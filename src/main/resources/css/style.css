@@ -10,8 +10,30 @@
     -fx-text-fill: #1e293b;
 }
 
-.app-root  { -fx-background-color: #f1f5f9; }
-.page-root { -fx-background-color: #f1f5f9; }
+.app-root  {
+    -fx-background-color: #f1f5f9;
+    /* FIX: ensure the root HBox itself fills the full scene */
+    -fx-pref-width: Infinity;
+    -fx-pref-height: Infinity;
+    -fx-max-width: Infinity;
+    -fx-max-height: Infinity;
+}
+
+/*
+  FIX: .page-root (applied to the root VBox of every sub-page FXML) must fill
+  the whole contentPane. Setting -fx-pref-width/-fx-pref-height: Infinity here
+  in CSS is the JavaFX equivalent of USE_COMPUTED_SIZE with a large bound and
+  works together with the maxWidth/maxHeight="Infinity" attributes in FXML.
+  Without this, each page renders at its intrinsic (minimum content) size
+  instead of stretching to fill the available space.
+*/
+.page-root {
+    -fx-background-color: #f1f5f9;
+    -fx-pref-width: Infinity;
+    -fx-pref-height: Infinity;
+    -fx-max-width: Infinity;
+    -fx-max-height: Infinity;
+}
 
 /* ══════════════════════════════════════════
    SIDEBAR
@@ -139,11 +161,16 @@
     -fx-background-radius: 50%; -fx-alignment: center; -fx-cursor: hand;
 }
 
-/* Content area — must fill all remaining space */
+/*
+  FIX: content-area must be Infinity in both dimensions so the StackPane
+  stretches to fill all remaining space after the top header.
+*/
 .content-area {
     -fx-background-color: #f1f5f9;
     -fx-pref-width: Infinity;
     -fx-pref-height: Infinity;
+    -fx-max-width: Infinity;
+    -fx-max-height: Infinity;
 }
 
 /* ══════════════════════════════════════════
@@ -451,8 +478,6 @@
 .scroll-bar .decrement-button { -fx-background-color: transparent; -fx-border-width: 0; }
 .scroll-bar .increment-arrow,
 .scroll-bar .decrement-arrow  { -fx-background-color: transparent; }
-
-/* Hide the corner between scrollbars */
 .scroll-pane .corner { -fx-background-color: transparent; }
 
 /* ══════════════════════════════════════════

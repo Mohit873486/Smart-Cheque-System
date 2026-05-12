@@ -2,31 +2,42 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<!--
+  FIX: Root VBox and ScrollPane now have maxWidth="Infinity" maxHeight="Infinity"
+  so the page fills the entire content area instead of collapsing to its
+  minimum computed size.
+-->
 <VBox xmlns="http://javafx.com/javafx/17"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.chequeprint.controller.SettingsController"
       fx:id="rootPane"
       styleClass="page-root"
+      maxWidth="Infinity"
+      maxHeight="Infinity"
       spacing="0">
 
-    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+    <ScrollPane fitToWidth="true" fitToHeight="false"
+                VBox.vgrow="ALWAYS"
+                maxWidth="Infinity" maxHeight="Infinity"
                 style="-fx-background-color:transparent; -fx-border-width:0;">
         <VBox spacing="24" style="-fx-padding: 28 28 28 28;">
 
             <!-- Page Header -->
             <VBox spacing="4">
-                <Label text="⚙️ Settings" styleClass="page-title"/>
+                <Label text="⚙️ Settings"                                         styleClass="page-title"/>
                 <Label text="Configure application preferences and defaults" styleClass="page-subtitle"/>
             </VBox>
 
             <!-- Print Settings -->
             <VBox styleClass="card" spacing="0">
                 <Label text="🖨️  Print Settings" styleClass="section-title"
-                       style="-fx-padding: 0 0 14 0; -fx-border-color: transparent transparent #e2e8f0 transparent; -fx-border-width:0 0 1 0;"/>
+                       style="-fx-padding: 0 0 14 0;
+                              -fx-border-color: transparent transparent #e2e8f0 transparent;
+                              -fx-border-width:0 0 1 0;"/>
 
                 <HBox styleClass="setting-row" alignment="CENTER_LEFT" spacing="16">
                     <VBox spacing="4" HBox.hgrow="ALWAYS">
-                        <Label text="Default Bank" styleClass="setting-name"/>
+                        <Label text="Default Bank"                              styleClass="setting-name"/>
                         <Label text="Pre-select this bank when creating cheques" styleClass="setting-desc"/>
                     </VBox>
                     <ComboBox fx:id="cmbDefaultBank" styleClass="form-combo" prefWidth="160"/>
@@ -35,8 +46,8 @@
 
                 <HBox styleClass="setting-row" alignment="CENTER_LEFT" spacing="16">
                     <VBox spacing="4" HBox.hgrow="ALWAYS">
-                        <Label text="Paper Size" styleClass="setting-name"/>
-                        <Label text="Default paper size for printing" styleClass="setting-desc"/>
+                        <Label text="Paper Size"                       styleClass="setting-name"/>
+                        <Label text="Default paper size for printing"  styleClass="setting-desc"/>
                     </VBox>
                     <ComboBox fx:id="cmbPaperSize" styleClass="form-combo" prefWidth="160"/>
                 </HBox>
@@ -44,7 +55,7 @@
 
                 <HBox styleClass="setting-row" alignment="CENTER_LEFT" spacing="16">
                     <VBox spacing="4" HBox.hgrow="ALWAYS">
-                        <Label text="Printer Name" styleClass="setting-name"/>
+                        <Label text="Printer Name"             styleClass="setting-name"/>
                         <Label text="Name of the printer to use" styleClass="setting-desc"/>
                     </VBox>
                     <TextField fx:id="fldPrinterName" styleClass="form-input" prefWidth="200"/>
@@ -54,12 +65,14 @@
             <!-- App Preferences -->
             <VBox styleClass="card" spacing="0">
                 <Label text="🔧  App Preferences" styleClass="section-title"
-                       style="-fx-padding: 0 0 14 0; -fx-border-color: transparent transparent #e2e8f0 transparent; -fx-border-width:0 0 1 0;"/>
+                       style="-fx-padding: 0 0 14 0;
+                              -fx-border-color: transparent transparent #e2e8f0 transparent;
+                              -fx-border-width:0 0 1 0;"/>
 
                 <HBox styleClass="setting-row" alignment="CENTER_LEFT" spacing="16">
                     <VBox spacing="4" HBox.hgrow="ALWAYS">
-                        <Label text="Auto-save" styleClass="setting-name"/>
-                        <Label text="Automatically save changes" styleClass="setting-desc"/>
+                        <Label text="Auto-save"                   styleClass="setting-name"/>
+                        <Label text="Automatically save changes"  styleClass="setting-desc"/>
                     </VBox>
                     <CheckBox fx:id="chkAutoSave"/>
                 </HBox>
@@ -67,8 +80,8 @@
 
                 <HBox styleClass="setting-row" alignment="CENTER_LEFT" spacing="16">
                     <VBox spacing="4" HBox.hgrow="ALWAYS">
-                        <Label text="Notifications" styleClass="setting-name"/>
-                        <Label text="Show desktop notifications" styleClass="setting-desc"/>
+                        <Label text="Notifications"                    styleClass="setting-name"/>
+                        <Label text="Show desktop notifications"       styleClass="setting-desc"/>
                     </VBox>
                     <CheckBox fx:id="chkNotifications"/>
                 </HBox>
@@ -78,11 +91,11 @@
             <VBox styleClass="card" spacing="12">
                 <Label text="ℹ️  About ChequePro" styleClass="section-title"/>
                 <HBox spacing="12">
-                    <Label text="Version:"  style="-fx-text-fill:#64748b; -fx-font-size:13px;"/>
-                    <Label text="2.0.0"     style="-fx-font-weight:bold; -fx-text-fill:#1e293b;"/>
+                    <Label text="Version:" style="-fx-text-fill:#64748b; -fx-font-size:13px;"/>
+                    <Label text="2.0.0"    style="-fx-font-weight:bold; -fx-text-fill:#1e293b;"/>
                 </HBox>
                 <HBox spacing="12">
-                    <Label text="Build:"    style="-fx-text-fill:#64748b; -fx-font-size:13px;"/>
+                    <Label text="Build:"   style="-fx-text-fill:#64748b; -fx-font-size:13px;"/>
                     <Label text="JavaFX 17 + MySQL + JasperReports"
                                            style="-fx-font-weight:bold; -fx-text-fill:#1e293b;"/>
                 </HBox>
@@ -91,6 +104,7 @@
             <HBox>
                 <Button text="💾  Save Settings" styleClass="btn-primary" onAction="#onSaveSettings"/>
             </HBox>
+
         </VBox>
     </ScrollPane>
 </VBox>

@@ -3,21 +3,31 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
+<!--
+  FIX 1: All child Labels inside nav HBox items now have mouseTransparent="true"
+          so clicks on the icon/text reliably reach the parent HBox handler.
+  FIX 2: The right-side VBox (main content column) now has maxWidth="Infinity"
+          and maxHeight="Infinity" to properly fill the remaining HBox space.
+  FIX 3: contentPane StackPane also gets maxWidth/maxHeight="Infinity" so
+          sub-pages loaded into it can expand to full size.
+-->
 <HBox xmlns="http://javafx.com/javafx/17"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.chequeprint.controller.MainController"
       styleClass="app-root"
+      maxWidth="Infinity" maxHeight="Infinity"
       fx:id="appRoot">
 
     <!-- ══ SIDEBAR ══ -->
-    <VBox fx:id="sidebar" styleClass="sidebar" prefWidth="224">
+    <VBox fx:id="sidebar" styleClass="sidebar" prefWidth="224"
+          minWidth="224" maxWidth="224">
 
         <!-- Logo -->
         <VBox styleClass="sidebar-logo" spacing="2">
             <HBox spacing="10" alignment="CENTER_LEFT">
                 <Label text="💼" styleClass="sidebar-logo-icon" mouseTransparent="true"/>
                 <VBox spacing="0" mouseTransparent="true">
-                    <Label text="ChequePro" styleClass="sidebar-logo-text"/>
+                    <Label text="ChequePro"       styleClass="sidebar-logo-text"/>
                     <Label text="Finance Manager" styleClass="sidebar-logo-sub"/>
                 </VBox>
             </HBox>
@@ -28,54 +38,46 @@
 
             <Label text="MAIN MENU" styleClass="sidebar-section-label"/>
 
-            <!--
-                FIX: All child Labels inside each nav HBox now have mouseTransparent="true".
-                Previously, clicking directly on the icon/text Label consumed the mouse event
-                and it did not reliably bubble up to the parent HBox's onMouseClicked handler.
-                With mouseTransparent="true", the Labels are invisible to mouse events and all
-                clicks pass straight through to the HBox handler.
-            -->
-
-            <HBox fx:id="navDashboard" styleClass="nav-item" spacing="12" alignment="CENTER_LEFT"
-                  onMouseClicked="#onDashboard">
+            <HBox fx:id="navDashboard" styleClass="nav-item" spacing="12"
+                  alignment="CENTER_LEFT" onMouseClicked="#onDashboard">
                 <Label text="📊" styleClass="nav-icon"  mouseTransparent="true"/>
                 <Label text="Dashboard" styleClass="nav-label" mouseTransparent="true"/>
             </HBox>
 
-            <HBox fx:id="navCheques" styleClass="nav-item" spacing="12" alignment="CENTER_LEFT"
-                  onMouseClicked="#onCheques">
+            <HBox fx:id="navCheques" styleClass="nav-item" spacing="12"
+                  alignment="CENTER_LEFT" onMouseClicked="#onCheques">
                 <Label text="📝" styleClass="nav-icon"  mouseTransparent="true"/>
                 <Label text="Cheques" styleClass="nav-label" mouseTransparent="true"/>
             </HBox>
 
-            <HBox fx:id="navInvoices" styleClass="nav-item" spacing="12" alignment="CENTER_LEFT"
-                  onMouseClicked="#onInvoices">
+            <HBox fx:id="navInvoices" styleClass="nav-item" spacing="12"
+                  alignment="CENTER_LEFT" onMouseClicked="#onInvoices">
                 <Label text="🧾" styleClass="nav-icon"  mouseTransparent="true"/>
                 <Label text="Invoices" styleClass="nav-label" mouseTransparent="true"/>
             </HBox>
 
-            <HBox fx:id="navBanks" styleClass="nav-item" spacing="12" alignment="CENTER_LEFT"
-                  onMouseClicked="#onBanks">
+            <HBox fx:id="navBanks" styleClass="nav-item" spacing="12"
+                  alignment="CENTER_LEFT" onMouseClicked="#onBanks">
                 <Label text="🏦" styleClass="nav-icon"  mouseTransparent="true"/>
                 <Label text="Bank Templates" styleClass="nav-label" mouseTransparent="true"/>
             </HBox>
 
             <Label text="ACCOUNT" styleClass="sidebar-section-label"/>
 
-            <HBox fx:id="navProfile" styleClass="nav-item" spacing="12" alignment="CENTER_LEFT"
-                  onMouseClicked="#onProfile">
+            <HBox fx:id="navProfile" styleClass="nav-item" spacing="12"
+                  alignment="CENTER_LEFT" onMouseClicked="#onProfile">
                 <Label text="👤" styleClass="nav-icon"  mouseTransparent="true"/>
                 <Label text="My Profile" styleClass="nav-label" mouseTransparent="true"/>
             </HBox>
 
-            <HBox fx:id="navSettings" styleClass="nav-item" spacing="12" alignment="CENTER_LEFT"
-                  onMouseClicked="#onSettings">
+            <HBox fx:id="navSettings" styleClass="nav-item" spacing="12"
+                  alignment="CENTER_LEFT" onMouseClicked="#onSettings">
                 <Label text="⚙️" styleClass="nav-icon"  mouseTransparent="true"/>
                 <Label text="Settings" styleClass="nav-label" mouseTransparent="true"/>
             </HBox>
 
-            <HBox fx:id="navSupport" styleClass="nav-item" spacing="12" alignment="CENTER_LEFT"
-                  onMouseClicked="#onSupport">
+            <HBox fx:id="navSupport" styleClass="nav-item" spacing="12"
+                  alignment="CENTER_LEFT" onMouseClicked="#onSupport">
                 <Label text="💬" styleClass="nav-icon"  mouseTransparent="true"/>
                 <Label text="Support" styleClass="nav-label" mouseTransparent="true"/>
             </HBox>
@@ -86,15 +88,18 @@
             <HBox styleClass="sidebar-user" spacing="10" alignment="CENTER_LEFT">
                 <Label text="AD" styleClass="user-avatar"/>
                 <VBox spacing="2">
-                    <Label text="Admin User" styleClass="user-name"/>
-                    <Label text="Administrator" styleClass="user-role"/>
+                    <Label text="Admin User"     styleClass="user-name"/>
+                    <Label text="Administrator"  styleClass="user-role"/>
                 </VBox>
             </HBox>
         </VBox>
     </VBox>
 
     <!-- ══ MAIN CONTENT ══ -->
-    <VBox HBox.hgrow="ALWAYS">
+    <!-- FIX: maxWidth/maxHeight="Infinity" ensures this column stretches to fill
+         all space not occupied by the sidebar. Without this the content area
+         stays at its preferred/computed size and pages appear cut off. -->
+    <VBox HBox.hgrow="ALWAYS" maxWidth="Infinity" maxHeight="Infinity">
 
         <!-- Top Header -->
         <HBox styleClass="top-header" alignment="CENTER_LEFT" spacing="16">
@@ -108,7 +113,11 @@
             <Label text="AD" styleClass="header-avatar"/>
         </HBox>
 
-        <!-- Content Pane — views are swapped in here by MainController.navigate() -->
-        <StackPane fx:id="contentPane" VBox.vgrow="ALWAYS" styleClass="content-area"/>
+        <!-- Content Pane — pages are loaded here by MainController.navigate() -->
+        <!-- FIX: maxWidth/maxHeight="Infinity" lets loaded sub-pages fill this pane -->
+        <StackPane fx:id="contentPane"
+                   VBox.vgrow="ALWAYS"
+                   maxWidth="Infinity" maxHeight="Infinity"
+                   styleClass="content-area"/>
     </VBox>
 </HBox>
