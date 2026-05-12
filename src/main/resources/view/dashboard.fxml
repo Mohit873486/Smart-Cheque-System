@@ -61,7 +61,7 @@
 
                 <!-- Monthly Amount -->
                 <VBox fx:id="cardAmount" styleClass="stat-card" spacing="12" HBox.hgrow="ALWAYS">
-                    <HBox spacing="12" alignment="CENTER_LEFT">
+                    <HBox      ncusdxhsquispacing="12" alignment="CENTER_LEFT">
                         <Label text="💰" styleClass="stat-icon stat-icon-purple"/>
                         <VBox spacing="2" HBox.hgrow="ALWAYS">
                             <Label text="This Month" styleClass="stat-label"/>

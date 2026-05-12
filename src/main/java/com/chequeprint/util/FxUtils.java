@@ -7,6 +7,16 @@ import javafx.util.Duration;
 
 /**
  * FxUtils — reusable JavaFX animation and UI helper methods.
+ *
+ * FIX in switchPage():
+ *   Previously, in.setOpacity(0) was called AFTER onSwitch.run() had already
+ *   added 'in' to the scene, causing a single-frame flash at full opacity
+ *   before the fade-in started. The fix moves in.setOpacity(0) to BEFORE
+ *   onSwitch.run() so the node enters the scene already invisible.
+ *
+ *   NOTE: MainController.navigate() no longer calls switchPage() directly —
+ *   it inlines the animation to avoid the detached-node/setOnFinished bug.
+ *   switchPage() is kept here for any other callers that may use it.
  */
 public class FxUtils {
 
@@ -94,15 +104,31 @@ public class FxUtils {
         tt.play();
     }
 
-    /** Page-switch: fade out old, fade in new content. */
+    /**
+     * Page-switch: fade out old node, then swap via onSwitch callback, then fade in new node.
+     *
+     * FIX: in.setOpacity(0) is now called BEFORE onSwitch.run() so the incoming
+     * node is already invisible when it enters the scene — no flash.
+     *
+     * IMPORTANT: The caller must ensure 'in' is not yet in the scene graph when
+     * this method is called. The swap (adding 'in' / removing 'out') happens
+     * inside onSwitch, which runs only after the fade-out completes, so 'out'
+     * is no longer being animated when it is detached — making it safe.
+     */
     public static void switchPage(Node out, Node in, Runnable onSwitch) {
+        // FIX: set incoming node invisible BEFORE it enters the scene
+        in.setOpacity(0);
+
         FadeTransition fadeOut = new FadeTransition(Duration.millis(140), out);
-        fadeOut.setFromValue(1); fadeOut.setToValue(0);
+        fadeOut.setFromValue(1);
+        fadeOut.setToValue(0);
         fadeOut.setOnFinished(e -> {
-            onSwitch.run();
-            in.setOpacity(0);
+            // 'out' animation is fully complete — safe to detach it now
+            if (onSwitch != null) onSwitch.run();
+
             FadeTransition fadeIn = new FadeTransition(Duration.millis(220), in);
-            fadeIn.setFromValue(0); fadeIn.setToValue(1);
+            fadeIn.setFromValue(0);
+            fadeIn.setToValue(1);
             fadeIn.play();
         });
         fadeOut.play();

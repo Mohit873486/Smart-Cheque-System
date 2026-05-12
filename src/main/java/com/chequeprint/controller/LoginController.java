@@ -92,7 +92,7 @@ public class LoginController {
             stage.setScene(scene);
             stage.setTitle("ChequePro — Cheque & Invoice Manager");
             stage.setMinWidth(1000);
-            stage.setMinHeight(650);
+            stage.setMinHeight(600);
             stage.centerOnScreen();
 
             root.setOpacity(0);

@@ -15,8 +15,8 @@
         <!-- Logo -->
         <VBox styleClass="sidebar-logo" spacing="2">
             <HBox spacing="10" alignment="CENTER_LEFT">
-                <Label text="💼" styleClass="sidebar-logo-icon"/>
-                <VBox spacing="0">
+                <Label text="💼" styleClass="sidebar-logo-icon" mouseTransparent="true"/>
+                <VBox spacing="0" mouseTransparent="true">
                     <Label text="ChequePro" styleClass="sidebar-logo-text"/>
                     <Label text="Finance Manager" styleClass="sidebar-logo-sub"/>
                 </VBox>
@@ -28,48 +28,56 @@
 
             <Label text="MAIN MENU" styleClass="sidebar-section-label"/>
 
+            <!--
+                FIX: All child Labels inside each nav HBox now have mouseTransparent="true".
+                Previously, clicking directly on the icon/text Label consumed the mouse event
+                and it did not reliably bubble up to the parent HBox's onMouseClicked handler.
+                With mouseTransparent="true", the Labels are invisible to mouse events and all
+                clicks pass straight through to the HBox handler.
+            -->
+
             <HBox fx:id="navDashboard" styleClass="nav-item" spacing="12" alignment="CENTER_LEFT"
                   onMouseClicked="#onDashboard">
-                <Label text="📊" styleClass="nav-icon"/>
-                <Label text="Dashboard" styleClass="nav-label"/>
+                <Label text="📊" styleClass="nav-icon"  mouseTransparent="true"/>
+                <Label text="Dashboard" styleClass="nav-label" mouseTransparent="true"/>
             </HBox>
 
             <HBox fx:id="navCheques" styleClass="nav-item" spacing="12" alignment="CENTER_LEFT"
                   onMouseClicked="#onCheques">
-                <Label text="📝" styleClass="nav-icon"/>
-                <Label text="Cheques" styleClass="nav-label"/>
+                <Label text="📝" styleClass="nav-icon"  mouseTransparent="true"/>
+                <Label text="Cheques" styleClass="nav-label" mouseTransparent="true"/>
             </HBox>
 
             <HBox fx:id="navInvoices" styleClass="nav-item" spacing="12" alignment="CENTER_LEFT"
                   onMouseClicked="#onInvoices">
-                <Label text="🧾" styleClass="nav-icon"/>
-                <Label text="Invoices" styleClass="nav-label"/>
+                <Label text="🧾" styleClass="nav-icon"  mouseTransparent="true"/>
+                <Label text="Invoices" styleClass="nav-label" mouseTransparent="true"/>
             </HBox>
 
             <HBox fx:id="navBanks" styleClass="nav-item" spacing="12" alignment="CENTER_LEFT"
                   onMouseClicked="#onBanks">
-                <Label text="🏦" styleClass="nav-icon"/>
-                <Label text="Bank Templates" styleClass="nav-label"/>
+                <Label text="🏦" styleClass="nav-icon"  mouseTransparent="true"/>
+                <Label text="Bank Templates" styleClass="nav-label" mouseTransparent="true"/>
             </HBox>
 
             <Label text="ACCOUNT" styleClass="sidebar-section-label"/>
 
             <HBox fx:id="navProfile" styleClass="nav-item" spacing="12" alignment="CENTER_LEFT"
                   onMouseClicked="#onProfile">
-                <Label text="👤" styleClass="nav-icon"/>
-                <Label text="My Profile" styleClass="nav-label"/>
+                <Label text="👤" styleClass="nav-icon"  mouseTransparent="true"/>
+                <Label text="My Profile" styleClass="nav-label" mouseTransparent="true"/>
             </HBox>
 
             <HBox fx:id="navSettings" styleClass="nav-item" spacing="12" alignment="CENTER_LEFT"
                   onMouseClicked="#onSettings">
-                <Label text="⚙️" styleClass="nav-icon"/>
-                <Label text="Settings" styleClass="nav-label"/>
+                <Label text="⚙️" styleClass="nav-icon"  mouseTransparent="true"/>
+                <Label text="Settings" styleClass="nav-label" mouseTransparent="true"/>
             </HBox>
 
             <HBox fx:id="navSupport" styleClass="nav-item" spacing="12" alignment="CENTER_LEFT"
                   onMouseClicked="#onSupport">
-                <Label text="💬" styleClass="nav-icon"/>
-                <Label text="Support" styleClass="nav-label"/>
+                <Label text="💬" styleClass="nav-icon"  mouseTransparent="true"/>
+                <Label text="Support" styleClass="nav-label" mouseTransparent="true"/>
             </HBox>
 
             <Region VBox.vgrow="ALWAYS"/>
@@ -93,14 +101,14 @@
             <Label fx:id="headerTitle" text="Dashboard" styleClass="header-title"/>
             <Region HBox.hgrow="ALWAYS"/>
             <HBox styleClass="search-box" alignment="CENTER_LEFT" spacing="6">
-                <Label text="🔍" style="-fx-text-fill:#94a3b8;"/>
+                <Label text="🔍" style="-fx-text-fill:#94a3b8;" mouseTransparent="true"/>
                 <TextField styleClass="search-input" promptText="Search..." prefWidth="200"/>
             </HBox>
             <Label text="🔔" styleClass="icon-btn"/>
             <Label text="AD" styleClass="header-avatar"/>
         </HBox>
 
-        <!-- Content Pane -->
+        <!-- Content Pane — views are swapped in here by MainController.navigate() -->
         <StackPane fx:id="contentPane" VBox.vgrow="ALWAYS" styleClass="content-area"/>
     </VBox>
 </HBox>
