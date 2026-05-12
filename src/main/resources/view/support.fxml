@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.chequeprint.controller.SupportController"
+      fx:id="rootPane"
+      styleClass="page-root"
+      spacing="0">
+
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                style="-fx-background-color:transparent; -fx-border-width:0;">
+        <VBox spacing="24" style="-fx-padding: 28 28 28 28;">
+
+            <!-- Page Header -->
+            <VBox spacing="4">
+                <Label text="💬 Support Center" styleClass="page-title"/>
+                <Label text="Get help or send us a message" styleClass="page-subtitle"/>
+            </VBox>
+
+            <HBox spacing="24" alignment="TOP_LEFT">
+
+                <!-- FAQ -->
+                <VBox styleClass="card" spacing="16" HBox.hgrow="ALWAYS">
+                    <Label text="❓ Frequently Asked Questions" styleClass="section-title"/>
+                    <Separator/>
+
+                    <VBox styleClass="faq-item" spacing="6">
+                        <Label text="How do I print a cheque?" styleClass="faq-q"/>
+                        <Label text="Select a cheque from the table, then click the Print button. Make sure a printer is connected."
+                               styleClass="faq-a" wrapText="true"/>
+                    </VBox>
+                    <Separator/>
+
+                    <VBox styleClass="faq-item" spacing="6">
+                        <Label text="How do I export an invoice to PDF?" styleClass="faq-q"/>
+                        <Label text="Select an invoice from the Invoice page and click 'Export PDF'. The file will be saved to your Desktop."
+                               styleClass="faq-a" wrapText="true"/>
+                    </VBox>
+                    <Separator/>
+
+                    <VBox styleClass="faq-item" spacing="6">
+                        <Label text="How do I add a new bank template?" styleClass="faq-q"/>
+                        <Label text="Go to the Bank Templates section from the sidebar and fill in the form to add your bank."
+                               styleClass="faq-a" wrapText="true"/>
+                    </VBox>
+                    <Separator/>
+
+                    <VBox styleClass="faq-item" spacing="6">
+                        <Label text="The database is not connecting. What do I do?" styleClass="faq-q"/>
+                        <Label text="Check that MySQL is running and credentials in AppConfig.java match your setup (default: root / root123)."
+                               styleClass="faq-a" wrapText="true"/>
+                    </VBox>
+                    <Separator/>
+
+                    <VBox styleClass="faq-item" spacing="6">
+                        <Label text="Can I change the cheque print template?" styleClass="faq-q"/>
+                        <Label text="Yes — edit the cheque_report.jrxml file in src/main/resources/reports/ using JasperSoft Studio."
+                               styleClass="faq-a" wrapText="true"/>
+                    </VBox>
+                </VBox>
+
+                <!-- Contact Form -->
+                <VBox styleClass="card" spacing="16" minWidth="320" maxWidth="360">
+                    <Label text="📨 Contact Support" styleClass="section-title"/>
+                    <Separator/>
+
+                    <VBox spacing="6">
+                        <Label text="YOUR NAME" styleClass="form-label"/>
+                        <TextField fx:id="fldSupportName" promptText="Full name"
+                                   styleClass="form-input"/>
+                    </VBox>
+
+                    <VBox spacing="6">
+                        <Label text="EMAIL ADDRESS" styleClass="form-label"/>
+                        <TextField fx:id="fldSupportEmail" promptText="your@email.com"
+                                   styleClass="form-input"/>
+                    </VBox>
+
+                    <VBox spacing="6">
+                        <Label text="MESSAGE" styleClass="form-label"/>
+                        <TextArea fx:id="fldMessage" promptText="Describe your issue…"
+                                  styleClass="form-input" prefRowCount="5" wrapText="true"/>
+                    </VBox>
+
+                    <Button text="📤  Send Message" styleClass="btn-primary"
+                            maxWidth="Infinity" onAction="#onSendMessage"/>
+
+                    <Label fx:id="lblConfirm" text="" styleClass="success-label"
+                           maxWidth="Infinity" wrapText="true" visible="false"/>
+
+                    <Separator/>
+
+                    <VBox spacing="8">
+                        <Label text="Other ways to reach us:" style="-fx-text-fill:#64748b; -fx-font-size:12px;"/>
+                        <HBox spacing="8" alignment="CENTER_LEFT">
+                            <Label text="📧" style="-fx-font-size:13px;"/>
+                            <Label text="support@chequeprint.com" style="-fx-font-size:12px; -fx-text-fill:#1a56db;"/>
+                        </HBox>
+                        <HBox spacing="8" alignment="CENTER_LEFT">
+                            <Label text="📞" style="-fx-font-size:13px;"/>
+                            <Label text="+91 80000 12345" style="-fx-font-size:12px; -fx-text-fill:#475569;"/>
+                        </HBox>
+                    </VBox>
+                </VBox>
+            </HBox>
+        </VBox>
+    </ScrollPane>
+</VBox>

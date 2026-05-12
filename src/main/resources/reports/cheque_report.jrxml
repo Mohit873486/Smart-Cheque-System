@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+                  http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="cheque_report"
+              pageWidth="612" pageHeight="264"
+              columnWidth="572" leftMargin="20" rightMargin="20"
+              topMargin="10" bottomMargin="10"
+              uuid="a1b2c3d4-e5f6-7890-abcd-ef1234567890">
+
+    <!-- Parameters passed from JasperPrintUtil -->
+    <parameter name="chequeNo"    class="java.lang.String"/>
+    <parameter name="payeeName"   class="java.lang.String"/>
+    <parameter name="amount"      class="java.lang.String"/>
+    <parameter name="amountWords" class="java.lang.String"/>
+    <parameter name="bankName"    class="java.lang.String"/>
+    <parameter name="issueDate"   class="java.lang.String"/>
+
+    <background>
+        <band splitType="Stretch"/>
+    </background>
+
+    <title>
+        <band height="244" splitType="Stretch">
+
+            <!-- Outer border -->
+            <rectangle>
+                <reportElement x="0" y="0" width="572" height="244" uuid="rect-outer"/>
+                <graphicElement>
+                    <pen lineWidth="1.5" lineColor="#1a56db"/>
+                </graphicElement>
+            </rectangle>
+
+            <!-- Bank name header bar -->
+            <rectangle>
+                <reportElement x="0" y="0" width="572" height="36" backcolor="#1a56db" uuid="rect-header"/>
+                <graphicElement>
+                    <pen lineWidth="0"/>
+                </graphicElement>
+            </rectangle>
+
+            <!-- Bank name -->
+            <staticText>
+                <reportElement x="10" y="6" width="200" height="24" forecolor="#FFFFFF" uuid="lbl-bank-static"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="13" isBold="true"/>
+                </textElement>
+                <text><![CDATA[BANK:]]></text>
+            </staticText>
+            <textField>
+                <reportElement x="60" y="6" width="300" height="24" forecolor="#FFFFFF" uuid="fld-bank"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="13" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{bankName}]]></textFieldExpression>
+            </textField>
+
+            <!-- Cheque No (top right) -->
+            <staticText>
+                <reportElement x="390" y="6" width="80" height="24" forecolor="#FFFFFF" uuid="lbl-chqno-static"/>
+                <textElement textAlignment="Right" verticalAlignment="Middle">
+                    <font size="11" isBold="true"/>
+                </textElement>
+                <text><![CDATA[Cheque No:]]></text>
+            </staticText>
+            <textField>
+                <reportElement x="474" y="6" width="90" height="24" forecolor="#FFFFFF" uuid="fld-chqno"/>
+                <textElement textAlignment="Right" verticalAlignment="Middle">
+                    <font size="11" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{chequeNo}]]></textFieldExpression>
+            </textField>
+
+            <!-- Date label -->
+            <staticText>
+                <reportElement x="390" y="50" width="60" height="18" uuid="lbl-date-static"/>
+                <textElement><font size="10" isBold="true"/></textElement>
+                <text><![CDATA[Date:]]></text>
+            </staticText>
+            <textField>
+                <reportElement x="452" y="50" width="112" height="18" uuid="fld-date"/>
+                <box>
+                    <bottomPen lineWidth="0.75" lineColor="#1e293b"/>
+                </box>
+                <textElement textAlignment="Center"><font size="10"/></textElement>
+                <textFieldExpression><![CDATA[$P{issueDate}]]></textFieldExpression>
+            </textField>
+
+            <!-- Pay line -->
+            <staticText>
+                <reportElement x="10" y="82" width="50" height="20" uuid="lbl-pay"/>
+                <textElement verticalAlignment="Middle"><font size="11" isBold="true"/></textElement>
+                <text><![CDATA[Pay:]]></text>
+            </staticText>
+            <textField>
+                <reportElement x="62" y="82" width="500" height="20" uuid="fld-payee"/>
+                <box>
+                    <bottomPen lineWidth="0.75" lineColor="#1e293b"/>
+                </box>
+                <textElement verticalAlignment="Middle"><font size="12" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{payeeName}]]></textFieldExpression>
+            </textField>
+
+            <!-- Amount words -->
+            <staticText>
+                <reportElement x="10" y="118" width="80" height="20" uuid="lbl-words"/>
+                <textElement verticalAlignment="Middle"><font size="10" isBold="true"/></textElement>
+                <text><![CDATA[Rupees:]]></text>
+            </staticText>
+            <textField isStretchWithOverflow="true">
+                <reportElement x="94" y="118" width="420" height="20" uuid="fld-words"/>
+                <box>
+                    <bottomPen lineWidth="0.75" lineColor="#1e293b"/>
+                </box>
+                <textElement verticalAlignment="Middle"><font size="10"/></textElement>
+                <textFieldExpression><![CDATA[$P{amountWords}]]></textFieldExpression>
+            </textField>
+
+            <!-- Amount box -->
+            <staticText>
+                <reportElement x="10" y="118" width="40" height="20" uuid="lbl-rs"/>
+                <textElement textAlignment="Right" verticalAlignment="Middle">
+                    <font size="11" isBold="true"/>
+                </textElement>
+                <text><![CDATA[₹]]></text>
+            </staticText>
+            <rectangle>
+                <reportElement x="516" y="110" width="50" height="28" uuid="rect-amount-box"/>
+                <graphicElement><pen lineWidth="1.2" lineColor="#1a56db"/></graphicElement>
+            </rectangle>
+            <textField>
+                <reportElement x="518" y="112" width="46" height="24" uuid="fld-amount"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font size="10" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{amount}]]></textFieldExpression>
+            </textField>
+
+            <!-- MICR band -->
+            <rectangle>
+                <reportElement x="0" y="210" width="572" height="34" backcolor="#f1f5f9" uuid="rect-micr"/>
+                <graphicElement><pen lineWidth="0"/></graphicElement>
+            </rectangle>
+            <staticText>
+                <reportElement x="10" y="216" width="200" height="22" uuid="lbl-micr"/>
+                <textElement verticalAlignment="Middle">
+                    <font fontName="Courier New" size="14" isBold="true"/>
+                </textElement>
+                <text><![CDATA[⑆ 000000 ⑆ 0000000000 ⑆]]></text>
+            </staticText>
+
+            <!-- Signature line -->
+            <line>
+                <reportElement x="400" y="185" width="160" height="1" uuid="line-sig"/>
+                <graphicElement><pen lineWidth="0.75" lineColor="#1e293b"/></graphicElement>
+            </line>
+            <staticText>
+                <reportElement x="400" y="188" width="160" height="16" uuid="lbl-sig"/>
+                <textElement textAlignment="Center"><font size="9" isItalic="true"/></textElement>
+                <text><![CDATA[Authorised Signature]]></text>
+            </staticText>
+
+        </band>
+    </title>
+</jasperReport>

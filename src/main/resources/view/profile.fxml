@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.chequeprint.controller.ProfileController"
+      fx:id="rootPane"
+      styleClass="page-root"
+      spacing="0">
+
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                style="-fx-background-color:transparent; -fx-border-width:0;">
+        <VBox spacing="24" style="-fx-padding: 28 28 28 28;">
+
+            <!-- Page Header -->
+            <VBox spacing="4">
+                <Label text="👤 My Profile" styleClass="page-title"/>
+                <Label text="Manage your personal and company information" styleClass="page-subtitle"/>
+            </VBox>
+
+            <HBox spacing="24" alignment="TOP_LEFT">
+
+                <!-- Avatar Card -->
+                <VBox styleClass="card" spacing="16" alignment="CENTER" minWidth="220" maxWidth="240">
+                    <Label fx:id="lblInitials" text="AD" styleClass="profile-avatar"/>
+                    <VBox spacing="4" alignment="CENTER">
+                        <Label text="Admin User"     styleClass="profile-name"/>
+                        <Label text="Administrator"  styleClass="profile-role"/>
+                        <Label text="ChequePro Inc." styleClass="profile-company"/>
+                        <Label text="📍 India"       styleClass="profile-location"/>
+                    </VBox>
+                    <Separator maxWidth="160"/>
+                    <VBox spacing="8" maxWidth="160">
+                        <HBox spacing="8" alignment="CENTER_LEFT">
+                            <Label text="📧" style="-fx-font-size:12px;"/>
+                            <Label text="admin@cheque.com" style="-fx-font-size:11px; -fx-text-fill:#64748b;"/>
+                        </HBox>
+                        <HBox spacing="8" alignment="CENTER_LEFT">
+                            <Label text="📞" style="-fx-font-size:12px;"/>
+                            <Label text="+91 98765 43210" style="-fx-font-size:11px; -fx-text-fill:#64748b;"/>
+                        </HBox>
+                    </VBox>
+                </VBox>
+
+                <!-- Form Card -->
+                <VBox styleClass="card" spacing="20" HBox.hgrow="ALWAYS">
+                    <Label text="Personal Information" styleClass="section-title"/>
+
+                    <HBox spacing="16">
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="FULL NAME" styleClass="form-label"/>
+                            <TextField fx:id="fldName" promptText="Your full name"
+                                       styleClass="form-input"/>
+                        </VBox>
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="EMAIL ADDRESS" styleClass="form-label"/>
+                            <TextField fx:id="fldEmail" promptText="your@email.com"
+                                       styleClass="form-input"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox spacing="16">
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="PHONE NUMBER" styleClass="form-label"/>
+                            <TextField fx:id="fldPhone" promptText="+91 XXXXX XXXXX"
+                                       styleClass="form-input"/>
+                        </VBox>
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="COMPANY NAME" styleClass="form-label"/>
+                            <TextField fx:id="fldCompany" promptText="Your company"
+                                       styleClass="form-input"/>
+                        </VBox>
+                    </HBox>
+
+                    <VBox spacing="6">
+                        <Label text="ADDRESS" styleClass="form-label"/>
+                        <TextArea fx:id="fldAddress" promptText="Full address…"
+                                  styleClass="form-input" prefRowCount="3" wrapText="true"/>
+                    </VBox>
+
+                    <HBox spacing="10">
+                        <Button text="💾  Save Profile" styleClass="btn-primary" onAction="#onSave"/>
+                        <Button text="Cancel"           styleClass="btn-secondary"/>
+                    </HBox>
+                </VBox>
+            </HBox>
+        </VBox>
+    </ScrollPane>
+</VBox>

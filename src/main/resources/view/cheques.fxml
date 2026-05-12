@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.chequeprint.controller.ChequeController"
+      fx:id="rootPane"
+      styleClass="page-root"
+      spacing="0">
+
+    <VBox spacing="20" style="-fx-padding: 24 24 24 24;" VBox.vgrow="ALWAYS">
+
+        <!-- Page Header -->
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="📝 Cheque Management" styleClass="page-title"/>
+                <Label text="Create, manage and print cheques" styleClass="page-subtitle"/>
+            </VBox>
+            <Button text="+ New Cheque" styleClass="btn-primary" onAction="#onClear"/>
+        </HBox>
+
+        <!-- Filter Bar -->
+        <HBox spacing="12" alignment="CENTER_LEFT" styleClass="card"
+              style="-fx-padding: 14 18 14 18;">
+            <Label text="🔍" style="-fx-font-size:14px; -fx-text-fill:#94a3b8;"/>
+            <TextField fx:id="searchField" promptText="Search by payee or cheque no…"
+                       styleClass="filter-input" prefWidth="280"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label text="Status:" style="-fx-text-fill:#64748b; -fx-font-size:13px;"/>
+            <ComboBox fx:id="filterStatus" styleClass="filter-combo" prefWidth="130"/>
+        </HBox>
+
+        <!-- Main Content: Table + Form -->
+        <HBox spacing="20" VBox.vgrow="ALWAYS">
+
+            <!-- Table -->
+            <VBox styleClass="card" HBox.hgrow="ALWAYS" spacing="14">
+                <Label text="All Cheques" styleClass="section-title"/>
+                <TableView fx:id="chequeTable" styleClass="data-table" VBox.vgrow="ALWAYS">
+                    <placeholder>
+                        <Label text="No cheques found. Click '+ New Cheque' to create one."
+                               styleClass="table-placeholder"/>
+                    </placeholder>
+                    <columns>
+                        <TableColumn fx:id="colChequeNo" text="CHEQUE NO"  prefWidth="120"/>
+                        <TableColumn fx:id="colPayee"    text="PAYEE NAME" prefWidth="180"/>
+                        <TableColumn fx:id="colAmount"   text="AMOUNT"     prefWidth="120"/>
+                        <TableColumn fx:id="colBank"     text="BANK"       prefWidth="110"/>
+                        <TableColumn fx:id="colDate"     text="DATE"       prefWidth="110"/>
+                        <TableColumn fx:id="colStatus"   text="STATUS"     prefWidth="100"/>
+                    </columns>
+                </TableView>
+
+                <!-- Action Buttons below table -->
+                <HBox spacing="10">
+                    <Button text="🖨️  Print" styleClass="btn-primary" onAction="#onPrint"/>
+                    <Button text="🗑  Delete" styleClass="btn-danger"  onAction="#onDelete"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label text="Click a row to edit" style="-fx-text-fill:#94a3b8; -fx-font-size:12px;" alignment="CENTER_RIGHT"/>
+                </HBox>
+            </VBox>
+
+            <!-- Form Panel -->
+            <VBox fx:id="formPanel" styleClass="card form-panel" spacing="16" minWidth="300" maxWidth="320">
+                <Label fx:id="lblFormTitle" text="New Cheque" styleClass="form-title" maxWidth="Infinity"/>
+
+                <VBox spacing="6">
+                    <Label text="PAYEE NAME" styleClass="form-label"/>
+                    <TextField fx:id="fldPayee" promptText="Enter payee name"
+                               styleClass="form-input"/>
+                </VBox>
+
+                <VBox spacing="6">
+                    <Label text="AMOUNT (₹)" styleClass="form-label"/>
+                    <TextField fx:id="fldAmount" promptText="0.00"
+                               styleClass="form-input"/>
+                </VBox>
+
+                <VBox spacing="6">
+                    <Label text="BANK" styleClass="form-label"/>
+                    <ComboBox fx:id="cmbBank" styleClass="form-combo" maxWidth="Infinity"/>
+                </VBox>
+
+                <VBox spacing="6">
+                    <Label text="ISSUE DATE" styleClass="form-label"/>
+                    <DatePicker fx:id="datePicker" styleClass="form-date" maxWidth="Infinity"/>
+                </VBox>
+
+                <Region VBox.vgrow="ALWAYS"/>
+
+                <VBox spacing="8">
+                    <Button text="💾  Save Cheque" styleClass="btn-primary"
+                            maxWidth="Infinity" onAction="#onSave"/>
+                    <Button text="✕  Clear Form"   styleClass="btn-secondary"
+                            maxWidth="Infinity" onAction="#onClear"/>
+                </VBox>
+            </VBox>
+        </HBox>
+    </VBox>
+</VBox>
