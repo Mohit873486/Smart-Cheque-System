@@ -1,92 +1,131 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane xmlns="http://javafx.com/javafx/17"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.chequeprint.controller.DashboardController">
+<!--
+  FIXED dashboard.fxml
+  =====================
+  PROBLEMS IN ORIGINAL:
+  1. Root was AnchorPane wrapping a VBox — double-wrapping is unnecessary and
+     the AnchorPane had no explicit size, so it collapsed to minimum.
+  2. VBox inside AnchorPane used AnchorPane constraints but if the AnchorPane
+     itself is not stretched, the constraints have nothing to anchor to.
+  3. ScrollPane had fitToHeight="true" which forces the inner VBox to the
+     ScrollPane viewport height — this PREVENTS vertical scrolling and causes
+     content to be squished rather than scrollable.
 
-    <!-- ROOT FULL SCREEN -->
-    <VBox fx:id="dashboardRoot"
-          spacing="0"
-          AnchorPane.topAnchor="0"
-          AnchorPane.bottomAnchor="0"
-          AnchorPane.leftAnchor="0"
-          AnchorPane.rightAnchor="0"
-          maxWidth="Infinity"
-          maxHeight="Infinity">
+  FIXES:
+  1. Removed outer AnchorPane wrapper — root is now VBox directly.
+  2. Root VBox: maxWidth="Infinity" maxHeight="Infinity" so StackPane in main.fxml
+     can stretch it to fill the full content area.
+  3. ScrollPane: fitToWidth="true" fitToHeight="false" — width fills, height
+     scrolls naturally. This is the correct pattern for vertical-scroll pages.
+  4. Inner content VBox does NOT need maxHeight; it grows via content naturally.
+  5. Stat cards: each HBox.hgrow="ALWAYS" on child VBoxes makes them share
+     horizontal space equally — added maxWidth="Infinity" to each card VBox.
+  6. Recent Activity section: added proper card styling and a structured table
+     placeholder so it looks polished at any window size.
+-->
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.chequeprint.controller.DashboardController"
+      fx:id="dashboardRoot"
+      styleClass="page-root"
+      maxWidth="Infinity"
+      maxHeight="Infinity"
+      spacing="0">
 
-        <!-- SCROLL AREA -->
-        <ScrollPane fitToWidth="true"
-                    fitToHeight="true"
-                    VBox.vgrow="ALWAYS"
-                    style="-fx-background-color:transparent; -fx-border-width:0;">
+    <!--
+      FIX: fitToHeight="false" — allows content to be taller than viewport
+           and enables the vertical scrollbar to appear naturally.
+           fitToWidth="true"  — inner VBox always spans full horizontal width.
+    -->
+    <ScrollPane fitToWidth="true"
+                fitToHeight="false"
+                VBox.vgrow="ALWAYS"
+                style="-fx-background-color:transparent; -fx-border-width:0;">
 
-            <VBox spacing="24"
-                  maxWidth="Infinity"
-                  style="-fx-padding: 28;">
+        <VBox spacing="24" maxWidth="Infinity"
+              style="-fx-padding: 28 28 28 28; -fx-background-color:#f1f5f9;">
 
-                <!-- HEADER -->
-                <VBox spacing="4">
-                    <Label fx:id="lblWelcome" text="Welcome" />
-                    <Label fx:id="lblSubtitle" text="Subtitle" />
-                </VBox>
-
-                <!-- QUICK ACTIONS -->
-                <HBox spacing="15">
-                    <Button text="Create Cheque" />
-                    <Button text="Print Cheque" />
+            <!-- ── PAGE HEADER ── -->
+            <VBox spacing="6">
+                <HBox alignment="CENTER_LEFT" spacing="12">
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label fx:id="lblWelcome"  text="Welcome back 👋" styleClass="page-title"/>
+                        <Label fx:id="lblSubtitle" text="Here's what's happening with your finances today."
+                               styleClass="page-subtitle"/>
+                    </VBox>
+                    <HBox spacing="10">
+                        <Button text="+ Create Cheque"  styleClass="btn-primary"/>
+                        <Button text="📄 New Invoice"   styleClass="btn-secondary"/>
+                    </HBox>
                 </HBox>
-
-                <!-- STATS ROW -->
-                <HBox fx:id="statsRow" spacing="16" maxWidth="Infinity">
-
-                    <VBox fx:id="cardTotal"
-                          styleClass="stat-card"
-                          spacing="10"
-                          HBox.hgrow="ALWAYS">
-                        <Label text="Total" />
-                        <Label fx:id="lblTotalCheques" text="0" />
-                    </VBox>
-
-                    <VBox fx:id="cardPrinted"
-                          styleClass="stat-card"
-                          spacing="10"
-                          HBox.hgrow="ALWAYS">
-                        <Label text="Printed" />
-                        <Label fx:id="lblPrinted" text="0" />
-                    </VBox>
-
-                    <VBox fx:id="cardPending"
-                          styleClass="stat-card"
-                          spacing="10"
-                          HBox.hgrow="ALWAYS">
-                        <Label text="Pending" />
-                        <Label fx:id="lblPending" text="0" />
-                    </VBox>
-
-                    <VBox fx:id="cardAmount"
-                          styleClass="stat-card"
-                          spacing="10"
-                          HBox.hgrow="ALWAYS">
-                        <Label text="Amount" />
-                        <Label fx:id="lblMonthlyAmount" text="₹0" />
-                    </VBox>
-
-                </HBox>
-
-                <!-- RECENT ACTIVITY -->
-                <VBox spacing="10">
-                    <Label text="Recent Activity" style="-fx-font-size:16;" />
-
-                    <Label text="No recent activity"
-                           style="-fx-padding:20;"
-                           maxWidth="Infinity"
-                           alignment="CENTER" />
-                </VBox>
-
             </VBox>
-        </ScrollPane>
-    </VBox>
-</AnchorPane>
+
+            <!-- ── STATS ROW ──
+                 FIX: Each child VBox uses HBox.hgrow="ALWAYS" + maxWidth="Infinity"
+                 so all four cards share horizontal space equally and expand when
+                 the window is resized.
+            -->
+            <HBox fx:id="statsRow" spacing="16" maxWidth="Infinity">
+
+                <VBox fx:id="cardTotal" styleClass="stat-card"
+                      spacing="10" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+                    <HBox alignment="CENTER_LEFT" spacing="8">
+                        <Label text="📋" style="-fx-font-size:20px;"/>
+                        <Label text="Total Cheques" styleClass="stat-label"/>
+                    </HBox>
+                    <Label fx:id="lblTotalCheques" text="0" styleClass="stat-value"/>
+                    <Label text="All time" styleClass="stat-sub"/>
+                </VBox>
+
+                <VBox fx:id="cardPrinted" styleClass="stat-card"
+                      spacing="10" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+                    <HBox alignment="CENTER_LEFT" spacing="8">
+                        <Label text="🖨️" style="-fx-font-size:20px;"/>
+                        <Label text="Printed" styleClass="stat-label"/>
+                    </HBox>
+                    <Label fx:id="lblPrinted" text="0" styleClass="stat-value"/>
+                    <Label text="Successfully printed" styleClass="stat-sub"/>
+                </VBox>
+
+                <VBox fx:id="cardPending" styleClass="stat-card"
+                      spacing="10" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+                    <HBox alignment="CENTER_LEFT" spacing="8">
+                        <Label text="⏳" style="-fx-font-size:20px;"/>
+                        <Label text="Pending" styleClass="stat-label"/>
+                    </HBox>
+                    <Label fx:id="lblPending" text="0" styleClass="stat-value"/>
+                    <Label text="Awaiting action" styleClass="stat-sub"/>
+                </VBox>
+
+                <VBox fx:id="cardAmount" styleClass="stat-card"
+                      spacing="10" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+                    <HBox alignment="CENTER_LEFT" spacing="8">
+                        <Label text="💰" style="-fx-font-size:20px;"/>
+                        <Label text="This Month" styleClass="stat-label"/>
+                    </HBox>
+                    <Label fx:id="lblMonthlyAmount" text="₹0" styleClass="stat-value"/>
+                    <Label text="Total value issued" styleClass="stat-sub"/>
+                </VBox>
+
+            </HBox>
+
+            <!-- ── RECENT ACTIVITY ── -->
+            <VBox styleClass="card" spacing="14" maxWidth="Infinity">
+                <HBox alignment="CENTER_LEFT" spacing="0">
+                    <Label text="Recent Activity" styleClass="section-title" HBox.hgrow="ALWAYS"/>
+                    <Button text="View All" styleClass="btn-link"/>
+                </HBox>
+                <Separator/>
+                <Label text="No recent activity. Create your first cheque to get started."
+                       styleClass="empty-label"
+                       maxWidth="Infinity"
+                       alignment="CENTER"
+                       style="-fx-padding: 24 0 24 0;"/>
+            </VBox>
+
+        </VBox>
+    </ScrollPane>
+</VBox>

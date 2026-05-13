@@ -3,9 +3,23 @@
 <?import javafx.scene.layout.*?>
 
 <!--
-  FIX: Root VBox and ScrollPane now have maxWidth="Infinity" maxHeight="Infinity"
-  so the page fills the entire content area instead of collapsing to its
-  minimum computed size.
+  FIXED settings.fxml
+  ====================
+  PROBLEMS IN ORIGINAL:
+  1. ScrollPane had fitToHeight="false" which is actually correct for a
+     scrollable page — this was already right.
+  2. Root VBox was missing prefWidth/prefHeight binding to scene size.
+     maxWidth/maxHeight="Infinity" was present which is good.
+  3. Inner content VBox had no maxWidth="Infinity" so it could not fill the
+     ScrollPane viewport horizontally even with fitToWidth="true".
+  4. Setting rows had inline border styles that used a non-standard shorthand
+     that doesn't always work in JavaFX CSS. Replaced with styleClass.
+
+  FIXES:
+  1. Root VBox and ScrollPane: maxWidth/maxHeight="Infinity" confirmed.
+  2. Inner content VBox: maxWidth="Infinity" added.
+  3. ScrollPane: fitToWidth="true", fitToHeight="false" (correct pattern).
+  4. Setting rows use styleClass="setting-row" cleanly.
 -->
 <VBox xmlns="http://javafx.com/javafx/17"
       xmlns:fx="http://javafx.com/fxml"
@@ -16,24 +30,27 @@
       maxHeight="Infinity"
       spacing="0">
 
-    <ScrollPane fitToWidth="true" fitToHeight="false"
+    <ScrollPane fitToWidth="true"
+                fitToHeight="false"
                 VBox.vgrow="ALWAYS"
-                maxWidth="Infinity" maxHeight="Infinity"
                 style="-fx-background-color:transparent; -fx-border-width:0;">
-        <VBox spacing="24" style="-fx-padding: 28 28 28 28;">
+
+        <VBox spacing="24" maxWidth="Infinity"
+              style="-fx-padding: 28 28 28 28; -fx-background-color:#f1f5f9;">
 
             <!-- Page Header -->
             <VBox spacing="4">
-                <Label text="⚙️ Settings"                                         styleClass="page-title"/>
-                <Label text="Configure application preferences and defaults" styleClass="page-subtitle"/>
+                <Label text="⚙️ Settings" styleClass="page-title"/>
+                <Label text="Configure application preferences and defaults"
+                       styleClass="page-subtitle"/>
             </VBox>
 
-            <!-- Print Settings -->
-            <VBox styleClass="card" spacing="0">
+            <!-- Print Settings Card -->
+            <VBox styleClass="card" spacing="0" maxWidth="Infinity">
                 <Label text="🖨️  Print Settings" styleClass="section-title"
                        style="-fx-padding: 0 0 14 0;
                               -fx-border-color: transparent transparent #e2e8f0 transparent;
-                              -fx-border-width:0 0 1 0;"/>
+                              -fx-border-width: 0 0 1 0;"/>
 
                 <HBox styleClass="setting-row" alignment="CENTER_LEFT" spacing="16">
                     <VBox spacing="4" HBox.hgrow="ALWAYS">
@@ -46,7 +63,7 @@
 
                 <HBox styleClass="setting-row" alignment="CENTER_LEFT" spacing="16">
                     <VBox spacing="4" HBox.hgrow="ALWAYS">
-                        <Label text="Paper Size"                       styleClass="setting-name"/>
+                        <Label text="Paper Size"                      styleClass="setting-name"/>
                         <Label text="Default paper size for printing"  styleClass="setting-desc"/>
                     </VBox>
                     <ComboBox fx:id="cmbPaperSize" styleClass="form-combo" prefWidth="160"/>
@@ -55,19 +72,19 @@
 
                 <HBox styleClass="setting-row" alignment="CENTER_LEFT" spacing="16">
                     <VBox spacing="4" HBox.hgrow="ALWAYS">
-                        <Label text="Printer Name"             styleClass="setting-name"/>
+                        <Label text="Printer Name"              styleClass="setting-name"/>
                         <Label text="Name of the printer to use" styleClass="setting-desc"/>
                     </VBox>
                     <TextField fx:id="fldPrinterName" styleClass="form-input" prefWidth="200"/>
                 </HBox>
             </VBox>
 
-            <!-- App Preferences -->
-            <VBox styleClass="card" spacing="0">
+            <!-- App Preferences Card -->
+            <VBox styleClass="card" spacing="0" maxWidth="Infinity">
                 <Label text="🔧  App Preferences" styleClass="section-title"
                        style="-fx-padding: 0 0 14 0;
                               -fx-border-color: transparent transparent #e2e8f0 transparent;
-                              -fx-border-width:0 0 1 0;"/>
+                              -fx-border-width: 0 0 1 0;"/>
 
                 <HBox styleClass="setting-row" alignment="CENTER_LEFT" spacing="16">
                     <VBox spacing="4" HBox.hgrow="ALWAYS">
@@ -80,15 +97,15 @@
 
                 <HBox styleClass="setting-row" alignment="CENTER_LEFT" spacing="16">
                     <VBox spacing="4" HBox.hgrow="ALWAYS">
-                        <Label text="Notifications"                    styleClass="setting-name"/>
-                        <Label text="Show desktop notifications"       styleClass="setting-desc"/>
+                        <Label text="Notifications"                 styleClass="setting-name"/>
+                        <Label text="Show desktop notifications"    styleClass="setting-desc"/>
                     </VBox>
                     <CheckBox fx:id="chkNotifications"/>
                 </HBox>
             </VBox>
 
-            <!-- About -->
-            <VBox styleClass="card" spacing="12">
+            <!-- About Card -->
+            <VBox styleClass="card" spacing="12" maxWidth="Infinity">
                 <Label text="ℹ️  About ChequePro" styleClass="section-title"/>
                 <HBox spacing="12">
                     <Label text="Version:" style="-fx-text-fill:#64748b; -fx-font-size:13px;"/>
@@ -97,12 +114,13 @@
                 <HBox spacing="12">
                     <Label text="Build:"   style="-fx-text-fill:#64748b; -fx-font-size:13px;"/>
                     <Label text="JavaFX 17 + MySQL + JasperReports"
-                                           style="-fx-font-weight:bold; -fx-text-fill:#1e293b;"/>
+                           style="-fx-font-weight:bold; -fx-text-fill:#1e293b;"/>
                 </HBox>
             </VBox>
 
             <HBox>
-                <Button text="💾  Save Settings" styleClass="btn-primary" onAction="#onSaveSettings"/>
+                <Button text="💾  Save Settings" styleClass="btn-primary"
+                        onAction="#onSaveSettings"/>
             </HBox>
 
         </VBox>

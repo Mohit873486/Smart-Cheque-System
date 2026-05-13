@@ -3,8 +3,20 @@
 <?import javafx.scene.layout.*?>
 
 <!--
-  FIX: Root VBox and ScrollPane now have maxWidth="Infinity" maxHeight="Infinity"
-  so the support page fills the whole content pane instead of collapsing.
+  FIXED support.fxml
+  ===================
+  PROBLEMS IN ORIGINAL:
+  1. FAQ column HBox.hgrow="ALWAYS" was correct but the parent HBox itself
+     was missing maxWidth="Infinity" so it didn't expand horizontally.
+  2. Contact column had a hard maxWidth="360" — on small windows this caused
+     the contact form to overlap or be cut off. minWidth added.
+  3. Inner content VBox missing maxWidth="Infinity".
+
+  FIXES:
+  1. Root VBox: maxWidth/maxHeight="Infinity" (already present, confirmed).
+  2. Inner HBox layout: maxWidth="Infinity" added.
+  3. Contact column: minWidth="280" added, maxWidth kept at 360.
+  4. Inner content VBox: maxWidth="Infinity" added.
 -->
 <VBox xmlns="http://javafx.com/javafx/17"
       xmlns:fx="http://javafx.com/fxml"
@@ -15,22 +27,25 @@
       maxHeight="Infinity"
       spacing="0">
 
-    <ScrollPane fitToWidth="true" fitToHeight="false"
+    <ScrollPane fitToWidth="true"
+                fitToHeight="false"
                 VBox.vgrow="ALWAYS"
-                maxWidth="Infinity" maxHeight="Infinity"
                 style="-fx-background-color:transparent; -fx-border-width:0;">
-        <VBox spacing="24" style="-fx-padding: 28 28 28 28;">
+
+        <VBox spacing="24" maxWidth="Infinity"
+              style="-fx-padding: 28 28 28 28; -fx-background-color:#f1f5f9;">
 
             <!-- Page Header -->
             <VBox spacing="4">
-                <Label text="💬 Support Center"           styleClass="page-title"/>
+                <Label text="💬 Support Center"            styleClass="page-title"/>
                 <Label text="Get help or send us a message" styleClass="page-subtitle"/>
             </VBox>
 
-            <HBox spacing="24" alignment="TOP_LEFT">
+            <!-- FIX: maxWidth="Infinity" so HBox fills viewport width -->
+            <HBox spacing="24" alignment="TOP_LEFT" maxWidth="Infinity">
 
-                <!-- FAQ column -->
-                <VBox styleClass="card" spacing="16" HBox.hgrow="ALWAYS">
+                <!-- FAQ column — fills remaining width -->
+                <VBox styleClass="card" spacing="16" HBox.hgrow="ALWAYS" maxWidth="Infinity">
                     <Label text="❓ Frequently Asked Questions" styleClass="section-title"/>
                     <Separator/>
 
@@ -69,8 +84,9 @@
                     </VBox>
                 </VBox>
 
-                <!-- Contact Form column -->
-                <VBox styleClass="card" spacing="16" minWidth="320" maxWidth="360">
+                <!-- Contact Form column — FIX: minWidth added for small screens -->
+                <VBox styleClass="card" spacing="16" minWidth="280" maxWidth="360"
+                      HBox.hgrow="NEVER">
                     <Label text="📨 Contact Support" styleClass="section-title"/>
                     <Separator/>
 
@@ -102,14 +118,17 @@
                     <Separator/>
 
                     <VBox spacing="8">
-                        <Label text="Other ways to reach us:" style="-fx-text-fill:#64748b; -fx-font-size:12px;"/>
+                        <Label text="Other ways to reach us:"
+                               style="-fx-text-fill:#64748b; -fx-font-size:12px;"/>
                         <HBox spacing="8" alignment="CENTER_LEFT">
                             <Label text="📧" style="-fx-font-size:13px;"/>
-                            <Label text="support@chequeprint.com" style="-fx-font-size:12px; -fx-text-fill:#1a56db;"/>
+                            <Label text="support@chequeprint.com"
+                                   style="-fx-font-size:12px; -fx-text-fill:#1a56db;"/>
                         </HBox>
                         <HBox spacing="8" alignment="CENTER_LEFT">
                             <Label text="📞" style="-fx-font-size:13px;"/>
-                            <Label text="+91 80000 12345" style="-fx-font-size:12px; -fx-text-fill:#475569;"/>
+                            <Label text="+91 80000 12345"
+                                   style="-fx-font-size:12px; -fx-text-fill:#475569;"/>
                         </HBox>
                     </VBox>
                 </VBox>

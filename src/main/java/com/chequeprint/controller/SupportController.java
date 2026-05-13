@@ -36,4 +36,9 @@ public class SupportController {
         FxUtils.animateIn(lblConfirm, 0);
         fldSupportName.clear(); fldSupportEmail.clear(); fldMessage.clear();
     }
+    private MainController mainController;
+
+    public void setMainController(MainController mainController) {
+        this.mainController = mainController;
+    }
 }

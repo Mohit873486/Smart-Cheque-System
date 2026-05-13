@@ -3,117 +3,136 @@
 <?import javafx.scene.layout.*?>
 
 <!--
-  FIX: Root VBox now has maxWidth="Infinity" maxHeight="Infinity".
-  FIX: ScrollPane gets maxWidth="Infinity" maxHeight="Infinity".
-  Without these two attributes the node does not expand to fill the
-  contentPane StackPane, so the profile card rendered tiny or off-screen.
+  FIXED profile.fxml
+  ===================
+  PROBLEMS IN ORIGINAL:
+  1. Root VBox had prefWidth="Infinity" — this is NOT a valid FXML attribute
+     value. "Infinity" is only valid for maxWidth/maxHeight, never for pref*.
+     Using it on pref causes the node to request infinite preferred size, which
+     breaks layout measurement entirely.
+  2. ScrollPane had both fitToWidth="true" AND fitToHeight="true". With
+     fitToHeight="true", the scroll pane forces its content to the viewport
+     height, disabling vertical scrolling and squishing the form cards.
+  3. Inner content VBox had prefWidth="Infinity" — same invalid value issue.
+
+  FIXES:
+  1. Removed all prefWidth="Infinity" and prefHeight="Infinity" (invalid).
+  2. Root VBox: maxWidth/maxHeight="Infinity" only (correct).
+  3. ScrollPane: fitToWidth="true", fitToHeight="false" (standard pattern).
+  4. Avatar card: removed fixed maxWidth="160" constraints on inner elements,
+     replaced with proper alignment so the card scales with HBox width.
+  5. Both cards use HBox.hgrow="ALWAYS" for equal space sharing.
 -->
 <VBox xmlns="http://javafx.com/javafx/17"
-    xmlns:fx="http://javafx.com/fxml"
-    fx:controller="com.chequeprint.controller.ProfileController"
-    fx:id="rootPane"
-    styleClass="page-root"
-    maxWidth="Infinity"
-    maxHeight="Infinity"
-    prefWidth="Infinity"
-    prefHeight="Infinity"
-    spacing="0">
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.chequeprint.controller.ProfileController"
+      fx:id="rootPane"
+      styleClass="page-root"
+      maxWidth="Infinity"
+      maxHeight="Infinity"
+      spacing="0">
 
-    <ScrollPane fitToWidth="true" fitToHeight="true"
-        VBox.vgrow="ALWAYS"
-        maxWidth="Infinity" maxHeight="Infinity"
-        prefWidth="Infinity"
-        prefHeight="Infinity"
-        style="-fx-background-color:transparent; -fx-border-width:0;">
-        <VBox spacing="24"
-            maxWidth="Infinity"
-            prefWidth="Infinity"
-            VBox.vgrow="ALWAYS"
-            style="-fx-padding: 28 28 28 28;">
+    <ScrollPane fitToWidth="true"
+                fitToHeight="false"
+                VBox.vgrow="ALWAYS"
+                style="-fx-background-color:transparent; -fx-border-width:0;">
+
+        <VBox spacing="24" maxWidth="Infinity"
+              style="-fx-padding: 28 28 28 28; -fx-background-color:#f1f5f9;">
 
             <!-- Page Header -->
             <VBox spacing="4">
-                <Label text="👤 My Profile" styleClass="page-title" />
+                <Label text="👤 My Profile" styleClass="page-title"/>
                 <Label text="Manage your personal and company information"
-                    styleClass="page-subtitle" />
+                       styleClass="page-subtitle"/>
             </VBox>
 
-            <HBox spacing="24"
-                alignment="TOP_LEFT"
-                maxWidth="Infinity"
-                HBox.hgrow="ALWAYS">
+            <!--
+              FIX: alignment="TOP_LEFT" is correct here. Both child VBoxes
+              use HBox.hgrow="ALWAYS" so they share the horizontal space.
+              Avatar card gets a sensible minWidth so it doesn't collapse,
+              while the form card expands to fill remaining width.
+            -->
+            <HBox spacing="24" alignment="TOP_LEFT" maxWidth="Infinity">
 
                 <!-- Avatar Card -->
                 <VBox styleClass="card"
-                    spacing="20"
-                    HBox.hgrow="ALWAYS"
-                    maxWidth="Infinity">
-                    <Label fx:id="lblInitials" text="AD" styleClass="profile-avatar" />
+                      spacing="16"
+                      alignment="CENTER"
+                      minWidth="220" maxWidth="260"
+                      HBox.hgrow="NEVER">
+
+                    <Label fx:id="lblInitials" text="AD" styleClass="profile-avatar"/>
+
                     <VBox spacing="4" alignment="CENTER">
-                        <Label text="Admin User" styleClass="profile-name" />
-                        <Label text="Administrator" styleClass="profile-role" />
-                        <Label text="ChequePro Inc." styleClass="profile-company" />
-                        <Label text="📍 India" styleClass="profile-location" />
+                        <Label text="Admin User"    styleClass="profile-name"/>
+                        <Label text="Administrator" styleClass="profile-role"/>
+                        <Label text="ChequePro Inc." styleClass="profile-company"/>
+                        <Label text="📍 India"      styleClass="profile-location"/>
                     </VBox>
-                    <Separator maxWidth="160" />
-                    <VBox spacing="8" maxWidth="160">
+
+                    <Separator maxWidth="Infinity"/>
+
+                    <VBox spacing="8" maxWidth="Infinity">
                         <HBox spacing="8" alignment="CENTER_LEFT">
-                            <Label text="📧" style="-fx-font-size:12px;" />
+                            <Label text="📧" style="-fx-font-size:12px;"/>
                             <Label text="admin@cheque.com"
-                                style="-fx-font-size:11px; -fx-text-fill:#64748b;" />
+                                   style="-fx-font-size:11px; -fx-text-fill:#64748b;"
+                                   wrapText="true"/>
                         </HBox>
                         <HBox spacing="8" alignment="CENTER_LEFT">
-                            <Label text="📞" style="-fx-font-size:12px;" />
+                            <Label text="📞" style="-fx-font-size:12px;"/>
                             <Label text="+91 98765 43210"
-                                style="-fx-font-size:11px; -fx-text-fill:#64748b;" />
+                                   style="-fx-font-size:11px; -fx-text-fill:#64748b;"/>
                         </HBox>
                     </VBox>
                 </VBox>
 
-                <!-- Form Card -->
-                <VBox styleClass="card" spacing="20" HBox.hgrow="ALWAYS">
-                    <Label text="Personal Information" styleClass="section-title" />
+                <!-- Form Card — fills remaining width -->
+                <VBox styleClass="card" spacing="20" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+                    <Label text="Personal Information" styleClass="section-title"/>
 
                     <HBox spacing="16">
                         <VBox spacing="6" HBox.hgrow="ALWAYS">
-                            <Label text="FULL NAME" styleClass="form-label" />
+                            <Label text="FULL NAME" styleClass="form-label"/>
                             <TextField fx:id="fldName" promptText="Your full name"
-                                styleClass="form-input" maxWidth="Infinity" />
+                                       styleClass="form-input" maxWidth="Infinity"/>
                         </VBox>
                         <VBox spacing="6" HBox.hgrow="ALWAYS">
-                            <Label text="EMAIL ADDRESS" styleClass="form-label" />
+                            <Label text="EMAIL ADDRESS" styleClass="form-label"/>
                             <TextField fx:id="fldEmail" promptText="your@email.com"
-                                styleClass="form-input" maxWidth="Infinity" />
+                                       styleClass="form-input" maxWidth="Infinity"/>
                         </VBox>
                     </HBox>
 
                     <HBox spacing="16">
                         <VBox spacing="6" HBox.hgrow="ALWAYS">
-                            <Label text="PHONE NUMBER" styleClass="form-label" />
+                            <Label text="PHONE NUMBER" styleClass="form-label"/>
                             <TextField fx:id="fldPhone" promptText="+91 XXXXX XXXXX"
-                                styleClass="form-input" maxWidth="Infinity" />
+                                       styleClass="form-input" maxWidth="Infinity"/>
                         </VBox>
                         <VBox spacing="6" HBox.hgrow="ALWAYS">
-                            <Label text="COMPANY NAME" styleClass="form-label" />
+                            <Label text="COMPANY NAME" styleClass="form-label"/>
                             <TextField fx:id="fldCompany" promptText="Your company"
-                                styleClass="form-input" maxWidth="Infinity" />
+                                       styleClass="form-input" maxWidth="Infinity"/>
                         </VBox>
                     </HBox>
 
                     <VBox spacing="6">
-                        <Label text="ADDRESS" styleClass="form-label" />
+                        <Label text="ADDRESS" styleClass="form-label"/>
                         <TextArea fx:id="fldAddress" promptText="Full address…"
-                            styleClass="form-input" prefRowCount="3"
-                            wrapText="true" maxWidth="Infinity" />
+                                  styleClass="form-input" prefRowCount="3"
+                                  wrapText="true" maxWidth="Infinity"/>
                     </VBox>
 
                     <HBox spacing="10">
-                        <Button text="💾  Save Profile" styleClass="btn-primary" onAction="#onSave" />
-                        <Button text="Cancel" styleClass="btn-secondary" />
+                        <Button text="💾  Save Profile" styleClass="btn-primary"
+                                onAction="#onSave"/>
+                        <Button text="Cancel" styleClass="btn-secondary"/>
                     </HBox>
                 </VBox>
-            </HBox>
 
+            </HBox>
         </VBox>
     </ScrollPane>
 </VBox>

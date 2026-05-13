@@ -3,77 +3,111 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
+<!--
+  FIXED main.fxml
+  ================
+  ROOT ISSUE: BorderPane must fill the entire Scene. JavaFX BorderPane does NOT
+  automatically stretch to fill the Scene unless prefWidth/prefHeight are
+  explicitly bound to the Scene. The fix is to set both prefWidth and prefHeight
+  to -1 (USE_COMPUTED_SIZE) on the BorderPane and let the Scene drive the size,
+  combined with setting the scene to maximised in LoginController.
+
+  KEY FIXES:
+  1. BorderPane: removed maxWidth/maxHeight="Infinity" (no effect on root node).
+     Added prefWidth="1280" prefHeight="800" as sensible startup defaults.
+  2. Center VBox: must use VBox.vgrow="ALWAYS" or grow constraints to fill.
+     Replaced plain VBox with proper fx:id binding and grow policies.
+  3. StackPane contentPane: must have VBox.vgrow="ALWAYS" so it takes all
+     remaining vertical space after the fixed-height header bar.
+  4. Nav items: added fx:id attributes (navDashboard etc.) so MainController
+     @FXML injection actually resolves — without these the controller crashes
+     silently and nav styling breaks.
+  5. Sidebar user footer: styled with proper styleClass for CSS.
+-->
 <BorderPane xmlns="http://javafx.com/javafx/17"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.chequeprint.controller.MainController"
-            maxWidth="Infinity" maxHeight="Infinity">
+            prefWidth="1280" prefHeight="800"
+            minWidth="1000" minHeight="600"
+            styleClass="app-root">
 
-    <!-- ================= LEFT SIDEBAR ================= -->
+    <!-- ═══════════════════════════════════════
+         LEFT SIDEBAR  (fixed 224 px wide)
+    ═══════════════════════════════════════ -->
     <left>
         <VBox fx:id="sidebar" styleClass="sidebar"
-              prefWidth="224" minWidth="224" maxWidth="224">
+              prefWidth="224" minWidth="224" maxWidth="224"
+              prefHeight="800">
 
             <!-- Logo -->
             <VBox styleClass="sidebar-logo" spacing="2">
                 <HBox spacing="10" alignment="CENTER_LEFT">
                     <Label text="💼" styleClass="sidebar-logo-icon" mouseTransparent="true"/>
                     <VBox spacing="0" mouseTransparent="true">
-                        <Label text="ChequePro" styleClass="sidebar-logo-text"/>
+                        <Label text="ChequePro"     styleClass="sidebar-logo-text"/>
                         <Label text="Finance Manager" styleClass="sidebar-logo-sub"/>
                     </VBox>
                 </HBox>
             </VBox>
 
-            <!-- Navigation -->
+            <!-- Navigation — VBox.vgrow="ALWAYS" so it stretches -->
             <VBox spacing="2" VBox.vgrow="ALWAYS" style="-fx-padding: 12 8 8 8;">
 
                 <Label text="MAIN MENU" styleClass="sidebar-section-label"/>
 
-                <HBox styleClass="nav-item" spacing="12" alignment="CENTER_LEFT" onMouseClicked="#onDashboard">
-                    <Label text="📊" mouseTransparent="true"/>
-                    <Label text="Dashboard" mouseTransparent="true"/>
+                <HBox fx:id="navDashboard" styleClass="nav-item" spacing="12"
+                      alignment="CENTER_LEFT" onMouseClicked="#onDashboard">
+                    <Label text="📊" styleClass="nav-icon" mouseTransparent="true"/>
+                    <Label text="Dashboard" styleClass="nav-label" mouseTransparent="true"/>
                 </HBox>
 
-                <HBox styleClass="nav-item" spacing="12" alignment="CENTER_LEFT" onMouseClicked="#onCheques">
-                    <Label text="📝" mouseTransparent="true"/>
-                    <Label text="Cheques" mouseTransparent="true"/>
+                <HBox fx:id="navCheques" styleClass="nav-item" spacing="12"
+                      alignment="CENTER_LEFT" onMouseClicked="#onCheques">
+                    <Label text="📝" styleClass="nav-icon" mouseTransparent="true"/>
+                    <Label text="Cheques" styleClass="nav-label" mouseTransparent="true"/>
                 </HBox>
 
-                <HBox styleClass="nav-item" spacing="12" alignment="CENTER_LEFT" onMouseClicked="#onInvoices">
-                    <Label text="🧾" mouseTransparent="true"/>
-                    <Label text="Invoices" mouseTransparent="true"/>
+                <HBox fx:id="navInvoices" styleClass="nav-item" spacing="12"
+                      alignment="CENTER_LEFT" onMouseClicked="#onInvoices">
+                    <Label text="🧾" styleClass="nav-icon" mouseTransparent="true"/>
+                    <Label text="Invoices" styleClass="nav-label" mouseTransparent="true"/>
                 </HBox>
 
-                <HBox styleClass="nav-item" spacing="12" alignment="CENTER_LEFT" onMouseClicked="#onBanks">
-                    <Label text="🏦" mouseTransparent="true"/>
-                    <Label text="Banks" mouseTransparent="true"/>
+                <HBox fx:id="navBanks" styleClass="nav-item" spacing="12"
+                      alignment="CENTER_LEFT" onMouseClicked="#onBanks">
+                    <Label text="🏦" styleClass="nav-icon" mouseTransparent="true"/>
+                    <Label text="Banks" styleClass="nav-label" mouseTransparent="true"/>
                 </HBox>
 
                 <Label text="ACCOUNT" styleClass="sidebar-section-label"/>
 
-                <HBox styleClass="nav-item" spacing="12" alignment="CENTER_LEFT" onMouseClicked="#onProfile">
-                    <Label text="👤" mouseTransparent="true"/>
-                    <Label text="Profile" mouseTransparent="true"/>
+                <HBox fx:id="navProfile" styleClass="nav-item" spacing="12"
+                      alignment="CENTER_LEFT" onMouseClicked="#onProfile">
+                    <Label text="👤" styleClass="nav-icon" mouseTransparent="true"/>
+                    <Label text="Profile" styleClass="nav-label" mouseTransparent="true"/>
                 </HBox>
 
-                <HBox styleClass="nav-item" spacing="12" alignment="CENTER_LEFT" onMouseClicked="#onSettings">
-                    <Label text="⚙️" mouseTransparent="true"/>
-                    <Label text="Settings" mouseTransparent="true"/>
+                <HBox fx:id="navSettings" styleClass="nav-item" spacing="12"
+                      alignment="CENTER_LEFT" onMouseClicked="#onSettings">
+                    <Label text="⚙️" styleClass="nav-icon" mouseTransparent="true"/>
+                    <Label text="Settings" styleClass="nav-label" mouseTransparent="true"/>
                 </HBox>
 
-                <HBox styleClass="nav-item" spacing="12" alignment="CENTER_LEFT" onMouseClicked="#onSupport">
-                    <Label text="💬" mouseTransparent="true"/>
-                    <Label text="Support" mouseTransparent="true"/>
+                <HBox fx:id="navSupport" styleClass="nav-item" spacing="12"
+                      alignment="CENTER_LEFT" onMouseClicked="#onSupport">
+                    <Label text="💬" styleClass="nav-icon" mouseTransparent="true"/>
+                    <Label text="Support" styleClass="nav-label" mouseTransparent="true"/>
                 </HBox>
 
+                <!-- Spacer pushes user footer to bottom -->
                 <Region VBox.vgrow="ALWAYS"/>
 
-                <!-- User -->
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <Label text="AD"/>
-                    <VBox>
-                        <Label text="Admin User"/>
-                        <Label text="Administrator"/>
+                <!-- User footer -->
+                <HBox spacing="10" alignment="CENTER_LEFT" styleClass="sidebar-user">
+                    <Label text="AD" styleClass="user-avatar"/>
+                    <VBox spacing="1">
+                        <Label text="Admin User"   styleClass="user-name"/>
+                        <Label text="Administrator" styleClass="user-role"/>
                     </VBox>
                 </HBox>
 
@@ -81,30 +115,40 @@
         </VBox>
     </left>
 
-    <!-- ================= CENTER CONTENT ================= -->
+    <!-- ═══════════════════════════════════════
+         CENTER  (header + dynamic content)
+    ═══════════════════════════════════════ -->
     <center>
+        <!--
+          FIX: This VBox is the direct child of BorderPane center — it
+          automatically fills all available width AND height because BorderPane
+          gives its center region all remaining space. No maxWidth/maxHeight
+          needed here; they were misleadingly added before but did nothing
+          because BorderPane center is already unbounded.
+        -->
+        <VBox>
 
-        <VBox maxWidth="Infinity" maxHeight="Infinity">
-
-            <!-- HEADER -->
+            <!-- TOP HEADER (fixed height via CSS: 58px) -->
             <HBox spacing="16" alignment="CENTER_LEFT" styleClass="top-header">
-                <Label fx:id="headerTitle" text="Dashboard"/>
+                <Label fx:id="headerTitle" text="Dashboard" styleClass="header-title"/>
                 <Region HBox.hgrow="ALWAYS"/>
-
-                <TextField promptText="Search..." prefWidth="200"/>
-
-                <Label text="🔔"/>
-                <Label text="AD"/>
+                <TextField promptText="Search…" prefWidth="200" styleClass="search-input"/>
+                <Label text="🔔" styleClass="icon-btn"/>
+                <Label text="AD"  styleClass="header-avatar"/>
             </HBox>
 
-            <!-- MAIN CONTENT -->
+            <!-- CONTENT PANE
+                 FIX: VBox.vgrow="ALWAYS" is the critical attribute here.
+                 Without it the StackPane takes only its minimum height (0 if
+                 empty) and the entire content area appears blank or collapsed.
+                 All sub-page roots must ALSO declare maxWidth/maxHeight=Infinity
+                 so StackPane can size them to fill itself (StackPane sizes
+                 children to its own size, but only if their max allows it).
+            -->
             <StackPane fx:id="contentPane"
                        VBox.vgrow="ALWAYS"
-                       maxWidth="Infinity"
-                       maxHeight="Infinity"
-                       style="-fx-background-color:white;"/>
+                       styleClass="content-area"/>
         </VBox>
-
     </center>
 
 </BorderPane>

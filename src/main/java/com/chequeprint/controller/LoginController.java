@@ -10,33 +10,28 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
 /**
  * LoginController — credential screen shown before main app.
  *
- * Fixes applied:
- * • Authentication delegated to UserService (single source of truth).
- * • DB status check uses DBConnection.statusLabel() (thread-safe).
- * • After login success: window resizes to 1280×800 and is re-centered.
- * • Enter key on username field moves focus to password field (UX improvement).
+ * LAYOUT FIX:
+ *   After successful login the main window is sized to 1280×800 AND then
+ *   stage.setMaximized(true) is called. This is the correct way to launch a
+ *   JavaFX admin dashboard in full-screen mode. Without setMaximized(true) the
+ *   BorderPane root only gets 1280×800 regardless of monitor size, and on larger
+ *   monitors the app does not fill the screen. The BorderPane + StackPane layout
+ *   is then fully responsive because the OS drives the window size.
  */
 public class LoginController {
 
-    @FXML
-    private TextField fldUsername;
-    @FXML
-    private PasswordField fldPassword;
-    @FXML
-    private Label lblError;
-    @FXML
-    private Button btnLogin;
-    @FXML
-    private StackPane rootPane;
-    @FXML
-    private Label lblDbStatus;
+    @FXML private TextField     fldUsername;
+    @FXML private PasswordField fldPassword;
+    @FXML private Label         lblError;
+    @FXML private Button        btnLogin;
+    @FXML private StackPane     rootPane;
+    @FXML private Label         lblDbStatus;
 
     private final UserService userService = new UserService();
 
@@ -85,6 +80,11 @@ public class LoginController {
             Parent root = loader.load();
 
             Stage stage = (Stage) btnLogin.getScene().getWindow();
+
+            // FIX: Use 1280×800 as the initial Scene size (used when not maximised).
+            // Then call setMaximized(true) so the window fills the monitor.
+            // This is critical for a dashboard app — without it BorderPane only
+            // gets 1280×800 even on a 1920×1080 monitor.
             Scene scene = new Scene(root, 1280, 800);
             scene.getStylesheets().add(
                     getClass().getResource("/css/style.css").toExternalForm());
@@ -93,6 +93,11 @@ public class LoginController {
             stage.setTitle("ChequePro — Cheque & Invoice Manager");
             stage.setMinWidth(1000);
             stage.setMinHeight(600);
+
+            // FIX: maximise the window so BorderPane fills the full screen.
+            // All layout containers are responsive (using grow constraints) so
+            // they will correctly fill whatever size the OS gives.
+            stage.setMaximized(true);
             stage.centerOnScreen();
 
             root.setOpacity(0);

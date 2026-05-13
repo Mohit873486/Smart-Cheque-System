@@ -102,6 +102,9 @@ public class MainController {
             if (ctrl instanceof DashboardController dc) dc.setMainController(this);
             if (ctrl instanceof ChequeController cc) cc.setMainController(this);
             if (ctrl instanceof InvoiceController ic) ic.setMainController(this);
+            if (ctrl instanceof ProfileController pc) pc.setMainController(this);
+            if (ctrl instanceof SettingsController pc) pc.setMainController(this);
+            if (ctrl instanceof SupportController pc) pc.setMainController(this);
 
             Node current = contentPane.getChildren().isEmpty()
                     ? null

@@ -35,4 +35,9 @@ public class SettingsController {
             + "Printer: " + fldPrinterName.getText()
         ).show();
     }
+    private MainController mainController;
+
+    public void setMainController(MainController mainController) {
+        this.mainController = mainController;
+    }
 }

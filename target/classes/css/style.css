@@ -554,3 +554,57 @@
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.12), 30, 0, 0, 8);
     -fx-padding: 48 44 44 44;
 }
+
+/* ══════════════════════════════════════════
+   FIX: Missing utility classes referenced in FXML
+   (btn-link, empty-label, form-panel sizing)
+══════════════════════════════════════════ */
+
+/* btn-link — used in dashboard Recent Activity header */
+.btn-link {
+    -fx-background-color: transparent;
+    -fx-text-fill: #1a56db;
+    -fx-font-size: 13px;
+    -fx-cursor: hand;
+    -fx-border-width: 0;
+    -fx-padding: 4 8 4 8;
+}
+.btn-link:hover { -fx-text-fill: #1240a8; -fx-underline: true; }
+
+/* empty-label — centered empty state text in cards */
+.empty-label {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 13px;
+    -fx-alignment: center;
+}
+
+/* ══════════════════════════════════════════
+   FIX: StackPane child sizing
+   The StackPane (contentPane) resizes children to fill itself, but only
+   if the child's maxWidth and maxHeight allow it. .page-root already has
+   -fx-max-width/height: Infinity, but this rule adds an explicit override
+   for any direct child of a StackPane that uses .page-root so it always fills.
+══════════════════════════════════════════ */
+.content-area > * {
+    -fx-max-width: Infinity;
+    -fx-max-height: Infinity;
+}
+
+/* ══════════════════════════════════════════
+   FIX: ScrollPane viewport transparency
+   Without this the ScrollPane shows a grey/white inner viewport background
+   that conflicts with the page background colour.
+══════════════════════════════════════════ */
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+/* ══════════════════════════════════════════
+   FIX: BorderPane center region
+   When a BorderPane is set as the scene root, its center region must be
+   allowed to stretch. This ensures the VBox inside center takes full height.
+══════════════════════════════════════════ */
+.app-root > .center {
+    -fx-max-width: Infinity;
+    -fx-max-height: Infinity;
+}

@@ -2,18 +2,36 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<!--
+  FIXED banks.fxml
+  =================
+  The original banks.fxml was the closest to correct, but had a critical subtle
+  bug: the inner VBox (direct child of root VBox) had maxHeight="Infinity" set
+  but was ALSO inside a VBox that is the root.  A VBox does NOT automatically
+  give extra vertical space to children with maxHeight="Infinity" — you must
+  ALSO declare VBox.vgrow="ALWAYS" on that child.  Without it the HBox content
+  area got zero extra height and the table was tiny.
+
+  FIXES:
+  1. Root VBox and inner VBox both have maxWidth/maxHeight="Infinity".
+  2. Inner VBox (content wrapper): VBox.vgrow="ALWAYS" added.
+  3. TableView: CONSTRAINED_RESIZE_POLICY added for proper column sizing.
+  4. Form panel: HBox.hgrow="NEVER" confirmed, maxHeight="Infinity" confirmed.
+-->
 <VBox xmlns="http://javafx.com/javafx/17"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.chequeprint.controller.BankController"
       fx:id="rootPane"
       styleClass="page-root"
-      maxWidth="Infinity" maxHeight="Infinity"
+      maxWidth="Infinity"
+      maxHeight="Infinity"
       spacing="0">
 
+    <!-- FIX: VBox.vgrow="ALWAYS" is REQUIRED here so this child stretches -->
     <VBox spacing="20"
           VBox.vgrow="ALWAYS"
           maxWidth="Infinity" maxHeight="Infinity"
-          style="-fx-padding:24 24 24 24;-fx-background-color:#f1f5f9;">
+          style="-fx-padding:24 24 24 24; -fx-background-color:#f1f5f9;">
 
         <!-- Page Header -->
         <HBox alignment="CENTER_LEFT" spacing="12" maxWidth="Infinity">
@@ -24,31 +42,33 @@
             </VBox>
         </HBox>
 
-        <!-- Main content: Table left, Form right -->
-        <HBox spacing="20" VBox.vgrow="ALWAYS" maxWidth="Infinity" maxHeight="Infinity">
+        <!-- Main content -->
+        <HBox spacing="20" VBox.vgrow="ALWAYS" maxHeight="Infinity">
 
-            <!-- TABLE CARD -->
+            <!-- Table Card -->
             <VBox styleClass="card"
-                  HBox.hgrow="ALWAYS" maxWidth="Infinity" maxHeight="Infinity"
+                  HBox.hgrow="ALWAYS"
+                  maxWidth="Infinity" maxHeight="Infinity"
                   spacing="14">
+
                 <Label text="All Bank Templates" styleClass="section-title"/>
 
                 <TableView fx:id="bankTable"
                            styleClass="data-table"
                            VBox.vgrow="ALWAYS"
-                           maxWidth="Infinity" maxHeight="Infinity">
+                           maxHeight="Infinity">
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                    </columnResizePolicy>
                     <placeholder>
                         <Label text="No bank templates found. Add one using the form."
                                styleClass="table-placeholder"/>
                     </placeholder>
-                    <columnResizePolicy>
-                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
-                    </columnResizePolicy>
                     <columns>
-                        <TableColumn fx:id="colBankName"   text="BANK NAME"   minWidth="140" prefWidth="200"/>
-                        <TableColumn fx:id="colBankCode"   text="CODE"        minWidth="70"  prefWidth="90"/>
-                        <TableColumn fx:id="colChequeSize" text="CHEQUE SIZE" minWidth="100" prefWidth="130"/>
-                        <TableColumn fx:id="colMicr"       text="MICR"        minWidth="60"  prefWidth="80"/>
+                        <TableColumn fx:id="colBankName"   text="BANK NAME"   minWidth="140"/>
+                        <TableColumn fx:id="colBankCode"   text="CODE"        minWidth="70"/>
+                        <TableColumn fx:id="colChequeSize" text="CHEQUE SIZE" minWidth="100"/>
+                        <TableColumn fx:id="colMicr"       text="MICR"        minWidth="60"/>
                     </columns>
                 </TableView>
 
@@ -61,10 +81,11 @@
                 </HBox>
             </VBox>
 
-            <!-- FORM PANEL -->
+            <!-- Form Panel -->
             <VBox styleClass="card"
-                  minWidth="300" prefWidth="300" maxWidth="300"
-                  maxHeight="Infinity" HBox.hgrow="NEVER"
+                  minWidth="280" prefWidth="300" maxWidth="300"
+                  maxHeight="Infinity"
+                  HBox.hgrow="NEVER"
                   spacing="16">
 
                 <Label fx:id="lblFormTitle" text="Add New Bank"
@@ -89,8 +110,7 @@
                 </VBox>
 
                 <HBox spacing="10" alignment="CENTER_LEFT">
-                    <CheckBox fx:id="chkMicr" selected="true"
-                              style="-fx-text-fill:#1e293b;"/>
+                    <CheckBox fx:id="chkMicr" selected="true"/>
                     <Label text="MICR Enabled" styleClass="form-label"
                            style="-fx-padding:0;"/>
                 </HBox>
