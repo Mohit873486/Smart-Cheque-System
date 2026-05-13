@@ -24,6 +24,11 @@ public class ProfileController {
 
     private final UserService userService = new UserService();
     private User user;
+    private MainController mainController;
+
+    public void setMainController(MainController mainController) {
+        this.mainController = mainController;
+    }
 
     @FXML
     public void initialize() {

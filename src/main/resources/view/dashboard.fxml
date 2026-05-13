@@ -10,19 +10,17 @@
     <!-- ROOT FULL SCREEN -->
     <VBox fx:id="dashboardRoot"
           spacing="0"
-          maxWidth="Infinity"
-          maxHeight="Infinity"
           AnchorPane.topAnchor="0"
           AnchorPane.bottomAnchor="0"
           AnchorPane.leftAnchor="0"
           AnchorPane.rightAnchor="0"
-          styleClass="page-root">
+          maxWidth="Infinity"
+          maxHeight="Infinity">
 
         <!-- SCROLL AREA -->
-        <ScrollPane fitToWidth="true" fitToHeight="true"
+        <ScrollPane fitToWidth="true"
+                    fitToHeight="true"
                     VBox.vgrow="ALWAYS"
-                    maxWidth="Infinity"
-                    maxHeight="Infinity"
                     style="-fx-background-color:transparent; -fx-border-width:0;">
 
             <VBox spacing="24"
@@ -31,53 +29,61 @@
 
                 <!-- HEADER -->
                 <VBox spacing="4">
-                    <Label fx:id="lblWelcome" text="Welcome"/>
-                    <Label fx:id="lblSubtitle" text="Subtitle"/>
+                    <Label fx:id="lblWelcome" text="Welcome" />
+                    <Label fx:id="lblSubtitle" text="Subtitle" />
                 </VBox>
 
                 <!-- QUICK ACTIONS -->
                 <HBox spacing="15">
-                    <Button text="Create Cheque"/>
-                    <Button text="Print Cheque"/>
+                    <Button text="Create Cheque" />
+                    <Button text="Print Cheque" />
                 </HBox>
 
                 <!-- STATS ROW -->
-                <HBox fx:id="statsRow" spacing="16">
+                <HBox fx:id="statsRow" spacing="16" maxWidth="Infinity">
 
-                    <!-- CARD TOTAL -->
                     <VBox fx:id="cardTotal"
                           styleClass="stat-card"
                           spacing="10"
                           HBox.hgrow="ALWAYS">
-                        <Label text="Total"/>
-                        <Label fx:id="lblTotalCheques" text="0"/>
+                        <Label text="Total" />
+                        <Label fx:id="lblTotalCheques" text="0" />
                     </VBox>
 
-                    <VBox styleClass="stat-card" spacing="10" HBox.hgrow="ALWAYS">
-                        <Label text="Printed"/>
-                        <Label fx:id="lblPrinted" text="0"/>
+                    <VBox fx:id="cardPrinted"
+                          styleClass="stat-card"
+                          spacing="10"
+                          HBox.hgrow="ALWAYS">
+                        <Label text="Printed" />
+                        <Label fx:id="lblPrinted" text="0" />
                     </VBox>
 
-                    <VBox styleClass="stat-card" spacing="10" HBox.hgrow="ALWAYS">
-                        <Label text="Pending"/>
-                        <Label fx:id="lblPending" text="0"/>
+                    <VBox fx:id="cardPending"
+                          styleClass="stat-card"
+                          spacing="10"
+                          HBox.hgrow="ALWAYS">
+                        <Label text="Pending" />
+                        <Label fx:id="lblPending" text="0" />
                     </VBox>
 
-                    <VBox styleClass="stat-card" spacing="10" HBox.hgrow="ALWAYS">
-                        <Label text="Amount"/>
-                        <Label fx:id="lblMonthlyAmount" text="₹0"/>
+                    <VBox fx:id="cardAmount"
+                          styleClass="stat-card"
+                          spacing="10"
+                          HBox.hgrow="ALWAYS">
+                        <Label text="Amount" />
+                        <Label fx:id="lblMonthlyAmount" text="₹0" />
                     </VBox>
 
                 </HBox>
 
                 <!-- RECENT ACTIVITY -->
                 <VBox spacing="10">
-                    <Label text="Recent Activity" style="-fx-font-size:16;"/>
+                    <Label text="Recent Activity" style="-fx-font-size:16;" />
 
                     <Label text="No recent activity"
                            style="-fx-padding:20;"
                            maxWidth="Infinity"
-                           alignment="CENTER"/>
+                           alignment="CENTER" />
                 </VBox>
 
             </VBox>

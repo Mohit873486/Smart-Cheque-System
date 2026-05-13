@@ -48,6 +48,9 @@ public class BankController {
     @FXML
     private Label lblFormTitle;
 
+        // ── State ──
+    private MainController mainController;
+
     private final BankDAO dao = new BankDAO();
     private final ObservableList<Bank> data = FXCollections.observableArrayList();
     private Bank selectedBank = null;
@@ -180,4 +183,8 @@ public class BankController {
         a.setHeaderText(null);
         a.showAndWait();
     }
+
+
+    public void setMainController(MainController mc) {
+    this.mainController = mc;}
 }
