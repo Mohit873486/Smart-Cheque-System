@@ -11,6 +11,7 @@ import java.util.List;
 public class InvoiceService {
 
     private final InvoiceDAO dao = new InvoiceDAO();
+    
 
     public List<Invoice> getAll() throws SQLException { return dao.findAll(); }
 

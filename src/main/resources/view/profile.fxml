@@ -1,138 +1,230 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
 
-<!--
-  FIXED profile.fxml
-  ===================
-  PROBLEMS IN ORIGINAL:
-  1. Root VBox had prefWidth="Infinity" — this is NOT a valid FXML attribute
-     value. "Infinity" is only valid for maxWidth/maxHeight, never for pref*.
-     Using it on pref causes the node to request infinite preferred size, which
-     breaks layout measurement entirely.
-  2. ScrollPane had both fitToWidth="true" AND fitToHeight="true". With
-     fitToHeight="true", the scroll pane forces its content to the viewport
-     height, disabling vertical scrolling and squishing the form cards.
-  3. Inner content VBox had prefWidth="Infinity" — same invalid value issue.
+<ScrollPane fitToWidth="true"
+            style="-fx-background: #f0f2f5; -fx-background-color: #f0f2f5;"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.chequeprint.controller.ProfileController">
 
-  FIXES:
-  1. Removed all prefWidth="Infinity" and prefHeight="Infinity" (invalid).
-  2. Root VBox: maxWidth/maxHeight="Infinity" only (correct).
-  3. ScrollPane: fitToWidth="true", fitToHeight="false" (standard pattern).
-  4. Avatar card: removed fixed maxWidth="160" constraints on inner elements,
-     replaced with proper alignment so the card scales with HBox width.
-  5. Both cards use HBox.hgrow="ALWAYS" for equal space sharing.
--->
-<VBox xmlns="http://javafx.com/javafx/17"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.chequeprint.controller.ProfileController"
-      fx:id="rootPane"
-      styleClass="page-root"
-      maxWidth="Infinity"
-      maxHeight="Infinity"
-      spacing="0">
+    <VBox spacing="24"
+          style="-fx-background-color: #f0f2f5;">
+        <padding>
+            <Insets top="28" right="32" bottom="40" left="32"/>
+        </padding>
 
-    <ScrollPane fitToWidth="true"
-                fitToHeight="false"
-                VBox.vgrow="ALWAYS"
-                style="-fx-background-color:transparent; -fx-border-width:0;">
-
-        <VBox spacing="24" maxWidth="Infinity"
-              style="-fx-padding: 28 28 28 28; -fx-background-color:#f1f5f9;">
-
-            <!-- Page Header -->
-            <VBox spacing="4">
-                <Label text="👤 My Profile" styleClass="page-title"/>
-                <Label text="Manage your personal and company information"
-                       styleClass="page-subtitle"/>
+        <!-- Page Header -->
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <Label text="👤" style="-fx-font-size: 24px;"/>
+            <VBox spacing="2">
+                <Label text="My Profile"
+                       style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;"/>
+                <Label text="Manage your personal information and account details."
+                       style="-fx-font-size: 13px; -fx-text-fill: #6b7280;"/>
             </VBox>
+        </HBox>
 
-            <!--
-              FIX: alignment="TOP_LEFT" is correct here. Both child VBoxes
-              use HBox.hgrow="ALWAYS" so they share the horizontal space.
-              Avatar card gets a sensible minWidth so it doesn't collapse,
-              while the form card expands to fill remaining width.
-            -->
-            <HBox spacing="24" alignment="TOP_LEFT" maxWidth="Infinity">
+        <HBox spacing="20" alignment="TOP_LEFT">
+
+            <!-- LEFT: Avatar + Basic Info Card -->
+            <VBox spacing="16" prefWidth="280" minWidth="260">
 
                 <!-- Avatar Card -->
-                <VBox styleClass="card"
-                      spacing="16"
-                      alignment="CENTER"
-                      minWidth="220" maxWidth="260"
-                      HBox.hgrow="NEVER">
+                <VBox spacing="16" alignment="CENTER"
+                      style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 28 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
 
-                    <Label fx:id="lblInitials" text="AD" styleClass="profile-avatar"/>
+                    <!-- Avatar Circle -->
+                    <StackPane>
+                        <Circle fx:id="avatarCircle" radius="48"
+                                style="-fx-fill: #2563eb;"/>
+                        <Label fx:id="lblAvatarInitials" text="AD"
+                               style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+                    </StackPane>
 
                     <VBox spacing="4" alignment="CENTER">
-                        <Label text="Admin User"    styleClass="profile-name"/>
-                        <Label text="Administrator" styleClass="profile-role"/>
-                        <Label text="ChequePro Inc." styleClass="profile-company"/>
-                        <Label text="📍 India"      styleClass="profile-location"/>
+                        <Label fx:id="lblProfileName" text="Admin User"
+                               style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;"/>
+                        <Label fx:id="lblProfileRole" text="Administrator"
+                               style="-fx-font-size: 13px; -fx-text-fill: #6b7280;"/>
                     </VBox>
 
-                    <Separator maxWidth="Infinity"/>
+                    <!-- Status Badge -->
+                    <HBox alignment="CENTER" spacing="6"
+                          style="-fx-background-color: #f0fdf4; -fx-background-radius: 20; -fx-padding: 6 14;">
+                        <Circle radius="4" style="-fx-fill: #10b981;"/>
+                        <Label text="Active Account"
+                               style="-fx-font-size: 12px; -fx-text-fill: #10b981; -fx-font-weight: 600;"/>
+                    </HBox>
 
-                    <VBox spacing="8" maxWidth="Infinity">
-                        <HBox spacing="8" alignment="CENTER_LEFT">
-                            <Label text="📧" style="-fx-font-size:12px;"/>
-                            <Label text="admin@cheque.com"
-                                   style="-fx-font-size:11px; -fx-text-fill:#64748b;"
-                                   wrapText="true"/>
-                        </HBox>
-                        <HBox spacing="8" alignment="CENTER_LEFT">
-                            <Label text="📞" style="-fx-font-size:12px;"/>
-                            <Label text="+91 98765 43210"
-                                   style="-fx-font-size:11px; -fx-text-fill:#64748b;"/>
-                        </HBox>
-                    </VBox>
+                    <Separator/>
+
+                    <!-- Quick Stats -->
+                    <HBox spacing="0" alignment="CENTER" maxWidth="Infinity">
+                        <VBox spacing="4" alignment="CENTER" HBox.hgrow="ALWAYS">
+                            <Label fx:id="lblStatCheques" text="0"
+                                   style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;"/>
+                            <Label text="Cheques"
+                                   style="-fx-font-size: 11px; -fx-text-fill: #9ca3af;"/>
+                        </VBox>
+                        <Separator orientation="VERTICAL" prefHeight="36"/>
+                        <VBox spacing="4" alignment="CENTER" HBox.hgrow="ALWAYS">
+                            <Label fx:id="lblStatInvoices" text="0"
+                                   style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;"/>
+                            <Label text="Invoices"
+                                   style="-fx-font-size: 11px; -fx-text-fill: #9ca3af;"/>
+                        </VBox>
+                        <Separator orientation="VERTICAL" prefHeight="36"/>
+                        <VBox spacing="4" alignment="CENTER" HBox.hgrow="ALWAYS">
+                            <Label fx:id="lblStatBanks" text="0"
+                                   style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;"/>
+                            <Label text="Banks"
+                                   style="-fx-font-size: 11px; -fx-text-fill: #9ca3af;"/>
+                        </VBox>
+                    </HBox>
                 </VBox>
 
-                <!-- Form Card — fills remaining width -->
-                <VBox styleClass="card" spacing="20" HBox.hgrow="ALWAYS" maxWidth="Infinity">
-                    <Label text="Personal Information" styleClass="section-title"/>
+                <!-- Change Password Card -->
+                <VBox spacing="14"
+                      style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
+                    <Label text="Change Password"
+                           style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;"/>
 
+                    <VBox spacing="6">
+                        <Label text="CURRENT PASSWORD"
+                               style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af; -fx-letter-spacing: 0.5;"/>
+                        <PasswordField fx:id="pfCurrentPassword"
+                                       style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;"
+                                       promptText="••••••••"/>
+                    </VBox>
+                    <VBox spacing="6">
+                        <Label text="NEW PASSWORD"
+                               style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;"/>
+                        <PasswordField fx:id="pfNewPassword"
+                                       style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;"
+                                       promptText="Min 8 characters"/>
+                    </VBox>
+                    <VBox spacing="6">
+                        <Label text="CONFIRM PASSWORD"
+                               style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;"/>
+                        <PasswordField fx:id="pfConfirmPassword"
+                                       style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;"
+                                       promptText="Repeat new password"/>
+                    </VBox>
+                    <Button fx:id="btnChangePassword" text="Update Password" maxWidth="Infinity"
+                            style="-fx-background-color: #1e3a5f; -fx-text-fill: white; -fx-font-weight: 600; -fx-font-size: 13px; -fx-background-radius: 8; -fx-padding: 10; -fx-cursor: hand;"/>
+                </VBox>
+
+            </VBox>
+
+            <!-- RIGHT: Edit Profile Form -->
+            <VBox spacing="20" HBox.hgrow="ALWAYS">
+
+                <!-- Personal Info -->
+                <VBox spacing="16"
+                      style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 24; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
+
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Personal Information"
+                               style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;"/>
+                    </HBox>
+                    <Separator style="-fx-opacity: 0.5;"/>
+
+                    <!-- Name Row -->
                     <HBox spacing="16">
                         <VBox spacing="6" HBox.hgrow="ALWAYS">
-                            <Label text="FULL NAME" styleClass="form-label"/>
-                            <TextField fx:id="fldName" promptText="Your full name"
-                                       styleClass="form-input" maxWidth="Infinity"/>
+                            <Label text="FIRST NAME"
+                                   style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;"/>
+                            <TextField fx:id="tfFirstName"
+                                       style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;"
+                                       promptText="First name"/>
                         </VBox>
                         <VBox spacing="6" HBox.hgrow="ALWAYS">
-                            <Label text="EMAIL ADDRESS" styleClass="form-label"/>
-                            <TextField fx:id="fldEmail" promptText="your@email.com"
-                                       styleClass="form-input" maxWidth="Infinity"/>
+                            <Label text="LAST NAME"
+                                   style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;"/>
+                            <TextField fx:id="tfLastName"
+                                       style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;"
+                                       promptText="Last name"/>
                         </VBox>
                     </HBox>
 
+                    <!-- Email & Phone Row -->
                     <HBox spacing="16">
                         <VBox spacing="6" HBox.hgrow="ALWAYS">
-                            <Label text="PHONE NUMBER" styleClass="form-label"/>
-                            <TextField fx:id="fldPhone" promptText="+91 XXXXX XXXXX"
-                                       styleClass="form-input" maxWidth="Infinity"/>
+                            <Label text="EMAIL ADDRESS"
+                                   style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;"/>
+                            <TextField fx:id="tfEmail"
+                                       style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;"
+                                       promptText="email@example.com"/>
                         </VBox>
                         <VBox spacing="6" HBox.hgrow="ALWAYS">
-                            <Label text="COMPANY NAME" styleClass="form-label"/>
-                            <TextField fx:id="fldCompany" promptText="Your company"
-                                       styleClass="form-input" maxWidth="Infinity"/>
+                            <Label text="PHONE NUMBER"
+                                   style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;"/>
+                            <TextField fx:id="tfPhone"
+                                       style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;"
+                                       promptText="+91 00000 00000"/>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Role (read-only) -->
+                    <VBox spacing="6">
+                        <Label text="ROLE"
+                               style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;"/>
+                        <TextField fx:id="tfRole" editable="false"
+                                   style="-fx-background-color: #f3f4f6; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px; -fx-text-fill: #6b7280;"
+                                   promptText="Administrator"/>
+                    </VBox>
+
+                    <!-- Save Button -->
+                    <HBox alignment="CENTER_RIGHT" spacing="12">
+                        <Button fx:id="btnCancelProfile" text="Discard Changes"
+                                style="-fx-background-color: white; -fx-text-fill: #374151; -fx-font-weight: 600; -fx-font-size: 13px; -fx-background-radius: 8; -fx-padding: 10 20; -fx-cursor: hand; -fx-border-color: #d1d5db; -fx-border-radius: 8;"/>
+                        <Button fx:id="btnSaveProfile" text="Save Changes"
+                                style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: 600; -fx-font-size: 13px; -fx-background-radius: 8; -fx-padding: 10 20; -fx-cursor: hand;"/>
+                    </HBox>
+                </VBox>
+
+                <!-- Business Info -->
+                <VBox spacing="16"
+                      style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 24; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
+                    <Label text="Business Information"
+                           style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;"/>
+                    <Separator style="-fx-opacity: 0.5;"/>
+
+                    <HBox spacing="16">
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="COMPANY NAME"
+                                   style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;"/>
+                            <TextField fx:id="tfCompany"
+                                       style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;"
+                                       promptText="Your company name"/>
+                        </VBox>
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="GST NUMBER"
+                                   style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;"/>
+                            <TextField fx:id="tfGST"
+                                       style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;"
+                                       promptText="GST number"/>
                         </VBox>
                     </HBox>
 
                     <VBox spacing="6">
-                        <Label text="ADDRESS" styleClass="form-label"/>
-                        <TextArea fx:id="fldAddress" promptText="Full address…"
-                                  styleClass="form-input" prefRowCount="3"
-                                  wrapText="true" maxWidth="Infinity"/>
+                        <Label text="BUSINESS ADDRESS"
+                               style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;"/>
+                        <TextArea fx:id="taAddress" prefRowCount="3"
+                                  style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;"
+                                  promptText="Street, City, State, PIN"/>
                     </VBox>
 
-                    <HBox spacing="10">
-                        <Button text="💾  Save Profile" styleClass="btn-primary"
-                                onAction="#onSave"/>
-                        <Button text="Cancel" styleClass="btn-secondary"/>
+                    <HBox alignment="CENTER_RIGHT">
+                        <Button fx:id="btnSaveBusiness" text="Save Business Info"
+                                style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: 600; -fx-font-size: 13px; -fx-background-radius: 8; -fx-padding: 10 20; -fx-cursor: hand;"/>
                     </HBox>
                 </VBox>
 
-            </HBox>
-        </VBox>
-    </ScrollPane>
-</VBox>
+            </VBox>
+        </HBox>
+    </VBox>
+</ScrollPane>

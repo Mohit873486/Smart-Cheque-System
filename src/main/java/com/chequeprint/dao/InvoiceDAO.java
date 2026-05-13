@@ -33,6 +33,8 @@ public class InvoiceDAO {
         return list;
     }
 
+    
+
     public boolean update(Invoice inv) throws SQLException {
         String sql = "UPDATE invoices SET client_name=?,amount=?,issue_date=?,due_date=?,status=?,notes=? WHERE id=?";
         try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(sql)) {
