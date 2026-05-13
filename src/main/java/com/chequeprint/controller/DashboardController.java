@@ -118,7 +118,8 @@ public class DashboardController {
                 int pending = service.getPendingCheques();
                 double amount = service.getMonthlyAmount();
 
-                int invoices = service.getTotalInvoices(); // (if exists in service)
+                // int invoices = service.getTotalInvoices(); // TODO: Add getTotalInvoices() to ChequeService
+                int invoices = 0;
 
                 Platform.runLater(() -> {
 

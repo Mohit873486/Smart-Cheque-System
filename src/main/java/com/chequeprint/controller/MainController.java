@@ -28,37 +28,50 @@ public class MainController {
     private Label headerTitle;
 
     // Navigation items
-    @FXML private HBox navDashboard;
-    @FXML private HBox navCheques;
-    @FXML private HBox navInvoices;
-    @FXML private HBox navBanks;
-    @FXML private HBox navProfile;
-    @FXML private HBox navSettings;
-    @FXML private HBox navSupport;
+    @FXML
+    private HBox navDashboard;
+    @FXML
+    private HBox navCheques;
+    @FXML
+    private HBox navInvoices;
+    @FXML
+    private HBox navBanks;
+    @FXML
+    private HBox navProfile;
+    @FXML
+    private HBox navSettings;
+    @FXML
+    private HBox navSupport;
 
     private HBox activeNavItem;
 
     // FXML mapping (MAIN SYSTEM)
-    private final Map<String, String> fxmlMap = new HashMap<>() {{
-        put("dashboard", "/view/dashboard.fxml");
-        put("cheques", "/view/cheques.fxml");
-        put("invoices", "/view/invoices.fxml");
-        put("banks", "/view/banks.fxml");
-        put("profile", "/view/profile.fxml");
-        put("settings", "/view/settings.fxml");
-        put("support", "/view/support.fxml");
-    }};
+    private final Map<String, String> fxmlMap = new HashMap<>() {
+        {
+            put("dashboard", "/view/dashboard.fxml");
+            put("cheques", "/view/cheques.fxml");
+            put("invoices", "/view/invoices.fxml");
+            put("banks", "/view/banks.fxml");
+            put("profile", "/view/profile.fxml");
+            put("settings", "/view/settings.fxml");
+            put("support", "/view/support.fxml");
+        }
+    };
 
     // Titles
-    private final Map<String, String> titleMap = new HashMap<>() {{
-        put("dashboard", "Dashboard");
-        put("cheques", "Cheque Management");
-        put("invoices", "Invoice Management");
-        put("banks", "Bank Templates");
-        put("profile", "My Profile");
-        put("settings", "Settings");
-        put("support", "Support Center");
-    }};
+    private final Map<String, String> titleMap = new HashMap<>() {
+        {
+            put("dashboard", "Dashboard");
+            put("cheques", "Cheque Management");
+            put("invoices", "Invoice Management");
+            put("banks", "Bank Templates");
+            put("profile", "My Profile");
+            put("settings", "Settings");
+            put("support", "Support Center");
+        }
+    };
+
+    private final Map<String, Node> pageCache = new HashMap<>();
 
     @FXML
     public void initialize() {
@@ -77,38 +90,94 @@ public class MainController {
 
     // ================= NAVIGATION METHODS =================
 
-    @FXML private void onDashboard() { navigate("dashboard"); setActiveNav(navDashboard); }
-    @FXML private void onCheques()   { navigate("cheques");   setActiveNav(navCheques); }
-    @FXML private void onInvoices()  { navigate("invoices");  setActiveNav(navInvoices); }
-    @FXML private void onBanks()     { navigate("banks");     setActiveNav(navBanks); }
-    @FXML private void onProfile()   { navigate("profile");   setActiveNav(navProfile); }
-    @FXML private void onSettings()  { navigate("settings");  setActiveNav(navSettings); }
-    @FXML private void onSupport()   { navigate("support");   setActiveNav(navSupport); }
+    @FXML
+    private void onDashboard() {
+        navigate("dashboard");
+        setActiveNav(navDashboard);
+    }
+
+    @FXML
+    private void onCheques() {
+        navigate("cheques");
+        setActiveNav(navCheques);
+    }
+
+    @FXML
+    private void onInvoices() {
+        navigate("invoices");
+        setActiveNav(navInvoices);
+    }
+
+    @FXML
+    private void onBanks() {
+        navigate("banks");
+        setActiveNav(navBanks);
+    }
+
+    @FXML
+    private void onProfile() {
+        navigate("profile");
+        setActiveNav(navProfile);
+    }
+
+    @FXML
+    private void onSettings() {
+        navigate("settings");
+        setActiveNav(navSettings);
+    }
+
+    @FXML
+    private void onSupport() {
+        navigate("support");
+        setActiveNav(navSupport);
+    }
 
     // ================= MAIN NAVIGATION (ADVANCED) =================
 
     public void navigate(String page) {
+
         String path = fxmlMap.get(page);
-        if (path == null) return;
+        if (path == null)
+            return;
 
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(path));
-            Node view = loader.load();
+            Node view;
 
-            view.setOpacity(0); // no flash
+            // ✅ CACHE FIX (IMPORTANT)
+            if (pageCache.containsKey(page)) {
+                view = pageCache.get(page);
+            } else {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource(path));
+                view = loader.load();
 
-            // Inject controller (optional)
-            Object ctrl = loader.getController();
-            if (ctrl instanceof DashboardController dc) dc.setMainController(this);
-            if (ctrl instanceof ChequeController cc) cc.setMainController(this);
-            if (ctrl instanceof InvoiceController ic) ic.setMainController(this);
-            if (ctrl instanceof ProfileController pc) pc.setMainController(this);
-            if (ctrl instanceof ProfileController pc) pc.setMainController(this);
-            if (ctrl instanceof SupportController pc) pc.setMainController(this);
+                view.setOpacity(0);
+
+                // Inject controller
+                Object ctrl = loader.getController();
+                if (ctrl instanceof DashboardController dc)
+                    dc.setMainController(this);
+                if (ctrl instanceof ChequeController cc)
+                    cc.setMainController(this);
+                if (ctrl instanceof InvoiceController ic)
+                    ic.setMainController(this);
+                if (ctrl instanceof ProfileController pc)
+                    pc.setMainController(this);
+                if (ctrl instanceof SettingsController sc)
+                    sc.setMainController(this);
+                if (ctrl instanceof SupportController sc)
+                    sc.setMainController(this);
+
+                // store in cache
+                pageCache.put(page, view);
+            }
 
             Node current = contentPane.getChildren().isEmpty()
                     ? null
                     : contentPane.getChildren().get(0);
+
+            if (current == view) {
+                return; // ✅ avoid reloading same page
+            }
 
             if (current != null) {
 
@@ -138,11 +207,13 @@ public class MainController {
 
             headerTitle.setText(titleMap.getOrDefault(page, "ChequePro"));
 
-        } catch (Exception e) {
+            // ✅ DEBUG (optional)
+            System.out.println("Loaded page: " + page);
+
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
     // ================= SIMPLE LOADER (EXTRA SUPPORT) =================
 
     public void loadPageSimple(String fxmlFile) {

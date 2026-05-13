@@ -7,6 +7,7 @@ public class User {
     private String phone;
     private String company;
     private String address;
+    private String password;
 
     public User() {}
 
@@ -22,5 +23,7 @@ public class User {
     public void setCompany(String c)    { this.company = c; }
     public String getAddress()          { return address; }
     public void setAddress(String a)    { this.address = a; }
+    public String getPassword()         { return password; }
+    public void setPassword(String pwd) { this.password = pwd; }
 }
 

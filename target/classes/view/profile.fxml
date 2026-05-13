@@ -10,7 +10,7 @@
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.chequeprint.controller.ProfileController">
 
-    <VBox spacing="24"
+    <VBox fx:id="rootPane" spacing="24"
           style="-fx-background-color: #f0f2f5;">
         <padding>
             <Insets top="28" right="32" bottom="40" left="32"/>

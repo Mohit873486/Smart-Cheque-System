@@ -9,9 +9,9 @@ import java.sql.SQLException;
  * UserService — business logic for user profile management.
  *
  * Responsibilities:
- *  • Input validation before DAO calls
- *  • Password hashing placeholder (swap MD5 for BCrypt in production)
- *  • Centralised credential check used by LoginController
+ * • Input validation before DAO calls
+ * • Password hashing placeholder (swap MD5 for BCrypt in production)
+ * • Centralised credential check used by LoginController
  */
 public class UserService {
 
@@ -28,9 +28,10 @@ public class UserService {
      * once a proper users table with hashed passwords is in place.
      */
     public boolean authenticate(String username, String password) {
-        if (username == null || password == null) return false;
+        if (username == null || password == null)
+            return false;
         return username.trim().equals(DEFAULT_USER)
-            && password.equals(DEFAULT_PASS);
+                && password.equals(DEFAULT_PASS);
     }
 
     // ── Profile CRUD ─────────────────────────────────────────────────
@@ -58,13 +59,31 @@ public class UserService {
 
     /**
      * Derives display initials from a full name.
-     * e.g. "Raj Kumar" → "RK",  "Admin" → "AD"
+     * e.g. "Raj Kumar" → "RK", "Admin" → "AD"
      */
     public static String getInitials(String name) {
-        if (name == null || name.isBlank()) return "?";
+        if (name == null || name.isBlank())
+            return "?";
         String[] parts = name.trim().split("\\s+");
         if (parts.length >= 2)
             return ("" + parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
         return name.substring(0, Math.min(2, name.length())).toUpperCase();
     }
+
+    /**
+     * Changes the user's password after validating the current one.
+     */
+    public void changePassword(int userId, String currentPassword, String newPassword) throws SQLException {
+        User user = dao.findById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("User not found.");
+        }
+        // Verify current password
+        if (!currentPassword.equals(user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect.");
+        }
+        user.setPassword(newPassword);
+        dao.insertOrUpdate(user);
+    }
+
 }

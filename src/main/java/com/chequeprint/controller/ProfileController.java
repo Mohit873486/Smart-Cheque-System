@@ -43,8 +43,11 @@ public class ProfileController {
 
     @FXML
     public void initialize() {
+        if (rootPane != null) {
         FxUtils.animateIn(rootPane, 0);
-        loadProfile();
+    }
+
+    loadProfile();
     }
 
     // =========================
