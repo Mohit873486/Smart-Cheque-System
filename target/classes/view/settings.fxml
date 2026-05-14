@@ -200,7 +200,9 @@
                     <Label text="Choose between light and dark mode for the application."
                         style="-fx-font-size: 12px; -fx-text-fill: #9ca3af;" />
                 </VBox>
+                <fx:define>
                     <ToggleGroup fx:id="tgTheme" />
+                </fx:define>
                 <RadioButton fx:id="rbLight" text="Light" toggleGroup="$tgTheme"
                     style="-fx-font-size: 13px; -fx-text-fill: #374151;" />
                 <RadioButton fx:id="rbDark" text="Dark" toggleGroup="$tgTheme"

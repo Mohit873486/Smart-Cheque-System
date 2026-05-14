@@ -2,28 +2,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<!--
-  FIXED cheques.fxml
-  ===================
-  PROBLEMS IN ORIGINAL:
-  1. Root VBox had NO maxWidth/maxHeight="Infinity" — so StackPane in main.fxml
-     could not stretch it; it rendered at its minimum computed size.
-  2. Outer VBox had VBox.vgrow="ALWAYS" on its inner VBox child, but the outer
-     root itself was not growable — growth constraint on a child is useless if
-     the parent is not growing.
-  3. TableView inside a VBox card — VBox.vgrow="ALWAYS" on the TableView was
-     correct, but the parent card VBox also needed maxHeight="Infinity" to
-     allow the VBox to grow inside the HBox.
-  4. Form panel: maxWidth="320" was hard-coded — fine for desktop but panels
-     were hidden on small windows. Added minWidth="280" for safety.
 
-  FIXES:
-  1. Root VBox: maxWidth="Infinity" maxHeight="Infinity" added.
-  2. Main content HBox: maxHeight="Infinity" so table card can grow vertically.
-  3. Table card VBox: maxHeight="Infinity" so TableView gets vertical space.
-  4. TableView: CONSTRAINED_RESIZE_POLICY added so columns fill width.
-  5. Form panel: minWidth="280" maxWidth="320" (unchanged but min added).
--->
 <VBox xmlns="http://javafx.com/javafx/17"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.chequeprint.controller.ChequeController"

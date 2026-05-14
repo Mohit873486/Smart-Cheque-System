@@ -7,11 +7,16 @@
 <?import javafx.scene.shape.*?>
 
 <ScrollPane fitToWidth="true" fitToHeight="false"
+       prefWidth="Infinity"
+       prefHeight="Infinity"
        style="-fx-background: #f0f2f5; -fx-background-color: #f0f2f5;"
        xmlns:fx="http://javafx.com/fxml/1"
        fx:controller="com.chequeprint.controller.DashboardController">
 
-       <VBox spacing="24" style="-fx-background-color: #f0f2f5;">
+       <VBox spacing="24"  minHeight="600" style="-fx-background-color: #f0f2f5;"
+              VBox.vgrow="ALWAYS"
+              maxWidth="Infinity"
+              maxHeight="Infinity">
               <padding>
                      <Insets top="28" right="32" bottom="32" left="32" />
               </padding>
@@ -22,7 +27,8 @@
                      <VBox spacing="2">
                             <Label fx:id="lblWelcome" text="Dashboard"
                                    style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
-                            <Label fx:id="lblSubtitle" text="Welcome back, Admin! Here's your financial overview."
+                            <Label fx:id="lblSubtitle"
+                                   text="Welcome back, Admin! Here's your financial overview."
                                    style="-fx-font-size: 13px; -fx-text-fill: #6b7280;" />
                      </VBox>
               </HBox>
