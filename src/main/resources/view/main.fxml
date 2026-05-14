@@ -25,27 +25,27 @@
   5. Sidebar user footer: styled with proper styleClass for CSS.
 -->
 <BorderPane xmlns="http://javafx.com/javafx/17"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.chequeprint.controller.MainController"
-            prefWidth="1280" prefHeight="800"
-            minWidth="1000" minHeight="600"
-            styleClass="app-root">
+    xmlns:fx="http://javafx.com/fxml"
+    fx:controller="com.chequeprint.controller.MainController"
+    prefWidth="1280" prefHeight="800"
+    minWidth="1000" minHeight="600"
+    styleClass="app-root">
 
     <!-- ═══════════════════════════════════════
          LEFT SIDEBAR  (fixed 224 px wide)
     ═══════════════════════════════════════ -->
     <left>
         <VBox fx:id="sidebar" styleClass="sidebar"
-              prefWidth="224" minWidth="224" maxWidth="224"
-              prefHeight="800">
+            prefWidth="224" minWidth="224" maxWidth="224"
+            prefHeight="800">
 
             <!-- Logo -->
             <VBox styleClass="sidebar-logo" spacing="2">
                 <HBox spacing="10" alignment="CENTER_LEFT">
-                    <Label text="💼" styleClass="sidebar-logo-icon" mouseTransparent="true"/>
+                    <Label text="💼" styleClass="sidebar-logo-icon" mouseTransparent="true" />
                     <VBox spacing="0" mouseTransparent="true">
-                        <Label text="ChequePro"     styleClass="sidebar-logo-text"/>
-                        <Label text="Finance Manager" styleClass="sidebar-logo-sub"/>
+                        <Label text="ChequePro" styleClass="sidebar-logo-text" />
+                        <Label text="Finance Manager" styleClass="sidebar-logo-sub" />
                     </VBox>
                 </HBox>
             </VBox>
@@ -53,61 +53,61 @@
             <!-- Navigation — VBox.vgrow="ALWAYS" so it stretches -->
             <VBox spacing="2" VBox.vgrow="ALWAYS" style="-fx-padding: 12 8 8 8;">
 
-                <Label text="MAIN MENU" styleClass="sidebar-section-label"/>
+                <Label text="MAIN MENU" styleClass="sidebar-section-label" />
 
                 <HBox fx:id="navDashboard" styleClass="nav-item" spacing="12"
-                      alignment="CENTER_LEFT" onMouseClicked="#onDashboard">
-                    <Label text="📊" styleClass="nav-icon" mouseTransparent="true"/>
-                    <Label text="Dashboard" styleClass="nav-label" mouseTransparent="true"/>
+                    alignment="CENTER_LEFT" onMouseClicked="#onDashboard">
+                    <Label text="📊" styleClass="nav-icon" mouseTransparent="true" />
+                    <Label text="Dashboard" styleClass="nav-label" mouseTransparent="true" />
                 </HBox>
 
                 <HBox fx:id="navCheques" styleClass="nav-item" spacing="12"
-                      alignment="CENTER_LEFT" onMouseClicked="#onCheques">
-                    <Label text="📝" styleClass="nav-icon" mouseTransparent="true"/>
-                    <Label text="Cheques" styleClass="nav-label" mouseTransparent="true"/>
+                    alignment="CENTER_LEFT" onMouseClicked="#onCheques">
+                    <Label text="📝" styleClass="nav-icon" mouseTransparent="true" />
+                    <Label text="Cheques" styleClass="nav-label" mouseTransparent="true" />
                 </HBox>
 
                 <HBox fx:id="navInvoices" styleClass="nav-item" spacing="12"
-                      alignment="CENTER_LEFT" onMouseClicked="#onInvoices">
-                    <Label text="🧾" styleClass="nav-icon" mouseTransparent="true"/>
-                    <Label text="Invoices" styleClass="nav-label" mouseTransparent="true"/>
+                    alignment="CENTER_LEFT" onMouseClicked="#onInvoices">
+                    <Label text="🧾" styleClass="nav-icon" mouseTransparent="true" />
+                    <Label text="Invoices" styleClass="nav-label" mouseTransparent="true" />
                 </HBox>
 
                 <HBox fx:id="navBanks" styleClass="nav-item" spacing="12"
-                      alignment="CENTER_LEFT" onMouseClicked="#onBanks">
-                    <Label text="🏦" styleClass="nav-icon" mouseTransparent="true"/>
-                    <Label text="Banks" styleClass="nav-label" mouseTransparent="true"/>
+                    alignment="CENTER_LEFT" onMouseClicked="#onBanks">
+                    <Label text="🏦" styleClass="nav-icon" mouseTransparent="true" />
+                    <Label text="Banks" styleClass="nav-label" mouseTransparent="true" />
                 </HBox>
 
-                <Label text="ACCOUNT" styleClass="sidebar-section-label"/>
+                <Label text="ACCOUNT" styleClass="sidebar-section-label" />
 
                 <HBox fx:id="navProfile" styleClass="nav-item" spacing="12"
-                      alignment="CENTER_LEFT" onMouseClicked="#onProfile">
-                    <Label text="👤" styleClass="nav-icon" mouseTransparent="true"/>
-                    <Label text="Profile" styleClass="nav-label" mouseTransparent="true"/>
+                    alignment="CENTER_LEFT" onMouseClicked="#onProfile">
+                    <Label text="👤" styleClass="nav-icon" mouseTransparent="true" />
+                    <Label text="Profile" styleClass="nav-label" mouseTransparent="true" />
                 </HBox>
 
                 <HBox fx:id="navSettings" styleClass="nav-item" spacing="12"
-                      alignment="CENTER_LEFT" onMouseClicked="#onSettings">
-                    <Label text="⚙️" styleClass="nav-icon" mouseTransparent="true"/>
-                    <Label text="Settings" styleClass="nav-label" mouseTransparent="true"/>
+                    alignment="CENTER_LEFT" onMouseClicked="#onSettings">
+                    <Label text="⚙️" styleClass="nav-icon" mouseTransparent="true" />
+                    <Label text="Settings" styleClass="nav-label" mouseTransparent="true" />
                 </HBox>
 
                 <HBox fx:id="navSupport" styleClass="nav-item" spacing="12"
-                      alignment="CENTER_LEFT" onMouseClicked="#onSupport">
-                    <Label text="💬" styleClass="nav-icon" mouseTransparent="true"/>
-                    <Label text="Support" styleClass="nav-label" mouseTransparent="true"/>
+                    alignment="CENTER_LEFT" onMouseClicked="#onSupport">
+                    <Label text="💬" styleClass="nav-icon" mouseTransparent="true" />
+                    <Label text="Support" styleClass="nav-label" mouseTransparent="true" />
                 </HBox>
 
                 <!-- Spacer pushes user footer to bottom -->
-                <Region VBox.vgrow="ALWAYS"/>
+                <Region VBox.vgrow="ALWAYS" />
 
                 <!-- User footer -->
                 <HBox spacing="10" alignment="CENTER_LEFT" styleClass="sidebar-user">
-                    <Label text="AD" styleClass="user-avatar"/>
+                    <Label text="AD" styleClass="user-avatar" />
                     <VBox spacing="1">
-                        <Label text="Admin User"   styleClass="user-name"/>
-                        <Label text="Administrator" styleClass="user-role"/>
+                        <Label text="Admin User" styleClass="user-name" />
+                        <Label text="Administrator" styleClass="user-role" />
                     </VBox>
                 </HBox>
 
@@ -129,12 +129,16 @@
         <VBox>
 
             <!-- TOP HEADER (fixed height via CSS: 58px) -->
-            <HBox spacing="16" alignment="CENTER_LEFT" styleClass="top-header">
-                <Label fx:id="headerTitle" text="Dashboard" styleClass="header-title"/>
-                <Region HBox.hgrow="ALWAYS"/>
-                <TextField promptText="Search…" prefWidth="200" styleClass="search-input"/>
-                <Label text="🔔" styleClass="icon-btn"/>
-                <Label text="AD"  styleClass="header-avatar"/>
+            <HBox spacing="16" alignment="CENTER_LEFT" styleClass="top-header"
+                xmlns="http://javafx.com/javafx/17"
+                xmlns:fx="http://javafx.com/fxml"
+                prefWidth="Infinity"
+                maxWidth="Infinity">
+                <Label fx:id="headerTitle" text="Dashboard" styleClass="header-title" />
+                <Region HBox.hgrow="ALWAYS" />
+                <TextField promptText="Search…" prefWidth="200" styleClass="search-input" />
+                <Label text="🔔" styleClass="icon-btn" />
+                <Label text="AD" styleClass="header-avatar" />
             </HBox>
 
             <!-- CONTENT PANE
@@ -146,8 +150,8 @@
                  children to its own size, but only if their max allows it).
             -->
             <StackPane fx:id="contentPane"
-                       VBox.vgrow="ALWAYS"
-                       styleClass="content-area"/>
+                VBox.vgrow="ALWAYS"
+                styleClass="content-area" />
         </VBox>
     </center>
 

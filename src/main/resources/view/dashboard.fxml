@@ -5,259 +5,289 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 <?import javafx.scene.shape.*?>
-
-<ScrollPane fitToWidth="true" fitToHeight="false"
-       prefWidth="Infinity"
-       prefHeight="Infinity"
-       style="-fx-background: #f0f2f5; -fx-background-color: #f0f2f5;"
-       xmlns:fx="http://javafx.com/fxml/1"
+<BorderPane xmlns:fx="http://javafx.com/fxml/1"
        fx:controller="com.chequeprint.controller.DashboardController">
+       <center>
+              <ScrollPane fitToWidth="true" fitToHeight="true"
+                     hbarPolicy="NEVER"
+                     vbarPolicy="AS_NEEDED"
+                     style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 0;">
+                     <content>
+                            <VBox spacing="24"
+                                   style="-fx-background-color: #f0f2f5;"
+                                   prefWidth="0"
+                                   minWidth="0"
+                                   maxWidth="Infinity">
+                                   <padding>
+                                          <Insets top="28" right="32" bottom="32" left="32" />
+                                   </padding>
 
-       <VBox spacing="24"   
-       style="-fx-background-color: #f0f2f5;"
-              VBox.vgrow="ALWAYS"
-              maxWidth="Infinity"
-              maxHeight="Infinity">
-              <padding>
-                     <Insets top="28" right="32" bottom="32" left="32" />
-              </padding>
+                                   <!-- Page Header -->
+                                   <HBox alignment="CENTER_LEFT" spacing="12">
+                                          <Label text="📊" style="-fx-font-size: 24px;" />
+                                          <VBox spacing="2">
+                                                 <Label fx:id="lblWelcome" text="Dashboard"
+                                                        style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
+                                                 <Label fx:id="lblSubtitle"
+                                                        text="Welcome back, Admin! Here's your financial overview."
+                                                        style="-fx-font-size: 13px; -fx-text-fill: #6b7280;" />
+                                          </VBox>
+                                   </HBox>
 
-              <!-- Page Header -->
-              <HBox alignment="CENTER_LEFT" spacing="12">
-                     <Label text="📊" style="-fx-font-size: 24px;" />
-                     <VBox spacing="2">
-                            <Label fx:id="lblWelcome" text="Dashboard"
-                                   style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
-                            <Label fx:id="lblSubtitle"
-                                   text="Welcome back, Admin! Here's your financial overview."
-                                   style="-fx-font-size: 13px; -fx-text-fill: #6b7280;" />
-                     </VBox>
-              </HBox>
+                                   <!-- Stats Cards Row -->
+                                   <HBox spacing="16">
+                                          <HBox.margin>
+                                                 <Insets top="4" />
+                                          </HBox.margin>
 
-              <!-- Stats Cards Row -->
-              <HBox spacing="16">
-                     <HBox.margin>
-                            <Insets top="4" />
-                     </HBox.margin>
+                                          <!-- Total Cheques Card -->
+                                          <VBox fx:id="cardTotal" spacing="12" alignment="TOP_LEFT"
+                                                 style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);"
+                                                 HBox.hgrow="ALWAYS">
+                                                 <HBox alignment="CENTER_LEFT" spacing="10">
+                                                        <Label text="🧾"
+                                                               style="-fx-font-size: 22px; -fx-background-color: #eff6ff; -fx-background-radius: 8; -fx-padding: 8;" />
+                                                        <Label text="Total Cheques"
+                                                               style="-fx-font-size: 13px; -fx-text-fill: #6b7280; -fx-font-weight: 600;" />
+                                                 </HBox>
+                                                 <Label fx:id="lblTotalCheques" text="0"
+                                                        style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
+                                                 <Label fx:id="lblChequesChange"
+                                                        text="↑ 0 this month"
+                                                        style="-fx-font-size: 12px; -fx-text-fill: #10b981;" />
+                                          </VBox>
 
-                     <!-- Total Cheques Card -->
-                     <VBox fx:id="cardTotal" spacing="12" alignment="TOP_LEFT"
-                            style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);"
-                            HBox.hgrow="ALWAYS">
-                            <HBox alignment="CENTER_LEFT" spacing="10">
-                                   <Label text="🧾"
-                                          style="-fx-font-size: 22px; -fx-background-color: #eff6ff; -fx-background-radius: 8; -fx-padding: 8;" />
-                                   <Label text="Total Cheques"
-                                          style="-fx-font-size: 13px; -fx-text-fill: #6b7280; -fx-font-weight: 600;" />
-                            </HBox>
-                            <Label fx:id="lblTotalCheques" text="0"
-                                   style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
-                            <Label fx:id="lblChequesChange" text="↑ 0 this month"
-                                   style="-fx-font-size: 12px; -fx-text-fill: #10b981;" />
-                     </VBox>
+                                          <!-- Pending Cheques Card -->
+                                          <VBox spacing="12" alignment="TOP_LEFT"
+                                                 style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);"
+                                                 HBox.hgrow="ALWAYS">
+                                                 <HBox alignment="CENTER_LEFT" spacing="10">
+                                                        <Label text="⏳"
+                                                               style="-fx-font-size: 22px; -fx-background-color: #fff7ed; -fx-background-radius: 8; -fx-padding: 8;" />
+                                                        <Label text="Pending"
+                                                               style="-fx-font-size: 13px; -fx-text-fill: #6b7280; -fx-font-weight: 600;" />
+                                                 </HBox>
+                                                 <Label fx:id="lblPendingCheques" text="0"
+                                                        style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #f59e0b;" />
+                                                 <Label text="Awaiting clearance"
+                                                        style="-fx-font-size: 12px; -fx-text-fill: #9ca3af;" />
+                                          </VBox>
 
-                     <!-- Pending Cheques Card -->
-                     <VBox spacing="12" alignment="TOP_LEFT"
-                            style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);"
-                            HBox.hgrow="ALWAYS">
-                            <HBox alignment="CENTER_LEFT" spacing="10">
-                                   <Label text="⏳"
-                                          style="-fx-font-size: 22px; -fx-background-color: #fff7ed; -fx-background-radius: 8; -fx-padding: 8;" />
-                                   <Label text="Pending"
-                                          style="-fx-font-size: 13px; -fx-text-fill: #6b7280; -fx-font-weight: 600;" />
-                            </HBox>
-                            <Label fx:id="lblPendingCheques" text="0"
-                                   style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #f59e0b;" />
-                            <Label text="Awaiting clearance"
-                                   style="-fx-font-size: 12px; -fx-text-fill: #9ca3af;" />
-                     </VBox>
+                                          <!-- Total Invoices Card -->
+                                          <VBox spacing="12" alignment="TOP_LEFT"
+                                                 style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);"
+                                                 HBox.hgrow="ALWAYS">
+                                                 <HBox alignment="CENTER_LEFT" spacing="10">
+                                                        <Label text="📄"
+                                                               style="-fx-font-size: 22px; -fx-background-color: #f0fdf4; -fx-background-radius: 8; -fx-padding: 8;" />
+                                                        <Label text="Total Invoices"
+                                                               style="-fx-font-size: 13px; -fx-text-fill: #6b7280; -fx-font-weight: 600;" />
+                                                 </HBox>
+                                                 <Label fx:id="lblTotalInvoices" text="0"
+                                                        style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
+                                                 <Label fx:id="lblInvoicesChange"
+                                                        text="↑ 0 this month"
+                                                        style="-fx-font-size: 12px; -fx-text-fill: #10b981;" />
+                                          </VBox>
 
-                     <!-- Total Invoices Card -->
-                     <VBox spacing="12" alignment="TOP_LEFT"
-                            style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);"
-                            HBox.hgrow="ALWAYS">
-                            <HBox alignment="CENTER_LEFT" spacing="10">
-                                   <Label text="📄"
-                                          style="-fx-font-size: 22px; -fx-background-color: #f0fdf4; -fx-background-radius: 8; -fx-padding: 8;" />
-                                   <Label text="Total Invoices"
-                                          style="-fx-font-size: 13px; -fx-text-fill: #6b7280; -fx-font-weight: 600;" />
-                            </HBox>
-                            <Label fx:id="lblTotalInvoices" text="0"
-                                   style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
-                            <Label fx:id="lblInvoicesChange" text="↑ 0 this month"
-                                   style="-fx-font-size: 12px; -fx-text-fill: #10b981;" />
-                     </VBox>
+                                          <!-- Total Amount Card -->
+                                          <VBox spacing="12" alignment="TOP_LEFT"
+                                                 style="-fx-background-color: #1e3a5f; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(30,58,95,0.25), 14, 0, 0, 4);"
+                                                 HBox.hgrow="ALWAYS">
+                                                 <HBox alignment="CENTER_LEFT" spacing="10">
+                                                        <Label text="₹"
+                                                               style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white; -fx-background-color: rgba(255,255,255,0.15); -fx-background-radius: 8; -fx-padding: 8 12 8 12;" />
+                                                        <Label text="Total Value"
+                                                               style="-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.75); -fx-font-weight: 600;" />
+                                                 </HBox>
+                                                 <Label fx:id="lblTotalAmount" text="₹0.00"
+                                                        style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;" />
+                                                 <Label text="Across all transactions"
+                                                        style="-fx-font-size: 12px; -fx-text-fill: rgba(255,255,255,0.55);" />
+                                          </VBox>
+                                   </HBox>
 
-                     <!-- Total Amount Card -->
-                     <VBox spacing="12" alignment="TOP_LEFT"
-                            style="-fx-background-color: #1e3a5f; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(30,58,95,0.25), 14, 0, 0, 4);"
-                            HBox.hgrow="ALWAYS">
-                            <HBox alignment="CENTER_LEFT" spacing="10">
-                                   <Label text="₹"
-                                          style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white; -fx-background-color: rgba(255,255,255,0.15); -fx-background-radius: 8; -fx-padding: 8 12 8 12;" />
-                                   <Label text="Total Value"
-                                          style="-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.75); -fx-font-weight: 600;" />
-                            </HBox>
-                            <Label fx:id="lblTotalAmount" text="₹0.00"
-                                   style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;" />
-                            <Label text="Across all transactions"
-                                   style="-fx-font-size: 12px; -fx-text-fill: rgba(255,255,255,0.55);" />
-                     </VBox>
-              </HBox>
+                                   <!-- Middle Row: Recent Cheques + Quick Actions -->
+                                   <HBox spacing="16" alignment="TOP_LEFT">
 
-              <!-- Middle Row: Recent Cheques + Quick Actions -->
-              <HBox spacing="16" alignment="TOP_LEFT">
+                                          <!-- Recent Cheques Table -->
+                                          <VBox spacing="16"
+                                                 style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);"
+                                                 HBox.hgrow="ALWAYS">
 
-                     <!-- Recent Cheques Table -->
-                     <VBox spacing="16"
-                            style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);"
-                            HBox.hgrow="ALWAYS">
+                                                 <HBox alignment="CENTER_LEFT">
+                                                        <Label text="Recent Cheques"
+                                                               style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
+                                                        <Region HBox.hgrow="ALWAYS" />
+                                                        <Button fx:id="btnViewAllCheques"
+                                                               text="View All →"
+                                                               style="-fx-background-color: transparent; -fx-text-fill: #2563eb; -fx-cursor: hand; -fx-font-size: 13px; -fx-font-weight: 600; -fx-border-color: transparent;" />
+                                                 </HBox>
 
-                            <HBox alignment="CENTER_LEFT">
-                                   <Label text="Recent Cheques"
-                                          style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
-                                   <Region HBox.hgrow="ALWAYS" />
-                                   <Button fx:id="btnViewAllCheques" text="View All →"
-                                          style="-fx-background-color: transparent; -fx-text-fill: #2563eb; -fx-cursor: hand; -fx-font-size: 13px; -fx-font-weight: 600; -fx-border-color: transparent;" />
-                            </HBox>
+                                                 <TableView fx:id="tblRecentCheques"
+                                                        VBox.vgrow="ALWAYS"
+                                                        style="-fx-background-color: transparent; -fx-background-radius: 8; -fx-border-color: #e5e7eb; -fx-border-radius: 8;">
+                                                        <columns>
+                                                               <TableColumn fx:id="colChequeNo"
+                                                                      text="Cheque #"
+                                                                      prefWidth="110" />
+                                                               <TableColumn fx:id="colPayee"
+                                                                      text="Payee"
+                                                                      prefWidth="160" />
+                                                               <TableColumn fx:id="colAmount"
+                                                                      text="Amount"
+                                                                      prefWidth="110" />
+                                                               <TableColumn fx:id="colStatus"
+                                                                      text="Status"
+                                                                      prefWidth="100" />
+                                                        </columns>
+                                                        <placeholder>
+                                                               <Label
+                                                                      text="No recent cheques to display."
+                                                                      style="-fx-text-fill: #9ca3af; -fx-font-size: 13px;" />
+                                                        </placeholder>
+                                                 </TableView>
+                                          </VBox>
 
-                            <TableView fx:id="tblRecentCheques" prefHeight="240"
-                                   style="-fx-background-color: transparent; -fx-background-radius: 8; -fx-border-color: #e5e7eb; -fx-border-radius: 8;">
-                                   <columns>
-                                          <TableColumn fx:id="colChequeNo" text="Cheque #"
-                                                 prefWidth="110" />
-                                          <TableColumn fx:id="colPayee" text="Payee" prefWidth="160" />
-                                          <TableColumn fx:id="colAmount" text="Amount"
-                                                 prefWidth="110" />
-                                          <TableColumn fx:id="colStatus" text="Status"
-                                                 prefWidth="100" />
-                                   </columns>
-                                   <placeholder>
-                                          <Label text="No recent cheques to display."
-                                                 style="-fx-text-fill: #9ca3af; -fx-font-size: 13px;" />
-                                   </placeholder>
-                            </TableView>
-                     </VBox>
+                                          <!-- Quick Actions + Banks Summary -->
+                                          <VBox spacing="16" prefWidth="280" minWidth="260">
 
-                     <!-- Quick Actions + Banks Summary -->
-                     <VBox spacing="16" prefWidth="280" minWidth="260">
+                                                 <!-- Quick Actions -->
+                                                 <VBox spacing="12"
+                                                        style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
+                                                        <Label text="Quick Actions"
+                                                               style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
 
-                            <!-- Quick Actions -->
-                            <VBox spacing="12"
-                                   style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
-                                   <Label text="Quick Actions"
-                                          style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
+                                                        <Button fx:id="btnNewCheque"
+                                                               text="+ New Cheque"
+                                                               maxWidth="Infinity"
+                                                               style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: 600; -fx-background-radius: 8; -fx-padding: 10 16; -fx-cursor: hand;" />
 
-                                   <Button fx:id="btnNewCheque" text="+ New Cheque"
-                                          maxWidth="Infinity"
-                                          style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: 600; -fx-background-radius: 8; -fx-padding: 10 16; -fx-cursor: hand;" />
+                                                        <Button fx:id="btnNewInvoice"
+                                                               text="+ New Invoice"
+                                                               maxWidth="Infinity"
+                                                               style="-fx-background-color: white; -fx-text-fill: #2563eb; -fx-font-size: 13px; -fx-font-weight: 600; -fx-background-radius: 8; -fx-padding: 10 16; -fx-cursor: hand; -fx-border-color: #2563eb; -fx-border-radius: 8;" />
 
-                                   <Button fx:id="btnNewInvoice" text="+ New Invoice"
-                                          maxWidth="Infinity"
-                                          style="-fx-background-color: white; -fx-text-fill: #2563eb; -fx-font-size: 13px; -fx-font-weight: 600; -fx-background-radius: 8; -fx-padding: 10 16; -fx-cursor: hand; -fx-border-color: #2563eb; -fx-border-radius: 8;" />
+                                                        <Button fx:id="btnAddBank" text="+ Add Bank"
+                                                               maxWidth="Infinity"
+                                                               style="-fx-background-color: white; -fx-text-fill: #374151; -fx-font-size: 13px; -fx-font-weight: 600; -fx-background-radius: 8; -fx-padding: 10 16; -fx-cursor: hand; -fx-border-color: #d1d5db; -fx-border-radius: 8;" />
+                                                 </VBox>
 
-                                   <Button fx:id="btnAddBank" text="+ Add Bank" maxWidth="Infinity"
-                                          style="-fx-background-color: white; -fx-text-fill: #374151; -fx-font-size: 13px; -fx-font-weight: 600; -fx-background-radius: 8; -fx-padding: 10 16; -fx-cursor: hand; -fx-border-color: #d1d5db; -fx-border-radius: 8;" />
+                                                 <!-- Cheque Status Summary -->
+                                                 <VBox spacing="14"
+                                                        style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
+                                                        <Label text="Cheque Status"
+                                                               style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
+
+                                                        <!-- Draft -->
+                                                        <VBox spacing="4">
+                                                               <HBox>
+                                                                      <Label text="Draft"
+                                                                             style="-fx-font-size: 12px; -fx-text-fill: #6b7280;" />
+                                                                      <Region HBox.hgrow="ALWAYS" />
+                                                                      <Label fx:id="lblDraftCount"
+                                                                             text="0"
+                                                                             style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #6b7280;" />
+                                                               </HBox>
+                                                               <ProgressBar fx:id="pbDraft"
+                                                                      progress="0"
+                                                                      maxWidth="Infinity"
+                                                                      style="-fx-accent: #94a3b8; -fx-pref-height: 6; -fx-background-radius: 4; -fx-border-radius: 4;" />
+                                                        </VBox>
+
+                                                        <!-- Pending -->
+                                                        <VBox spacing="4">
+                                                               <HBox>
+                                                                      <Label text="Pending"
+                                                                             style="-fx-font-size: 12px; -fx-text-fill: #6b7280;" />
+                                                                      <Region HBox.hgrow="ALWAYS" />
+                                                                      <Label fx:id="lblPendingCount"
+                                                                             text="0"
+                                                                             style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #f59e0b;" />
+                                                               </HBox>
+                                                               <ProgressBar fx:id="pbPending"
+                                                                      progress="0"
+                                                                      maxWidth="Infinity"
+                                                                      style="-fx-accent: #f59e0b; -fx-pref-height: 6; -fx-background-radius: 4; -fx-border-radius: 4;" />
+                                                        </VBox>
+
+                                                        <!-- Printed -->
+                                                        <VBox spacing="4">
+                                                               <HBox>
+                                                                      <Label text="Printed"
+                                                                             style="-fx-font-size: 12px; -fx-text-fill: #6b7280;" />
+                                                                      <Region HBox.hgrow="ALWAYS" />
+                                                                      <Label fx:id="lblPrintedCount"
+                                                                             text="0"
+                                                                             style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #10b981;" />
+                                                               </HBox>
+                                                               <ProgressBar fx:id="pbPrinted"
+                                                                      progress="0"
+                                                                      maxWidth="Infinity"
+                                                                      style="-fx-accent: #10b981; -fx-pref-height: 6; -fx-background-radius: 4; -fx-border-radius: 4;" />
+                                                        </VBox>
+
+                                                        <!-- Cleared -->
+                                                        <VBox spacing="4">
+                                                               <HBox>
+                                                                      <Label text="Cleared"
+                                                                             style="-fx-font-size: 12px; -fx-text-fill: #6b7280;" />
+                                                                      <Region HBox.hgrow="ALWAYS" />
+                                                                      <Label fx:id="lblClearedCount"
+                                                                             text="0"
+                                                                             style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #2563eb;" />
+                                                               </HBox>
+                                                               <ProgressBar fx:id="pbCleared"
+                                                                      progress="0"
+                                                                      maxWidth="Infinity"
+                                                                      style="-fx-accent: #2563eb; -fx-pref-height: 6; -fx-background-radius: 4; -fx-border-radius: 4;" />
+                                                        </VBox>
+                                                 </VBox>
+
+                                          </VBox>
+                                   </HBox>
+
+                                   <!-- Recent Invoices Row -->
+                                   <VBox spacing="16"
+                                          style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
+
+                                          <HBox alignment="CENTER_LEFT">
+                                                 <Label text="Recent Invoices"
+                                                        style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
+                                                 <Region HBox.hgrow="ALWAYS" />
+                                                 <Button fx:id="btnViewAllInvoices"
+                                                        text="View All →"
+                                                        style="-fx-background-color: transparent; -fx-text-fill: #2563eb; -fx-cursor: hand; -fx-font-size: 13px; -fx-font-weight: 600; -fx-border-color: transparent;" />
+                                          </HBox>
+
+                                          <TableView fx:id="tblRecentInvoices" prefHeight="200"
+                                                 style="-fx-background-color: transparent; -fx-background-radius: 8; -fx-border-color: #e5e7eb; -fx-border-radius: 8;">
+                                                 <columns>
+                                                        <TableColumn fx:id="colInvoiceNo"
+                                                               text="Invoice #"
+                                                               prefWidth="120" />
+                                                        <TableColumn fx:id="colInvoiceClient"
+                                                               text="Client"
+                                                               prefWidth="180" />
+                                                        <TableColumn fx:id="colInvoiceAmount"
+                                                               text="Amount"
+                                                               prefWidth="120" />
+                                                        <TableColumn fx:id="colInvoiceDue"
+                                                               text="Due Date"
+                                                               prefWidth="120" />
+                                                        <TableColumn fx:id="colInvoiceStatus"
+                                                               text="Status"
+                                                               prefWidth="110" />
+                                                 </columns>
+                                                 <placeholder>
+                                                        <Label text="No recent invoices to display."
+                                                               style="-fx-text-fill: #9ca3af; -fx-font-size: 13px;" />
+                                                 </placeholder>
+                                          </TableView>
+                                   </VBox>
+
                             </VBox>
-
-                            <!-- Cheque Status Summary -->
-                            <VBox spacing="14"
-                                   style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
-                                   <Label text="Cheque Status"
-                                          style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
-
-                                   <!-- Draft -->
-                                   <VBox spacing="4">
-                                          <HBox>
-                                                 <Label text="Draft"
-                                                        style="-fx-font-size: 12px; -fx-text-fill: #6b7280;" />
-                                                 <Region HBox.hgrow="ALWAYS" />
-                                                 <Label fx:id="lblDraftCount" text="0"
-                                                        style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #6b7280;" />
-                                          </HBox>
-                                          <ProgressBar fx:id="pbDraft" progress="0"
-                                                 maxWidth="Infinity"
-                                                 style="-fx-accent: #94a3b8; -fx-pref-height: 6; -fx-background-radius: 4; -fx-border-radius: 4;" />
-                                   </VBox>
-
-                                   <!-- Pending -->
-                                   <VBox spacing="4">
-                                          <HBox>
-                                                 <Label text="Pending"
-                                                        style="-fx-font-size: 12px; -fx-text-fill: #6b7280;" />
-                                                 <Region HBox.hgrow="ALWAYS" />
-                                                 <Label fx:id="lblPendingCount" text="0"
-                                                        style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #f59e0b;" />
-                                          </HBox>
-                                          <ProgressBar fx:id="pbPending" progress="0"
-                                                 maxWidth="Infinity"
-                                                 style="-fx-accent: #f59e0b; -fx-pref-height: 6; -fx-background-radius: 4; -fx-border-radius: 4;" />
-                                   </VBox>
-
-                                   <!-- Printed -->
-                                   <VBox spacing="4">
-                                          <HBox>
-                                                 <Label text="Printed"
-                                                        style="-fx-font-size: 12px; -fx-text-fill: #6b7280;" />
-                                                 <Region HBox.hgrow="ALWAYS" />
-                                                 <Label fx:id="lblPrintedCount" text="0"
-                                                        style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #10b981;" />
-                                          </HBox>
-                                          <ProgressBar fx:id="pbPrinted" progress="0"
-                                                 maxWidth="Infinity"
-                                                 style="-fx-accent: #10b981; -fx-pref-height: 6; -fx-background-radius: 4; -fx-border-radius: 4;" />
-                                   </VBox>
-
-                                   <!-- Cleared -->
-                                   <VBox spacing="4">
-                                          <HBox>
-                                                 <Label text="Cleared"
-                                                        style="-fx-font-size: 12px; -fx-text-fill: #6b7280;" />
-                                                 <Region HBox.hgrow="ALWAYS" />
-                                                 <Label fx:id="lblClearedCount" text="0"
-                                                        style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #2563eb;" />
-                                          </HBox>
-                                          <ProgressBar fx:id="pbCleared" progress="0"
-                                                 maxWidth="Infinity"
-                                                 style="-fx-accent: #2563eb; -fx-pref-height: 6; -fx-background-radius: 4; -fx-border-radius: 4;" />
-                                   </VBox>
-                            </VBox>
-
-                     </VBox>
-              </HBox>
-
-              <!-- Recent Invoices Row -->
-              <VBox spacing="16"
-                     style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
-
-                     <HBox alignment="CENTER_LEFT">
-                            <Label text="Recent Invoices"
-                                   style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
-                            <Region HBox.hgrow="ALWAYS" />
-                            <Button fx:id="btnViewAllInvoices" text="View All →"
-                                   style="-fx-background-color: transparent; -fx-text-fill: #2563eb; -fx-cursor: hand; -fx-font-size: 13px; -fx-font-weight: 600; -fx-border-color: transparent;" />
-                     </HBox>
-
-                     <TableView fx:id="tblRecentInvoices" prefHeight="200"
-                            style="-fx-background-color: transparent; -fx-background-radius: 8; -fx-border-color: #e5e7eb; -fx-border-radius: 8;">
-                            <columns>
-                                   <TableColumn fx:id="colInvoiceNo" text="Invoice #"
-                                          prefWidth="120" />
-                                   <TableColumn fx:id="colInvoiceClient" text="Client"
-                                          prefWidth="180" />
-                                   <TableColumn fx:id="colInvoiceAmount" text="Amount"
-                                          prefWidth="120" />
-                                   <TableColumn fx:id="colInvoiceDue" text="Due Date"
-                                          prefWidth="120" />
-                                   <TableColumn fx:id="colInvoiceStatus" text="Status"
-                                          prefWidth="110" />
-                            </columns>
-                            <placeholder>
-                                   <Label text="No recent invoices to display."
-                                          style="-fx-text-fill: #9ca3af; -fx-font-size: 13px;" />
-                            </placeholder>
-                     </TableView>
-              </VBox>
-
-       </VBox>
-</ScrollPane>
+                     </content>
+              </ScrollPane>
+       </center>
+</BorderPane>
