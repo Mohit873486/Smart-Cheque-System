@@ -81,7 +81,7 @@ public class DashboardController {
     // =========================
     // ROOT LAYOUT
     // =========================
-    @FXML private VBox dashboardRoot;
+    @FXML private BorderPane dashboardRoot;
     @FXML private HBox statsRow;
 
     private final ChequeService service = new ChequeService();

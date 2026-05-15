@@ -150,8 +150,7 @@
                  children to its own size, but only if their max allows it).
             -->
             <StackPane fx:id="contentPane"
-                VBox.vgrow="ALWAYS"
-                styleClass="content-area" />
+                VBox.vgrow="ALWAYS" />
         </VBox>
     </center>
 

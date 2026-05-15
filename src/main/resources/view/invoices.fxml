@@ -9,122 +9,122 @@
   HBox main content area missing maxHeight, table card missing maxHeight.
   All the same fixes applied here as in cheques.fxml.
 -->
-<VBox xmlns="http://javafx.com/javafx/17"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.chequeprint.controller.InvoiceController"
-      fx:id="rootPane"
-      styleClass="page-root"
-      maxWidth="Infinity"
-      maxHeight="Infinity"
-      spacing="0">
+<ScrollPane fitToWidth="true"
+    style="-fx-background: #f0f2f5; -fx-background-color: #f0f2f5;"
+    xmlns:fx="http://javafx.com/fxml/1"
+    fx:controller="com.chequeprint.controller.InvoiceController">
+    <VBox fx:id="rootPane" spacing="24"
+        style="-fx-background-color: #f0f2f5;">
 
-    <VBox spacing="20" VBox.vgrow="ALWAYS"
-          maxWidth="Infinity" maxHeight="Infinity"
-          style="-fx-padding: 24 24 24 24; -fx-background-color:#f1f5f9;">
+        <VBox spacing="20" VBox.vgrow="ALWAYS"
+            maxWidth="Infinity" maxHeight="Infinity"
+            style="-fx-padding: 24 24 24 24; -fx-background-color:#f1f5f9;">
 
-        <!-- Page Header -->
-        <HBox alignment="CENTER_LEFT" spacing="12">
-            <VBox spacing="4" HBox.hgrow="ALWAYS">
-                <Label text="🧾 Invoice Management" styleClass="page-title"/>
-                <Label text="Create and export professional invoices" styleClass="page-subtitle"/>
-            </VBox>
-            <Button text="+ New Invoice" styleClass="btn-primary" onAction="#onClear"/>
-        </HBox>
+            <!-- Page Header -->
+            <HBox alignment="CENTER_LEFT" spacing="12">
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="🧾 Invoice Management" styleClass="page-title" />
+                    <Label text="Create and export professional invoices" styleClass="page-subtitle" />
+                </VBox>
+                <Button text="+ New Invoice" styleClass="btn-primary" onAction="#onClear" />
+            </HBox>
 
-        <!-- Filter Bar -->
-        <HBox spacing="12" alignment="CENTER_LEFT" styleClass="card"
-              style="-fx-padding: 14 18 14 18;">
-            <Label text="🔍" style="-fx-font-size:14px; -fx-text-fill:#94a3b8;"/>
-            <TextField fx:id="searchField" promptText="Search by client or invoice no…"
-                       styleClass="filter-input" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-        </HBox>
+            <!-- Filter Bar -->
+            <HBox spacing="12" alignment="CENTER_LEFT" styleClass="card"
+                style="-fx-padding: 14 18 14 18;">
+                <Label text="🔍" style="-fx-font-size:14px; -fx-text-fill:#94a3b8;" />
+                <TextField fx:id="searchField" promptText="Search by client or invoice no…"
+                    styleClass="filter-input" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
+            </HBox>
 
-        <HBox spacing="20" VBox.vgrow="ALWAYS" maxHeight="Infinity">
+            <HBox spacing="20" VBox.vgrow="ALWAYS" maxHeight="Infinity">
 
-            <!-- Table Card -->
-            <VBox styleClass="card" HBox.hgrow="ALWAYS"
-                  maxWidth="Infinity" maxHeight="Infinity"
-                  spacing="14">
+                <!-- Table Card -->
+                <VBox styleClass="card" HBox.hgrow="ALWAYS"
+                    maxWidth="Infinity" maxHeight="Infinity"
+                    spacing="14">
 
-                <Label text="All Invoices" styleClass="section-title"/>
+                    <Label text="All Invoices" styleClass="section-title" />
 
-                <TableView fx:id="invoiceTable" styleClass="data-table"
-                           VBox.vgrow="ALWAYS" maxHeight="Infinity">
-                    <columnResizePolicy>
-                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
-                    </columnResizePolicy>
-                    <placeholder>
-                        <Label text="No invoices found. Click '+ New Invoice' to create one."
-                               styleClass="table-placeholder"/>
-                    </placeholder>
-                    <columns>
-                        <TableColumn fx:id="colInvoiceNo" text="INVOICE NO"  minWidth="110"/>
-                        <TableColumn fx:id="colClient"    text="CLIENT"       minWidth="150"/>
-                        <TableColumn fx:id="colAmount"    text="AMOUNT"       minWidth="110"/>
-                        <TableColumn fx:id="colIssueDate" text="ISSUE DATE"   minWidth="110"/>
-                        <TableColumn fx:id="colDueDate"   text="DUE DATE"     minWidth="110"/>
-                        <TableColumn fx:id="colStatus"    text="STATUS"       minWidth="90"/>
-                    </columns>
-                </TableView>
+                    <TableView fx:id="invoiceTable" styleClass="data-table"
+                        VBox.vgrow="ALWAYS" maxHeight="Infinity">
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                        </columnResizePolicy>
+                        <placeholder>
+                            <Label text="No invoices found. Click '+ New Invoice' to create one."
+                                styleClass="table-placeholder" />
+                        </placeholder>
+                        <columns>
+                            <TableColumn fx:id="colInvoiceNo" text="INVOICE NO" minWidth="110" />
+                            <TableColumn fx:id="colClient" text="CLIENT" minWidth="150" />
+                            <TableColumn fx:id="colAmount" text="AMOUNT" minWidth="110" />
+                            <TableColumn fx:id="colIssueDate" text="ISSUE DATE" minWidth="110" />
+                            <TableColumn fx:id="colDueDate" text="DUE DATE" minWidth="110" />
+                            <TableColumn fx:id="colStatus" text="STATUS" minWidth="90" />
+                        </columns>
+                    </TableView>
 
-                <HBox spacing="10">
-                    <Button text="📄  Export PDF" styleClass="btn-primary"   onAction="#onExportPdf"/>
-                    <Button text="🗑  Delete"      styleClass="btn-danger"    onAction="#onDelete"/>
-                    <Region HBox.hgrow="ALWAYS"/>
-                    <Label text="Click a row to edit"
-                           style="-fx-text-fill:#94a3b8; -fx-font-size:12px;"
-                           alignment="CENTER_RIGHT"/>
-                </HBox>
-            </VBox>
-
-            <!-- Form Panel -->
-            <VBox styleClass="card"
-                  spacing="16"
-                  minWidth="280" maxWidth="320"
-                  maxHeight="Infinity"
-                  HBox.hgrow="NEVER">
-
-                <Label fx:id="lblFormTitle" text="New Invoice"
-                       styleClass="form-title" maxWidth="Infinity"/>
-
-                <VBox spacing="6">
-                    <Label text="CLIENT NAME" styleClass="form-label"/>
-                    <TextField fx:id="fldClient" promptText="Enter client name"
-                               styleClass="form-input" maxWidth="Infinity"/>
+                    <HBox spacing="10">
+                        <Button text="📄  Export PDF" styleClass="btn-primary"
+                            onAction="#onExportPdf" />
+                        <Button text="🗑  Delete" styleClass="btn-danger" onAction="#onDelete" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Label text="Click a row to edit"
+                            style="-fx-text-fill:#94a3b8; -fx-font-size:12px;"
+                            alignment="CENTER_RIGHT" />
+                    </HBox>
                 </VBox>
 
-                <VBox spacing="6">
-                    <Label text="AMOUNT (₹)" styleClass="form-label"/>
-                    <TextField fx:id="fldAmount" promptText="0.00"
-                               styleClass="form-input" maxWidth="Infinity"/>
-                </VBox>
+                <!-- Form Panel -->
+                <VBox styleClass="card"
+                    spacing="16"
+                    minWidth="280" maxWidth="320"
+                    maxHeight="Infinity"
+                    HBox.hgrow="NEVER">
 
-                <VBox spacing="6">
-                    <Label text="ISSUE DATE" styleClass="form-label"/>
-                    <DatePicker fx:id="dateIssue" styleClass="form-date" maxWidth="Infinity"/>
-                </VBox>
+                    <Label fx:id="lblFormTitle" text="New Invoice"
+                        styleClass="form-title" maxWidth="Infinity" />
 
-                <VBox spacing="6">
-                    <Label text="DUE DATE" styleClass="form-label"/>
-                    <DatePicker fx:id="dateDue" styleClass="form-date" maxWidth="Infinity"/>
-                </VBox>
+                    <VBox spacing="6">
+                        <Label text="CLIENT NAME" styleClass="form-label" />
+                        <TextField fx:id="fldClient" promptText="Enter client name"
+                            styleClass="form-input" maxWidth="Infinity" />
+                    </VBox>
 
-                <VBox spacing="6">
-                    <Label text="NOTES" styleClass="form-label"/>
-                    <TextArea fx:id="fldNotes" promptText="Optional notes…"
-                              styleClass="form-input" prefRowCount="3"
-                              wrapText="true" maxWidth="Infinity"/>
-                </VBox>
+                    <VBox spacing="6">
+                        <Label text="AMOUNT (₹)" styleClass="form-label" />
+                        <TextField fx:id="fldAmount" promptText="0.00"
+                            styleClass="form-input" maxWidth="Infinity" />
+                    </VBox>
 
-                <Region VBox.vgrow="ALWAYS"/>
+                    <VBox spacing="6">
+                        <Label text="ISSUE DATE" styleClass="form-label" />
+                        <DatePicker fx:id="dateIssue" styleClass="form-date" maxWidth="Infinity" />
+                    </VBox>
 
-                <VBox spacing="8">
-                    <Button text="💾  Save Invoice"  styleClass="btn-primary"
-                            maxWidth="Infinity" onAction="#onSave"/>
-                    <Button text="✕  Clear Form"     styleClass="btn-secondary"
-                            maxWidth="Infinity" onAction="#onClear"/>
+                    <VBox spacing="6">
+                        <Label text="DUE DATE" styleClass="form-label" />
+                        <DatePicker fx:id="dateDue" styleClass="form-date" maxWidth="Infinity" />
+                    </VBox>
+
+                    <VBox spacing="6">
+                        <Label text="NOTES" styleClass="form-label" />
+                        <TextArea fx:id="fldNotes" promptText="Optional notes…"
+                            styleClass="form-input" prefRowCount="3"
+                            wrapText="true" maxWidth="Infinity" />
+                    </VBox>
+
+                    <Region VBox.vgrow="ALWAYS" />
+
+                    <VBox spacing="8">
+                        <Button text="💾  Save Invoice" styleClass="btn-primary"
+                            maxWidth="Infinity" onAction="#onSave" />
+                        <Button text="✕  Clear Form" styleClass="btn-secondary"
+                            maxWidth="Infinity" onAction="#onClear" />
+                    </VBox>
                 </VBox>
-            </VBox>
-        </HBox>
+            </HBox>
+        </VBox>
     </VBox>
-</VBox>
+</ScrollPane>

@@ -6,18 +6,15 @@
 <?import javafx.scene.text.*?>
 <?import javafx.scene.shape.*?>
 <BorderPane xmlns:fx="http://javafx.com/fxml/1"
-       fx:controller="com.chequeprint.controller.DashboardController">
+       fx:controller="com.chequeprint.controller.DashboardController"
+       fx:id="dashboardRoot"
+       maxWidth="Infinity" maxHeight="Infinity">
        <center>
-              <ScrollPane fitToWidth="true" fitToHeight="true"
-                     hbarPolicy="NEVER"
-                     vbarPolicy="AS_NEEDED"
-                     style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 0;">
+              <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+                     style="-fx-background: transparent; -fx-border-color: transparent;">
                      <content>
-                            <VBox spacing="24"
-                                   style="-fx-background-color: #f0f2f5;"
-                                   prefWidth="0"
-                                   minWidth="0"
-                                   maxWidth="Infinity">
+                            <VBox spacing="24" style="-fx-background-color:#f0f2f5;"
+                                   prefWidth="0" minWidth="0" maxWidth="Infinity">
                                    <padding>
                                           <Insets top="28" right="32" bottom="32" left="32" />
                                    </padding>
