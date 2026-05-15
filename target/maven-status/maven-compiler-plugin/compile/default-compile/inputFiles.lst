@@ -3,6 +3,7 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\Cheque
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\PrintService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\SettingsController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\ProfileController.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\dao\SettingDAO.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\dao\UserDAO.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\DashboardController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\InvoiceService.java
@@ -24,6 +25,7 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\config\AppCo
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\ChequeController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\dao\ChequeDAO.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\InvoiceController.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\Settings.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\User.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\UserService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\SupportController.java

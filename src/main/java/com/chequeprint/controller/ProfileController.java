@@ -40,7 +40,7 @@ public class ProfileController {
 
     @FXML
     private PasswordField pfCurrentPassword, pfNewPassword, pfConfirmPassword;
-a
+
     @FXML
     private Button btnSaveProfile, btnCancelProfile, btnSaveBusiness, btnChangePassword;
 
@@ -199,6 +199,7 @@ a
     // =========================
     @FXML
     private void onCancel() {
+        System.out.println("Cancel Clicked");
         loadProfile();
     }
 

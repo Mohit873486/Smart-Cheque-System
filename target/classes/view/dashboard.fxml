@@ -118,6 +118,7 @@
                                                         <Region HBox.hgrow="ALWAYS" />
                                                         <Button fx:id="btnViewAllCheques"
                                                                text="View All →"
+                                                               onAction="#onViewAllCheques"
                                                                style="-fx-background-color: transparent; -fx-text-fill: #2563eb; -fx-cursor: hand; -fx-font-size: 13px; -fx-font-weight: 600; -fx-border-color: transparent;" />
                                                  </HBox>
 
@@ -157,15 +158,18 @@
 
                                                         <Button fx:id="btnNewCheque"
                                                                text="+ New Cheque"
+                                                               onAction="#onNewCheque"
                                                                maxWidth="Infinity"
                                                                style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: 600; -fx-background-radius: 8; -fx-padding: 10 16; -fx-cursor: hand;" />
 
                                                         <Button fx:id="btnNewInvoice"
                                                                text="+ New Invoice"
+                                                               onAction="#onNewInvoice"
                                                                maxWidth="Infinity"
                                                                style="-fx-background-color: white; -fx-text-fill: #2563eb; -fx-font-size: 13px; -fx-font-weight: 600; -fx-background-radius: 8; -fx-padding: 10 16; -fx-cursor: hand; -fx-border-color: #2563eb; -fx-border-radius: 8;" />
 
                                                         <Button fx:id="btnAddBank" text="+ Add Bank"
+                                                               onAction="#onAddBank"
                                                                maxWidth="Infinity"
                                                                style="-fx-background-color: white; -fx-text-fill: #374151; -fx-font-size: 13px; -fx-font-weight: 600; -fx-background-radius: 8; -fx-padding: 10 16; -fx-cursor: hand; -fx-border-color: #d1d5db; -fx-border-radius: 8;" />
                                                  </VBox>
@@ -254,6 +258,7 @@
                                                  <Region HBox.hgrow="ALWAYS" />
                                                  <Button fx:id="btnViewAllInvoices"
                                                         text="View All →"
+                                                        onAction="#onViewAllInvoices"
                                                         style="-fx-background-color: transparent; -fx-text-fill: #2563eb; -fx-cursor: hand; -fx-font-size: 13px; -fx-font-weight: 600; -fx-border-color: transparent;" />
                                           </HBox>
 

@@ -608,3 +608,19 @@
     -fx-max-width: Infinity;
     -fx-max-height: Infinity;
 }
+
+/* Segmented progress bars used on dashboard Cheque Status */
+.segmented-bar {
+    -fx-alignment: center-left;
+    -fx-padding: 6 0 6 0;
+}
+.segmented-bar .segment {
+    -fx-background-color: rgba(0,0,0,0.06);
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-pref-height: 8px;
+    -fx-min-height: 6px;
+}
+.segmented-bar .segment:hover {
+    -fx-opacity: 0.95;
+}

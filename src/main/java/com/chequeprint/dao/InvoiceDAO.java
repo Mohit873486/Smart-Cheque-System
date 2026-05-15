@@ -27,13 +27,12 @@ public class InvoiceDAO {
         List<Invoice> list = new ArrayList<>();
         String sql = "SELECT * FROM invoices ORDER BY created_at DESC";
         try (Statement st = AppConfig.getConnection().createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
-            while (rs.next()) list.add(mapRow(rs));
+                ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next())
+                list.add(mapRow(rs));
         }
         return list;
     }
-
-    
 
     public boolean update(Invoice inv) throws SQLException {
         String sql = "UPDATE invoices SET client_name=?,amount=?,issue_date=?,due_date=?,status=?,notes=? WHERE id=?";
@@ -62,10 +61,24 @@ public class InvoiceDAO {
         inv.setInvoiceNo(rs.getString("invoice_no"));
         inv.setClientName(rs.getString("client_name"));
         inv.setAmount(rs.getBigDecimal("amount"));
-        Date id = rs.getDate("issue_date"); if (id != null) inv.setIssueDate(id.toLocalDate());
-        Date dd = rs.getDate("due_date");   if (dd != null) inv.setDueDate(dd.toLocalDate());
+        Date id = rs.getDate("issue_date");
+        if (id != null)
+            inv.setIssueDate(id.toLocalDate());
+        Date dd = rs.getDate("due_date");
+        if (dd != null)
+            inv.setDueDate(dd.toLocalDate());
         inv.setStatus(Invoice.Status.valueOf(rs.getString("status")));
         inv.setNotes(rs.getString("notes"));
         return inv;
+    }
+
+    public int countTotal() throws SQLException {
+        String sql = "SELECT COUNT(*) FROM invoices";
+        try (Statement st = AppConfig.getConnection().createStatement();
+                ResultSet rs = st.executeQuery(sql)) {
+            if (rs.next())
+                return rs.getInt(1);
+        }
+        return 0;
     }
 }

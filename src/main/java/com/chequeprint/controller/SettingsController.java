@@ -1,5 +1,7 @@
 package com.chequeprint.controller;
 
+import com.chequeprint.dao.SettingDAO;
+import com.chequeprint.model.Settings;
 import com.chequeprint.util.FxUtils;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -167,7 +169,8 @@ public class SettingsController {
             cbAutoGST.setSelected(true);
 
             // Appearance
-            if (rbLight != null) rbLight.setSelected(true);
+            if (rbLight != null)
+                rbLight.setSelected(true);
 
             System.out.println("[Settings] Default settings loaded");
         } catch (Exception e) {
@@ -182,34 +185,22 @@ public class SettingsController {
     @FXML
     private void onSaveSettings() {
         try {
-            // Validate inputs
-            if (tfAppName.getText().trim().isEmpty()) {
-                showAlert(Alert.AlertType.WARNING, "Validation Error", "Application name cannot be empty");
-                return;
-            }
-
-            // Gather all settings
             String appName = tfAppName.getText().trim();
-            String currency = cbCurrency.getValue() != null ? cbCurrency.getValue() : "₹ Indian Rupee (INR)";
-            String dateFormat = cbDateFormat.getValue() != null ? cbDateFormat.getValue() : "dd/MM/yyyy";
-            String language = cbLanguage.getValue() != null ? cbLanguage.getValue() : "English (India)";
-
+            String currency = cbCurrency.getValue();
+            String dateFormat = cbDateFormat.getValue();
+            String language = cbLanguage.getValue();
             String chequePrefix = tfChequePrefix.getText().trim();
-            boolean autoPrint = cbAutoPrint.isSelected();
-            boolean amountConfirm = cbAmountConfirm.isSelected();
-
             String invoicePrefix = tfInvoicePrefix.getText().trim();
-            String paymentTerms = cbPaymentTerms.getValue() != null ? cbPaymentTerms.getValue() : "Net 30";
-            boolean autoGST = cbAutoGST.isSelected();
-
             String theme = rbDark.isSelected() ? "dark" : "light";
 
-            // TODO: Save to database/preferences
-            // SettingsService.saveSettings(new Settings(appName, currency, dateFormat,
-            // language, ...))
+            Settings s = new Settings(
+                    appName, currency, dateFormat,
+                    language, chequePrefix,
+                    invoicePrefix, theme);
 
-            System.out.println("[Settings] Saving: AppName=" + appName + ", Currency=" + currency +
-                    ", Theme=" + theme + ", AutoPrint=" + autoPrint + ", AutoGST=" + autoGST);
+            // 🔥 DAO CALL
+            SettingDAO dao = new SettingDAO();
+            dao.saveSettings(s);
 
             showAlert(Alert.AlertType.INFORMATION, "Success", "Settings saved successfully!");
 
@@ -218,7 +209,6 @@ public class SettingsController {
             e.printStackTrace();
         }
     }
-
     // ========================================
     // HANDLER: RESET TO DEFAULTS
     // ========================================

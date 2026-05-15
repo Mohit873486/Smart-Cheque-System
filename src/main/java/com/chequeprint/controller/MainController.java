@@ -132,6 +132,34 @@ public class MainController {
     setActiveNav(navSupport);
   }
 
+  public void showDashboard() {
+    onDashboard();
+  }
+
+  public void showCheques() {
+    onCheques();
+  }
+
+  public void showInvoices() {
+    onInvoices();
+  }
+
+  public void showBanks() {
+    onBanks();
+  }
+
+  public void showProfile() {
+    onProfile();
+  }
+
+  public void showSettings() {
+    onSettings();
+  }
+
+  public void showSupport() {
+    onSupport();
+  }
+
   // ================= MAIN NAVIGATION (ADVANCED) =================
 
   public void navigate(String page) {

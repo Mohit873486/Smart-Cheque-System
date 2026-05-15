@@ -11,9 +11,14 @@ import java.util.List;
 public class InvoiceService {
 
     private final InvoiceDAO dao = new InvoiceDAO();
-    
 
-    public List<Invoice> getAll() throws SQLException { return dao.findAll(); }
+    public int getTotalInvoices() throws SQLException {
+        return dao.countTotal();
+    }
+
+    public List<Invoice> getAll() throws SQLException {
+        return dao.findAll();
+    }
 
     public boolean save(Invoice inv) throws SQLException {
         validate(inv);
@@ -27,12 +32,15 @@ public class InvoiceService {
         return dao.update(inv);
     }
 
-    public boolean delete(int id) throws SQLException { return dao.delete(id); }
+    public boolean delete(int id) throws SQLException {
+        return dao.delete(id);
+    }
 
     public boolean markPaid(int id) throws SQLException {
         List<Invoice> all = dao.findAll();
         Invoice inv = all.stream().filter(i -> i.getId() == id).findFirst().orElse(null);
-        if (inv == null) return false;
+        if (inv == null)
+            return false;
         inv.setStatus(Invoice.Status.Paid);
         return dao.update(inv);
     }
@@ -42,7 +50,9 @@ public class InvoiceService {
             throw new IllegalArgumentException("Client name is required.");
         if (inv.getAmount() == null || inv.getAmount().compareTo(BigDecimal.ZERO) <= 0)
             throw new IllegalArgumentException("Invoice amount must be greater than zero.");
-        if (inv.getIssueDate() == null) inv.setIssueDate(LocalDate.now());
-        if (inv.getDueDate() == null)   inv.setDueDate(LocalDate.now().plusDays(30));
+        if (inv.getIssueDate() == null)
+            inv.setIssueDate(LocalDate.now());
+        if (inv.getDueDate() == null)
+            inv.setDueDate(LocalDate.now().plusDays(30));
     }
 }
