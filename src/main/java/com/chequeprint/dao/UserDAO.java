@@ -48,19 +48,27 @@ public class UserDAO {
 
     public boolean insertOrUpdate(User u) throws SQLException {
         if (u.getId() == 0) {
+
             String sql = "INSERT INTO users (name,email,phone,company,address,password) VALUES(?,?,?,?,?,?)";
+
             try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(sql)) {
+
                 ps.setString(1, u.getName());
                 ps.setString(2, u.getEmail());
                 ps.setString(3, u.getPhone());
                 ps.setString(4, u.getCompany());
                 ps.setString(5, u.getAddress());
                 ps.setString(6, u.getPassword());
+
                 return ps.executeUpdate() > 0;
             }
-        } else {
+
+        } else if (u.getPassword() != null && !u.getPassword().isEmpty()) {
+
             String sql = "UPDATE users SET name=?,email=?,phone=?,company=?,address=?,password=? WHERE id=?";
+
             try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(sql)) {
+
                 ps.setString(1, u.getName());
                 ps.setString(2, u.getEmail());
                 ps.setString(3, u.getPhone());
@@ -68,8 +76,26 @@ public class UserDAO {
                 ps.setString(5, u.getAddress());
                 ps.setString(6, u.getPassword());
                 ps.setInt(7, u.getId());
+
+                return ps.executeUpdate() > 0;
+            }
+
+        } else {
+
+            String sql = "UPDATE users SET name=?,email=?,phone=?,company=?,address=? WHERE id=?";
+
+            try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(sql)) {
+
+                ps.setString(1, u.getName());
+                ps.setString(2, u.getEmail());
+                ps.setString(3, u.getPhone());
+                ps.setString(4, u.getCompany());
+                ps.setString(5, u.getAddress());
+                ps.setInt(6, u.getId());
+
                 return ps.executeUpdate() > 0;
             }
         }
+
     }
 }

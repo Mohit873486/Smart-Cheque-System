@@ -24,40 +24,59 @@ import javafx.scene.layout.VBox;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
+
 public class InvoiceController {
 
     // ── Table columns ────────────────────────────────────────────────
-    @FXML private TableView<Invoice>            invoiceTable;
-    @FXML private TableColumn<Invoice, String>  colInvoiceNo;
-    @FXML private TableColumn<Invoice, String>  colClient;
-    @FXML private TableColumn<Invoice, String>  colAmount;
-    @FXML private TableColumn<Invoice, String>  colIssueDate;
-    @FXML private TableColumn<Invoice, String>  colDueDate;
-    @FXML private TableColumn<Invoice, String>  colStatus;
+    @FXML
+    private TableView<Invoice> invoiceTable;
+    @FXML
+    private TableColumn<Invoice, String> colInvoiceNo;
+    @FXML
+    private TableColumn<Invoice, String> colClient;
+    @FXML
+    private TableColumn<Invoice, String> colAmount;
+    @FXML
+    private TableColumn<Invoice, String> colIssueDate;
+    @FXML
+    private TableColumn<Invoice, String> colDueDate;
+    @FXML
+    private TableColumn<Invoice, String> colStatus;
 
     // ── Form fields ──────────────────────────────────────────────────
-    @FXML private TextField  fldClient;
-    @FXML private TextField  fldAmount;
-    @FXML private DatePicker dateIssue;
-    @FXML private DatePicker dateDue;
-    @FXML private TextArea   fldNotes;
-    @FXML private Label      lblFormTitle;
-    @FXML private TextField  searchField;
-    @FXML private VBox       rootPane;
+    @FXML
+    private TextField fldClient;
+    @FXML
+    private TextField fldAmount;
+    @FXML
+    private DatePicker dateIssue;
+    @FXML
+    private DatePicker dateDue;
+    @FXML
+    private TextArea fldNotes;
+    @FXML
+    private Label lblFormTitle;
+    @FXML
+    private TextField searchField;
+    @FXML
+    private VBox rootPane;
 
     // ── Injected by MainController ───────────────────────────────────
     private MainController mainController;
 
     // ── State ────────────────────────────────────────────────────────
-    private final InvoiceService              service = new InvoiceService();
-    private final ObservableList<Invoice>     data    = FXCollections.observableArrayList();
-    private       Invoice                     selectedInvoice;
+    private final InvoiceService service = new InvoiceService();
+    private final ObservableList<Invoice> data = FXCollections.observableArrayList();
+    private Invoice selectedInvoice;
 
     // ─────────────────────────────────────────────────────────────────
     @FXML
     public void initialize() {
         setupTable();
         loadData();
+        setupSearchFilter();
         dateIssue.setValue(LocalDate.now());
         dateDue.setValue(LocalDate.now().plusDays(30));
         FxUtils.animateIn(rootPane, 0);
@@ -68,26 +87,25 @@ public class InvoiceController {
         colInvoiceNo.setCellValueFactory(new PropertyValueFactory<>("invoiceNo"));
         colClient.setCellValueFactory(new PropertyValueFactory<>("clientName"));
 
-        colAmount.setCellValueFactory(c ->
-            new SimpleStringProperty(
+        colAmount.setCellValueFactory(c -> new SimpleStringProperty(
                 c.getValue().getAmount() != null
-                    ? "₹" + String.format("%,.2f", c.getValue().getAmount())
-                    : "₹0.00"));
+                        ? "₹" + String.format("%,.2f", c.getValue().getAmount())
+                        : "₹0.00"));
 
-        colIssueDate.setCellValueFactory(c ->
-            new SimpleStringProperty(
+        colIssueDate.setCellValueFactory(c -> new SimpleStringProperty(
                 c.getValue().getIssueDate() != null
-                    ? c.getValue().getIssueDate().toString() : ""));
+                        ? c.getValue().getIssueDate().toString()
+                        : ""));
 
-        colDueDate.setCellValueFactory(c ->
-            new SimpleStringProperty(
+        colDueDate.setCellValueFactory(c -> new SimpleStringProperty(
                 c.getValue().getDueDate() != null
-                    ? c.getValue().getDueDate().toString() : ""));
+                        ? c.getValue().getDueDate().toString()
+                        : ""));
 
-        colStatus.setCellValueFactory(c ->
-            new SimpleStringProperty(
+        colStatus.setCellValueFactory(c -> new SimpleStringProperty(
                 c.getValue().getStatus() != null
-                    ? c.getValue().getStatus().name() : ""));
+                        ? c.getValue().getStatus().name()
+                        : ""));
 
         // Color-code status column
         colStatus.setCellFactory(col -> new TableCell<>() {
@@ -101,11 +119,11 @@ public class InvoiceController {
                 }
                 setText(item);
                 switch (item) {
-                    case "Paid"      -> setStyle("-fx-text-fill:#065f46;-fx-font-weight:bold;");
-                    case "Unpaid"    -> setStyle("-fx-text-fill:#991b1b;-fx-font-weight:bold;");
-                    case "Partial"   -> setStyle("-fx-text-fill:#1e40af;-fx-font-weight:bold;");
+                    case "Paid" -> setStyle("-fx-text-fill:#065f46;-fx-font-weight:bold;");
+                    case "Unpaid" -> setStyle("-fx-text-fill:#991b1b;-fx-font-weight:bold;");
+                    case "Partial" -> setStyle("-fx-text-fill:#1e40af;-fx-font-weight:bold;");
                     case "Cancelled" -> setStyle("-fx-text-fill:#475569;");
-                    default          -> setStyle("");
+                    default -> setStyle("");
                 }
             }
         });
@@ -113,9 +131,10 @@ public class InvoiceController {
         invoiceTable.setItems(data);
 
         invoiceTable.getSelectionModel().selectedItemProperty()
-            .addListener((obs, old, sel) -> {
-                if (sel != null) populateForm(sel);
-            });
+                .addListener((obs, old, sel) -> {
+                    if (sel != null)
+                        populateForm(sel);
+                });
     }
 
     // ── Load data ────────────────────────────────────────────────────
@@ -125,10 +144,44 @@ public class InvoiceController {
                 var list = service.getAll();
                 Platform.runLater(() -> data.setAll(list));
             } catch (Exception e) {
-                Platform.runLater(() ->
-                    showAlert("DB Error", e.getMessage(), Alert.AlertType.ERROR));
+                Platform.runLater(() -> showAlert("DB Error", e.getMessage(), Alert.AlertType.ERROR));
             }
         }, "load-invoices").start();
+    }
+
+    // Serch Filter
+    private void setupSearchFilter() {
+
+        FilteredList<Invoice> filteredData = new FilteredList<>(data, p -> true);
+
+        searchField.textProperty().addListener((obs, oldVal, newVal) -> {
+            filteredData.setPredicate(invoice -> {
+
+                if (newVal == null || newVal.isEmpty()) {
+                    return true;
+                }
+
+                String keyword = newVal.toLowerCase();
+
+                // search logic (client + invoice no)
+                if (invoice.getClientName() != null &&
+                        invoice.getClientName().toLowerCase().contains(keyword)) {
+                    return true;
+                }
+
+                if (invoice.getInvoiceNo() != null &&
+                        invoice.getInvoiceNo().toLowerCase().contains(keyword)) {
+                    return true;
+                }
+
+                return false;
+            });
+        });
+
+        SortedList<Invoice> sortedData = new SortedList<>(filteredData);
+        sortedData.comparatorProperty().bind(invoiceTable.comparatorProperty());
+
+        invoiceTable.setItems(sortedData);
     }
 
     // ── Save / Update ────────────────────────────────────────────────
@@ -140,7 +193,7 @@ public class InvoiceController {
         if (client.isEmpty() || amtStr.isEmpty()) {
             FxUtils.shake(fldClient);
             showAlert("Validation", "Client name and amount are required.",
-                Alert.AlertType.WARNING);
+                    Alert.AlertType.WARNING);
             return;
         }
 
@@ -150,25 +203,25 @@ public class InvoiceController {
         } catch (NumberFormatException e) {
             FxUtils.shake(fldAmount);
             showAlert("Validation", "Enter a valid numeric amount (e.g. 5000.00).",
-                Alert.AlertType.WARNING);
+                    Alert.AlertType.WARNING);
             return;
         }
 
         if (amt.compareTo(BigDecimal.ZERO) <= 0) {
             FxUtils.shake(fldAmount);
             showAlert("Validation", "Amount must be greater than zero.",
-                Alert.AlertType.WARNING);
+                    Alert.AlertType.WARNING);
             return;
         }
 
         try {
             if (selectedInvoice == null) {
                 Invoice inv = new Invoice(null, client, amt,
-                    dateIssue.getValue(), dateDue.getValue());
+                        dateIssue.getValue(), dateDue.getValue());
                 inv.setNotes(fldNotes.getText());
                 service.save(inv);
                 showAlert("Success", "Invoice saved successfully.",
-                    Alert.AlertType.INFORMATION);
+                        Alert.AlertType.INFORMATION);
             } else {
                 selectedInvoice.setClientName(client);
                 selectedInvoice.setAmount(amt);
@@ -191,18 +244,18 @@ public class InvoiceController {
         Invoice sel = invoiceTable.getSelectionModel().getSelectedItem();
         if (sel == null) {
             showAlert("No Selection", "Please select an invoice to export.",
-                Alert.AlertType.WARNING);
+                    Alert.AlertType.WARNING);
             return;
         }
         try {
             String desktopPath = System.getProperty("user.home")
-                               + java.io.File.separator + "Desktop";
+                    + java.io.File.separator + "Desktop";
 
             String savedPath = JasperPrintUtil.exportInvoicePdf(sel, desktopPath);
 
             showAlert("PDF Exported",
-                "Invoice saved to:\n" + savedPath,
-                Alert.AlertType.INFORMATION);
+                    "Invoice saved to:\n" + savedPath,
+                    Alert.AlertType.INFORMATION);
         } catch (Exception e) {
             showAlert("Export Error", e.getMessage(), Alert.AlertType.ERROR);
         }
@@ -214,12 +267,12 @@ public class InvoiceController {
         Invoice sel = invoiceTable.getSelectionModel().getSelectedItem();
         if (sel == null) {
             showAlert("No Selection", "Please select an invoice to delete.",
-                Alert.AlertType.WARNING);
+                    Alert.AlertType.WARNING);
             return;
         }
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-            "Delete invoice " + sel.getInvoiceNo() + "?",
-            ButtonType.YES, ButtonType.NO);
+                "Delete invoice " + sel.getInvoiceNo() + "?",
+                ButtonType.YES, ButtonType.NO);
         confirm.setTitle("Confirm Delete");
         confirm.setHeaderText(null);
         confirm.showAndWait().ifPresent(btn -> {
@@ -273,4 +326,5 @@ public class InvoiceController {
     public void setMainController(MainController mc) {
         this.mainController = mc;
     }
+
 }

@@ -13,25 +13,36 @@ public class ProfileController {
     // =========================
     // OLD PROFILE FIELDS
     // =========================
-    @FXML private TextField fldName, fldEmail, fldPhone, fldCompany;
-    @FXML private TextArea fldAddress;
-    @FXML private Label lblInitials;
-    @FXML private VBox rootPane;
+    @FXML
+    private TextField fldName, fldEmail, fldPhone, fldCompany;
+    @FXML
+    private TextArea fldAddress;
+    @FXML
+    private Label lblInitials;
+    @FXML
+    private VBox rootPane;
 
     // =========================
     // NEW UI FIELDS (MERGED)
     // =========================
-    @FXML private Label lblAvatarInitials, lblProfileName, lblProfileRole;
+    @FXML
+    private Label lblAvatarInitials, lblProfileName, lblProfileRole;
 
-    @FXML private Label lblStatCheques, lblStatInvoices, lblStatBanks;
+    @FXML
+    private Label lblStatCheques, lblStatInvoices, lblStatBanks;
 
-    @FXML private TextField tfFirstName, tfLastName, tfEmail, tfPhone, tfRole;
-    @FXML private TextField tfCompany, tfGST;
-    @FXML private TextArea taAddress;
+    @FXML
+    private TextField tfFirstName, tfLastName, tfEmail, tfPhone, tfRole;
+    @FXML
+    private TextField tfCompany, tfGST;
+    @FXML
+    private TextArea taAddress;
 
-    @FXML private PasswordField pfCurrentPassword, pfNewPassword, pfConfirmPassword;
-
-    @FXML private Button btnSaveProfile, btnCancelProfile, btnSaveBusiness, btnChangePassword;
+    @FXML
+    private PasswordField pfCurrentPassword, pfNewPassword, pfConfirmPassword;
+a
+    @FXML
+    private Button btnSaveProfile, btnCancelProfile, btnSaveBusiness, btnChangePassword;
 
     private final UserService userService = new UserService();
     private User user;
@@ -44,10 +55,10 @@ public class ProfileController {
     @FXML
     public void initialize() {
         if (rootPane != null) {
-        FxUtils.animateIn(rootPane, 0);
-    }
+            FxUtils.animateIn(rootPane, 0);
+        }
 
-    loadProfile();
+        loadProfile();
     }
 
     // =========================
@@ -86,21 +97,23 @@ public class ProfileController {
                         // =========================
                         String initials = UserService.getInitials(user.getName());
 
-                        if (lblInitials != null) lblInitials.setText(initials);
-                        if (lblAvatarInitials != null) lblAvatarInitials.setText(initials);
-                        if (lblProfileName != null) lblProfileName.setText(user.getName());
+                        if (lblInitials != null)
+                            lblInitials.setText(initials);
+                        if (lblAvatarInitials != null)
+                            lblAvatarInitials.setText(initials);
+                        if (lblProfileName != null)
+                            lblProfileName.setText(user.getName());
 
                         // default role (if not in DB)
-                        if (lblProfileRole != null) lblProfileRole.setText("User");
+                        if (lblProfileRole != null)
+                            lblProfileRole.setText("User");
 
                     });
                 }
 
             } catch (Exception e) {
-                Platform.runLater(() ->
-                        new Alert(Alert.AlertType.ERROR,
-                                "Could not load profile: " + e.getMessage()).show()
-                );
+                Platform.runLater(() -> new Alert(Alert.AlertType.ERROR,
+                        "Could not load profile: " + e.getMessage()).show());
             }
         }, "load-profile").start();
     }
@@ -111,7 +124,8 @@ public class ProfileController {
     @FXML
     private void onSave() {
         try {
-            if (user == null) user = new User();
+            if (user == null)
+                user = new User();
 
             String fullName = tfFirstName.getText().trim() + " " + tfLastName.getText().trim();
 
@@ -194,34 +208,44 @@ public class ProfileController {
     private void updateUIAfterSave() {
         String initials = UserService.getInitials(user.getName());
 
-        if (lblInitials != null) lblInitials.setText(initials);
-        if (lblAvatarInitials != null) lblAvatarInitials.setText(initials);
-        if (lblProfileName != null) lblProfileName.setText(user.getName());
+        if (lblInitials != null)
+            lblInitials.setText(initials);
+        if (lblAvatarInitials != null)
+            lblAvatarInitials.setText(initials);
+        if (lblProfileName != null)
+            lblProfileName.setText(user.getName());
     }
 
     private void set(TextField tf, String value) {
-        if (tf != null) tf.setText(value != null ? value : "");
+        if (tf != null)
+            tf.setText(value != null ? value : "");
     }
 
     private void set(TextArea ta, String value) {
-        if (ta != null) ta.setText(value != null ? value : "");
+        if (ta != null)
+            ta.setText(value != null ? value : "");
     }
 
     private String get(TextField primary, TextField fallback) {
-        if (primary != null && !primary.getText().isEmpty()) return primary.getText().trim();
-        if (fallback != null) return fallback.getText().trim();
+        if (primary != null && !primary.getText().isEmpty())
+            return primary.getText().trim();
+        if (fallback != null)
+            return fallback.getText().trim();
         return "";
     }
 
     private String get(TextArea primary, TextArea fallback) {
-        if (primary != null && !primary.getText().isEmpty()) return primary.getText().trim();
-        if (fallback != null) return fallback.getText().trim();
+        if (primary != null && !primary.getText().isEmpty())
+            return primary.getText().trim();
+        if (fallback != null)
+            return fallback.getText().trim();
         return "";
     }
 
     private String[] splitName(String fullName) {
-        if (fullName == null) return new String[]{"", ""};
+        if (fullName == null)
+            return new String[] { "", "" };
         String[] parts = fullName.trim().split(" ", 2);
-        return parts.length == 2 ? parts : new String[]{parts[0], ""};
+        return parts.length == 2 ? parts : new String[] { parts[0], "" };
     }
 }
