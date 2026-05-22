@@ -233,6 +233,12 @@ public class InvoiceController {
             }
             clearForm();
             loadData();
+            // Notify dashboard (if loaded) to reload its metrics and recent tables
+            if (mainController != null) {
+                Object dc = mainController.getController("dashboard");
+                if (dc instanceof DashboardController)
+                    ((DashboardController) dc).reload();
+            }
         } catch (Exception e) {
             showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
         }
@@ -281,6 +287,12 @@ public class InvoiceController {
                     service.delete(sel.getId());
                     clearForm();
                     loadData();
+                    if (mainController != null) {
+                        Object dc = mainController.getController("dashboard");
+                        if (dc instanceof DashboardController)
+                            ((DashboardController) dc).reload();
+                    }
+
                 } catch (Exception e) {
                     showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
                 }

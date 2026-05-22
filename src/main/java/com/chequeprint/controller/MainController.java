@@ -58,6 +58,9 @@ public class MainController {
     }
   };
 
+  // Keep a reference to loaded controllers so other pages can be notified
+  private final Map<String, Object> controllerMap = new HashMap<>();
+
   // Titles
   private final Map<String, String> titleMap = new HashMap<>() {
     {
@@ -160,6 +163,13 @@ public class MainController {
     onSupport();
   }
 
+  /**
+   * Returns the controller instance for a cached page, or null if not loaded.
+   */
+  public Object getController(String page) {
+    return controllerMap.get(page);
+  }
+
   // ================= MAIN NAVIGATION (ADVANCED) =================
 
   public void navigate(String page) {
@@ -197,6 +207,8 @@ public class MainController {
 
         // store in cache
         pageCache.put(page, view);
+        // also keep controller reference for cross-page notifications
+        controllerMap.put(page, ctrl);
       }
 
       Node current = contentPane.getChildren().isEmpty()

@@ -24,48 +24,66 @@ import java.util.List;
  * ChequeController — manages Cheque CRUD, filtering, and printing.
  *
  * Fixes applied vs original:
- *  • bankNameToId lookup now falls back correctly when a bank isn't in the map.
- *  • onPrint() uses PrintService (not raw JasperPrintUtil) for cleaner separation.
- *  • loadBanksIntoCombo() properly handles empty DB — won't NPE on getItems().get(0).
- *  • applyFilter() is null-safe for bankName.
- *  • clearForm() safely checks combo list before calling getValue().
+ * • bankNameToId lookup now falls back correctly when a bank isn't in the map.
+ * • onPrint() uses PrintService (not raw JasperPrintUtil) for cleaner
+ * separation.
+ * • loadBanksIntoCombo() properly handles empty DB — won't NPE on
+ * getItems().get(0).
+ * • applyFilter() is null-safe for bankName.
+ * • clearForm() safely checks combo list before calling getValue().
  */
 public class ChequeController {
 
     // ── Table ──
-    @FXML private TableView<Cheque>           chequeTable;
-    @FXML private TableColumn<Cheque, String> colChequeNo;
-    @FXML private TableColumn<Cheque, String> colPayee;
-    @FXML private TableColumn<Cheque, String> colAmount;
-    @FXML private TableColumn<Cheque, String> colBank;
-    @FXML private TableColumn<Cheque, String> colDate;
-    @FXML private TableColumn<Cheque, String> colStatus;
+    @FXML
+    private TableView<Cheque> chequeTable;
+    @FXML
+    private TableColumn<Cheque, String> colChequeNo;
+    @FXML
+    private TableColumn<Cheque, String> colPayee;
+    @FXML
+    private TableColumn<Cheque, String> colAmount;
+    @FXML
+    private TableColumn<Cheque, String> colBank;
+    @FXML
+    private TableColumn<Cheque, String> colDate;
+    @FXML
+    private TableColumn<Cheque, String> colStatus;
 
     // ── Form ──
-    @FXML private TextField    fldPayee;
-    @FXML private TextField    fldAmount;
-    @FXML private ComboBox<String> cmbBank;
-    @FXML private DatePicker   datePicker;
-    @FXML private Label        lblFormTitle;
-    @FXML private VBox         formPanel;
+    @FXML
+    private TextField fldPayee;
+    @FXML
+    private TextField fldAmount;
+    @FXML
+    private ComboBox<String> cmbBank;
+    @FXML
+    private DatePicker datePicker;
+    @FXML
+    private Label lblFormTitle;
+    @FXML
+    private VBox formPanel;
 
     // ── Filters ──
-    @FXML private TextField        searchField;
-    @FXML private ComboBox<String> filterStatus;
+    @FXML
+    private TextField searchField;
+    @FXML
+    private ComboBox<String> filterStatus;
 
     // ── Root ──
-    @FXML private VBox rootPane;
+    @FXML
+    private VBox rootPane;
 
     // ── State ──
     private MainController mainController;
 
     private final ChequeService chequeService = new ChequeService();
-    private final PrintService  printService  = new PrintService();
-    private final BankDAO       bankDAO       = new BankDAO();
+    private final PrintService printService = new PrintService();
+    private final BankDAO bankDAO = new BankDAO();
 
-    private final ObservableList<Cheque> data     = FXCollections.observableArrayList();
-    private FilteredList<Cheque>         filtered;
-    private Cheque                       selectedCheque;
+    private final ObservableList<Cheque> data = FXCollections.observableArrayList();
+    private FilteredList<Cheque> filtered;
+    private Cheque selectedCheque;
 
     /** Maps displayed bank name → bank_id; populated from DB. */
     private final java.util.Map<String, Integer> bankNameToId = new java.util.LinkedHashMap<>();
@@ -84,33 +102,36 @@ public class ChequeController {
     // ── Table setup ──────────────────────────────────────────────────
     private void setupTable() {
         colChequeNo.setCellValueFactory(new PropertyValueFactory<>("chequeNo"));
-        colPayee   .setCellValueFactory(new PropertyValueFactory<>("payeeName"));
-        colBank    .setCellValueFactory(new PropertyValueFactory<>("bankName"));
+        colPayee.setCellValueFactory(new PropertyValueFactory<>("payeeName"));
+        colBank.setCellValueFactory(new PropertyValueFactory<>("bankName"));
 
         colAmount.setCellValueFactory(c -> new SimpleStringProperty(
-            c.getValue().getAmount() != null
-                ? "₹" + String.format("%,.2f", c.getValue().getAmount())
-                : "₹0.00"));
+                c.getValue().getAmount() != null
+                        ? "₹" + String.format("%,.2f", c.getValue().getAmount())
+                        : "₹0.00"));
 
         colDate.setCellValueFactory(c -> {
             LocalDate d = c.getValue().getIssueDate();
             return new SimpleStringProperty(d != null ? d.toString() : "");
         });
 
-        colStatus.setCellValueFactory(c ->
-            new SimpleStringProperty(c.getValue().getStatus().name()));
+        colStatus.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getStatus().name()));
 
         // Color-code status column
         colStatus.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) { setText(null); setStyle(""); return; }
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
                 setText(item);
                 setStyle(switch (item) {
-                    case "Printed"   -> "-fx-text-fill:#065f46;-fx-font-weight:bold;";
-                    case "Pending"   -> "-fx-text-fill:#92400e;-fx-font-weight:bold;";
-                    case "Draft"     -> "-fx-text-fill:#475569;-fx-font-weight:bold;";
+                    case "Printed" -> "-fx-text-fill:#065f46;-fx-font-weight:bold;";
+                    case "Pending" -> "-fx-text-fill:#92400e;-fx-font-weight:bold;";
+                    case "Draft" -> "-fx-text-fill:#475569;-fx-font-weight:bold;";
                     case "Cancelled" -> "-fx-text-fill:#991b1b;-fx-font-weight:bold;";
                     default -> "";
                 });
@@ -118,34 +139,37 @@ public class ChequeController {
         });
 
         chequeTable.getSelectionModel().selectedItemProperty()
-            .addListener((obs, old, sel) -> { if (sel != null) populateForm(sel); });
+                .addListener((obs, old, sel) -> {
+                    if (sel != null)
+                        populateForm(sel);
+                });
     }
 
     // ── Filters ─────────────────────────────────────────────────────
     private void setupFilters() {
         filterStatus.setItems(FXCollections.observableArrayList(
-            "All", "Draft", "Pending", "Printed", "Cancelled"));
+                "All", "Draft", "Pending", "Printed", "Cancelled"));
         filterStatus.setValue("All");
 
         filtered = new FilteredList<>(data, p -> true);
         chequeTable.setItems(filtered);
 
-        searchField .textProperty() .addListener((obs, o, v) -> applyFilter());
+        searchField.textProperty().addListener((obs, o, v) -> applyFilter());
         filterStatus.valueProperty().addListener((obs, o, v) -> applyFilter());
     }
 
     private void applyFilter() {
         String search = searchField.getText() == null ? ""
-                        : searchField.getText().toLowerCase().trim();
+                : searchField.getText().toLowerCase().trim();
         String status = filterStatus.getValue();
 
         filtered.setPredicate(c -> {
             boolean matchSearch = search.isEmpty()
-                || (c.getPayeeName() != null && c.getPayeeName().toLowerCase().contains(search))
-                || (c.getChequeNo()  != null && c.getChequeNo() .toLowerCase().contains(search))
-                || (c.getBankName()  != null && c.getBankName() .toLowerCase().contains(search));
+                    || (c.getPayeeName() != null && c.getPayeeName().toLowerCase().contains(search))
+                    || (c.getChequeNo() != null && c.getChequeNo().toLowerCase().contains(search))
+                    || (c.getBankName() != null && c.getBankName().toLowerCase().contains(search));
             boolean matchStatus = "All".equals(status)
-                || (c.getStatus() != null && c.getStatus().name().equals(status));
+                    || (c.getStatus() != null && c.getStatus().name().equals(status));
             return matchSearch && matchStatus;
         });
     }
@@ -172,7 +196,7 @@ public class ChequeController {
             } catch (Exception e) {
                 Platform.runLater(() -> {
                     cmbBank.setItems(FXCollections.observableArrayList(
-                        "SBI", "HDFC", "ICICI", "Axis Bank"));
+                            "SBI", "HDFC", "ICICI", "Axis Bank"));
                     cmbBank.setValue("SBI");
                 });
             }
@@ -195,13 +219,13 @@ public class ChequeController {
     @FXML
     private void onSave() {
         try {
-            String payee  = fldPayee .getText().trim();
+            String payee = fldPayee.getText().trim();
             String amtStr = fldAmount.getText().trim();
 
             if (payee.isEmpty() || amtStr.isEmpty()) {
                 FxUtils.shake(fldPayee.getParent());
                 showAlert("Validation", "Payee name and amount are required.",
-                    Alert.AlertType.WARNING);
+                        Alert.AlertType.WARNING);
                 return;
             }
 
@@ -211,21 +235,21 @@ public class ChequeController {
             } catch (NumberFormatException nfe) {
                 FxUtils.shake(fldAmount);
                 showAlert("Validation", "Enter a valid numeric amount (e.g. 5000.00).",
-                    Alert.AlertType.WARNING);
+                        Alert.AlertType.WARNING);
                 return;
             }
 
             if (amount.compareTo(BigDecimal.ZERO) <= 0) {
                 FxUtils.shake(fldAmount);
                 showAlert("Validation", "Amount must be greater than zero.",
-                    Alert.AlertType.WARNING);
+                        Alert.AlertType.WARNING);
                 return;
             }
 
             // Resolve bankId — prefer map lookup, fallback to combo index+1
             String selectedBankName = cmbBank.getValue();
             int bankId = bankNameToId.getOrDefault(selectedBankName,
-                Math.max(1, cmbBank.getSelectionModel().getSelectedIndex() + 1));
+                    Math.max(1, cmbBank.getSelectionModel().getSelectedIndex() + 1));
 
             if (selectedCheque == null) {
                 Cheque c = new Cheque(null, payee, amount, bankId, datePicker.getValue());
@@ -241,6 +265,12 @@ public class ChequeController {
             }
             clearForm();
             loadData();
+            // Notify dashboard (if loaded) to reload its metrics and recent tables
+            if (mainController != null) {
+                Object dc = mainController.getController("dashboard");
+                if (dc instanceof DashboardController)
+                    ((DashboardController) dc).reload();
+            }
 
         } catch (Exception e) {
             showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
@@ -253,12 +283,17 @@ public class ChequeController {
         Cheque sel = chequeTable.getSelectionModel().getSelectedItem();
         if (sel == null) {
             showAlert("No Selection", "Please select a cheque to print.",
-                Alert.AlertType.WARNING);
+                    Alert.AlertType.WARNING);
             return;
         }
         try {
-            printService.printCheque(sel);   // shows system print dialog
-            loadData();                      // refresh table (status → Printed)
+            printService.printCheque(sel); // shows system print dialog
+            loadData(); // refresh table (status → Printed)
+            if (mainController != null) {
+                Object dc = mainController.getController("dashboard");
+                if (dc instanceof DashboardController)
+                    ((DashboardController) dc).reload();
+            }
         } catch (Exception e) {
             showAlert("Print Error", e.getMessage(), Alert.AlertType.ERROR);
         }
@@ -270,12 +305,12 @@ public class ChequeController {
         Cheque sel = chequeTable.getSelectionModel().getSelectedItem();
         if (sel == null) {
             showAlert("No Selection", "Please select a cheque to delete.",
-                Alert.AlertType.WARNING);
+                    Alert.AlertType.WARNING);
             return;
         }
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-            "Delete cheque " + sel.getChequeNo() + "?",
-            ButtonType.YES, ButtonType.NO);
+                "Delete cheque " + sel.getChequeNo() + "?",
+                ButtonType.YES, ButtonType.NO);
         confirm.setTitle("Confirm Delete");
         confirm.setHeaderText(null);
         confirm.showAndWait().ifPresent(btn -> {
@@ -284,6 +319,11 @@ public class ChequeController {
                     chequeService.delete(sel.getId());
                     clearForm();
                     loadData();
+                    if (mainController != null) {
+                        Object dc = mainController.getController("dashboard");
+                        if (dc instanceof DashboardController)
+                            ((DashboardController) dc).reload();
+                    }
                 } catch (Exception e) {
                     showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
                 }
@@ -291,13 +331,16 @@ public class ChequeController {
         });
     }
 
-    @FXML private void onClear() { clearForm(); }
+    @FXML
+    private void onClear() {
+        clearForm();
+    }
 
     // ── Form helpers ─────────────────────────────────────────────────
     private void populateForm(Cheque c) {
         selectedCheque = c;
         lblFormTitle.setText("Edit Cheque");
-        fldPayee .setText(c.getPayeeName());
+        fldPayee.setText(c.getPayeeName());
         fldAmount.setText(c.getAmount() != null ? c.getAmount().toPlainString() : "");
         datePicker.setValue(c.getIssueDate() != null ? c.getIssueDate() : LocalDate.now());
         if (c.getBankName() != null && cmbBank.getItems().contains(c.getBankName()))
@@ -308,7 +351,7 @@ public class ChequeController {
     private void clearForm() {
         selectedCheque = null;
         lblFormTitle.setText("New Cheque");
-        fldPayee .clear();
+        fldPayee.clear();
         fldAmount.clear();
         if (!cmbBank.getItems().isEmpty())
             cmbBank.setValue(cmbBank.getItems().get(0));
@@ -323,5 +366,7 @@ public class ChequeController {
         a.showAndWait();
     }
 
-    public void setMainController(MainController mc) { this.mainController = mc; }
+    public void setMainController(MainController mc) {
+        this.mainController = mc;
+    }
 }

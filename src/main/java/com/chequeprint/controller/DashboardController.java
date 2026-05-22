@@ -162,9 +162,15 @@ public class DashboardController {
         FxUtils.animateIn(lblWelcome, 0);
         FxUtils.animateIn(lblSubtitle, 60);
 
-        // =========================
-        // LOAD DATA BACKGROUND THREAD
-        // =========================
+        // Load data asynchronously (also callable externally via `reload()`)
+        reload();
+    }
+
+    /**
+     * Reloads dashboard metrics and recent tables on a background thread.
+     * Can be called by other controllers (e.g. after inserting a cheque).
+     */
+    public void reload() {
         new Thread(() -> {
             try {
                 int total = service.getTotalCheques();
@@ -176,10 +182,7 @@ public class DashboardController {
                 var recentInvoices = invoiceService.getAll();
 
                 Platform.runLater(() -> {
-
-                    // =========================
-                    // ANIMATIONS
-                    // =========================
+                    // animations
                     animateCard(cardTotal, 80);
                     animateCard(cardPrinted, 160);
                     animateCard(cardPending, 240);
@@ -227,11 +230,9 @@ public class DashboardController {
                         cancelled = recentCheques.stream().filter(c -> c.getStatus() == Cheque.Status.Cancelled)
                                 .count();
                     } else {
-                        // fall back to service-level counts
                         totalForProgress = Math.max(total, 1);
                         printedCountLong = printed;
                         pendingCountLong = pending;
-                        // estimate draft as remaining (may be approximate if DB has other statuses)
                         long est = totalForProgress - printedCountLong - pendingCountLong;
                         draft = Math.max(est, 0);
                         cancelled = 0;
@@ -265,9 +266,6 @@ public class DashboardController {
                         replaceProgressBarWithSegmentBar(pbCleared, totalForProgress, (int) cancelled, "#991b1b");
                     }
 
-                    // =========================
-                    // HOVER EFFECTS
-                    // =========================
                     addHover(cardTotal);
                     addHover(cardPrinted);
                     addHover(cardPending);
