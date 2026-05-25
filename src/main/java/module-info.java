@@ -8,6 +8,7 @@ module com.chequeprint {
 
     // ── Database ─────────────────────────────────────────────────────
     requires java.sql;
+    requires java.desktop;
 
     // ── Third-party (automatic modules on the module path) ───────────
     requires jasperreports;

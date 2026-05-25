@@ -26,7 +26,7 @@
 
             <!-- Outer border -->
             <rectangle>
-                <reportElement x="0" y="0" width="572" height="244" uuid="rect-outer"/>
+                <reportElement x="0" y="0" width="572" height="244" />
                 <graphicElement>
                     <pen lineWidth="1.5" lineColor="#1a56db"/>
                 </graphicElement>
@@ -34,7 +34,7 @@
 
             <!-- Bank name header bar -->
             <rectangle>
-                <reportElement x="0" y="0" width="572" height="36" backcolor="#1a56db" uuid="rect-header"/>
+                <reportElement x="0" y="0" width="572" height="36" backcolor="#1a56db" />
                 <graphicElement>
                     <pen lineWidth="0"/>
                 </graphicElement>
@@ -42,14 +42,14 @@
 
             <!-- Bank name -->
             <staticText>
-                <reportElement x="10" y="6" width="200" height="24" forecolor="#FFFFFF" uuid="lbl-bank-static"/>
+                <reportElement x="10" y="6" width="200" height="24" forecolor="#FFFFFF" />
                 <textElement verticalAlignment="Middle">
                     <font size="13" isBold="true"/>
                 </textElement>
                 <text><![CDATA[BANK:]]></text>
             </staticText>
             <textField>
-                <reportElement x="60" y="6" width="300" height="24" forecolor="#FFFFFF" uuid="fld-bank"/>
+                <reportElement x="60" y="6" width="300" height="24" forecolor="#FFFFFF" />
                 <textElement verticalAlignment="Middle">
                     <font size="13" isBold="true"/>
                 </textElement>
@@ -58,14 +58,14 @@
 
             <!-- Cheque No (top right) -->
             <staticText>
-                <reportElement x="390" y="6" width="80" height="24" forecolor="#FFFFFF" uuid="lbl-chqno-static"/>
+                <reportElement x="390" y="6" width="80" height="24" forecolor="#FFFFFF" />
                 <textElement textAlignment="Right" verticalAlignment="Middle">
                     <font size="11" isBold="true"/>
                 </textElement>
                 <text><![CDATA[Cheque No:]]></text>
             </staticText>
             <textField>
-                <reportElement x="474" y="6" width="90" height="24" forecolor="#FFFFFF" uuid="fld-chqno"/>
+                <reportElement x="474" y="6" width="90" height="24" forecolor="#FFFFFF" />
                 <textElement textAlignment="Right" verticalAlignment="Middle">
                     <font size="11" isBold="true"/>
                 </textElement>
@@ -74,12 +74,12 @@
 
             <!-- Date label -->
             <staticText>
-                <reportElement x="390" y="50" width="60" height="18" uuid="lbl-date-static"/>
+                <reportElement x="390" y="50" width="60" height="18" />
                 <textElement><font size="10" isBold="true"/></textElement>
                 <text><![CDATA[Date:]]></text>
             </staticText>
             <textField>
-                <reportElement x="452" y="50" width="112" height="18" uuid="fld-date"/>
+                <reportElement x="452" y="50" width="112" height="18" />
                 <box>
                     <bottomPen lineWidth="0.75" lineColor="#1e293b"/>
                 </box>
@@ -89,12 +89,12 @@
 
             <!-- Pay line -->
             <staticText>
-                <reportElement x="10" y="82" width="50" height="20" uuid="lbl-pay"/>
+                <reportElement x="10" y="82" width="50" height="20" />
                 <textElement verticalAlignment="Middle"><font size="11" isBold="true"/></textElement>
                 <text><![CDATA[Pay:]]></text>
             </staticText>
             <textField>
-                <reportElement x="62" y="82" width="500" height="20" uuid="fld-payee"/>
+                <reportElement x="62" y="82" width="500" height="20" />
                 <box>
                     <bottomPen lineWidth="0.75" lineColor="#1e293b"/>
                 </box>
@@ -104,12 +104,12 @@
 
             <!-- Amount words -->
             <staticText>
-                <reportElement x="10" y="118" width="80" height="20" uuid="lbl-words"/>
+                <reportElement x="10" y="118" width="80" height="20" />
                 <textElement verticalAlignment="Middle"><font size="10" isBold="true"/></textElement>
                 <text><![CDATA[Rupees:]]></text>
             </staticText>
             <textField isStretchWithOverflow="true">
-                <reportElement x="94" y="118" width="420" height="20" uuid="fld-words"/>
+                <reportElement x="94" y="118" width="420" height="20" />
                 <box>
                     <bottomPen lineWidth="0.75" lineColor="#1e293b"/>
                 </box>
@@ -119,18 +119,18 @@
 
             <!-- Amount box -->
             <staticText>
-                <reportElement x="10" y="118" width="40" height="20" uuid="lbl-rs"/>
+                <reportElement x="10" y="118" width="40" height="20" />
                 <textElement textAlignment="Right" verticalAlignment="Middle">
                     <font size="11" isBold="true"/>
                 </textElement>
                 <text><![CDATA[₹]]></text>
             </staticText>
             <rectangle>
-                <reportElement x="516" y="110" width="50" height="28" uuid="rect-amount-box"/>
+                <reportElement x="516" y="110" width="50" height="28" />
                 <graphicElement><pen lineWidth="1.2" lineColor="#1a56db"/></graphicElement>
             </rectangle>
             <textField>
-                <reportElement x="518" y="112" width="46" height="24" uuid="fld-amount"/>
+                <reportElement x="518" y="112" width="46" height="24" />
                 <textElement textAlignment="Center" verticalAlignment="Middle">
                     <font size="10" isBold="true"/>
                 </textElement>
@@ -139,11 +139,11 @@
 
             <!-- MICR band -->
             <rectangle>
-                <reportElement x="0" y="210" width="572" height="34" backcolor="#f1f5f9" uuid="rect-micr"/>
+                <reportElement x="0" y="210" width="572" height="34" backcolor="#f1f5f9" />
                 <graphicElement><pen lineWidth="0"/></graphicElement>
             </rectangle>
             <staticText>
-                <reportElement x="10" y="216" width="200" height="22" uuid="lbl-micr"/>
+                <reportElement x="10" y="216" width="200" height="22" />
                 <textElement verticalAlignment="Middle">
                     <font fontName="Courier New" size="14" isBold="true"/>
                 </textElement>
@@ -152,11 +152,11 @@
 
             <!-- Signature line -->
             <line>
-                <reportElement x="400" y="185" width="160" height="1" uuid="line-sig"/>
+                <reportElement x="400" y="185" width="160" height="1" />
                 <graphicElement><pen lineWidth="0.75" lineColor="#1e293b"/></graphicElement>
             </line>
             <staticText>
-                <reportElement x="400" y="188" width="160" height="16" uuid="lbl-sig"/>
+                <reportElement x="400" y="188" width="160" height="16" />
                 <textElement textAlignment="Center"><font size="9" isItalic="true"/></textElement>
                 <text><![CDATA[Authorised Signature]]></text>
             </staticText>
@@ -164,3 +164,4 @@
         </band>
     </title>
 </jasperReport>
+

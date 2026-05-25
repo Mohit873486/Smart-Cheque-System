@@ -11,14 +11,23 @@ import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperPrintManager;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.export.JRPdfExporter;
+import net.sf.jasperreports.engine.export.JRPrintServiceExporter;
 import net.sf.jasperreports.export.SimpleExporterInput;
 import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
 import net.sf.jasperreports.export.SimplePdfExporterConfiguration;
+import net.sf.jasperreports.export.SimplePrintServiceExporterConfiguration;
 
 import java.io.File;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
+import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.standard.Copies;
+import javax.print.attribute.standard.MediaPrintableArea;
+import javax.print.attribute.standard.MediaSizeName;
 
 public class JasperPrintUtil {
 
@@ -47,9 +56,47 @@ public class JasperPrintUtil {
         JasperPrint print = JasperFillManager.fillReport(
                 jr, params, new JREmptyDataSource());
 
-        JasperPrintManager.printReport(print, true);
+        // Use JRPrintServiceExporter to control print attributes and paper size.
+        try {
+            // compute page size in millimeters from JR report size (points)
+            int pageWidthPts = jr.getPageWidth();
+            int pageHeightPts = jr.getPageHeight();
+            // 1 inch = 72 points; 1 inch = 25.4 mm
+            double widthMm = pageWidthPts * 25.4 / 72.0;
+            double heightMm = pageHeightPts * 25.4 / 72.0;
 
-        cheque.setStatus(Cheque.Status.Printed);
+            PrintRequestAttributeSet printRequestAttributeSet = new HashPrintRequestAttributeSet();
+            // prefer default media, but set printable area to match report
+            printRequestAttributeSet.add(new Copies(1));
+            // MediaPrintableArea(x, y, w, h, units) — use full page area
+            printRequestAttributeSet.add(new MediaPrintableArea(0f, 0f, (float) widthMm, (float) heightMm,
+                    MediaPrintableArea.MM));
+            // optionally hint A4 for printers that require a media name
+            printRequestAttributeSet.add(MediaSizeName.ISO_A4);
+
+            JRPrintServiceExporter exporter = new JRPrintServiceExporter();
+            exporter.setExporterInput(new SimpleExporterInput(print));
+
+            SimplePrintServiceExporterConfiguration cfg = new SimplePrintServiceExporterConfiguration();
+            cfg.setPrintRequestAttributeSet(printRequestAttributeSet);
+            cfg.setDisplayPageDialog(true);
+            cfg.setDisplayPrintDialog(true);
+
+            // try to use default print service
+            PrintService defaultService = PrintServiceLookup.lookupDefaultPrintService();
+            if (defaultService != null) {
+                cfg.setPrintService(defaultService);
+            }
+
+            exporter.setConfiguration(cfg);
+            exporter.exportReport();
+
+            cheque.setStatus(Cheque.Status.Printed);
+        } catch (Exception ex) {
+            // fallback to default behavior (shows dialog)
+            JasperPrintManager.printReport(print, true);
+            cheque.setStatus(Cheque.Status.Printed);
+        }
     }
 
     // ── Export cheque as PDF file ────────────────────────────────────
