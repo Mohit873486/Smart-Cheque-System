@@ -17,6 +17,8 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -286,14 +288,35 @@ public class ChequeController {
                     Alert.AlertType.WARNING);
             return;
         }
+
         try {
-            printService.printCheque(sel); // shows system print dialog
-            loadData(); // refresh table (status → Printed)
+            Path home = Path.of(System.getProperty("user.home"));
+            Path downloads = home.resolve("Downloads");
+            Path desktop = home.resolve("Desktop");
+
+            Path targetDir;
+            if (Files.exists(downloads)) {
+                targetDir = downloads;
+            } else if (Files.exists(desktop)) {
+                targetDir = desktop;
+            } else {
+                targetDir = home;
+            }
+
+            String savedPath = printService.exportSelectedChequePdfAndMarkPrinted(sel, targetDir.toString());
+
+            loadData();
             if (mainController != null) {
                 Object dc = mainController.getController("dashboard");
-                if (dc instanceof DashboardController)
+                if (dc instanceof DashboardController) {
                     ((DashboardController) dc).reload();
+                }
             }
+
+            showAlert("PDF Downloaded",
+                    "Cheque PDF generated using bank template.\nSaved to:\n" + savedPath,
+                    Alert.AlertType.INFORMATION);
+
         } catch (Exception e) {
             showAlert("Print Error", e.getMessage(), Alert.AlertType.ERROR);
         }
