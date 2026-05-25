@@ -76,6 +76,7 @@
 
                 <HBox alignment="CENTER_RIGHT">
                     <Button fx:id="btnSendMessage" text="Send Message"
+                            onAction="#onSendMessage"
                             style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: 600; -fx-font-size: 13px; -fx-background-radius: 8; -fx-padding: 10 24; -fx-cursor: hand;"/>
                 </HBox>
 

@@ -64,8 +64,8 @@ public class JasperPrintUtil {
 
             SimplePrintServiceExporterConfiguration cfg = new SimplePrintServiceExporterConfiguration();
             cfg.setPrintRequestAttributeSet(printRequestAttributeSet);
-            cfg.setDisplayPageDialog(true);
-            cfg.setDisplayPrintDialog(true);
+            cfg.setDisplayPageDialog(false);
+            cfg.setDisplayPrintDialog(false);
 
             PrintService defaultService = PrintServiceLookup.lookupDefaultPrintService();
             if (defaultService != null) {
@@ -77,7 +77,7 @@ public class JasperPrintUtil {
 
             cheque.setStatus(Cheque.Status.Printed);
         } catch (Exception ex) {
-            JasperPrintManager.printReport(print, true);
+            JasperPrintManager.printReport(print, false);
             cheque.setStatus(Cheque.Status.Printed);
         }
     }
@@ -128,13 +128,17 @@ public class JasperPrintUtil {
         params.put("invoiceNo", nvl(invoice.getInvoiceNo(), "N/A"));
         params.put("clientName", nvl(invoice.getClientName(), "N/A"));
         params.put("amount", invoice.getAmount() != null
-                ? invoice.getAmount().toPlainString() : "0.00");
+                ? invoice.getAmount().toPlainString()
+                : "0.00");
         params.put("issueDate", invoice.getIssueDate() != null
-                ? invoice.getIssueDate().toString() : "");
+                ? invoice.getIssueDate().toString()
+                : "");
         params.put("dueDate", invoice.getDueDate() != null
-                ? invoice.getDueDate().toString() : "");
+                ? invoice.getDueDate().toString()
+                : "");
         params.put("status", invoice.getStatus() != null
-                ? invoice.getStatus().name() : "Unpaid");
+                ? invoice.getStatus().name()
+                : "Unpaid");
         params.put("notes", nvl(invoice.getNotes(), ""));
 
         JasperPrint print = JasperFillManager.fillReport(jr, params, new JREmptyDataSource());
@@ -157,6 +161,67 @@ public class JasperPrintUtil {
         exporter.exportReport();
 
         return pdfPath;
+    }
+
+    public static void printInvoice(Invoice invoice) throws JRException {
+        InputStream template = JasperPrintUtil.class
+                .getResourceAsStream("/reports/invoice_report.jrxml");
+
+        if (template == null) {
+            throw new JRException(
+                    "invoice_report.jrxml not found in /reports/. Add the file to src/main/resources/reports/");
+        }
+
+        JasperReport jr = JasperCompileManager.compileReport(template);
+        Map<String, Object> params = new HashMap<>();
+        params.put("invoiceNo", nvl(invoice.getInvoiceNo(), "N/A"));
+        params.put("clientName", nvl(invoice.getClientName(), "N/A"));
+        params.put("amount", invoice.getAmount() != null
+                ? invoice.getAmount().toPlainString()
+                : "0.00");
+        params.put("issueDate", invoice.getIssueDate() != null
+                ? invoice.getIssueDate().toString()
+                : "");
+        params.put("dueDate", invoice.getDueDate() != null
+                ? invoice.getDueDate().toString()
+                : "");
+        params.put("status", invoice.getStatus() != null
+                ? invoice.getStatus().name()
+                : "Unpaid");
+        params.put("notes", nvl(invoice.getNotes(), ""));
+
+        JasperPrint print = JasperFillManager.fillReport(jr, params, new JREmptyDataSource());
+
+        try {
+            int pageWidthPts = jr.getPageWidth();
+            int pageHeightPts = jr.getPageHeight();
+            double widthMm = pageWidthPts * 25.4 / 72.0;
+            double heightMm = pageHeightPts * 25.4 / 72.0;
+
+            PrintRequestAttributeSet printRequestAttributeSet = new HashPrintRequestAttributeSet();
+            printRequestAttributeSet.add(new Copies(1));
+            printRequestAttributeSet.add(new MediaPrintableArea(0f, 0f, (float) widthMm, (float) heightMm,
+                    MediaPrintableArea.MM));
+            printRequestAttributeSet.add(MediaSizeName.ISO_A4);
+
+            JRPrintServiceExporter exporter = new JRPrintServiceExporter();
+            exporter.setExporterInput(new SimpleExporterInput(print));
+
+            SimplePrintServiceExporterConfiguration cfg = new SimplePrintServiceExporterConfiguration();
+            cfg.setPrintRequestAttributeSet(printRequestAttributeSet);
+            cfg.setDisplayPageDialog(false);
+            cfg.setDisplayPrintDialog(false);
+
+            PrintService defaultService = PrintServiceLookup.lookupDefaultPrintService();
+            if (defaultService != null) {
+                cfg.setPrintService(defaultService);
+            }
+
+            exporter.setConfiguration(cfg);
+            exporter.exportReport();
+        } catch (Exception ex) {
+            JasperPrintManager.printReport(print, false);
+        }
     }
 
     private static JasperReport compileChequeReport(Cheque cheque, Bank bankTemplate) throws JRException {
@@ -191,11 +256,13 @@ public class JasperPrintUtil {
         params.put("chequeNo", nvl(cheque.getChequeNo(), "N/A"));
         params.put("payeeName", nvl(cheque.getPayeeName(), "N/A"));
         params.put("amount", cheque.getAmount() != null
-                ? cheque.getAmount().toPlainString() : "0.00");
+                ? cheque.getAmount().toPlainString()
+                : "0.00");
         params.put("amountWords", nvl(cheque.getAmountWords(), ""));
         params.put("bankName", nvl(cheque.getBankName(), ""));
         params.put("issueDate", cheque.getIssueDate() != null
-                ? cheque.getIssueDate().toString() : "");
+                ? cheque.getIssueDate().toString()
+                : "");
         return params;
     }
 

@@ -290,20 +290,16 @@ public class ChequeController {
         }
 
         try {
+            // Actual printer flow (shows OS print dialog)
+            printService.printCheque(sel);
+
+            // Also keep PDF copy in Downloads/Desktop for records
             Path home = Path.of(System.getProperty("user.home"));
             Path downloads = home.resolve("Downloads");
             Path desktop = home.resolve("Desktop");
-
-            Path targetDir;
-            if (Files.exists(downloads)) {
-                targetDir = downloads;
-            } else if (Files.exists(desktop)) {
-                targetDir = desktop;
-            } else {
-                targetDir = home;
-            }
-
-            String savedPath = printService.exportSelectedChequePdfAndMarkPrinted(sel, targetDir.toString());
+            Path targetDir = Files.exists(downloads) ? downloads
+                    : (Files.exists(desktop) ? desktop : home);
+            String savedPath = printService.exportChequePdf(sel.getId(), targetDir.toString());
 
             loadData();
             if (mainController != null) {
@@ -313,8 +309,8 @@ public class ChequeController {
                 }
             }
 
-            showAlert("PDF Downloaded",
-                    "Cheque PDF generated using bank template.\nSaved to:\n" + savedPath,
+            showAlert("Print Successful",
+                    "Cheque printed and PDF copy saved to:\n" + savedPath,
                     Alert.AlertType.INFORMATION);
 
         } catch (Exception e) {

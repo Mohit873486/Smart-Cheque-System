@@ -244,7 +244,7 @@ public class InvoiceController {
         }
     }
 
-    // ── Export PDF ───────────────────────────────────────────────────
+    // ── ───────────────────────────────────────────────────
     @FXML
     private void onExportPdf() {
         Invoice sel = invoiceTable.getSelectionModel().getSelectedItem();
@@ -264,6 +264,24 @@ public class InvoiceController {
                     Alert.AlertType.INFORMATION);
         } catch (Exception e) {
             showAlert("Export Error", e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+
+    @FXML
+    private void onPrint() {
+        Invoice sel = invoiceTable.getSelectionModel().getSelectedItem();
+        if (sel == null) {
+            showAlert("No Selection", "Please select an invoice to print.",
+                    Alert.AlertType.WARNING);
+            return;
+        }
+        try {
+            JasperPrintUtil.printInvoice(sel);
+            showAlert("Print Sent",
+                    "Invoice was sent to the default printer.",
+                    Alert.AlertType.INFORMATION);
+        } catch (Exception e) {
+            showAlert("Print Error", e.getMessage(), Alert.AlertType.ERROR);
         }
     }
 
