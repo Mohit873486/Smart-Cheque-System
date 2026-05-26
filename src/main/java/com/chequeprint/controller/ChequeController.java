@@ -330,16 +330,7 @@ public class ChequeController {
 
             loadData();
 
-            // Get the saved cheque with ID from database for printing
-            var allCheques = chequeService.getAll();
-            Cheque chequeToprint = allCheques.stream()
-                    .filter(c -> c.getPayeeName().equals(payee)
-                            && c.getAmount().compareTo(amount) == 0
-                            && c.getIssueDate().equals(datePicker.getValue()))
-                    .findFirst()
-                    .orElse(newCheque);
-
-            boolean printed = printService.previewCheque(chequeToprint);
+            boolean printed = printService.previewCheque(newCheque);
             if (!printed) {
                 showAlert("Print Canceled", "Cheque printing was canceled.",
                         Alert.AlertType.INFORMATION);

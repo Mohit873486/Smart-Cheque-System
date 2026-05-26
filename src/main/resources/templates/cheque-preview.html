@@ -37,6 +37,8 @@ body {
   position: absolute;
   left: 13mm;
   top: 8mm;
+  width: 55mm;
+  min-height: 9mm;
   display: flex;
   align-items: flex-start;
   gap: 5mm;
@@ -56,6 +58,7 @@ body {
   white-space: nowrap;
 }
 .branch-copy {
+  display: none;
   padding-left: 5mm;
   border-left: 0.2mm solid #d8d8d8;
   font-size: 5.5pt;
@@ -264,7 +267,7 @@ body {
 }
 .micr {
   position: absolute;
-  bottom: 4mm;
+  bottom: auto;
   transform: translateX(-50%);
   font-family: Consolas, "Courier New", monospace;
   letter-spacing: 1.5mm;
@@ -282,8 +285,6 @@ body {
     overflow: hidden;
   }
   .sheet {
-    width: 100% !important;
-    height: 100% !important;
     border: 0;
   }
 }
@@ -291,7 +292,7 @@ body {
 </head>
 <body>
   <div class="sheet" data-width-mm="{{DOC_WIDTH_MM}}" data-height-mm="{{DOC_HEIGHT_MM}}">
-    <div class="bank-header">
+    <div class="bank-header" data-left="{{BANK_LEFT}}" data-top="{{BANK_TOP}}" data-width="{{BANK_WIDTH}}" data-height="{{BANK_HEIGHT}}">
       <div class="bank-mark">⌃</div>
       <div>
         <div class="bank-name">{{BANK_NAME}}</div>
@@ -305,7 +306,7 @@ body {
 
     <div class="cheque-no">Cheque No: {{CHEQUE_NO}}</div>
 
-    <div class="date-zone">
+    <div class="date-zone" data-left="{{DATE_LEFT}}" data-top="{{DATE_TOP}}" data-width="{{DATE_WIDTH}}" data-height="{{DATE_HEIGHT}}">
       <div class="date-boxes" data-date="{{ISSUE_DATE}}">
         <span></span><span></span><span></span><span></span>
         <span></span><span></span><span></span><span></span>
@@ -328,13 +329,6 @@ body {
     <div class="amount-outline"><div class="rupee-symbol">₹</div></div>
     <div class="signature-guide">Please Sign Above</div>
     <div class="micr-band"></div>
-
-    <div class="field-anchor date-field" data-left="{{DATE_LEFT}}" data-top="{{DATE_TOP}}" data-width="{{DATE_WIDTH}}" data-height="{{DATE_HEIGHT}}">
-      <div class="date-row">
-        <span class="field-label">Date:</span>
-        <div class="line-value">{{ISSUE_DATE}}</div>
-      </div>
-    </div>
 
     <div class="field-anchor pay-field" data-left="{{PAYEE_LEFT}}" data-top="{{PAYEE_TOP}}" data-width="{{PAYEE_WIDTH}}" data-height="{{PAYEE_HEIGHT}}">
       <div class="pay-row">
@@ -367,7 +361,7 @@ body {
       <div class="signature-label" data-display="{{SIGN_LABEL_DISPLAY}}">Authorised Signature</div>
     </div>
 
-    <div class="micr" data-left="{{MICR_LEFT}}">{{MICR_TEXT}}</div>
+    <div class="micr" data-left="{{MICR_LEFT}}" data-top="{{MICR_TOP}}" data-width="{{MICR_WIDTH}}" data-height="{{MICR_HEIGHT}}">{{MICR_TEXT}}</div>
   </div>
   <script>
     (function () {
@@ -414,7 +408,7 @@ body {
         }
       }
 
-      document.querySelectorAll('.field-anchor[data-left][data-top]').forEach(function (el) {
+      document.querySelectorAll('[data-left][data-top]').forEach(function (el) {
         var left = el.getAttribute('data-left');
         var top = el.getAttribute('data-top');
         var fieldWidth = el.getAttribute('data-width');

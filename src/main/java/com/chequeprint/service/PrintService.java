@@ -30,7 +30,7 @@ public class PrintService {
         Bank bank = resolveBank(cheque);
         boolean printed = JasperPrintUtil.printCheque(cheque, bank);
         if (printed) {
-            chequeDAO.update(cheque);
+            chequeDAO.updateStatus(cheque, Cheque.Status.Printed);
         }
         return printed;
     }
@@ -42,8 +42,7 @@ public class PrintService {
         Bank bank = resolveBank(cheque);
         boolean printed = JasperPrintUtil.previewCheque(cheque, bank);
         if (printed) {
-            cheque.setStatus(Cheque.Status.Printed);
-            chequeDAO.update(cheque);
+            chequeDAO.updateStatus(cheque, Cheque.Status.Printed);
         }
         return printed;
     }
@@ -59,7 +58,7 @@ public class PrintService {
                 Bank bank = resolveBank(c);
                 boolean printed = JasperPrintUtil.printCheque(c, bank);
                 if (printed) {
-                    chequeDAO.update(c);
+                    chequeDAO.updateStatus(c, Cheque.Status.Printed);
                 }
             } catch (Exception e) {
                 System.err.println("Print failed for " + c.getChequeNo()
@@ -93,7 +92,7 @@ public class PrintService {
         Bank bank = resolveBank(c);
         boolean printed = JasperPrintUtil.printCheque(c, bank);
         if (printed) {
-            chequeDAO.update(c);
+            chequeDAO.updateStatus(c, Cheque.Status.Printed);
         }
     }
 
@@ -114,8 +113,7 @@ public class PrintService {
         Bank bank = resolveBank(cheque);
         String pdfPath = JasperPrintUtil.exportChequePdf(cheque, outputDir, bank);
 
-        cheque.setStatus(Cheque.Status.Printed);
-        chequeDAO.update(cheque);
+        chequeDAO.updateStatus(cheque, Cheque.Status.Printed);
 
         return pdfPath;
     }

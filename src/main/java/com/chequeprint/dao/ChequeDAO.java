@@ -27,6 +27,12 @@ public class ChequeDAO {
         "UPDATE cheques SET payee_name=?, amount=?, amount_words=?, bank_id=?, " +
         "issue_date=?, status=? WHERE id=?";
 
+    private static final String UPDATE_STATUS_BY_ID =
+        "UPDATE cheques SET status=? WHERE id=?";
+
+    private static final String UPDATE_STATUS_BY_CHEQUE_NO =
+        "UPDATE cheques SET status=? WHERE cheque_no=?";
+
     private static final String DELETE = "DELETE FROM cheques WHERE id=?";
 
     private static final String COUNT_TOTAL   = "SELECT COUNT(*) FROM cheques";
@@ -39,7 +45,7 @@ public class ChequeDAO {
 
     // ---- CREATE ----
     public boolean insert(Cheque c) throws SQLException {
-        try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(INSERT)) {
+        try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(INSERT, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, c.getChequeNo());
             ps.setString(2, c.getPayeeName());
             ps.setBigDecimal(3, c.getAmount());
@@ -47,7 +53,15 @@ public class ChequeDAO {
             ps.setInt(5, c.getBankId());
             ps.setDate(6, Date.valueOf(c.getIssueDate()));
             ps.setString(7, c.getStatus().name());
-            return ps.executeUpdate() > 0;
+            boolean inserted = ps.executeUpdate() > 0;
+            if (inserted) {
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        c.setId(keys.getInt(1));
+                    }
+                }
+            }
+            return inserted;
         }
     }
 
@@ -83,6 +97,34 @@ public class ChequeDAO {
             ps.setInt(7, c.getId());
             return ps.executeUpdate() > 0;
         }
+    }
+
+    public boolean updateStatus(Cheque c, Cheque.Status status) throws SQLException {
+        if (c == null || status == null) {
+            return false;
+        }
+
+        boolean updated = false;
+        if (c.getId() > 0) {
+            try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(UPDATE_STATUS_BY_ID)) {
+                ps.setString(1, status.name());
+                ps.setInt(2, c.getId());
+                updated = ps.executeUpdate() > 0;
+            }
+        }
+
+        if (!updated && c.getChequeNo() != null && !c.getChequeNo().isBlank()) {
+            try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(UPDATE_STATUS_BY_CHEQUE_NO)) {
+                ps.setString(1, status.name());
+                ps.setString(2, c.getChequeNo());
+                updated = ps.executeUpdate() > 0;
+            }
+        }
+
+        if (updated) {
+            c.setStatus(status);
+        }
+        return updated;
     }
 
     // ---- DELETE ----

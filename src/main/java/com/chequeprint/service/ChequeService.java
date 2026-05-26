@@ -47,8 +47,7 @@ public class ChequeService {
     public boolean markPrinted(int id) throws SQLException {
         Cheque c = dao.findById(id);
         if (c == null) return false;
-        c.setStatus(Cheque.Status.Printed);
-        return dao.update(c);
+        return dao.updateStatus(c, Cheque.Status.Printed);
     }
 
     // --- Dashboard stats ---

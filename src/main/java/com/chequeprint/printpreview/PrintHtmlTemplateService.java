@@ -43,6 +43,11 @@ public class PrintHtmlTemplateService {
         template = template.replace("{{AMOUNT_NUMBER}}", escapeText(formatAmount(cheque.getAmount())));
         template = template.replace("{{MICR_TEXT}}", escapeText(buildMicr(bank, cheque)));
 
+        template = template.replace("{{BANK_LEFT}}", ratioToPercent(layout.get(LayoutField.BANK_LOGO).getXRatio()));
+        template = template.replace("{{BANK_TOP}}", ratioToPercent(layout.get(LayoutField.BANK_LOGO).getYRatio()));
+        template = template.replace("{{BANK_WIDTH}}", ratioToMm(layout.get(LayoutField.BANK_LOGO).getWidthRatio(), widthMm, 0.18));
+        template = template.replace("{{BANK_HEIGHT}}", ratioToMm(layout.get(LayoutField.BANK_LOGO).getHeightRatio(), heightMm, 0.10));
+
         template = template.replace("{{DATE_LEFT}}", ratioToPercent(layout.get(LayoutField.DATE).getXRatio()));
         template = template.replace("{{DATE_TOP}}", ratioToPercent(layout.get(LayoutField.DATE).getYRatio()));
         template = template.replace("{{DATE_WIDTH}}", ratioToMm(layout.get(LayoutField.DATE).getWidthRatio(), widthMm, 0.19));
@@ -89,6 +94,8 @@ public class PrintHtmlTemplateService {
 
         template = template.replace("{{MICR_LEFT}}", ratioToPercent(layout.get(LayoutField.MICR).getXRatio()));
         template = template.replace("{{MICR_TOP}}", ratioToPercent(layout.get(LayoutField.MICR).getYRatio()));
+        template = template.replace("{{MICR_WIDTH}}", ratioToMm(layout.get(LayoutField.MICR).getWidthRatio(), widthMm, 0.50));
+        template = template.replace("{{MICR_HEIGHT}}", ratioToMm(layout.get(LayoutField.MICR).getHeightRatio(), heightMm, 0.08));
 
         return template;
     }
