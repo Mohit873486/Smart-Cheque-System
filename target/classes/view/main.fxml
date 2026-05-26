@@ -130,15 +130,15 @@
 
             <!-- TOP HEADER (fixed height via CSS: 58px) -->
             <HBox spacing="16" alignment="CENTER_LEFT" styleClass="top-header"
-                xmlns="http://javafx.com/javafx/17"
-                xmlns:fx="http://javafx.com/fxml"
+                prefHeight="58" minHeight="58" maxHeight="58"
+                VBox.vgrow="NEVER"
                 prefWidth="Infinity"
                 maxWidth="Infinity">
                 <Label fx:id="headerTitle" text="Dashboard" styleClass="header-title" />
                 <Region HBox.hgrow="ALWAYS" />
-                <TextField promptText="Search…" prefWidth="200" styleClass="search-input" />
-                <Label text="🔔" styleClass="icon-btn" />
-                <Label text="AD" styleClass="header-avatar" />
+                <!-- <TextField promptText="Search…" prefWidth="200" styleClass="search-input" />
+                <Label text="🔔" styleClass="icon-btn" /> -->
+                <Label text="AD" styleClass="header-avatar" /> 
             </HBox>
 
             <!-- CONTENT PANE

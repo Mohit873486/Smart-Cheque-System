@@ -125,6 +125,8 @@
                     <VBox spacing="8">
                         <Button text="💾  Save Cheque" styleClass="btn-primary"
                             maxWidth="Infinity" onAction="#onSave" />
+                        <Button text=" Print" styleClass="btn-success"
+                            maxWidth="Infinity" onAction="#onSaveAndPrint" />
                         <Button text="✕  Clear Form" styleClass="btn-secondary"
                             maxWidth="Infinity" onAction="#onClear" />
                     </VBox>

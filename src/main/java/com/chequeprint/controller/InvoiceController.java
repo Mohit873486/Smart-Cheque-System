@@ -244,6 +244,77 @@ public class InvoiceController {
         }
     }
 
+    // ── Save and Direct Print ────────────────────────────────────────
+    @FXML
+    private void onSaveAndPrint() {
+        String client = fldClient.getText().trim();
+        String amtStr = fldAmount.getText().trim();
+
+        if (client.isEmpty() || amtStr.isEmpty()) {
+            FxUtils.shake(fldClient);
+            showAlert("Validation", "Client name and amount are required.",
+                    Alert.AlertType.WARNING);
+            return;
+        }
+
+        BigDecimal amt;
+        try {
+            amt = new BigDecimal(amtStr);
+        } catch (NumberFormatException e) {
+            FxUtils.shake(fldAmount);
+            showAlert("Validation", "Enter a valid numeric amount (e.g. 5000.00).",
+                    Alert.AlertType.WARNING);
+            return;
+        }
+
+        if (amt.compareTo(BigDecimal.ZERO) <= 0) {
+            FxUtils.shake(fldAmount);
+            showAlert("Validation", "Amount must be greater than zero.",
+                    Alert.AlertType.WARNING);
+            return;
+        }
+
+        try {
+            Invoice invoiceToPrint;
+            if (selectedInvoice == null) {
+                Invoice inv = new Invoice(null, client, amt,
+                        dateIssue.getValue(), dateDue.getValue());
+                inv.setNotes(fldNotes.getText());
+                service.save(inv);
+                invoiceToPrint = inv;
+            } else {
+                selectedInvoice.setClientName(client);
+                selectedInvoice.setAmount(amt);
+                selectedInvoice.setIssueDate(dateIssue.getValue());
+                selectedInvoice.setDueDate(dateDue.getValue());
+                selectedInvoice.setNotes(fldNotes.getText());
+                service.update(selectedInvoice);
+                invoiceToPrint = selectedInvoice;
+            }
+
+            loadData();
+
+            boolean printed = JasperPrintUtil.previewInvoice(invoiceToPrint);
+            if (!printed) {
+                showAlert("Print Canceled", "Invoice printing was canceled.",
+                        Alert.AlertType.INFORMATION);
+                return;
+            }
+
+            showAlert("Success", "Invoice preview opened and printed successfully!",
+                    Alert.AlertType.INFORMATION);
+
+            clearForm();
+            if (mainController != null) {
+                Object dc = mainController.getController("dashboard");
+                if (dc instanceof DashboardController)
+                    ((DashboardController) dc).reload();
+            }
+        } catch (Exception e) {
+            showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+
     // ── ───────────────────────────────────────────────────
     @FXML
     private void onExportPdf() {
@@ -276,9 +347,15 @@ public class InvoiceController {
             return;
         }
         try {
-            JasperPrintUtil.printInvoice(sel);
-            showAlert("Print Sent",
-                    "Invoice was sent to the default printer.",
+            boolean printed = JasperPrintUtil.previewInvoice(sel);
+            if (!printed) {
+                showAlert("Print Canceled", "Invoice printing was canceled.",
+                        Alert.AlertType.INFORMATION);
+                return;
+            }
+            loadData();
+            showAlert("Print Successful",
+                    "Invoice printed successfully.",
                     Alert.AlertType.INFORMATION);
         } catch (Exception e) {
             showAlert("Print Error", e.getMessage(), Alert.AlertType.ERROR);

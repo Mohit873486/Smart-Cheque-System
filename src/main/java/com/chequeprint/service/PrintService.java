@@ -15,21 +15,37 @@ public class PrintService {
     private final ChequeDAO chequeDAO = new ChequeDAO();
     private final BankDAO bankDAO = new BankDAO();
 
-    public void printCheque(int chequeId) throws Exception {
+    public boolean printCheque(int chequeId) throws Exception {
         Cheque c = chequeDAO.findById(chequeId);
         if (c == null) {
             throw new IllegalArgumentException("Cheque not found: id=" + chequeId);
         }
-        printCheque(c);
+        return printCheque(c);
     }
 
-    public void printCheque(Cheque cheque) throws Exception {
+    public boolean printCheque(Cheque cheque) throws Exception {
         if (cheque == null) {
             throw new IllegalArgumentException("Cheque must not be null.");
         }
         Bank bank = resolveBank(cheque);
-        JasperPrintUtil.printCheque(cheque, bank);
-        chequeDAO.update(cheque);
+        boolean printed = JasperPrintUtil.printCheque(cheque, bank);
+        if (printed) {
+            chequeDAO.update(cheque);
+        }
+        return printed;
+    }
+
+    public boolean previewCheque(Cheque cheque) throws Exception {
+        if (cheque == null) {
+            throw new IllegalArgumentException("Cheque must not be null.");
+        }
+        Bank bank = resolveBank(cheque);
+        boolean printed = JasperPrintUtil.previewCheque(cheque, bank);
+        if (printed) {
+            cheque.setStatus(Cheque.Status.Printed);
+            chequeDAO.update(cheque);
+        }
+        return printed;
     }
 
     public List<Cheque> printAllPending() throws SQLException {
@@ -41,8 +57,10 @@ public class PrintService {
         for (Cheque c : pending) {
             try {
                 Bank bank = resolveBank(c);
-                JasperPrintUtil.printCheque(c, bank);
-                chequeDAO.update(c);
+                boolean printed = JasperPrintUtil.printCheque(c, bank);
+                if (printed) {
+                    chequeDAO.update(c);
+                }
             } catch (Exception e) {
                 System.err.println("Print failed for " + c.getChequeNo()
                         + ": " + e.getMessage());
@@ -73,8 +91,10 @@ public class PrintService {
             throw new IllegalArgumentException("Cheque not found: id=" + chequeId);
         }
         Bank bank = resolveBank(c);
-        JasperPrintUtil.printCheque(c, bank);
-        chequeDAO.update(c);
+        boolean printed = JasperPrintUtil.printCheque(c, bank);
+        if (printed) {
+            chequeDAO.update(c);
+        }
     }
 
     public String exportChequePdf(int chequeId, String outputDir) throws Exception {

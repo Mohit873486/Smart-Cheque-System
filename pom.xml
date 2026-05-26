@@ -44,6 +44,16 @@
             <artifactId>javafx-graphics</artifactId>
             <version>${javafx.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-swing</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-web</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
 
         <!-- ── MySQL Connector/J 8.3 (new groupId / artifactId) ── -->
         <dependency>
@@ -119,6 +129,7 @@
                     <include>**/*.jpg</include>
                     <include>**/*.properties</include>
                     <include>**/*.sql</include>
+                    <include>**/*.html</include>
                 </includes>
             </resource>
         </resources>

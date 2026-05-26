@@ -5,6 +5,8 @@ module com.chequeprint {
     requires javafx.fxml;
     requires javafx.graphics;
     requires javafx.base;
+    requires javafx.swing;
+    requires javafx.web;
 
     // ── Database ─────────────────────────────────────────────────────
     requires java.sql;
@@ -32,6 +34,7 @@ module com.chequeprint {
     opens com.chequeprint.dao to javafx.fxml;
     opens com.chequeprint.service to javafx.fxml;
     opens com.chequeprint.util to javafx.fxml;
+    opens com.chequeprint.printpreview to javafx.fxml;
 
     // ── Exports ──────────────────────────────────────────────────────
     exports com.chequeprint;
@@ -41,4 +44,5 @@ module com.chequeprint {
     exports com.chequeprint.dao;
     exports com.chequeprint.util;
     exports com.chequeprint.config;
+    exports com.chequeprint.printpreview;
 }

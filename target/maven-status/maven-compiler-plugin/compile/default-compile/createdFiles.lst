@@ -1,7 +1,9 @@
+com\chequeprint\printpreview\PrintHtmlTemplateService.class
 com\chequeprint\preview\BankTemplate.class
 com\chequeprint\service\ChequeService.class
 com\chequeprint\preview\ChequeData.class
 com\chequeprint\dao\UserDAO.class
+com\chequeprint\printpreview\PrintPreviewController.class
 com\chequeprint\controller\DashboardController$1.class
 com\chequeprint\model\LayoutField.class
 com\chequeprint\controller\InvoiceController$1.class
@@ -11,6 +13,7 @@ com\chequeprint\model\FieldPosition.class
 com\chequeprint\model\Settings.class
 com\chequeprint\controller\ChequeController.class
 com\chequeprint\controller\SettingsController.class
+com\chequeprint\printpreview\PrintPreviewController$2.class
 com\chequeprint\model\BankTemplateLayout.class
 com\chequeprint\model\Cheque$Status.class
 com\chequeprint\controller\DashboardController.class
@@ -33,10 +36,13 @@ com\chequeprint\util\ChequeSizeCodec.class
 com\chequeprint\util\AmountToWords.class
 com\chequeprint\util\FxUtils.class
 com\chequeprint\preview\ChequePrintPreviewApp.class
+com\chequeprint\printpreview\PrintPreviewService.class
 com\chequeprint\controller\MainController$1.class
+com\chequeprint\printpreview\PrintPreviewDocument$PdfSaveHandler.class
 com\chequeprint\dao\InvoiceDAO.class
 com\chequeprint\preview\ChequeLayout.class
 com\chequeprint\preview\FieldPosition.class
+com\chequeprint\printpreview\PrintPreviewDocument.class
 com\chequeprint\model\User.class
 com\chequeprint\preview\ChequePrintPreviewApp$AmountToWords.class
 com\chequeprint\util\ChequeSizePreset.class
@@ -55,6 +61,7 @@ com\chequeprint\MainApp.class
 com\chequeprint\model\Invoice.class
 com\chequeprint\service\InvoiceService.class
 com\chequeprint\controller\ChequeController$1.class
+com\chequeprint\printpreview\PrintPreviewController$1.class
 com\chequeprint\model\Cheque.class
 com\chequeprint\util\DateUtil.class
 com\chequeprint\controller\MainController.class

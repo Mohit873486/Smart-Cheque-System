@@ -3,6 +3,7 @@ package com.chequeprint.util;
 import com.chequeprint.model.Bank;
 import com.chequeprint.model.Cheque;
 import com.chequeprint.model.Invoice;
+import com.chequeprint.printpreview.PrintPreviewService;
 import net.sf.jasperreports.engine.JREmptyDataSource;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperCompileManager;
@@ -11,11 +12,9 @@ import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperPrintManager;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.export.JRPdfExporter;
-import net.sf.jasperreports.engine.export.JRPrintServiceExporter;
 import net.sf.jasperreports.export.SimpleExporterInput;
 import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
 import net.sf.jasperreports.export.SimplePdfExporterConfiguration;
-import net.sf.jasperreports.export.SimplePrintServiceExporterConfiguration;
 
 import java.io.File;
 import java.io.InputStream;
@@ -25,61 +24,63 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import javax.print.PrintService;
-import javax.print.PrintServiceLookup;
-import javax.print.attribute.HashPrintRequestAttributeSet;
-import javax.print.attribute.PrintRequestAttributeSet;
-import javax.print.attribute.standard.Copies;
-import javax.print.attribute.standard.MediaPrintableArea;
-import javax.print.attribute.standard.MediaSizeName;
 
 public class JasperPrintUtil {
 
     private static final String DEFAULT_CHEQUE_TEMPLATE = "/reports/cheque_report.jrxml";
+    private static final PrintPreviewService PREVIEW_SERVICE = new PrintPreviewService();
 
-    public static void printCheque(Cheque cheque) throws JRException {
-        printCheque(cheque, null);
+    public static boolean printCheque(Cheque cheque) throws JRException {
+        return printCheque(cheque, null);
     }
 
-    public static void printCheque(Cheque cheque, Bank bankTemplate) throws JRException {
+    public static boolean printCheque(Cheque cheque, Bank bankTemplate) throws JRException {
         JasperReport jr = compileChequeReport(cheque, bankTemplate);
         Map<String, Object> params = buildChequeParams(cheque);
-
         JasperPrint print = JasperFillManager.fillReport(jr, params, new JREmptyDataSource());
+        JasperPrintManager.printReport(print, false);
+        cheque.setStatus(Cheque.Status.Printed);
+        return true;
+    }
 
+    public static boolean previewCheque(Cheque cheque, Bank bankTemplate) throws JRException {
         try {
-            int pageWidthPts = jr.getPageWidth();
-            int pageHeightPts = jr.getPageHeight();
-            double widthMm = pageWidthPts * 25.4 / 72.0;
-            double heightMm = pageHeightPts * 25.4 / 72.0;
-
-            PrintRequestAttributeSet printRequestAttributeSet = new HashPrintRequestAttributeSet();
-            printRequestAttributeSet.add(new Copies(1));
-            printRequestAttributeSet.add(new MediaPrintableArea(0f, 0f, (float) widthMm, (float) heightMm,
-                    MediaPrintableArea.MM));
-            printRequestAttributeSet.add(MediaSizeName.ISO_A4);
-
-            JRPrintServiceExporter exporter = new JRPrintServiceExporter();
-            exporter.setExporterInput(new SimpleExporterInput(print));
-
-            SimplePrintServiceExporterConfiguration cfg = new SimplePrintServiceExporterConfiguration();
-            cfg.setPrintRequestAttributeSet(printRequestAttributeSet);
-            cfg.setDisplayPageDialog(false);
-            cfg.setDisplayPrintDialog(false);
-
-            PrintService defaultService = PrintServiceLookup.lookupDefaultPrintService();
-            if (defaultService != null) {
-                cfg.setPrintService(defaultService);
+            boolean printed = PREVIEW_SERVICE.previewCheque(cheque, bankTemplate);
+            if (printed) {
+                cheque.setStatus(Cheque.Status.Printed);
             }
-
-            exporter.setConfiguration(cfg);
-            exporter.exportReport();
-
-            cheque.setStatus(Cheque.Status.Printed);
+            return printed;
+        } catch (JRException ex) {
+            throw ex;
         } catch (Exception ex) {
-            JasperPrintManager.printReport(print, false);
-            cheque.setStatus(Cheque.Status.Printed);
+            throw new JRException("Unable to open cheque preview.", ex);
         }
+    }
+
+    public static boolean previewInvoice(Invoice invoice) throws JRException {
+        try {
+            return PREVIEW_SERVICE.previewInvoice(invoice);
+        } catch (JRException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new JRException("Unable to open invoice preview.", ex);
+        }
+    }
+
+    public static boolean printInvoice(Invoice invoice) throws JRException {
+        InputStream template = JasperPrintUtil.class
+                .getResourceAsStream("/reports/invoice_report.jrxml");
+
+        if (template == null) {
+            throw new JRException(
+                    "invoice_report.jrxml not found in /reports/. Add the file to src/main/resources/reports/");
+        }
+
+        JasperReport jr = JasperCompileManager.compileReport(template);
+        Map<String, Object> params = buildInvoiceParams(invoice);
+        JasperPrint print = JasperFillManager.fillReport(jr, params, new JREmptyDataSource());
+        JasperPrintManager.printReport(print, false);
+        return true;
     }
 
     public static String exportChequePdf(Cheque cheque, String outputDir) throws JRException {
@@ -124,23 +125,7 @@ public class JasperPrintUtil {
 
         JasperReport jr = JasperCompileManager.compileReport(template);
 
-        Map<String, Object> params = new HashMap<>();
-        params.put("invoiceNo", nvl(invoice.getInvoiceNo(), "N/A"));
-        params.put("clientName", nvl(invoice.getClientName(), "N/A"));
-        params.put("amount", invoice.getAmount() != null
-                ? invoice.getAmount().toPlainString()
-                : "0.00");
-        params.put("issueDate", invoice.getIssueDate() != null
-                ? invoice.getIssueDate().toString()
-                : "");
-        params.put("dueDate", invoice.getDueDate() != null
-                ? invoice.getDueDate().toString()
-                : "");
-        params.put("status", invoice.getStatus() != null
-                ? invoice.getStatus().name()
-                : "Unpaid");
-        params.put("notes", nvl(invoice.getNotes(), ""));
-
+        Map<String, Object> params = buildInvoiceParams(invoice);
         JasperPrint print = JasperFillManager.fillReport(jr, params, new JREmptyDataSource());
 
         File dir = new File(outputDir);
@@ -161,67 +146,6 @@ public class JasperPrintUtil {
         exporter.exportReport();
 
         return pdfPath;
-    }
-
-    public static void printInvoice(Invoice invoice) throws JRException {
-        InputStream template = JasperPrintUtil.class
-                .getResourceAsStream("/reports/invoice_report.jrxml");
-
-        if (template == null) {
-            throw new JRException(
-                    "invoice_report.jrxml not found in /reports/. Add the file to src/main/resources/reports/");
-        }
-
-        JasperReport jr = JasperCompileManager.compileReport(template);
-        Map<String, Object> params = new HashMap<>();
-        params.put("invoiceNo", nvl(invoice.getInvoiceNo(), "N/A"));
-        params.put("clientName", nvl(invoice.getClientName(), "N/A"));
-        params.put("amount", invoice.getAmount() != null
-                ? invoice.getAmount().toPlainString()
-                : "0.00");
-        params.put("issueDate", invoice.getIssueDate() != null
-                ? invoice.getIssueDate().toString()
-                : "");
-        params.put("dueDate", invoice.getDueDate() != null
-                ? invoice.getDueDate().toString()
-                : "");
-        params.put("status", invoice.getStatus() != null
-                ? invoice.getStatus().name()
-                : "Unpaid");
-        params.put("notes", nvl(invoice.getNotes(), ""));
-
-        JasperPrint print = JasperFillManager.fillReport(jr, params, new JREmptyDataSource());
-
-        try {
-            int pageWidthPts = jr.getPageWidth();
-            int pageHeightPts = jr.getPageHeight();
-            double widthMm = pageWidthPts * 25.4 / 72.0;
-            double heightMm = pageHeightPts * 25.4 / 72.0;
-
-            PrintRequestAttributeSet printRequestAttributeSet = new HashPrintRequestAttributeSet();
-            printRequestAttributeSet.add(new Copies(1));
-            printRequestAttributeSet.add(new MediaPrintableArea(0f, 0f, (float) widthMm, (float) heightMm,
-                    MediaPrintableArea.MM));
-            printRequestAttributeSet.add(MediaSizeName.ISO_A4);
-
-            JRPrintServiceExporter exporter = new JRPrintServiceExporter();
-            exporter.setExporterInput(new SimpleExporterInput(print));
-
-            SimplePrintServiceExporterConfiguration cfg = new SimplePrintServiceExporterConfiguration();
-            cfg.setPrintRequestAttributeSet(printRequestAttributeSet);
-            cfg.setDisplayPageDialog(false);
-            cfg.setDisplayPrintDialog(false);
-
-            PrintService defaultService = PrintServiceLookup.lookupDefaultPrintService();
-            if (defaultService != null) {
-                cfg.setPrintService(defaultService);
-            }
-
-            exporter.setConfiguration(cfg);
-            exporter.exportReport();
-        } catch (Exception ex) {
-            JasperPrintManager.printReport(print, false);
-        }
     }
 
     private static JasperReport compileChequeReport(Cheque cheque, Bank bankTemplate) throws JRException {
@@ -249,6 +173,26 @@ public class JasperPrintUtil {
         throw new JRException("No cheque template found for bank '"
                 + nvl(cheque.getBankName(), "Unknown")
                 + "'. Tried: " + String.join(", ", candidates));
+    }
+
+    private static Map<String, Object> buildInvoiceParams(Invoice invoice) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("invoiceNo", nvl(invoice.getInvoiceNo(), "N/A"));
+        params.put("clientName", nvl(invoice.getClientName(), "N/A"));
+        params.put("amount", invoice.getAmount() != null
+                ? invoice.getAmount().toPlainString()
+                : "0.00");
+        params.put("issueDate", invoice.getIssueDate() != null
+                ? invoice.getIssueDate().toString()
+                : "");
+        params.put("dueDate", invoice.getDueDate() != null
+                ? invoice.getDueDate().toString()
+                : "");
+        params.put("status", invoice.getStatus() != null
+                ? invoice.getStatus().name()
+                : "Unpaid");
+        params.put("notes", nvl(invoice.getNotes(), ""));
+        return params;
     }
 
     private static Map<String, Object> buildChequeParams(Cheque cheque) {

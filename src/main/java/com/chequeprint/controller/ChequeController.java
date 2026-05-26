@@ -279,6 +279,89 @@ public class ChequeController {
         }
     }
 
+    // ── Save and Direct Print ────────────────────────────────────────
+    @FXML
+    private void onSaveAndPrint() {
+        try {
+            String payee = fldPayee.getText().trim();
+            String amtStr = fldAmount.getText().trim();
+
+            if (payee.isEmpty() || amtStr.isEmpty()) {
+                FxUtils.shake(fldPayee.getParent());
+                showAlert("Validation", "Payee name and amount are required.",
+                        Alert.AlertType.WARNING);
+                return;
+            }
+
+            BigDecimal amount;
+            try {
+                amount = new BigDecimal(amtStr);
+            } catch (NumberFormatException nfe) {
+                FxUtils.shake(fldAmount);
+                showAlert("Validation", "Enter a valid numeric amount (e.g. 5000.00).",
+                        Alert.AlertType.WARNING);
+                return;
+            }
+
+            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                FxUtils.shake(fldAmount);
+                showAlert("Validation", "Amount must be greater than zero.",
+                        Alert.AlertType.WARNING);
+                return;
+            }
+
+            // Resolve bankId — prefer map lookup, fallback to combo index+1
+            String selectedBankName = cmbBank.getValue();
+            int bankId = bankNameToId.getOrDefault(selectedBankName,
+                    Math.max(1, cmbBank.getSelectionModel().getSelectedIndex() + 1));
+
+            Cheque newCheque;
+            if (selectedCheque == null) {
+                newCheque = new Cheque(null, payee, amount, bankId, datePicker.getValue());
+                chequeService.save(newCheque);
+            } else {
+                selectedCheque.setPayeeName(payee);
+                selectedCheque.setAmount(amount);
+                selectedCheque.setBankId(bankId);
+                selectedCheque.setIssueDate(datePicker.getValue());
+                chequeService.update(selectedCheque);
+                newCheque = selectedCheque;
+            }
+
+            loadData();
+
+            // Get the saved cheque with ID from database for printing
+            var allCheques = chequeService.getAll();
+            Cheque chequeToprint = allCheques.stream()
+                    .filter(c -> c.getPayeeName().equals(payee)
+                            && c.getAmount().compareTo(amount) == 0
+                            && c.getIssueDate().equals(datePicker.getValue()))
+                    .findFirst()
+                    .orElse(newCheque);
+
+            boolean printed = printService.previewCheque(chequeToprint);
+            if (!printed) {
+                showAlert("Print Canceled", "Cheque printing was canceled.",
+                        Alert.AlertType.INFORMATION);
+                return;
+            }
+
+            showAlert("Success", "Cheque preview opened and printed successfully.",
+                    Alert.AlertType.INFORMATION);
+
+            clearForm();
+            if (mainController != null) {
+                Object dc = mainController.getController("dashboard");
+                if (dc instanceof DashboardController) {
+                    ((DashboardController) dc).reload();
+                }
+            }
+
+        } catch (Exception e) {
+            showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+
     // ── Print ────────────────────────────────────────────────────────
     @FXML
     private void onPrint() {
@@ -290,16 +373,12 @@ public class ChequeController {
         }
 
         try {
-            // Actual printer flow (shows OS print dialog)
-            printService.printCheque(sel);
-
-            // Also keep PDF copy in Downloads/Desktop for records
-            Path home = Path.of(System.getProperty("user.home"));
-            Path downloads = home.resolve("Downloads");
-            Path desktop = home.resolve("Desktop");
-            Path targetDir = Files.exists(downloads) ? downloads
-                    : (Files.exists(desktop) ? desktop : home);
-            String savedPath = printService.exportChequePdf(sel.getId(), targetDir.toString());
+            boolean printed = printService.previewCheque(sel);
+            if (!printed) {
+                showAlert("Print Canceled", "Cheque printing was canceled.",
+                        Alert.AlertType.INFORMATION);
+                return;
+            }
 
             loadData();
             if (mainController != null) {
@@ -310,7 +389,7 @@ public class ChequeController {
             }
 
             showAlert("Print Successful",
-                    "Cheque printed and PDF copy saved to:\n" + savedPath,
+                    "Cheque printed successfully.",
                     Alert.AlertType.INFORMATION);
 
         } catch (Exception e) {
