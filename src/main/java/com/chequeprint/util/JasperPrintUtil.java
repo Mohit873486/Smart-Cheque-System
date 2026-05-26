@@ -207,6 +207,16 @@ public class JasperPrintUtil {
         params.put("issueDate", cheque.getIssueDate() != null
                 ? cheque.getIssueDate().toString()
                 : "");
+        // signature path for Jasper templates (optional)
+        try {
+            if (com.chequeprint.util.SignatureService.hasSignature()) {
+                params.put("signaturePath", com.chequeprint.util.SignatureService.getSignaturePath().toString());
+            } else {
+                params.put("signaturePath", "");
+            }
+        } catch (Exception ignored) {
+            params.put("signaturePath", "");
+        }
         return params;
     }
 

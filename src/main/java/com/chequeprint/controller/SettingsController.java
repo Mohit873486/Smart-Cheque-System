@@ -7,6 +7,7 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 
 /**
  * SettingsController - Manages application settings, preferences, and
@@ -73,6 +74,26 @@ public class SettingsController {
     @FXML
     private Button btnResetSettings;
 
+    // ========================================
+    // SIGNATURE AUTO SETTINGS
+    // ========================================
+    @FXML
+    private javafx.scene.image.ImageView ivSignature;
+    @FXML
+    private Button btnUploadSignature;
+    @FXML
+    private Button btnRemoveSignature;
+    @FXML
+    private CheckBox cbAutoSignature;
+    @FXML
+    private TextField tfSigWidth;
+    @FXML
+    private TextField tfSigHeight;
+    @FXML
+    private TextField tfSigX;
+    @FXML
+    private TextField tfSigY;
+
     private MainController mainController;
 
     public void setMainController(MainController mainController) {
@@ -92,6 +113,21 @@ public class SettingsController {
 
             // Load current settings from preferences/database
             loadSettings();
+
+            // Load signature preview if available
+            try {
+                javafx.scene.image.Image img = com.chequeprint.util.SignatureService.loadSignatureImage();
+                if (img != null && ivSignature != null) {
+                    ivSignature.setImage(img);
+                }
+                java.util.Properties meta = com.chequeprint.util.SignatureService.loadMetadata();
+                cbAutoSignature.setSelected(Boolean.parseBoolean(meta.getProperty("enabled", "true")));
+                tfSigWidth.setText(meta.getProperty("width", "120px"));
+                tfSigHeight.setText(meta.getProperty("height", "40px"));
+                tfSigX.setText(meta.getProperty("x", "0"));
+                tfSigY.setText(meta.getProperty("y", "0"));
+            } catch (Exception ignored) {
+            }
 
             System.out.println("[SettingsController] Initialization completed successfully");
         } catch (Exception e) {
@@ -202,6 +238,18 @@ public class SettingsController {
             SettingDAO dao = new SettingDAO();
             dao.saveSettings(s);
 
+            // persist signature metadata
+            try {
+                java.util.Properties meta = com.chequeprint.util.SignatureService.loadMetadata();
+                meta.setProperty("enabled", Boolean.toString(cbAutoSignature.isSelected()));
+                meta.setProperty("width", tfSigWidth.getText() == null ? "120px" : tfSigWidth.getText());
+                meta.setProperty("height", tfSigHeight.getText() == null ? "40px" : tfSigHeight.getText());
+                meta.setProperty("x", tfSigX.getText() == null ? "0" : tfSigX.getText());
+                meta.setProperty("y", tfSigY.getText() == null ? "0" : tfSigY.getText());
+                com.chequeprint.util.SignatureService.saveMetadata(meta);
+            } catch (Exception ignored) {
+            }
+
             showAlert(Alert.AlertType.INFORMATION, "Success", "Settings saved successfully!");
 
         } catch (Exception e) {
@@ -258,6 +306,45 @@ public class SettingsController {
     // ========================================
     // UTILITY METHODS
     // ========================================
+
+    @FXML
+    private void onUploadSignature() {
+        try {
+            javafx.stage.FileChooser chooser = new javafx.stage.FileChooser();
+            chooser.setTitle("Upload Signature (PNG)");
+            chooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("PNG Images", "*.png"));
+            Stage stage = (Stage) btnSaveSettings.getScene().getWindow();
+            java.io.File file = chooser.showOpenDialog(stage);
+            if (file == null) return;
+
+            // Save to app directory
+            java.nio.file.Path saved = com.chequeprint.util.SignatureService.saveSignature(file);
+            javafx.scene.image.Image img = com.chequeprint.util.SignatureService.loadSignatureImage();
+            if (ivSignature != null && img != null) {
+                ivSignature.setImage(img);
+            }
+            java.util.Properties meta = com.chequeprint.util.SignatureService.loadMetadata();
+            meta.setProperty("enabled", Boolean.toString(true));
+            com.chequeprint.util.SignatureService.saveMetadata(meta);
+            showAlert(Alert.AlertType.INFORMATION, "Signature", "Signature uploaded successfully.");
+        } catch (Exception ex) {
+            showAlert(Alert.AlertType.ERROR, "Signature Error", "Failed to upload signature: " + ex.getMessage());
+        }
+    }
+
+    @FXML
+    private void onRemoveSignature() {
+        try {
+            com.chequeprint.util.SignatureService.removeSignature();
+            if (ivSignature != null) ivSignature.setImage(null);
+            java.util.Properties meta = com.chequeprint.util.SignatureService.loadMetadata();
+            meta.setProperty("enabled", "false");
+            com.chequeprint.util.SignatureService.saveMetadata(meta);
+            showAlert(Alert.AlertType.INFORMATION, "Signature", "Signature removed.");
+        } catch (Exception ex) {
+            showAlert(Alert.AlertType.ERROR, "Signature Error", "Failed to remove signature: " + ex.getMessage());
+        }
+    }
 
     private void showAlert(Alert.AlertType type, String title, String message) {
         Alert alert = new Alert(type);

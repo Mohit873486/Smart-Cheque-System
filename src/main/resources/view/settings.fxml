@@ -2,6 +2,7 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
 
 <ScrollPane fitToWidth="true"
@@ -76,6 +77,48 @@
                     </VBox>
                 </HBox>
 
+            </VBox>
+        </VBox>
+
+        <!-- ─────────── Signature Settings ─────────── -->
+        <VBox spacing="0"
+            style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
+            <HBox alignment="CENTER_LEFT" spacing="10"
+                style="-fx-padding: 18 24 14 24;">
+                <Label text="✍️" style="-fx-font-size: 16px;" />
+                <Label text="Signature"
+                    style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
+            </HBox>
+            <Separator />
+
+            <VBox spacing="14" style="-fx-padding: 18 24 18 24;">
+                <HBox spacing="12" alignment="CENTER_LEFT">
+                    <ImageView fx:id="ivSignature" fitWidth="200" fitHeight="80" preserveRatio="true" style="-fx-border-color:#e5e7eb; -fx-background-color: #fff;" />
+                    <VBox spacing="8">
+                        <Button fx:id="btnUploadSignature" text="Upload Signature" onAction="#onUploadSignature" style="-fx-background-radius:8; -fx-padding:8 12;" />
+                        <Button fx:id="btnRemoveSignature" text="Remove Signature" onAction="#onRemoveSignature" style="-fx-background-radius:8; -fx-padding:8 12;" />
+                        <CheckBox fx:id="cbAutoSignature" text="Enable Auto Signature" />
+                    </VBox>
+                </HBox>
+
+                <HBox spacing="12">
+                    <VBox spacing="6">
+                        <Label text="Width (e.g., 120px)" />
+                        <TextField fx:id="tfSigWidth" />
+                    </VBox>
+                    <VBox spacing="6">
+                        <Label text="Height (e.g., 40px)" />
+                        <TextField fx:id="tfSigHeight" />
+                    </VBox>
+                    <VBox spacing="6">
+                        <Label text="Offset X" />
+                        <TextField fx:id="tfSigX" />
+                    </VBox>
+                    <VBox spacing="6">
+                        <Label text="Offset Y" />
+                        <TextField fx:id="tfSigY" />
+                    </VBox>
+                </HBox>
             </VBox>
         </VBox>
 

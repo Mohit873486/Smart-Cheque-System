@@ -126,7 +126,8 @@ body {
     </div>
 
     <div class="field signature" style="left: {{SIGN_LEFT}}; top: {{SIGN_TOP}};">
-      <div class="value">Authorised Signature</div>
+      <img id="sig" src="{{SIGN_SRC}}" style="position:absolute; left:calc(50% + {{SIGN_OFFSET_X}}); top:calc(50% + {{SIGN_OFFSET_Y}}); transform:translate(-50%, -50%); width:{{SIGN_WIDTH}}; height:{{SIGN_HEIGHT}}; display:{{SIGN_DISPLAY}}; object-fit:contain;" />
+      <div class="value" style="display: {{SIGN_LABEL_DISPLAY}}">Authorised Signature</div>
     </div>
 
     <div class="micr" style="left: {{MICR_LEFT}}; top: {{MICR_TOP}};">{{MICR_TEXT}}</div>

@@ -12,6 +12,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import com.chequeprint.util.SignatureService;
+import java.util.Properties;
 
 public class PrintHtmlTemplateService {
 
@@ -47,6 +49,25 @@ public class PrintHtmlTemplateService {
 
         template = template.replace("{{SIGN_LEFT}}", ratioToPercent(layout.get(LayoutField.SIGNATURE).getXRatio()));
         template = template.replace("{{SIGN_TOP}}", ratioToPercent(layout.get(LayoutField.SIGNATURE).getYRatio()));
+
+        // Signature injection: load saved metadata and signature path
+        Properties meta = SignatureService.loadMetadata();
+        boolean sigEnabled = Boolean.parseBoolean(meta.getProperty("enabled", "true")) && SignatureService.hasSignature();
+        String sigSrc = sigEnabled ? SignatureService.getSignatureUrl() : "";
+        String sigWidth = meta.getProperty("width", "120px");
+        String sigHeight = meta.getProperty("height", "40px");
+        String sigOffsetX = meta.getProperty("x", "0px");
+        String sigOffsetY = meta.getProperty("y", "0px");
+        String sigDisplay = sigEnabled ? "block" : "none";
+        String sigLabelDisplay = sigEnabled ? "none" : "block";
+
+        template = template.replace("{{SIGN_SRC}}", sigSrc);
+        template = template.replace("{{SIGN_WIDTH}}", sigWidth);
+        template = template.replace("{{SIGN_HEIGHT}}", sigHeight);
+        template = template.replace("{{SIGN_DISPLAY}}", sigDisplay);
+        template = template.replace("{{SIGN_LABEL_DISPLAY}}", sigLabelDisplay);
+        template = template.replace("{{SIGN_OFFSET_X}}", sigOffsetX);
+        template = template.replace("{{SIGN_OFFSET_Y}}", sigOffsetY);
 
         template = template.replace("{{MICR_LEFT}}", ratioToPercent(layout.get(LayoutField.MICR).getXRatio()));
         template = template.replace("{{MICR_TOP}}", ratioToPercent(layout.get(LayoutField.MICR).getYRatio()));

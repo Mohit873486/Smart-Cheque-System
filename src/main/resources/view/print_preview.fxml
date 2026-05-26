@@ -55,8 +55,8 @@
 
                         <Separator />
 
-                        <Button text="Print" onAction="#onPrint" styleClass="btn-primary" maxWidth="Infinity" />
-                        <Button text="Save as PDF" onAction="#onSavePdf" styleClass="btn-secondary" maxWidth="Infinity" />
+                        <Button fx:id="btnPrint" text="Print" onAction="#onPrint" styleClass="btn-primary" maxWidth="Infinity" />
+                        <Button fx:id="btnSavePdf" text="Save as PDF" onAction="#onSavePdf" styleClass="btn-secondary" maxWidth="Infinity" />
                         <Button text="Close" onAction="#onClose" styleClass="btn-outline" maxWidth="Infinity" />
 
                         <Region VBox.vgrow="ALWAYS" />

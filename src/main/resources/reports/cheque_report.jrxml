@@ -16,6 +16,7 @@
     <parameter name="amountWords" class="java.lang.String"/>
     <parameter name="bankName"    class="java.lang.String"/>
     <parameter name="issueDate"   class="java.lang.String"/>
+    <parameter name="signaturePath" class="java.lang.String"/>
 
     <background>
         <band splitType="Stretch"/>
@@ -150,7 +151,11 @@
                 <text><![CDATA[⑆ 000000 ⑆ 0000000000 ⑆]]></text>
             </staticText>
 
-            <!-- Signature line -->
+            <!-- Signature image -->
+            <image scaleImage="RetainShape">
+                <reportElement x="410" y="140" width="150" height="45" />
+                <imageExpression><![CDATA[$P{signaturePath} != null && !$P{signaturePath}.isEmpty() ? new java.io.File($P{signaturePath}).toURI().toURL() : null]]></imageExpression>
+            </image>
             <line>
                 <reportElement x="400" y="185" width="160" height="1" />
                 <graphicElement><pen lineWidth="0.75" lineColor="#1e293b"/></graphicElement>
@@ -164,4 +169,3 @@
         </band>
     </title>
 </jasperReport>
-

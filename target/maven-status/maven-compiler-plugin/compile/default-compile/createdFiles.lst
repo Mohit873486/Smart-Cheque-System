@@ -22,6 +22,7 @@ com\chequeprint\preview\ChequeField.class
 com\chequeprint\dao\BankDAO.class
 com\chequeprint\util\BankTemplateLayoutStore.class
 com\chequeprint\controller\ProfileController.class
+com\chequeprint\util\SignatureService.class
 com\chequeprint\dao\ChequeDAO.class
 com\chequeprint\controller\MainController$2.class
 com\chequeprint\model\BankTemplateLayout$1.class

@@ -44,7 +44,7 @@ public class PrintPreviewService {
                 html,
                 widthMm,
                 heightMm,
-                () -> JasperPrintUtil.exportChequePdf(cheque, resolveDefaultExportDir().toString(), bankTemplate));
+                () -> JasperPrintUtil.exportChequePdf(cheque, createTempExportDir().toString(), bankTemplate));
 
         return showPreview(doc);
     }
@@ -63,7 +63,7 @@ public class PrintPreviewService {
                 html,
                 210.0,
                 297.0,
-                () -> JasperPrintUtil.exportInvoicePdf(invoice, resolveDefaultExportDir().toString()));
+                () -> JasperPrintUtil.exportInvoicePdf(invoice, createTempExportDir().toString()));
 
         return showPreview(doc);
     }
@@ -148,18 +148,8 @@ public class PrintPreviewService {
         return merged;
     }
 
-    private Path resolveDefaultExportDir() {
-        Path home = Path.of(System.getProperty("user.home"));
-        Path downloads = home.resolve("Downloads");
-        Path desktop = home.resolve("Desktop");
-
-        if (Files.exists(downloads)) {
-            return downloads;
-        }
-        if (Files.exists(desktop)) {
-            return desktop;
-        }
-        return home;
+    private Path createTempExportDir() throws Exception {
+        return Files.createTempDirectory("chequepro-preview-");
     }
 
     private String safe(String value, String fallback) {
