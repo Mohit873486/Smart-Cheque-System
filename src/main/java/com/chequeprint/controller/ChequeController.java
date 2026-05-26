@@ -339,14 +339,14 @@ public class ChequeController {
                     .findFirst()
                     .orElse(newCheque);
 
-            boolean printed = printService.previewCheque(chequeToprint);
+            boolean printed = printService.printCheque(chequeToprint);
             if (!printed) {
                 showAlert("Print Canceled", "Cheque printing was canceled.",
                         Alert.AlertType.INFORMATION);
                 return;
             }
 
-            showAlert("Success", "Cheque preview opened and printed successfully.",
+            showAlert("Success", "Cheque printed successfully.",
                     Alert.AlertType.INFORMATION);
 
             clearForm();
@@ -373,7 +373,7 @@ public class ChequeController {
         }
 
         try {
-            boolean printed = printService.previewCheque(sel);
+            boolean printed = printService.printCheque(sel);
             if (!printed) {
                 showAlert("Print Canceled", "Cheque printing was canceled.",
                         Alert.AlertType.INFORMATION);

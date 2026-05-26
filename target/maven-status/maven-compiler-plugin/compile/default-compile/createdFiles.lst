@@ -13,7 +13,6 @@ com\chequeprint\model\FieldPosition.class
 com\chequeprint\model\Settings.class
 com\chequeprint\controller\ChequeController.class
 com\chequeprint\controller\SettingsController.class
-com\chequeprint\printpreview\PrintPreviewController$2.class
 com\chequeprint\model\BankTemplateLayout.class
 com\chequeprint\model\Cheque$Status.class
 com\chequeprint\controller\DashboardController.class
@@ -62,7 +61,6 @@ com\chequeprint\MainApp.class
 com\chequeprint\model\Invoice.class
 com\chequeprint\service\InvoiceService.class
 com\chequeprint\controller\ChequeController$1.class
-com\chequeprint\printpreview\PrintPreviewController$1.class
 com\chequeprint\model\Cheque.class
 com\chequeprint\util\DateUtil.class
 com\chequeprint\controller\MainController.class

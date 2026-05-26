@@ -2,18 +2,12 @@ package com.chequeprint.printpreview;
 
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.print.JobSettings;
 import javafx.print.PageLayout;
 import javafx.print.PageOrientation;
 import javafx.print.Paper;
 import javafx.print.Printer;
 import javafx.print.PrinterJob;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
+import javafx.scene.control.*;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.concurrent.Worker;
@@ -39,7 +33,7 @@ public class PrintPreviewController {
     private ComboBox<String> cmbZoom;
 
     @FXML
-    private ComboBox<Printer> cmbPrinter;
+    private ComboBox<String> cmbPrinter;
 
     @FXML
     private WebView previewWebView;
@@ -57,30 +51,50 @@ public class PrintPreviewController {
 
     @FXML
     public void initialize() {
+
         setupZoom();
+
         setupPrinters();
+
         previewWebView.setContextMenuEnabled(false);
-        setButtonsEnabled(false);
+
+        setButtonsEnabled(false, false);
     }
 
     public void setDocument(PrintPreviewDocument document) {
+
         this.document = document;
-        this.contentReady = false;
-        setButtonsEnabled(false);
+
+        boolean canSave = document.getPdfSaveHandler() != null;
+
         lblDocTitle.setText(document.getDocumentTitle());
-        lblSize.setText(String.format(Locale.ROOT, "%.1f mm x %.1f mm", document.getWidthMm(), document.getHeightMm()));
+
+        lblSize.setText(String.format(
+                Locale.ROOT,
+                "%.1f mm x %.1f mm",
+                document.getWidthMm(),
+                document.getHeightMm()));
 
         WebEngine engine = previewWebView.getEngine();
+
         engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
+
             if (newState == Worker.State.SUCCEEDED) {
+
                 contentReady = true;
-                setButtonsEnabled(true);
-            } else if (newState == Worker.State.FAILED || newState == Worker.State.CANCELLED) {
+
+                setButtonsEnabled(true, canSave);
+
+            } else if (newState == Worker.State.FAILED) {
+
                 contentReady = false;
-                setButtonsEnabled(false);
+
+                setButtonsEnabled(false, canSave);
             }
         });
+
         engine.loadContent(document.getHtmlContent(), "text/html");
+
         applyZoom(cmbZoom.getValue());
     }
 
@@ -88,256 +102,281 @@ public class PrintPreviewController {
         return printed;
     }
 
+    // =========================================================
+    // PRINT BUTTON
+    // =========================================================
+
     @FXML
     private void onPrint() {
+
         if (document == null) {
+            showAlert(
+                    "Print",
+                    "Unable to print: no document loaded.",
+                    Alert.AlertType.ERROR);
             return;
         }
-        if (!contentReady) {
-            showAlert("Preview", "Please wait for preview to finish loading.", Alert.AlertType.INFORMATION);
+
+        String printerName = cmbPrinter.getValue();
+        Printer printer = selectPrinter(printerName);
+        if (printer == null) {
+            showAlert(
+                    "Print",
+                    "Selected printer does not support silent printing.",
+                    Alert.AlertType.WARNING);
             return;
         }
 
-        try {
-            Printer printer = cmbPrinter.getValue() != null ? cmbPrinter.getValue() : Printer.getDefaultPrinter();
-            if (printer == null) {
-                showAlert("Printer", "No printer found on this system.", Alert.AlertType.WARNING);
-                return;
-            }
-            if (isFaxPrinter(printer)) {
-                showAlert("Printer", "Selected printer is Fax. Please choose a real printer or PDF printer.", Alert.AlertType.WARNING);
-                return;
-            }
+        if (isVirtualPrinterName(printer.getName())) {
+            showAlert(
+                    "Print",
+                    "Selected printer does not support silent printing.",
+                    Alert.AlertType.WARNING);
+            return;
+        }
 
-            // If user selected a PDF virtual printer, use same save-to-file flow as Save as PDF.
-            if (isPdfPrinter(printer)) {
-                Path saved = savePdfToUserLocation();
-                if (saved != null) {
-                    showAlert("PDF Saved", "Saved file:\n" + saved, Alert.AlertType.INFORMATION);
-                    printed = true;
-                    closeWindow();
-                }
-                return;
-            }
+        PrinterJob job = PrinterJob.createPrinterJob(printer);
+        if (job == null) {
+            showAlert(
+                    "Printer",
+                    "Unable to create a printer job.",
+                    Alert.AlertType.ERROR);
+            return;
+        }
 
-            PrinterJob job = PrinterJob.createPrinterJob(printer);
-            if (job == null) {
-                showAlert("Printer", "Unable to create print job.", Alert.AlertType.ERROR);
-                return;
-            }
+        PageOrientation orientation = document.getWidthMm() >= document.getHeightMm()
+                ? PageOrientation.LANDSCAPE
+                : PageOrientation.PORTRAIT;
 
-            JobSettings settings = job.getJobSettings();
-            settings.setJobName(document.getJobName());
+        Paper paper = choosePaper(printer, orientation);
+        PageLayout layout = printer.createPageLayout(paper, orientation, Printer.MarginType.HARDWARE_MINIMUM);
+        job.getJobSettings().setPageLayout(layout);
 
-            PageOrientation orientation = document.getWidthMm() >= document.getHeightMm()
-                    ? PageOrientation.LANDSCAPE
-                    : PageOrientation.PORTRAIT;
+        boolean printedPage = job.printPage(previewWebView);
+        if (!printedPage) {
+            showAlert(
+                    "Print",
+                    "Unable to print the preview content.",
+                    Alert.AlertType.ERROR);
+            return;
+        }
 
-            Paper paper = choosePaper(printer, orientation);
-            PageLayout layout = printer.createPageLayout(paper, orientation, Printer.MarginType.HARDWARE_MINIMUM);
-            settings.setPageLayout(layout);
-
-            previewWebView.getEngine().print(job);
-            boolean ended = job.endJob();
-            if (ended) {
-                printed = true;
-                closeWindow();
-            } else {
-                showAlert("Print", "Print job was cancelled or failed.", Alert.AlertType.INFORMATION);
-            }
-        } catch (Exception ex) {
-            showAlert("Print Error", ex.getMessage(), Alert.AlertType.ERROR);
+        boolean ended = job.endJob();
+        if (ended) {
+            printed = true;
+            closeWindow();
+        } else {
+            showAlert(
+                    "Print",
+                    "Print job was cancelled or failed.",
+                    Alert.AlertType.INFORMATION);
         }
     }
+
+    // =========================================================
+    // SAVE PDF BUTTON
+    // =========================================================
 
     @FXML
     private void onSavePdf() {
+
         if (document == null || document.getPdfSaveHandler() == null) {
-            showAlert("PDF", "Save as PDF is not available for this document.", Alert.AlertType.INFORMATION);
-            return;
-        }
-        if (!contentReady) {
-            showAlert("Preview", "Please wait for preview to finish loading.", Alert.AlertType.INFORMATION);
+
+            showAlert(
+                    "PDF",
+                    "Save as PDF not available.",
+                    Alert.AlertType.ERROR);
+
             return;
         }
 
         try {
-            Path saved = savePdfToUserLocation();
-            if (saved == null) {
+
+            // Generate temp PDF
+            String generatedPdf = document.getPdfSaveHandler().savePdf();
+
+            FileChooser chooser = new FileChooser();
+
+            chooser.setTitle("Save PDF");
+
+            chooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter(
+                            "PDF Files",
+                            "*.pdf"));
+
+            chooser.setInitialFileName(suggestPdfName(document.getJobName()));
+            if (lastSaveDirectory != null && Files.isDirectory(lastSaveDirectory)) {
+                chooser.setInitialDirectory(lastSaveDirectory.toFile());
+            }
+
+            File saveFile = chooser.showSaveDialog(
+                    previewWebView.getScene().getWindow());
+
+            if (saveFile == null) {
                 return;
             }
-            showAlert("PDF Saved", "Saved file:\n" + saved, Alert.AlertType.INFORMATION);
-            openContainingFolder(saved);
+
+            Path sourcePath = Path.of(generatedPdf).toAbsolutePath().normalize();
+            if (!Files.exists(sourcePath) || Files.size(sourcePath) == 0) {
+                throw new IllegalStateException("Generated PDF is missing or empty.");
+            }
+
+            Path targetPath = withPdfExtension(saveFile.toPath()).toAbsolutePath().normalize();
+            if (targetPath.getParent() != null) {
+                Files.createDirectories(targetPath.getParent());
+            }
+
+            Files.copy(
+                    sourcePath,
+                    targetPath,
+                    StandardCopyOption.REPLACE_EXISTING);
+
+            lastSaveDirectory = targetPath.getParent();
+
+            showAlert(
+                    "PDF Saved",
+                    "Saved Successfully:\n" + targetPath.toString(),
+                    Alert.AlertType.INFORMATION);
+            openContainingFolder(targetPath);
+
         } catch (Exception ex) {
-            showAlert("PDF Error", ex.getMessage(), Alert.AlertType.ERROR);
+
+            ex.printStackTrace();
+
+            showAlert(
+                    "PDF Error",
+                    ex.getMessage(),
+                    Alert.AlertType.ERROR);
         }
     }
 
-    private Path savePdfToUserLocation() throws Exception {
-        if (document == null || document.getPdfSaveHandler() == null) {
-            return null;
-        }
-
-        // First generate the PDF to a temporary location so we can validate it.
-        String generated = document.getPdfSaveHandler().savePdf();
-        Path sourcePath = Path.of(generated).toAbsolutePath().normalize();
-
-        if (!Files.exists(sourcePath)) {
-            throw new IllegalStateException("PDF was not generated: " + sourcePath);
-        }
-        if (Files.size(sourcePath) <= 0) {
-            throw new IllegalStateException("Generated PDF is empty: " + sourcePath);
-        }
-
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Save PDF");
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF Files", "*.pdf"));
-        chooser.setInitialFileName(suggestPdfName(document.getJobName()));
-        if (lastSaveDirectory != null && Files.isDirectory(lastSaveDirectory)) {
-            chooser.setInitialDirectory(lastSaveDirectory.toFile());
-        }
-
-        Stage stage = (Stage) previewWebView.getScene().getWindow();
-        File target = chooser.showSaveDialog(stage);
-        if (target == null) {
-            return null;
-        }
-
-        Path targetPath = withPdfExtension(target.toPath()).toAbsolutePath().normalize();
-        if (targetPath.getParent() != null) {
-            Files.createDirectories(targetPath.getParent());
-        }
-
-        if (!sourcePath.equals(targetPath)) {
-            Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-        }
-
-        if (!Files.exists(targetPath)) {
-            throw new IllegalStateException("PDF save failed at: " + targetPath);
-        }
-        if (Files.size(targetPath) <= 0) {
-            throw new IllegalStateException("Saved PDF is empty: " + targetPath);
-        }
-
-        lastSaveDirectory = targetPath.getParent();
-        return targetPath;
-    }
+    // =========================================================
+    // CLOSE BUTTON
+    // =========================================================
 
     @FXML
     private void onClose() {
-        closeWindow();
+
+        Stage stage = (Stage) previewWebView.getScene().getWindow();
+
+        stage.close();
     }
+
+    // =========================================================
+    // ZOOM
+    // =========================================================
 
     private void setupZoom() {
-        cmbZoom.setItems(FXCollections.observableArrayList("75%", "100%", "125%", "150%"));
+
+        cmbZoom.setItems(
+                FXCollections.observableArrayList(
+                        "75%",
+                        "100%",
+                        "125%",
+                        "150%"));
+
         cmbZoom.setValue("100%");
-        cmbZoom.valueProperty().addListener((obs, oldVal, newVal) -> applyZoom(newVal));
-    }
 
-    private void setupPrinters() {
-        cmbPrinter.setCellFactory(cb -> new ListCell<>() {
-            @Override
-            protected void updateItem(Printer item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.getName());
-            }
+        cmbZoom.valueProperty().addListener((obs, oldVal, newVal) -> {
+            applyZoom(newVal);
         });
-        cmbPrinter.setButtonCell(new ListCell<>() {
-            @Override
-            protected void updateItem(Printer item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? "Select printer" : item.getName());
-            }
-        });
-
-        cmbPrinter.setItems(FXCollections.observableArrayList(Printer.getAllPrinters()));
-        Printer defaultPrinter = Printer.getDefaultPrinter();
-        if (defaultPrinter != null) {
-            cmbPrinter.setValue(defaultPrinter);
-        } else if (!cmbPrinter.getItems().isEmpty()) {
-            cmbPrinter.setValue(cmbPrinter.getItems().get(0));
-        }
     }
 
     private void applyZoom(String zoomLabel) {
+
         if (zoomLabel == null) {
+
             previewWebView.setZoom(1.0);
+
             return;
         }
+
         String numeric = zoomLabel.replace("%", "").trim();
+
         try {
+
             double factor = Double.parseDouble(numeric) / 100.0;
+
             previewWebView.setZoom(factor);
-        } catch (NumberFormatException ex) {
+
+        } catch (Exception ex) {
+
             previewWebView.setZoom(1.0);
         }
     }
 
-    private Paper choosePaper(Printer printer, PageOrientation orientation) {
-        Paper target = orientation == PageOrientation.LANDSCAPE ? Paper.A4 : Paper.A4;
-        if (printer.getPrinterAttributes().getSupportedPapers().contains(target)) {
-            return target;
+    // =========================================================
+    // PRINTER LIST
+    // =========================================================
+
+    private void setupPrinters() {
+
+        var printerNames = FXCollections.observableArrayList("Default Printer");
+        for (Printer printer : Printer.getAllPrinters()) {
+            String name = printer.getName();
+            if (name != null && !name.isBlank() && !printerNames.contains(name)) {
+                printerNames.add(name);
+            }
         }
-        return printer.getPrinterAttributes().getDefaultPaper();
+
+        cmbPrinter.setItems(printerNames);
+        cmbPrinter.setValue("Default Printer");
+    }
+
+    // =========================================================
+    // BUTTON ENABLE/DISABLE
+    // =========================================================
+
+    private Printer selectPrinter(String printerName) {
+        if (printerName == null || printerName.isBlank() || printerName.equals("Default Printer")) {
+            return Printer.getDefaultPrinter();
+        }
+        for (Printer printer : Printer.getAllPrinters()) {
+            if (printerName.equalsIgnoreCase(printer.getName())) {
+                return printer;
+            }
+        }
+        return Printer.getDefaultPrinter();
+    }
+
+    private boolean isVirtualPrinterName(String name) {
+        if (name == null) {
+            return true;
+        }
+        String lower = name.toLowerCase(Locale.ROOT);
+        return lower.contains("fax")
+                || lower.contains("print to pdf")
+                || lower.contains("xps")
+                || lower.contains("onenote")
+                || lower.contains("pdf")
+                || lower.contains("virtual");
+    }
+
+    private Paper choosePaper(Printer printer, PageOrientation orientation) {
+        Paper target = Paper.A4;
+        if (printer != null) {
+            if (printer.getPrinterAttributes().getSupportedPapers().contains(target)) {
+                return target;
+            }
+            return printer.getPrinterAttributes().getDefaultPaper();
+        }
+        return target;
     }
 
     private void closeWindow() {
         Stage stage = (Stage) previewWebView.getScene().getWindow();
-        stage.close();
+        if (stage != null) {
+            stage.close();
+        }
     }
 
-    private void showAlert(String title, String msg, Alert.AlertType type) {
-        Alert alert = new Alert(type, msg, ButtonType.OK);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.showAndWait();
-    }
+    private void setButtonsEnabled(
+            boolean printEnabled,
+            boolean saveEnabled) {
 
-    private String suggestPdfName(String rawName) {
-        String base = (rawName == null || rawName.isBlank()) ? "document" : rawName;
-        String clean = base.replaceAll("[\\\\/:*?\"<>|]+", "_").trim();
-        if (clean.isEmpty()) {
-            clean = "document";
-        }
-        if (!clean.toLowerCase(Locale.ROOT).endsWith(".pdf")) {
-            clean = clean + ".pdf";
-        }
-        return clean;
-    }
+        btnPrint.setDisable(!printEnabled);
 
-    private Path withPdfExtension(Path path) {
-        String name = path.getFileName() != null ? path.getFileName().toString() : "";
-        if (name.toLowerCase(Locale.ROOT).endsWith(".pdf")) {
-            return path;
-        }
-        Path parent = path.getParent();
-        String updated = name.isBlank() ? "document.pdf" : name + ".pdf";
-        return parent == null ? Path.of(updated) : parent.resolve(updated);
-    }
-
-    private boolean isPdfPrinter(Printer printer) {
-        if (printer == null || printer.getName() == null) {
-            return false;
-        }
-        String name = printer.getName().toLowerCase(Locale.ROOT);
-        return name.contains("pdf");
-    }
-
-    private boolean isFaxPrinter(Printer printer) {
-        if (printer == null || printer.getName() == null) {
-            return false;
-        }
-        String name = printer.getName().toLowerCase(Locale.ROOT);
-        return name.contains("fax");
-    }
-
-    private void setButtonsEnabled(boolean enabled) {
-        if (btnPrint != null) {
-            btnPrint.setDisable(!enabled);
-        }
-        if (btnSavePdf != null) {
-            btnSavePdf.setDisable(!enabled);
-        }
+        btnSavePdf.setDisable(!saveEnabled);
     }
 
     private void openContainingFolder(Path file) {
@@ -349,7 +388,48 @@ public class PrintPreviewController {
                 Desktop.getDesktop().open(file.getParent().toFile());
             }
         } catch (Exception ignored) {
-            // Non-blocking helper, ignore failures.
+            // ignore non-critical folder open errors
         }
+    }
+
+    private String suggestPdfName(String rawName) {
+        String base = rawName == null || rawName.isBlank() ? "document" : rawName;
+        String clean = base.replaceAll("[\\\\/:*?\"<>|]+", "_").trim();
+        if (clean.isEmpty()) {
+            clean = "document";
+        }
+        if (!clean.toLowerCase(Locale.ROOT).endsWith(".pdf")) {
+            clean = clean + ".pdf";
+        }
+        return clean;
+    }
+
+    private Path withPdfExtension(Path path) {
+        String fileName = path.getFileName() != null ? path.getFileName().toString() : "document.pdf";
+        if (fileName.toLowerCase(Locale.ROOT).endsWith(".pdf")) {
+            return path;
+        }
+        Path parent = path.getParent();
+        return parent == null ? Path.of(fileName + ".pdf") : parent.resolve(fileName + ".pdf");
+    }
+
+    // =========================================================
+    // ALERT
+    // =========================================================
+
+    private void showAlert(
+            String title,
+            String msg,
+            Alert.AlertType type) {
+
+        Alert alert = new Alert(type);
+
+        alert.setTitle(title);
+
+        alert.setHeaderText(null);
+
+        alert.setContentText(msg);
+
+        alert.showAndWait();
     }
 }
