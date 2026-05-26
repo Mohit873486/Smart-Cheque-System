@@ -317,8 +317,10 @@ public class SettingsController {
             java.io.File file = chooser.showOpenDialog(stage);
             if (file == null) return;
 
+            com.chequeprint.util.SignatureService.validateSignatureImage(file);
+
             // Save to app directory
-            java.nio.file.Path saved = com.chequeprint.util.SignatureService.saveSignature(file);
+            com.chequeprint.util.SignatureService.saveSignature(file);
             javafx.scene.image.Image img = com.chequeprint.util.SignatureService.loadSignatureImage();
             if (ivSignature != null && img != null) {
                 ivSignature.setImage(img);

@@ -36,6 +36,10 @@ public class DashboardController {
     @FXML
     private Label lblPendingCheques;
     @FXML
+    private Label lblPrintedCheques;
+    @FXML
+    private Label lblTodayEntries;
+    @FXML
     private Label lblTotalInvoices;
     @FXML
     private Label lblTotalAmount;
@@ -133,6 +137,7 @@ public class DashboardController {
     private final ChequeService service = new ChequeService();
     private final InvoiceService invoiceService = new InvoiceService();
     private MainController mainController;
+    private Timeline autoRefreshTimeline;
 
     @FXML
     public void initialize() {
@@ -162,6 +167,8 @@ public class DashboardController {
         FxUtils.animateIn(lblWelcome, 0);
         FxUtils.animateIn(lblSubtitle, 60);
 
+        startAutoRefresh();
+
         // Load data asynchronously (also callable externally via `reload()`)
         reload();
     }
@@ -176,6 +183,7 @@ public class DashboardController {
                 int total = service.getTotalCheques();
                 int printed = service.getPrintedCheques();
                 int pending = service.getPendingCheques();
+                int today = service.getTodayCheques();
                 double amount = service.getMonthlyAmount();
                 int invoice = invoiceService.getTotalInvoices();
                 var recentCheques = service.getAll();
@@ -202,6 +210,8 @@ public class DashboardController {
                     setCount(lblTotalInvoices, invoice, "");
                     setCount(lblTotalAmount, (int) amount, "₹");
                     setCount(lblPendingCheques, pending, "");
+                    setCount(lblPrintedCheques, printed, "");
+                    setCount(lblTodayEntries, today, "");
 
                     // =========================
                     // RECENT TABLES
@@ -387,6 +397,15 @@ public class DashboardController {
         }
     }
 
+    private void startAutoRefresh() {
+        if (autoRefreshTimeline != null) {
+            autoRefreshTimeline.stop();
+        }
+        autoRefreshTimeline = new Timeline(new KeyFrame(Duration.seconds(10), e -> reload()));
+        autoRefreshTimeline.setCycleCount(Animation.INDEFINITE);
+        autoRefreshTimeline.play();
+    }
+
     // =========================
     // MAIN CONTROLLER LINK
     // =========================
@@ -465,3 +484,4 @@ public class DashboardController {
         });
     }
 }
+

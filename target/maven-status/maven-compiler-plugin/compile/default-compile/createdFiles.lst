@@ -49,6 +49,7 @@ com\chequeprint\util\ChequeSizePreset.class
 com\chequeprint\controller\LoginController.class
 com\chequeprint\model\Invoice$Status.class
 module-info.class
+com\chequeprint\util\SignatureOverlayHelper.class
 com\chequeprint\model\Bank.class
 com\chequeprint\preview\ChequePreviewPanel.class
 com\chequeprint\config\AppConfig.class
@@ -60,6 +61,7 @@ com\chequeprint\controller\SupportController.class
 com\chequeprint\MainApp.class
 com\chequeprint\model\Invoice.class
 com\chequeprint\service\InvoiceService.class
+com\chequeprint\util\SignatureOverlayHelper$Delta.class
 com\chequeprint\controller\ChequeController$1.class
 com\chequeprint\model\Cheque.class
 com\chequeprint\util\DateUtil.class

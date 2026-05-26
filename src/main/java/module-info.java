@@ -16,7 +16,7 @@ module com.chequeprint {
     // ── Third-party (automatic modules on the module path) ───────────
     requires jasperreports;
     requires mysql.connector.j;
-    requires itext;
+    requires com.github.librepdf.openpdf;
 
     // ── Open packages for FXML reflection ────────────────────────────
     // FIX: javafx.graphics added to the 'opens' for com.chequeprint so the

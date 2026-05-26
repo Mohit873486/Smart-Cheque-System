@@ -55,6 +55,7 @@ public class ChequeService {
     public int getTotalCheques()   throws SQLException { return dao.countTotal(); }
     public int getPrintedCheques() throws SQLException { return dao.countPrinted(); }
     public int getPendingCheques() throws SQLException { return dao.countPending(); }
+    public int getTodayCheques() throws SQLException { return dao.countTodayEntries(); }
     public double getMonthlyAmount() throws SQLException { return dao.sumThisMonth(); }
 
     // --- Helpers ---

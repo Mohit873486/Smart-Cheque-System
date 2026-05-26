@@ -4,6 +4,7 @@ import com.chequeprint.config.AppConfig;
 import com.chequeprint.model.Cheque;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,8 +32,10 @@ public class ChequeDAO {
     private static final String COUNT_TOTAL   = "SELECT COUNT(*) FROM cheques";
     private static final String COUNT_PRINTED = "SELECT COUNT(*) FROM cheques WHERE status='Printed'";
     private static final String COUNT_PENDING = "SELECT COUNT(*) FROM cheques WHERE status='Pending'";
-    private static final String SUM_AMOUNT    =
-        "SELECT COALESCE(SUM(amount),0) FROM cheques WHERE MONTH(issue_date)=MONTH(NOW())";
+    private static final String COUNT_BY_ISSUE_DATE =
+        "SELECT COUNT(*) FROM cheques WHERE issue_date = ?";
+    private static final String SUM_AMOUNT_RANGE =
+        "SELECT COALESCE(SUM(amount),0) FROM cheques WHERE issue_date >= ? AND issue_date < ?";
 
     // ---- CREATE ----
     public boolean insert(Cheque c) throws SQLException {
@@ -103,10 +106,31 @@ public class ChequeDAO {
         return querySingleInt(COUNT_PENDING);
     }
 
+    public int countTodayEntries() throws SQLException {
+        return countByIssueDate(LocalDate.now());
+    }
+
+    public int countByIssueDate(LocalDate date) throws SQLException {
+        if (date == null) {
+            return 0;
+        }
+        try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(COUNT_BY_ISSUE_DATE)) {
+            ps.setDate(1, Date.valueOf(date));
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        }
+    }
+
     public double sumThisMonth() throws SQLException {
-        try (Statement st = AppConfig.getConnection().createStatement();
-             ResultSet rs = st.executeQuery(SUM_AMOUNT)) {
-            return rs.next() ? rs.getDouble(1) : 0.0;
+        LocalDate start = LocalDate.now().withDayOfMonth(1);
+        LocalDate end = start.plusMonths(1);
+        try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(SUM_AMOUNT_RANGE)) {
+            ps.setDate(1, Date.valueOf(start));
+            ps.setDate(2, Date.valueOf(end));
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getDouble(1) : 0.0;
+            }
         }
     }
 

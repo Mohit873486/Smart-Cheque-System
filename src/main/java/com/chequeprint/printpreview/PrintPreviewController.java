@@ -122,16 +122,8 @@ public class PrintPreviewController {
         if (printer == null) {
             showAlert(
                     "Print",
-                    "Selected printer does not support silent printing.",
-                    Alert.AlertType.WARNING);
-            return;
-        }
-
-        if (isVirtualPrinterName(printer.getName())) {
-            showAlert(
-                    "Print",
-                    "Selected printer does not support silent printing.",
-                    Alert.AlertType.WARNING);
+                    "No printer is available. Please check printer settings.",
+                    Alert.AlertType.ERROR);
             return;
         }
 
@@ -142,6 +134,10 @@ public class PrintPreviewController {
                     "Unable to create a printer job.",
                     Alert.AlertType.ERROR);
             return;
+        }
+
+        if (document.getJobName() != null && !document.getJobName().isBlank()) {
+            job.getJobSettings().setJobName(document.getJobName());
         }
 
         PageOrientation orientation = document.getWidthMm() >= document.getHeightMm()
@@ -337,19 +333,6 @@ public class PrintPreviewController {
             }
         }
         return Printer.getDefaultPrinter();
-    }
-
-    private boolean isVirtualPrinterName(String name) {
-        if (name == null) {
-            return true;
-        }
-        String lower = name.toLowerCase(Locale.ROOT);
-        return lower.contains("fax")
-                || lower.contains("print to pdf")
-                || lower.contains("xps")
-                || lower.contains("onenote")
-                || lower.contains("pdf")
-                || lower.contains("virtual");
     }
 
     private Paper choosePaper(Printer printer, PageOrientation orientation) {

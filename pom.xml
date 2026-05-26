@@ -85,14 +85,6 @@
             <artifactId>jasperreports-fonts</artifactId>
             <version>6.21.0</version>
         </dependency>
-
-        <!-- iText 2.x — used internally by JasperReports PDF export -->
-        <dependency>
-            <groupId>com.lowagie</groupId>
-            <artifactId>itext</artifactId>
-            <version>2.1.7</version>
-        </dependency>
-
         <!-- Apache Commons Digester — required by JasperReports JRXML compiler -->
         <dependency>
             <groupId>commons-digester</groupId>
@@ -223,3 +215,4 @@
         </plugins>
     </build>
 </project>
+
