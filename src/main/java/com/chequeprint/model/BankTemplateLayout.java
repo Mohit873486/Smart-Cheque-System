@@ -46,7 +46,20 @@ public class BankTemplateLayout implements Serializable {
     }
 
     public void setFieldPosition(LayoutField field, double xRatio, double yRatio) {
-        fieldPositions.put(field, new FieldPosition(clamp(xRatio), clamp(yRatio)));
+        FieldPosition current = get(field);
+        fieldPositions.put(field, new FieldPosition(
+                clamp(xRatio),
+                clamp(yRatio),
+                current.getWidthRatio(),
+                current.getHeightRatio()));
+    }
+
+    public void setFieldLayout(LayoutField field, double xRatio, double yRatio, double widthRatio, double heightRatio) {
+        fieldPositions.put(field, new FieldPosition(
+                clamp(xRatio),
+                clamp(yRatio),
+                clamp(widthRatio),
+                clamp(heightRatio)));
     }
 
     public BankTemplateLayout copy() {
@@ -73,13 +86,13 @@ public class BankTemplateLayout implements Serializable {
 
     private static FieldPosition defaultPosition(LayoutField field) {
         return switch (field) {
-            case BANK_LOGO -> new FieldPosition(0.08, 0.10);
-            case DATE -> new FieldPosition(0.84, 0.20);
-            case PAYEE -> new FieldPosition(0.18, 0.38);
-            case AMOUNT_NUMBER -> new FieldPosition(0.84, 0.42);
-            case AMOUNT_WORDS -> new FieldPosition(0.20, 0.56);
-            case SIGNATURE -> new FieldPosition(0.82, 0.82);
-            case MICR -> new FieldPosition(0.50, 0.92);
+            case BANK_LOGO -> new FieldPosition(0.06, 0.10, 0.18, 0.10);
+            case DATE -> new FieldPosition(0.78, 0.10, 0.19, 0.10);
+            case PAYEE -> new FieldPosition(0.18, 0.30, 0.66, 0.09);
+            case AMOUNT_NUMBER -> new FieldPosition(0.76, 0.43, 0.16, 0.11);
+            case AMOUNT_WORDS -> new FieldPosition(0.18, 0.43, 0.62, 0.09);
+            case SIGNATURE -> new FieldPosition(0.73, 0.63, 0.22, 0.16);
+            case MICR -> new FieldPosition(0.50, 0.86, 0.50, 0.08);
         };
     }
 

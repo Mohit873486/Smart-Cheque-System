@@ -7,19 +7,28 @@ import javafx.print.PageOrientation;
 import javafx.print.Paper;
 import javafx.print.Printer;
 import javafx.print.PrinterJob;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
+import javafx.scene.image.WritableImage;
+import javafx.scene.paint.Color;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.concurrent.Worker;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import com.lowagie.text.Document;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfWriter;
 
 import java.awt.Desktop;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Locale;
+import javax.imageio.ImageIO;
 
 public class PrintPreviewController {
 
@@ -47,6 +56,8 @@ public class PrintPreviewController {
     private PrintPreviewDocument document;
     private boolean printed;
     private boolean contentReady;
+    private double basePreviewWidthPx;
+    private double basePreviewHeightPx;
     private static Path lastSaveDirectory;
 
     @FXML
@@ -74,6 +85,10 @@ public class PrintPreviewController {
                 "%.1f mm x %.1f mm",
                 document.getWidthMm(),
                 document.getHeightMm()));
+
+        basePreviewWidthPx = mmToPx(document.getWidthMm());
+        basePreviewHeightPx = mmToPx(document.getHeightMm());
+        resizePreviewWebView(1.0);
 
         WebEngine engine = previewWebView.getEngine();
 
@@ -140,7 +155,9 @@ public class PrintPreviewController {
             job.getJobSettings().setJobName(document.getJobName());
         }
 
-        PageOrientation orientation = PageOrientation.PORTRAIT;
+        PageOrientation orientation = document.getWidthMm() >= document.getHeightMm()
+                ? PageOrientation.LANDSCAPE
+                : PageOrientation.PORTRAIT;
         Paper paper = choosePaper(printer, orientation);
         PageLayout layout = printer.createPageLayout(paper, orientation, 0, 0, 0, 0);
         job.getJobSettings().setPageLayout(layout);
@@ -174,7 +191,7 @@ public class PrintPreviewController {
     @FXML
     private void onSavePdf() {
 
-        if (document == null || document.getPdfSaveHandler() == null) {
+        if (document == null) {
 
             showAlert(
                     "PDF",
@@ -185,10 +202,6 @@ public class PrintPreviewController {
         }
 
         try {
-
-            // Generate temp PDF
-            String generatedPdf = document.getPdfSaveHandler().savePdf();
-
             FileChooser chooser = new FileChooser();
 
             chooser.setTitle("Save PDF");
@@ -210,20 +223,12 @@ public class PrintPreviewController {
                 return;
             }
 
-            Path sourcePath = Path.of(generatedPdf).toAbsolutePath().normalize();
-            if (!Files.exists(sourcePath) || Files.size(sourcePath) == 0) {
-                throw new IllegalStateException("Generated PDF is missing or empty.");
-            }
-
             Path targetPath = withPdfExtension(saveFile.toPath()).toAbsolutePath().normalize();
             if (targetPath.getParent() != null) {
                 Files.createDirectories(targetPath.getParent());
             }
 
-            Files.copy(
-                    sourcePath,
-                    targetPath,
-                    StandardCopyOption.REPLACE_EXISTING);
+            exportCurrentPreviewPdf(targetPath);
 
             lastSaveDirectory = targetPath.getParent();
 
@@ -292,10 +297,12 @@ public class PrintPreviewController {
             double factor = Double.parseDouble(numeric) / 100.0;
 
             previewWebView.setZoom(factor);
+            resizePreviewWebView(factor);
 
         } catch (Exception ex) {
 
             previewWebView.setZoom(1.0);
+            resizePreviewWebView(1.0);
         }
     }
 
@@ -334,17 +341,6 @@ public class PrintPreviewController {
     }
 
     private Paper choosePaper(Printer printer, PageOrientation orientation) {
-        if (document != null && document.getWidthMm() > 0 && document.getHeightMm() > 0) {
-            try {
-                return new Paper(
-                        document.getDocumentTitle(),
-                        document.getWidthMm(),
-                        document.getHeightMm(),
-                        Paper.Units.MM);
-            } catch (Exception ignored) {
-            }
-        }
-
         Paper target = Paper.A4;
         if (printer != null) {
             if (printer.getPrinterAttributes().getSupportedPapers().contains(target)) {
@@ -369,6 +365,70 @@ public class PrintPreviewController {
         btnPrint.setDisable(!printEnabled);
 
         btnSavePdf.setDisable(!saveEnabled);
+    }
+
+    private void resizePreviewWebView(double zoomFactor) {
+        if (basePreviewWidthPx <= 0 || basePreviewHeightPx <= 0) {
+            return;
+        }
+
+        double width = basePreviewWidthPx * zoomFactor;
+        double height = basePreviewHeightPx * zoomFactor;
+
+        previewWebView.setPrefSize(width, height);
+        previewWebView.setMinSize(width, height);
+        previewWebView.setMaxSize(width, height);
+    }
+
+    private double mmToPx(double mm) {
+        return mm * 96.0 / 25.4;
+    }
+
+    private double mmToPt(double mm) {
+        return mm * 72.0 / 25.4;
+    }
+
+    private void exportCurrentPreviewPdf(Path targetPath) throws Exception {
+        String selectedZoom = cmbZoom.getValue();
+        double previousZoom = previewWebView.getZoom();
+
+        previewWebView.setZoom(1.0);
+        resizePreviewWebView(1.0);
+        previewWebView.applyCss();
+        previewWebView.layout();
+
+        SnapshotParameters params = new SnapshotParameters();
+        params.setFill(Color.WHITE);
+        WritableImage snapshot = previewWebView.snapshot(params, null);
+
+        if (selectedZoom != null) {
+            applyZoom(selectedZoom);
+        } else {
+            previewWebView.setZoom(previousZoom);
+            resizePreviewWebView(previousZoom);
+        }
+
+        BufferedImage buffered = SwingFXUtils.fromFXImage(snapshot, null);
+        ByteArrayOutputStream imageBytes = new ByteArrayOutputStream();
+        ImageIO.write(buffered, "png", imageBytes);
+
+        Rectangle pageSize = new Rectangle(
+                (float) mmToPt(document.getWidthMm()),
+                (float) mmToPt(document.getHeightMm()));
+
+        Document pdf = new Document(pageSize, 0, 0, 0, 0);
+        try (var out = Files.newOutputStream(targetPath)) {
+            PdfWriter.getInstance(pdf, out);
+            pdf.open();
+            com.lowagie.text.Image image = com.lowagie.text.Image.getInstance(imageBytes.toByteArray());
+            image.setAbsolutePosition(0, 0);
+            image.scaleAbsolute(pageSize.getWidth(), pageSize.getHeight());
+            pdf.add(image);
+        } finally {
+            if (pdf.isOpen()) {
+                pdf.close();
+            }
+        }
     }
 
     private void openContainingFolder(Path file) {

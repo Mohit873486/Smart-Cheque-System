@@ -74,6 +74,16 @@ public class BankController {
     private AnchorPane previewViewport;
     @FXML
     private Pane chequePreviewPane;
+    @FXML
+    private ComboBox<LayoutField> cmbAdjustField;
+    @FXML
+    private TextField fldAdjustLeft;
+    @FXML
+    private TextField fldAdjustTop;
+    @FXML
+    private TextField fldAdjustWidth;
+    @FXML
+    private TextField fldAdjustHeight;
 
     private final BankDAO dao = new BankDAO();
     private final BankTemplateLayoutStore layoutStore = new BankTemplateLayoutStore();
@@ -90,6 +100,7 @@ public class BankController {
         setupTable();
         setupForm();
         setupPreview();
+        setupAdjustmentPanel();
         loadLayouts();
         loadData();
         FxUtils.animateIn(previewViewport, 0);
@@ -134,25 +145,28 @@ public class BankController {
 
     private void setupPreview() {
         chequePreviewPane.setStyle("-fx-background-color:white; -fx-border-color:#94a3b8; -fx-border-width:1; -fx-background-radius:10; -fx-border-radius:10;");
-        createFieldNode(LayoutField.BANK_LOGO, "BANK LOGO", "-fx-background-color:#eff6ff; -fx-border-color:#3b82f6;", 110, 28);
-        createFieldNode(LayoutField.DATE, "DATE", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;", 90, 24);
-        createFieldNode(LayoutField.PAYEE, "PAY TO", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;", 110, 24);
-        createFieldNode(LayoutField.AMOUNT_NUMBER, "AMOUNT #", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;", 120, 24);
-        createFieldNode(LayoutField.AMOUNT_WORDS, "AMOUNT WORDS", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;", 140, 24);
-        createFieldNode(LayoutField.SIGNATURE, "SIGNATURE", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;", 120, 24);
-        createFieldNode(LayoutField.MICR, "MICR AREA", "-fx-background-color:#f1f5f9; -fx-border-color:#334155;", 150, 24);
+        createFieldNode(LayoutField.BANK_LOGO, "BANK", "-fx-background-color:#eff6ff; -fx-border-color:#3b82f6;");
+        createFieldNode(LayoutField.DATE, "DATE", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;");
+        createFieldNode(LayoutField.PAYEE, "PAYEE", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;");
+        createFieldNode(LayoutField.AMOUNT_NUMBER, "AMOUNT", "-fx-background-color:#fefce8; -fx-border-color:#ca8a04;");
+        createFieldNode(LayoutField.AMOUNT_WORDS, "WORDS", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;");
+        createFieldNode(LayoutField.SIGNATURE, "SIGN", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;");
+        createFieldNode(LayoutField.MICR, "MICR", "-fx-background-color:#f1f5f9; -fx-border-color:#334155;");
 
         previewViewport.widthProperty().addListener((obs, old, v) -> layoutPreviewPane());
         previewViewport.heightProperty().addListener((obs, old, v) -> layoutPreviewPane());
     }
 
-    private void createFieldNode(LayoutField field, String text, String style, double w, double h) {
+    private void setupAdjustmentPanel() {
+        cmbAdjustField.setItems(FXCollections.observableArrayList(LayoutField.values()));
+        cmbAdjustField.setValue(LayoutField.PAYEE);
+        cmbAdjustField.valueProperty().addListener((obs, old, field) -> loadAdjustmentFields(field));
+    }
+
+    private void createFieldNode(LayoutField field, String text, String style) {
         Label label = new Label(text);
         label.setPadding(new Insets(2, 5, 2, 5));
         label.setStyle(style + " -fx-font-size:11px; -fx-font-weight:600;");
-        label.setPrefSize(w, h);
-        label.setMinSize(w, h);
-        label.setMaxSize(w, h);
         label.setCursor(Cursor.MOVE);
         enableDrag(field, label);
         fieldNodes.put(field, label);
@@ -168,6 +182,10 @@ public class BankController {
         });
         node.setOnMouseDragged(e -> {
             moveFieldNode(field, node, e, delta);
+            e.consume();
+        });
+        node.setOnMouseReleased(e -> {
+            persistCurrentLayoutIfPossible();
             e.consume();
         });
     }
@@ -189,6 +207,9 @@ public class BankController {
         double xr = chequePreviewPane.getWidth() <= 0 ? 0 : nx / chequePreviewPane.getWidth();
         double yr = chequePreviewPane.getHeight() <= 0 ? 0 : ny / chequePreviewPane.getHeight();
         currentLayout.setFieldPosition(field, xr, yr);
+        if (field == cmbAdjustField.getValue()) {
+            loadAdjustmentFields(field);
+        }
     }
 
     private void layoutPreviewPane() {
@@ -231,6 +252,11 @@ public class BankController {
             FieldPosition pos = currentLayout.get(field);
             double x = pos.getXRatio() * chequePreviewPane.getWidth();
             double y = pos.getYRatio() * chequePreviewPane.getHeight();
+            double w = fieldWidthPx(field, pos);
+            double h = fieldHeightPx(field, pos);
+            node.setPrefSize(w, h);
+            node.setMinSize(w, h);
+            node.setMaxSize(w, h);
             x = clamp(x, 0, Math.max(0, chequePreviewPane.getWidth() - node.getWidth()));
             y = clamp(y, 0, Math.max(0, chequePreviewPane.getHeight() - node.getHeight()));
             node.setLayoutX(x);
@@ -239,6 +265,51 @@ public class BankController {
         }
 
         lblPreviewSize.setText(String.format("Preview Size: %.2f x %.2f inches", currentLayout.getWidthInches(), currentLayout.getHeightInches()));
+        loadAdjustmentFields(cmbAdjustField.getValue());
+    }
+
+    @FXML
+    private void onApplyFieldAdjustment() {
+        if (currentLayout == null || cmbAdjustField.getValue() == null) {
+            return;
+        }
+
+        try {
+            LayoutField field = cmbAdjustField.getValue();
+            double widthMm = currentLayout.getWidthInches() * 25.4;
+            double heightMm = currentLayout.getHeightInches() * 25.4;
+
+            double leftMm = parsePositive(fldAdjustLeft.getText(), "Left");
+            double topMm = parsePositive(fldAdjustTop.getText(), "Top");
+            double fieldWidthMm = parsePositive(fldAdjustWidth.getText(), "Width");
+            double fieldHeightMm = parsePositive(fldAdjustHeight.getText(), "Height");
+
+            fieldWidthMm = Math.min(fieldWidthMm, Math.max(1.0, widthMm - leftMm));
+            fieldHeightMm = Math.min(fieldHeightMm, Math.max(1.0, heightMm - topMm));
+
+            currentLayout.setFieldLayout(
+                    field,
+                    leftMm / widthMm,
+                    topMm / heightMm,
+                    fieldWidthMm / widthMm,
+                    fieldHeightMm / heightMm);
+            refreshPreview();
+            persistCurrentLayoutIfPossible();
+        } catch (IllegalArgumentException ex) {
+            showAlert("Adjustment", ex.getMessage(), Alert.AlertType.WARNING);
+        }
+    }
+
+    @FXML
+    private void onResetDefaultLayout() {
+        if (currentLayout == null) {
+            return;
+        }
+
+        currentLayout = new BankTemplateLayout(currentLayout.getWidthInches(), currentLayout.getHeightInches());
+        layoutPreviewPane();
+        refreshPreview();
+        persistCurrentLayoutIfPossible();
     }
 
     private void loadLayouts() {
@@ -455,6 +526,91 @@ public class BankController {
         bank.setBankCode(fldBankCode.getText().trim().toUpperCase());
         bank.setMicr(chkMicr.isSelected());
         return bank;
+    }
+
+    private void loadAdjustmentFields(LayoutField field) {
+        if (currentLayout == null || field == null || fldAdjustLeft == null) {
+            return;
+        }
+
+        FieldPosition pos = currentLayout.get(field);
+        double widthMm = currentLayout.getWidthInches() * 25.4;
+        double heightMm = currentLayout.getHeightInches() * 25.4;
+
+        fldAdjustLeft.setText(formatMm(pos.getXRatio() * widthMm));
+        fldAdjustTop.setText(formatMm(pos.getYRatio() * heightMm));
+        fldAdjustWidth.setText(formatMm(effectiveWidthRatio(field, pos) * widthMm));
+        fldAdjustHeight.setText(formatMm(effectiveHeightRatio(field, pos) * heightMm));
+    }
+
+    private double fieldWidthPx(LayoutField field, FieldPosition pos) {
+        return Math.max(24.0, effectiveWidthRatio(field, pos) * chequePreviewPane.getWidth());
+    }
+
+    private double fieldHeightPx(LayoutField field, FieldPosition pos) {
+        return Math.max(18.0, effectiveHeightRatio(field, pos) * chequePreviewPane.getHeight());
+    }
+
+    private double effectiveWidthRatio(LayoutField field, FieldPosition pos) {
+        if (pos.getWidthRatio() > 0) {
+            return pos.getWidthRatio();
+        }
+        return switch (field) {
+            case DATE -> 0.19;
+            case PAYEE -> 0.66;
+            case AMOUNT_NUMBER -> 0.16;
+            case AMOUNT_WORDS -> 0.62;
+            case SIGNATURE -> 0.22;
+            case BANK_LOGO -> 0.18;
+            case MICR -> 0.50;
+        };
+    }
+
+    private double effectiveHeightRatio(LayoutField field, FieldPosition pos) {
+        if (pos.getHeightRatio() > 0) {
+            return pos.getHeightRatio();
+        }
+        return switch (field) {
+            case SIGNATURE -> 0.16;
+            case AMOUNT_NUMBER -> 0.11;
+            case DATE, BANK_LOGO -> 0.10;
+            case PAYEE, AMOUNT_WORDS -> 0.09;
+            case MICR -> 0.08;
+        };
+    }
+
+    private double parsePositive(String raw, String label) {
+        try {
+            double value = Double.parseDouble(raw.trim());
+            if (value < 0) {
+                throw new NumberFormatException();
+            }
+            return value;
+        } catch (Exception ex) {
+            throw new IllegalArgumentException(label + " must be a valid number in mm.");
+        }
+    }
+
+    private String formatMm(double value) {
+        return String.format(java.util.Locale.ROOT, "%.2f", value);
+    }
+
+    private void persistCurrentLayoutIfPossible() {
+        if (currentLayout == null) {
+            return;
+        }
+
+        String code = selectedBank != null ? safeCode(selectedBank.getBankCode()) : safeCode(fldBankCode.getText());
+        if (code.isBlank()) {
+            return;
+        }
+
+        try {
+            layoutByBankCode.put(code, currentLayout.copy());
+            layoutStore.saveAll(layoutByBankCode);
+        } catch (Exception ex) {
+            showAlert("Layout Save Error", "Unable to save cheque alignment: " + ex.getMessage(), Alert.AlertType.ERROR);
+        }
     }
 
     private String safeCode(String code) {

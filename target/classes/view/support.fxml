@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<ScrollPane fitToWidth="true"
+            style="-fx-background: #f0f2f5; -fx-background-color: #f0f2f5;"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.chequeprint.controller.SupportController">
+
+    <VBox fx:id="rootPane" spacing="24"
+          style="-fx-background-color: #f0f2f5;">
+        <padding>
+            <Insets top="28" right="32" bottom="40" left="32"/>
+        </padding>
+
+        <!-- Page Header -->
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <Label text="💬" style="-fx-font-size: 24px;"/>
+            <VBox spacing="2">
+                <Label text="Help &amp; Support"
+                       style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;"/>
+                <Label text="Find answers, report issues, or contact our support team."
+                       style="-fx-font-size: 13px; -fx-text-fill: #6b7280;"/>
+            </VBox>
+        </HBox>
+
+        <!-- Top Row: Contact + FAQ -->
+        <HBox spacing="16" alignment="TOP_LEFT">
+
+            <!-- Contact Support Form -->
+            <VBox spacing="16"
+                  style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 24; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);"
+                  HBox.hgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <Label text="📩" style="-fx-font-size: 18px;"/>
+                    <Label text="Contact Support"
+                           style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;"/>
+                </HBox>
+                <Separator style="-fx-opacity: 0.5;"/>
+
+                <HBox spacing="16">
+                    <VBox spacing="6" HBox.hgrow="ALWAYS">
+                        <Label text="YOUR NAME"
+                               style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;"/>
+                        <TextField fx:id="tfSupportName"
+                                   style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;"
+                                   promptText="Full name"/>
+                    </VBox>
+                    <VBox spacing="6" HBox.hgrow="ALWAYS">
+                        <Label text="EMAIL"
+                               style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;"/>
+                        <TextField fx:id="tfSupportEmail"
+                                   style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;"
+                                   promptText="your@email.com"/>
+                    </VBox>
+                </HBox>
+
+                <VBox spacing="6">
+                    <Label text="SUBJECT"
+                           style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;"/>
+                    <ComboBox fx:id="cbSupportTopic" maxWidth="Infinity"
+                              style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-background-radius: 8; -fx-padding: 4 8; -fx-font-size: 13px;"
+                              promptText="Select a topic…"/>
+                </VBox>
+
+                <VBox spacing="6">
+                    <Label text="MESSAGE"
+                           style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;"/>
+                    <TextArea fx:id="taSupportMessage" prefRowCount="5"
+                              style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;"
+                              promptText="Describe your issue or question in detail…"
+                              wrapText="true"/>
+                </VBox>
+
+                <HBox alignment="CENTER_RIGHT">
+                    <Button fx:id="btnSendMessage" text="Send Message"
+                            onAction="#onSendMessage"
+                            style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: 600; -fx-font-size: 13px; -fx-background-radius: 8; -fx-padding: 10 24; -fx-cursor: hand;"/>
+                </HBox>
+
+                <Label fx:id="lblSupportStatus" text=""
+                       style="-fx-font-size: 12px; -fx-text-fill: #10b981;" wrapText="true"/>
+            </VBox>
+
+            <!-- Quick Info Sidebar -->
+            <VBox spacing="16" prefWidth="280" minWidth="260">
+
+                <!-- App Version -->
+                <VBox spacing="12"
+                      style="-fx-background-color: #1e3a5f; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(30,58,95,0.2), 10, 0, 0, 3);">
+                    <Label text="📦  App Info"
+                           style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+                    <Separator style="-fx-opacity: 0.3;"/>
+
+                    <HBox alignment="CENTER_LEFT">
+                        <Label text="Version"
+                               style="-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.65);"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="lblAppVersion" text="1.0.0"
+                               style="-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: white;"/>
+                    </HBox>
+                    <HBox alignment="CENTER_LEFT">
+                        <Label text="Build"
+                               style="-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.65);"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="lblBuildDate" text="2026-05-13"
+                               style="-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: white;"/>
+                    </HBox>
+                    <HBox alignment="CENTER_LEFT">
+                        <Label text="Java FX"
+                               style="-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.65);"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label text="21"
+                               style="-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: white;"/>
+                    </HBox>
+                </VBox>
+
+                <!-- Contact Info -->
+                <VBox spacing="14"
+                      style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
+                    <Label text="Other Ways to Reach Us"
+                           style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;"/>
+                    <Separator style="-fx-opacity: 0.5;"/>
+
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="📧" style="-fx-font-size: 16px;"/>
+                        <VBox spacing="2">
+                            <Label text="Email Support"
+                                   style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #374151;"/>
+                            <Label text="support@chequepro.in"
+                                   style="-fx-font-size: 12px; -fx-text-fill: #2563eb;"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="📞" style="-fx-font-size: 16px;"/>
+                        <VBox spacing="2">
+                            <Label text="Phone Support"
+                                   style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #374151;"/>
+                            <Label text="+91 98765 43210"
+                                   style="-fx-font-size: 12px; -fx-text-fill: #6b7280;"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="🕐" style="-fx-font-size: 16px;"/>
+                        <VBox spacing="2">
+                            <Label text="Support Hours"
+                                   style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #374151;"/>
+                            <Label text="Mon–Sat, 9 AM – 6 PM IST"
+                                   style="-fx-font-size: 12px; -fx-text-fill: #6b7280;"/>
+                        </VBox>
+                    </HBox>
+                </VBox>
+
+            </VBox>
+        </HBox>
+
+        <!-- FAQ Section -->
+        <VBox spacing="0"
+              style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
+
+            <HBox alignment="CENTER_LEFT" spacing="10"
+                  style="-fx-padding: 18 24 14 24;">
+                <Label text="❓" style="-fx-font-size: 18px;"/>
+                <Label text="Frequently Asked Questions"
+                       style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;"/>
+            </HBox>
+            <Separator/>
+
+            <VBox spacing="0">
+
+                <!-- FAQ Item 1 -->
+                <VBox style="-fx-border-color: transparent transparent #f3f4f6 transparent; -fx-padding: 18 24;">
+                    <Label text="How do I add a new bank account?"
+                           style="-fx-font-size: 13px; -fx-font-weight: 700; -fx-text-fill: #1a1a2e;"/>
+                    <Label text="Go to Banks in the sidebar, click '+ New Bank', and fill in the account details. The bank will then be available when creating cheques."
+                           style="-fx-font-size: 13px; -fx-text-fill: #6b7280;"
+                           wrapText="true"/>
+                </VBox>
+
+                <!-- FAQ Item 2 -->
+                <VBox style="-fx-border-color: transparent transparent #f3f4f6 transparent; -fx-padding: 18 24;">
+                    <Label text="Can I edit a cheque after it's been printed?"
+                           style="-fx-font-size: 13px; -fx-font-weight: 700; -fx-text-fill: #1a1a2e;"/>
+                    <Label text="Yes. Click the cheque row in the Cheques table to load it in the edit form. Update the fields and click Save. Note: Printed status will reset to Draft."
+                           style="-fx-font-size: 13px; -fx-text-fill: #6b7280;"
+                           wrapText="true"/>
+                </VBox>
+
+                <!-- FAQ Item 3 -->
+                <VBox style="-fx-border-color: transparent transparent #f3f4f6 transparent; -fx-padding: 18 24;">
+                    <Label text="How do I export or backup my data?"
+                           style="-fx-font-size: 13px; -fx-font-weight: 700; -fx-text-fill: #1a1a2e;"/>
+                    <Label text="Use Settings → Data Management to export cheques, invoices, and banks as CSV or PDF reports."
+                           style="-fx-font-size: 13px; -fx-text-fill: #6b7280;"
+                           wrapText="true"/>
+                </VBox>
+
+                <!-- FAQ Item 4 -->
+                <VBox style="-fx-padding: 18 24;">
+                    <Label text="Why is the amount field showing ₹0.00 after I open a saved cheque?"
+                           style="-fx-font-size: 13px; -fx-font-weight: 700; -fx-text-fill: #1a1a2e;"/>
+                    <Label text="This can happen if the database record lost formatting. Open the cheque, re-enter the amount, and save again."
+                           style="-fx-font-size: 13px; -fx-text-fill: #6b7280;"
+                           wrapText="true"/>
+                </VBox>
+
+            </VBox>
+        </VBox>
+
+    </VBox>
+</ScrollPane>
