@@ -1,6 +1,7 @@
 package com.chequeprint;
 
 import com.chequeprint.config.AppConfig;
+import com.chequeprint.service.ChequeReminderScheduler;
 import com.chequeprint.util.DBConnection;
 import javafx.animation.*;
 import javafx.application.Application;
@@ -28,14 +29,18 @@ import javafx.util.Duration;
  */
 public class MainApp extends Application {
 
+    private final ChequeReminderScheduler reminderScheduler = new ChequeReminderScheduler();
+
     @Override
     public void start(Stage primaryStage) {
+        reminderScheduler.startDaily();
         showSplash(primaryStage);
     }
 
     // ── Clean shutdown ───────────────────────────────────────────────
     @Override
     public void stop() {
+        reminderScheduler.stop();
         AppConfig.closeConnection();
         DBConnection.closeConnection();
     }

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="20"
+      maxWidth="Infinity" maxHeight="Infinity"
+      xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.chequeprint.controller.AiAssistantController"
+      style="-fx-padding: 24; -fx-background-color:#f1f5f9;">
+
+    <HBox alignment="CENTER_LEFT" spacing="12">
+        <VBox spacing="4" HBox.hgrow="ALWAYS">
+            <Label text="AI Assistant" styleClass="page-title" />
+            <Label text="Run cheque actions, reminders, insights, database queries, and OCR"
+                   styleClass="page-subtitle" />
+        </VBox>
+    </HBox>
+
+    <VBox spacing="14" styleClass="card" maxWidth="Infinity">
+        <Label text="Command" styleClass="section-title" />
+
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <TextField fx:id="txtCommand"
+                       promptText="Example: Add cheque for Mohit 5000 tomorrow"
+                       styleClass="form-input"
+                       HBox.hgrow="ALWAYS"
+                       maxWidth="Infinity" />
+            <Button fx:id="btnRun"
+                    text="Run"
+                    styleClass="btn-primary"
+                    onAction="#onRun" />
+        </HBox>
+
+        <HBox spacing="10">
+            <Button fx:id="btnReminder"
+                    text="Reminder Check"
+                    styleClass="btn-secondary"
+                    onAction="#onReminder" />
+            <Button fx:id="btnSuggest"
+                    text="Smart Suggestions"
+                    styleClass="btn-secondary"
+                    onAction="#onSuggestions" />
+            <Button fx:id="btnOcr"
+                    text="OCR Image"
+                    styleClass="btn-secondary"
+                    onAction="#onOcrImage" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Button text="Clear"
+                    styleClass="btn-danger"
+                    onAction="#onClear" />
+        </HBox>
+    </VBox>
+
+    <VBox spacing="14" styleClass="card" VBox.vgrow="ALWAYS" maxHeight="Infinity">
+        <Label text="Output" styleClass="section-title" />
+        <TextArea fx:id="txtOutput"
+                  editable="false"
+                  wrapText="true"
+                  VBox.vgrow="ALWAYS"
+                  maxHeight="Infinity"
+                  style="-fx-font-family:'Consolas'; -fx-font-size:13px;" />
+    </VBox>
+</VBox>

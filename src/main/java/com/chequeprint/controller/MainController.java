@@ -37,6 +37,8 @@ public class MainController {
   @FXML
   private HBox navBanks;
   @FXML
+  private HBox navAiAssistant;
+  @FXML
   private HBox navProfile;
   @FXML
   private HBox navSettings;
@@ -52,6 +54,7 @@ public class MainController {
       put("cheques", "/view/cheques.fxml");
       put("invoices", "/view/invoices.fxml");
       put("banks", "/view/banks.fxml");
+      put("ai", "/view/ai-assistant.fxml");
       put("profile", "/view/profile.fxml");
       put("settings", "/view/settings.fxml");
       put("support", "/view/support.fxml");
@@ -68,6 +71,7 @@ public class MainController {
       put("cheques", "Cheque Management");
       put("invoices", "Invoice Management");
       put("banks", "Bank Templates");
+      put("ai", "AI Assistant");
       put("profile", "My Profile");
       put("settings", "Settings");
       put("support", "Support Center");
@@ -118,6 +122,12 @@ public class MainController {
   }
 
   @FXML
+  private void onAiAssistant() {
+    navigate("ai");
+    setActiveNav(navAiAssistant);
+  }
+
+  @FXML
   private void onProfile() {
     navigate("profile");
     setActiveNav(navProfile);
@@ -149,6 +159,10 @@ public class MainController {
 
   public void showBanks() {
     onBanks();
+  }
+
+  public void showAiAssistant() {
+    onAiAssistant();
   }
 
   public void showProfile() {
@@ -198,6 +212,8 @@ public class MainController {
           cc.setMainController(this);
         if (ctrl instanceof InvoiceController ic)
           ic.setMainController(this);
+        if (ctrl instanceof AiAssistantController ac)
+          ac.setMainController(this);
         if (ctrl instanceof ProfileController pc)
           pc.setMainController(this);
         if (ctrl instanceof SettingsController sc)
@@ -250,8 +266,14 @@ public class MainController {
       // ✅ DEBUG (optional)
       System.out.println("Loaded page: " + page);
 
-    } catch (IOException e) {
+    } catch (Exception e) {
       e.printStackTrace();
+      Label error = new Label("Unable to load " + titleMap.getOrDefault(page, page)
+          + ".\n" + e.getClass().getSimpleName() + ": " + e.getMessage());
+      error.setWrapText(true);
+      error.getStyleClass().add("empty-label");
+      contentPane.getChildren().setAll(error);
+      headerTitle.setText("Load Error");
     }
   }
   // ================= SIMPLE LOADER (EXTRA SUPPORT) =================

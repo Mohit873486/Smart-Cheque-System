@@ -5,7 +5,10 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\Invo
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\printpreview\PrintHtmlTemplateService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\MainApp.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\Invoice.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\OpenAiChequeAssistantService.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\OpenAiChequeOcrService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\BankController.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\MultiAgentCoordinatorService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\JasperPrintUtil.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\LoginController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\ChequePrint.java
@@ -21,6 +24,8 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\Settin
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\User.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\BankTemplateLayoutStore.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\SupportController.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\AiAssistantController.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\ChequeAiCommand.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\FxUtils.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\MainController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\Cheque.java
@@ -29,14 +34,18 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\ChequeS
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\preview\ChequeField.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\LayoutField.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\SettingsController.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\AiSqlDatabaseService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\dao\SettingDAO.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\dao\UserDAO.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\dao\BankDAO.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\Bank.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\BankTemplatePdfExporter.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\preview\ChequeLayout.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\ChequeReminderService.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\OpenAiSqlQueryService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\ChequeSizeCodec.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\preview\FieldPosition.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\ChequeAiActionExecutor.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\DBConnection.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\SignatureOverlayHelper.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\DateUtil.java
@@ -53,3 +62,5 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\BankTe
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\printpreview\PrintPreviewController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\UserService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\preview\ChequeRenderer.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\ChequeReminderScheduler.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\SmartSuggestionService.java

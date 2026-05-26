@@ -79,6 +79,12 @@
                     <Label text="Banks" styleClass="nav-label" mouseTransparent="true" />
                 </HBox>
 
+                <HBox fx:id="navAiAssistant" styleClass="nav-item" spacing="12"
+                    alignment="CENTER_LEFT" onMouseClicked="#onAiAssistant">
+                    <Label text="AI" styleClass="nav-icon" mouseTransparent="true" />
+                    <Label text="AI Assistant" styleClass="nav-label" mouseTransparent="true" />
+                </HBox>
+
                 <Label text="ACCOUNT" styleClass="sidebar-section-label" />
 
                 <HBox fx:id="navProfile" styleClass="nav-item" spacing="12"
