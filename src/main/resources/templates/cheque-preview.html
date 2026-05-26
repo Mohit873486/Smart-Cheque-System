@@ -4,135 +4,300 @@
 <meta charset="UTF-8">
 <title>Cheque Preview</title>
 <style>
-:root {
-  --sheet-width-mm: {{DOC_WIDTH_MM}};
-  --sheet-height-mm: {{DOC_HEIGHT_MM}};
-}
 * { box-sizing: border-box; }
 body {
   margin: 0;
   font-family: "Segoe UI", Arial, sans-serif;
-  background: #dde3ec;
+  background: #d7dce4;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .sheet {
-  width: calc(var(--sheet-width-mm) * 1mm);
-  height: calc(var(--sheet-height-mm) * 1mm);
+  width: 216mm;
+  height: 93mm;
   background: #ffffff;
-  border: 1px solid #1f56d6;
+  border: 1.8px solid #1f56d6;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 12px 30px rgba(15,23,42,.16);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
 }
 .header {
-  height: 14%;
+  height: 36px;
   background: #1f56d6;
   color: #ffffff;
-  padding: 0 12px;
+  padding: 0 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: .2px;
+  letter-spacing: 0.2px;
 }
-.grid-line {
+.header-left {
+  font-size: 17px;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+}
+.header-right .label {
+  color: #ffffff;
+  font-size: 14px;
+  margin-right: 8px;
+}
+.header-right .value {
+  color: #ffffff;
+  font-size: 16px;
+  min-width: 90px;
+  text-align: right;
+  border: 0;
+}
+.rule {
   position: absolute;
-  left: 0;
-  right: 0;
-  border-top: 1px solid #94a3b8;
+  left: 0px;
+  right: 0px;
+  border-top: 1px solid #96a4bc;
 }
-.field {
+.field-anchor {
   position: absolute;
-  transform: translate(-50%, -50%);
-  color: #111827;
-}
-.label {
-  display: block;
-  font-size: 10px;
   color: #0f172a;
-  margin-bottom: 2px;
-  font-weight: 700;
-  text-transform: uppercase;
 }
-.value {
+.field-label {
+  display: block;
+  font-size: 11px;
+  color: #111827;
+  margin-bottom: 1px;
+  font-weight: 700;
+  text-transform: none;
+}
+.line-value {
+  border-bottom: 1px solid #374b6f;
+  min-height: 18px;
+  padding-bottom: 2px;
   font-size: 12px;
   font-weight: 600;
-  border-bottom: 1px solid #64748b;
-  min-width: 180px;
-  white-space: nowrap;
-}
-.amount-box .value {
-  border: 1px solid #1f56d6;
-  min-width: 86px;
-  text-align: right;
-  padding: 4px 8px;
-}
-.signature .value {
-  min-width: 150px;
-  text-align: center;
-  font-style: italic;
-  font-size: 11px;
-}
-.micr {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  font-family: Consolas, "Courier New", monospace;
-  letter-spacing: 1px;
-  font-size: 15px;
   color: #111827;
 }
-.footer-strip {
+.date-field {
+  width: 300px;
+}
+.date-row {
+  display: flex;
+  align-items: center;
+}
+.date-row .field-label {
+  margin: 0;
+  width: 56px;
+  margin-right: 8px;
+  font-size: 11px;
+}
+.date-row .line-value {
+  min-width: 210px;
+  text-align: center;
+}
+.pay-field {
+  width: 650px;
+}
+.pay-row {
+  display: flex;
+  align-items: center;
+}
+.pay-row .field-label {
+  margin: 0;
+  min-width: 34px;
+  font-size: 13px;
+  margin-right: 8px;
+}
+.pay-row .line-value {
+  min-width: 585px;
+  font-size: 17px;
+  font-weight: 700;
+}
+.words-field {
+  width: 640px;
+}
+.words-row {
+  display: flex;
+  align-items: center;
+}
+.words-row .field-label {
+  margin: 0;
+  min-width: 82px;
+  font-size: 11px;
+  margin-right: 8px;
+}
+.words-row .line-value {
+  min-width: 540px;
+}
+.amount-box {
+  width: 92px;
+}
+.amount-box .field-label {
+  text-align: center;
+  margin-bottom: 3px;
+}
+.amount-value {
+  border: 2px solid #1f56d6;
+  min-height: 26px;
+  text-align: center;
+  padding: 3px 4px;
+  font-size: 17px;
+  font-weight: 700;
+}
+.signature-field {
+  width: 220px;
+  text-align: center;
+}
+.signature-photo {
+  object-fit: contain;
+  margin: 0 auto 2px auto;
+  max-width: 100%;
+}
+.signature-line {
+  border-top: 1px solid #1e293b;
+  width: 100%;
+  margin-top: 2px;
+}
+.signature-label {
+  margin-top: 3px;
+  font-size: 10px;
+  font-style: italic;
+}
+.micr-strip {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 13%;
+  height: 34px;
   background: #e2e8f0;
+}
+.micr {
+  position: absolute;
+  bottom: 8px;
+  transform: translateX(-50%);
+  font-family: Consolas, "Courier New", monospace;
+  letter-spacing: 1.4px;
+  font-size: 18px;
+  color: #101828;
+}
+@media print {
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    background: #ffffff;
+    display: block;
+    overflow: hidden;
+  }
+  .sheet {
+    width: 100% !important;
+    height: 100% !important;
+    border: 0;
+    box-shadow: none;
+  }
 }
 </style>
 </head>
 <body>
-  <div class="sheet">
+  <div class="sheet" data-width-mm="{{DOC_WIDTH_MM}}" data-height-mm="{{DOC_HEIGHT_MM}}">
     <div class="header">
-      <div>BANK: {{BANK_NAME}}</div>
-      <div>Cheque No: {{CHEQUE_NO}}</div>
+      <div class="header-left">BANK: {{BANK_NAME}}</div>
+      <div class="header-right">
+        <span class="label">Cheque No:</span>
+        <span class="value">{{CHEQUE_NO}}</span>
+      </div>
     </div>
 
-    <div class="grid-line" style="top: 26%;"></div>
-    <div class="grid-line" style="top: 42%;"></div>
+    <div class="rule" style="top: 36px;"></div>
+    <div class="rule" style="top: calc(36px + 60px);"></div>
 
-    <div class="field" style="left: {{DATE_LEFT}}; top: {{DATE_TOP}};">
-      <span class="label">Date</span>
-      <div class="value">{{ISSUE_DATE}}</div>
+    <div class="field-anchor date-field" data-left="{{DATE_LEFT}}" data-top="{{DATE_TOP}}">
+      <div class="date-row">
+        <span class="field-label">Date:</span>
+        <div class="line-value">{{ISSUE_DATE}}</div>
+      </div>
     </div>
 
-    <div class="field" style="left: {{PAYEE_LEFT}}; top: {{PAYEE_TOP}};">
-      <span class="label">Pay</span>
-      <div class="value">{{PAYEE}}</div>
+    <div class="field-anchor pay-field" data-left="{{PAYEE_LEFT}}" data-top="{{PAYEE_TOP}}">
+      <div class="pay-row">
+        <span class="field-label">Pay:</span>
+        <div class="line-value">{{PAYEE}}</div>
+      </div>
     </div>
 
-    <div class="field" style="left: {{WORDS_LEFT}}; top: {{WORDS_TOP}};">
-      <span class="label">Rupees</span>
-      <div class="value">{{AMOUNT_WORDS}}</div>
+    <div class="field-anchor words-field" data-left="{{WORDS_LEFT}}" data-top="{{WORDS_TOP}}">
+      <div class="words-row">
+        <span class="field-label">Rupees:</span>
+        <div class="line-value">{{AMOUNT_WORDS}}</div>
+      </div>
     </div>
 
-    <div class="field amount-box" style="left: {{NUMBER_LEFT}}; top: {{NUMBER_TOP}};">
-      <span class="label">Amount</span>
-      <div class="value">{{AMOUNT_NUMBER}}</div>
+    <div class="field-anchor amount-box" data-left="{{NUMBER_LEFT}}" data-top="{{NUMBER_TOP}}">
+      <div class="field-label">Amount</div>
+      <div class="amount-value">{{AMOUNT_NUMBER}}</div>
     </div>
 
-    <div class="field signature" style="left: {{SIGN_LEFT}}; top: {{SIGN_TOP}};">
-      <img id="sig" src="{{SIGN_SRC}}" style="position:absolute; left:calc(50% + {{SIGN_OFFSET_X}}); top:calc(50% + {{SIGN_OFFSET_Y}}); transform:translate(-50%, -50%); width:{{SIGN_WIDTH}}; height:{{SIGN_HEIGHT}}; display:{{SIGN_DISPLAY}}; object-fit:contain;" />
-      <div class="value" style="display: {{SIGN_LABEL_DISPLAY}}">Authorised Signature</div>
+    <div class="field-anchor signature-field" data-left="{{SIGN_LEFT}}" data-top="{{SIGN_TOP}}">
+      <img class="signature-photo"
+           src="{{SIGN_SRC}}"
+           data-width="{{SIGN_WIDTH}}"
+           data-height="{{SIGN_HEIGHT}}"
+           data-display="{{SIGN_DISPLAY}}"
+           data-offset-x="{{SIGN_OFFSET_X}}"
+           data-offset-y="{{SIGN_OFFSET_Y}}" />
+      <div class="signature-line"></div>
+      <div class="signature-label" data-display="{{SIGN_LABEL_DISPLAY}}">Authorised Signature</div>
     </div>
 
-    <div class="micr" style="left: {{MICR_LEFT}}; top: {{MICR_TOP}};">{{MICR_TEXT}}</div>
-
-    <div class="footer-strip"></div>
+    <div class="micr-strip"></div>
+    <div class="micr" data-left="{{MICR_LEFT}}">{{MICR_TEXT}}</div>
   </div>
+  <script>
+    (function () {
+      var sheet = document.querySelector('.sheet');
+      if (!sheet) return;
+
+      var widthMm = sheet.getAttribute('data-width-mm');
+      var heightMm = sheet.getAttribute('data-height-mm');
+      if (widthMm) sheet.style.width = widthMm + 'mm';
+      if (heightMm) sheet.style.height = heightMm + 'mm';
+
+      document.querySelectorAll('.field-anchor[data-left][data-top]').forEach(function (el) {
+        var left = el.getAttribute('data-left');
+        var top = el.getAttribute('data-top');
+        if (left) el.style.left = left;
+        if (top) el.style.top = top;
+      });
+
+      var sig = document.querySelector('.signature-photo');
+      if (sig) {
+        var sigWidth = sig.getAttribute('data-width');
+        var sigHeight = sig.getAttribute('data-height');
+        var sigDisplay = sig.getAttribute('data-display');
+        var sigOffsetX = sig.getAttribute('data-offset-x');
+        var sigOffsetY = sig.getAttribute('data-offset-y');
+        if (sigWidth) sig.style.width = sigWidth;
+        if (sigHeight) sig.style.height = sigHeight;
+        if (sigDisplay) sig.style.display = sigDisplay;
+        if (sigOffsetX) sig.style.marginLeft = sigOffsetX;
+        if (sigOffsetY) sig.style.marginTop = sigOffsetY;
+      }
+
+      var sigLabel = document.querySelector('.signature-label[data-display]');
+      if (sigLabel) {
+        var labelDisplay = sigLabel.getAttribute('data-display');
+        if (labelDisplay) sigLabel.style.display = labelDisplay;
+      }
+
+      var micr = document.querySelector('.micr[data-left]');
+      if (micr) {
+        var micrLeft = micr.getAttribute('data-left');
+        if (micrLeft) micr.style.left = micrLeft;
+      }
+    })();
+  </script>
 </body>
 </html>

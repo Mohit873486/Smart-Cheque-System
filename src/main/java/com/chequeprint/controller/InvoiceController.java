@@ -23,6 +23,7 @@ import javafx.scene.layout.VBox;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Comparator;
 
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
@@ -281,7 +282,7 @@ public class InvoiceController {
                         dateIssue.getValue(), dateDue.getValue());
                 inv.setNotes(fldNotes.getText());
                 service.save(inv);
-                invoiceToPrint = inv;
+                invoiceToPrint = resolveLatestSavedInvoice(inv);
             } else {
                 selectedInvoice.setClientName(client);
                 selectedInvoice.setAmount(amt);
@@ -294,14 +295,14 @@ public class InvoiceController {
 
             loadData();
 
-            boolean printed = JasperPrintUtil.previewInvoice(invoiceToPrint);
+            boolean printed = openPrintPreview(invoiceToPrint);
             if (!printed) {
                 showAlert("Print Canceled", "Invoice printing was canceled.",
                         Alert.AlertType.INFORMATION);
                 return;
             }
 
-            showAlert("Success", "Invoice preview opened and printed successfully!",
+            showAlert("Success", "Invoice printed successfully.",
                     Alert.AlertType.INFORMATION);
 
             clearForm();
@@ -347,19 +348,40 @@ public class InvoiceController {
             return;
         }
         try {
-            boolean printed = JasperPrintUtil.previewInvoice(sel);
+            boolean printed = openPrintPreview(sel);
             if (!printed) {
                 showAlert("Print Canceled", "Invoice printing was canceled.",
                         Alert.AlertType.INFORMATION);
                 return;
             }
             loadData();
+            if (mainController != null) {
+                Object dc = mainController.getController("dashboard");
+                if (dc instanceof DashboardController) {
+                    ((DashboardController) dc).reload();
+                }
+            }
             showAlert("Print Successful",
                     "Invoice printed successfully.",
                     Alert.AlertType.INFORMATION);
         } catch (Exception e) {
             showAlert("Print Error", e.getMessage(), Alert.AlertType.ERROR);
         }
+    }
+
+    private boolean openPrintPreview(Invoice invoice) throws Exception {
+        return JasperPrintUtil.previewInvoice(invoice);
+    }
+
+    private Invoice resolveLatestSavedInvoice(Invoice created) throws Exception {
+        if (created == null || created.getInvoiceNo() == null || created.getInvoiceNo().isBlank()) {
+            return created;
+        }
+
+        return service.getAll().stream()
+                .filter(i -> created.getInvoiceNo().equals(i.getInvoiceNo()))
+                .max(Comparator.comparingInt(Invoice::getId))
+                .orElse(created);
     }
 
     // ── Delete ───────────────────────────────────────────────────────

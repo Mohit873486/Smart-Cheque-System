@@ -339,7 +339,7 @@ public class ChequeController {
                     .findFirst()
                     .orElse(newCheque);
 
-            boolean printed = printService.printCheque(chequeToprint);
+            boolean printed = printService.previewCheque(chequeToprint);
             if (!printed) {
                 showAlert("Print Canceled", "Cheque printing was canceled.",
                         Alert.AlertType.INFORMATION);
@@ -373,7 +373,7 @@ public class ChequeController {
         }
 
         try {
-            boolean printed = printService.printCheque(sel);
+            boolean printed = printService.previewCheque(sel);
             if (!printed) {
                 showAlert("Print Canceled", "Cheque printing was canceled.",
                         Alert.AlertType.INFORMATION);

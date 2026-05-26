@@ -140,19 +140,17 @@ public class PrintPreviewController {
             job.getJobSettings().setJobName(document.getJobName());
         }
 
-        PageOrientation orientation = document.getWidthMm() >= document.getHeightMm()
-                ? PageOrientation.LANDSCAPE
-                : PageOrientation.PORTRAIT;
-
+        PageOrientation orientation = PageOrientation.PORTRAIT;
         Paper paper = choosePaper(printer, orientation);
-        PageLayout layout = printer.createPageLayout(paper, orientation, Printer.MarginType.HARDWARE_MINIMUM);
+        PageLayout layout = printer.createPageLayout(paper, orientation, 0, 0, 0, 0);
         job.getJobSettings().setPageLayout(layout);
 
-        boolean printedPage = job.printPage(previewWebView);
-        if (!printedPage) {
+        try {
+            previewWebView.getEngine().print(job);
+        } catch (Exception ex) {
             showAlert(
                     "Print",
-                    "Unable to print the preview content.",
+                    "Unable to print the preview content: " + ex.getMessage(),
                     Alert.AlertType.ERROR);
             return;
         }
@@ -336,6 +334,17 @@ public class PrintPreviewController {
     }
 
     private Paper choosePaper(Printer printer, PageOrientation orientation) {
+        if (document != null && document.getWidthMm() > 0 && document.getHeightMm() > 0) {
+            try {
+                return new Paper(
+                        document.getDocumentTitle(),
+                        document.getWidthMm(),
+                        document.getHeightMm(),
+                        Paper.Units.MM);
+            } catch (Exception ignored) {
+            }
+        }
+
         Paper target = Paper.A4;
         if (printer != null) {
             if (printer.getPrinterAttributes().getSupportedPapers().contains(target)) {
