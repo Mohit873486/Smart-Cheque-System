@@ -137,8 +137,15 @@ public class PrintPreviewController {
         if (printer == null) {
             showAlert(
                     "Print",
-                    "No printer is available. Please check printer settings.",
+                    "No physical printer is available. Please add/select a printer in Windows printer settings.",
                     Alert.AlertType.ERROR);
+            return;
+        }
+        if (isVirtualFilePrinter(printer)) {
+            showAlert(
+                    "Print",
+                    "Selected printer saves to a file. Please select a physical printer, or use Save as PDF.",
+                    Alert.AlertType.INFORMATION);
             return;
         }
 
@@ -315,13 +322,18 @@ public class PrintPreviewController {
         var printerNames = FXCollections.observableArrayList("Default Printer");
         for (Printer printer : Printer.getAllPrinters()) {
             String name = printer.getName();
-            if (name != null && !name.isBlank() && !printerNames.contains(name)) {
+            if (name != null && !name.isBlank() && !printerNames.contains(name) && !isVirtualFilePrinter(printer)) {
                 printerNames.add(name);
             }
         }
 
         cmbPrinter.setItems(printerNames);
-        cmbPrinter.setValue("Default Printer");
+        Printer defaultPrinter = selectPhysicalPrinter(null);
+        if (defaultPrinter != null && !isDefaultPhysicalPrinter(defaultPrinter)) {
+            cmbPrinter.setValue(defaultPrinter.getName());
+        } else {
+            cmbPrinter.setValue("Default Printer");
+        }
     }
 
     // =========================================================
@@ -330,14 +342,58 @@ public class PrintPreviewController {
 
     private Printer selectPrinter(String printerName) {
         if (printerName == null || printerName.isBlank() || printerName.equals("Default Printer")) {
-            return Printer.getDefaultPrinter();
+            return selectPhysicalPrinter(null);
         }
         for (Printer printer : Printer.getAllPrinters()) {
             if (printerName.equalsIgnoreCase(printer.getName())) {
                 return printer;
             }
         }
-        return Printer.getDefaultPrinter();
+        return selectPhysicalPrinter(null);
+    }
+
+    private Printer selectPhysicalPrinter(String preferredName) {
+        if (preferredName != null && !preferredName.isBlank()) {
+            for (Printer printer : Printer.getAllPrinters()) {
+                if (preferredName.equalsIgnoreCase(printer.getName()) && !isVirtualFilePrinter(printer)) {
+                    return printer;
+                }
+            }
+        }
+
+        Printer defaultPrinter = Printer.getDefaultPrinter();
+        if (defaultPrinter != null && !isVirtualFilePrinter(defaultPrinter)) {
+            return defaultPrinter;
+        }
+
+        for (Printer printer : Printer.getAllPrinters()) {
+            if (!isVirtualFilePrinter(printer)) {
+                return printer;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean isDefaultPhysicalPrinter(Printer printer) {
+        Printer defaultPrinter = Printer.getDefaultPrinter();
+        return defaultPrinter != null
+                && printer != null
+                && defaultPrinter.getName().equalsIgnoreCase(printer.getName())
+                && !isVirtualFilePrinter(defaultPrinter);
+    }
+
+    private boolean isVirtualFilePrinter(Printer printer) {
+        if (printer == null || printer.getName() == null) {
+            return false;
+        }
+
+        String name = printer.getName().toLowerCase(Locale.ROOT);
+        return name.contains("pdf")
+                || name.contains("xps")
+                || name.contains("onenote")
+                || name.contains("fax")
+                || name.contains("file");
     }
 
     private Paper choosePaper(Printer printer, PageOrientation orientation) {
