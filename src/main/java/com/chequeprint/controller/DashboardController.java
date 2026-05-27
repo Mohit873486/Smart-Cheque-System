@@ -77,6 +77,8 @@ public class DashboardController {
     @FXML
     private TableColumn<Cheque, String> colAmount;
     @FXML
+    private TableColumn<Cheque, String> colBank;
+    @FXML
     private TableColumn<Cheque, String> colStatus;
 
     @FXML
@@ -160,7 +162,7 @@ public class DashboardController {
         // HEADER TEXT
         // =========================
         if (lblWelcome != null)
-            lblWelcome.setText("Welcome Mohit ✅");
+            lblWelcome.setText("Welcome, Mohit");
         if (lblSubtitle != null)
             lblSubtitle.setText("Finance Dashboard");
 
@@ -202,13 +204,13 @@ public class DashboardController {
                     setCount(lblTotalCheques, total, "");
                     setCount(lblPrinted, printed, "");
                     setCount(lblPending, pending, "");
-                    setCount(lblMonthlyAmount, (int) amount, "₹");
+                    setCount(lblMonthlyAmount, (int) amount, "\u20B9");
 
                     // =========================
                     // NEW LABELS
                     // =========================
                     setCount(lblTotalInvoices, invoice, "");
-                    setCount(lblTotalAmount, (int) amount, "₹");
+                    setCount(lblTotalAmount, (int) amount, "\u20B9");
                     setCount(lblPendingCheques, pending, "");
                     setCount(lblPrintedCheques, printed, "");
                     setCount(lblTodayEntries, today, "");
@@ -286,7 +288,7 @@ public class DashboardController {
                 e.printStackTrace();
                 Platform.runLater(() -> {
                     if (lblWelcome != null)
-                        lblWelcome.setText("⚠ Database Error");
+                        lblWelcome.setText("Database Error");
                 });
             }
         }).start();
@@ -359,8 +361,11 @@ public class DashboardController {
         if (tblRecentCheques != null) {
             colChequeNo.setCellValueFactory(new PropertyValueFactory<>("chequeNo"));
             colPayee.setCellValueFactory(new PropertyValueFactory<>("payeeName"));
+            if (colBank != null) {
+                colBank.setCellValueFactory(new PropertyValueFactory<>("bankName"));
+            }
             colAmount.setCellValueFactory(c -> new SimpleStringProperty(
-                    c.getValue().getAmount() != null ? "₹" + c.getValue().getAmount().toPlainString() : ""));
+                    c.getValue().getAmount() != null ? "\u20B9" + c.getValue().getAmount().toPlainString() : ""));
             colStatus.setCellValueFactory(c -> new SimpleStringProperty(
                     c.getValue().getStatus() != null ? c.getValue().getStatus().name() : "Unknown"));
             // Color-code status similar to ChequeController
@@ -370,17 +375,11 @@ public class DashboardController {
                     super.updateItem(item, empty);
                     if (empty || item == null) {
                         setText(null);
-                        setStyle("");
+                        setGraphic(null);
                         return;
                     }
-                    setText(item);
-                    setStyle(switch (item) {
-                        case "Printed" -> "-fx-text-fill:#065f46;-fx-font-weight:bold;";
-                        case "Pending" -> "-fx-text-fill:#92400e;-fx-font-weight:bold;";
-                        case "Draft" -> "-fx-text-fill:#475569;-fx-font-weight:bold;";
-                        case "Cancelled" -> "-fx-text-fill:#991b1b;-fx-font-weight:bold;";
-                        default -> "";
-                    });
+                    setText(null);
+                    setGraphic(statusBadge(item));
                 }
             });
         }
@@ -389,12 +388,25 @@ public class DashboardController {
             colInvoiceNo.setCellValueFactory(new PropertyValueFactory<>("invoiceNo"));
             colInvoiceClient.setCellValueFactory(new PropertyValueFactory<>("clientName"));
             colInvoiceAmount.setCellValueFactory(c -> new SimpleStringProperty(
-                    c.getValue().getAmount() != null ? "₹" + c.getValue().getAmount().toPlainString() : ""));
+                    c.getValue().getAmount() != null ? "\u20B9" + c.getValue().getAmount().toPlainString() : ""));
             colInvoiceDue.setCellValueFactory(c -> new SimpleStringProperty(
                     c.getValue().getDueDate() != null ? c.getValue().getDueDate().toString() : ""));
             colInvoiceStatus.setCellValueFactory(c -> new SimpleStringProperty(
                     c.getValue().getStatus() != null ? c.getValue().getStatus().name() : "Unpaid"));
         }
+    }
+
+    private Label statusBadge(String status) {
+        Label badge = new Label(status);
+        badge.getStyleClass().add("status-badge");
+        switch (status) {
+            case "Printed" -> badge.getStyleClass().add("status-printed");
+            case "Pending" -> badge.getStyleClass().add("status-pending");
+            case "Draft" -> badge.getStyleClass().add("status-draft");
+            case "Cancelled" -> badge.getStyleClass().add("status-cancelled");
+            default -> badge.getStyleClass().add("status-neutral");
+        }
+        return badge;
     }
 
     private void startAutoRefresh() {

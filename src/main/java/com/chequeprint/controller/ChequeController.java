@@ -126,17 +126,11 @@ public class ChequeController {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(null);
-                    setStyle("");
+                    setGraphic(null);
                     return;
                 }
-                setText(item);
-                setStyle(switch (item) {
-                    case "Printed" -> "-fx-text-fill:#065f46;-fx-font-weight:bold;";
-                    case "Pending" -> "-fx-text-fill:#92400e;-fx-font-weight:bold;";
-                    case "Draft" -> "-fx-text-fill:#475569;-fx-font-weight:bold;";
-                    case "Cancelled" -> "-fx-text-fill:#991b1b;-fx-font-weight:bold;";
-                    default -> "";
-                });
+                setText(null);
+                setGraphic(statusBadge(item));
             }
         });
 
@@ -148,6 +142,19 @@ public class ChequeController {
     }
 
     // ── Filters ─────────────────────────────────────────────────────
+    private Label statusBadge(String status) {
+        Label badge = new Label(status);
+        badge.getStyleClass().add("status-badge");
+        switch (status) {
+            case "Printed" -> badge.getStyleClass().add("status-printed");
+            case "Pending" -> badge.getStyleClass().add("status-pending");
+            case "Draft" -> badge.getStyleClass().add("status-draft");
+            case "Cancelled" -> badge.getStyleClass().add("status-cancelled");
+            default -> badge.getStyleClass().add("status-neutral");
+        }
+        return badge;
+    }
+
     private void setupFilters() {
         filterStatus.setItems(FXCollections.observableArrayList(
                 "All", "Draft", "Pending", "Printed", "Cancelled"));

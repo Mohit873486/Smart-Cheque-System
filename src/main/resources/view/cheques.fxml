@@ -1,139 +1,118 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<ScrollPane fitToWidth="true"
-    style="-fx-background: #f0f2f5; -fx-background-color: #f0f2f5;"
+<ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+    styleClass="page-scroll"
     xmlns:fx="http://javafx.com/fxml/1"
     fx:controller="com.chequeprint.controller.ChequeController">
-    <VBox fx:id="rootPane" spacing="24"
-        style="-fx-background-color: #f0f2f5;">
 
-        <!-- FIX: inner VBox must also declare maxWidth/maxHeight or it won't grow -->
-        <VBox spacing="20" VBox.vgrow="ALWAYS"
-            maxWidth="Infinity" maxHeight="Infinity"
-            style="-fx-padding: 24 24 24 24; -fx-background-color:#f1f5f9;">
+    <VBox fx:id="rootPane" spacing="22" styleClass="cheque-page"
+        maxWidth="Infinity" maxHeight="Infinity">
+        <padding>
+            <Insets top="26" right="28" bottom="28" left="28" />
+        </padding>
 
-            <!-- Page Header -->
-            <HBox alignment="CENTER_LEFT" spacing="12">
-                <VBox spacing="4" HBox.hgrow="ALWAYS">
-                    <Label text="📝 Cheque Management" styleClass="page-title" />
-                    <Label text="Create, manage and print cheques"
-                        styleClass="page-subtitle" />
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Cheque Management" styleClass="dashboard-title" />
+                <Label text="Create, edit, and print cheque records"
+                    styleClass="dashboard-subtitle" />
+            </VBox>
+            <Button text="+ New Cheque" styleClass="btn-primary" onAction="#onClear" />
+        </HBox>
+
+        <HBox spacing="20" VBox.vgrow="ALWAYS" maxWidth="Infinity" maxHeight="Infinity">
+            <VBox spacing="14" styleClass="cheque-list-panel"
+                HBox.hgrow="ALWAYS" maxWidth="Infinity" maxHeight="Infinity">
+                <HBox spacing="12" alignment="CENTER_LEFT" styleClass="cheque-filter-bar">
+                    <HBox spacing="8" alignment="CENTER_LEFT" styleClass="search-shell"
+                        HBox.hgrow="ALWAYS" maxWidth="Infinity">
+                        <Label text="⌕" styleClass="search-icon" />
+                        <TextField fx:id="searchField" promptText="Search cheque #, payee, or bank"
+                            styleClass="search-input-field" HBox.hgrow="ALWAYS"
+                            maxWidth="Infinity" />
+                    </HBox>
+                    <ComboBox fx:id="filterStatus" styleClass="filter-combo"
+                        prefWidth="150" />
+                </HBox>
+
+                <TableView fx:id="chequeTable" styleClass="modern-table"
+                    VBox.vgrow="ALWAYS" maxHeight="Infinity">
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                    </columnResizePolicy>
+                    <placeholder>
+                        <Label text="No cheques found. Click '+ New Cheque' to create one."
+                            styleClass="table-placeholder" />
+                    </placeholder>
+                    <columns>
+                        <TableColumn fx:id="colChequeNo" text="Cheque #" minWidth="105" />
+                        <TableColumn fx:id="colPayee" text="Payee" minWidth="165" />
+                        <TableColumn fx:id="colAmount" text="Amount" minWidth="120" />
+                        <TableColumn fx:id="colBank" text="Bank" minWidth="120" />
+                        <TableColumn fx:id="colDate" text="Issue Date" minWidth="115" />
+                        <TableColumn fx:id="colStatus" text="Status" minWidth="100" />
+                    </columns>
+                </TableView>
+
+                <HBox spacing="10" alignment="CENTER_LEFT" styleClass="table-action-footer">
+                    <Button text="Print Selected" styleClass="btn-primary" onAction="#onPrint" />
+                    <Button text="Delete" styleClass="btn-danger-low" onAction="#onDelete" />
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Label text="Select a row to edit" styleClass="footer-hint" />
+                </HBox>
+            </VBox>
+
+            <VBox fx:id="formPanel" spacing="16" styleClass="edit-cheque-card"
+                prefWidth="340" minWidth="320" maxWidth="370" maxHeight="Infinity"
+                HBox.hgrow="NEVER">
+                <Label fx:id="lblFormTitle" text="Edit Cheque"
+                    styleClass="form-title-clean" maxWidth="Infinity" />
+
+                <VBox spacing="7">
+                    <Label text="Payee Name" styleClass="form-label" />
+                    <TextField fx:id="fldPayee" promptText="Enter payee name"
+                        styleClass="form-input" maxWidth="Infinity" />
                 </VBox>
-                <Button text="+ New Cheque" styleClass="btn-primary" onAction="#onClear" />
-            </HBox>
 
-            <!-- Filter Bar -->
-            <HBox spacing="12" alignment="CENTER_LEFT" styleClass="card"
-                style="-fx-padding: 14 18 14 18;">
-                <Label text="🔍" style="-fx-font-size:14px; -fx-text-fill:#94a3b8;" />
-                <TextField fx:id="searchField"
-                    promptText="Search by payee or cheque no…"
-                    styleClass="filter-input" prefWidth="280" HBox.hgrow="ALWAYS"
-                    maxWidth="Infinity" />
-                <Label text="Status:" style="-fx-text-fill:#64748b; -fx-font-size:13px;" />
-                <ComboBox fx:id="filterStatus" styleClass="filter-combo" prefWidth="130" />
-            </HBox>
-
-            <!-- FIX: HBox must have maxHeight="Infinity" so children can expand
-                        vertically -->
-            <HBox spacing="20" VBox.vgrow="ALWAYS" maxHeight="Infinity">
-
-                <!-- Table Card — FIX: maxHeight="Infinity" on the VBox card -->
-                <VBox styleClass="card" HBox.hgrow="ALWAYS"
-                    maxWidth="Infinity" maxHeight="Infinity"
-                    spacing="14">
-
-                    <Label text="All Cheques" styleClass="section-title" />
-
-                    <!--
-                  FIX: CONSTRAINED_RESIZE_POLICY makes columns fill the
-                  available table width automatically — no more empty grey
-                  space to the right when window is resized.
-                -->
-                    <TableView fx:id="chequeTable" styleClass="data-table"
-                        VBox.vgrow="ALWAYS" maxHeight="Infinity">
-                        <columnResizePolicy>
-                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                        </columnResizePolicy>
-                        <placeholder>
-                            <Label
-                                text="No cheques found. Click '+ New Cheque' to create one."
-                                styleClass="table-placeholder" />
-                        </placeholder>
-                        <columns>
-                            <TableColumn fx:id="colChequeNo" text="CHEQUE NO"
-                                minWidth="100" />
-                            <TableColumn fx:id="colPayee" text="PAYEE NAME"
-                                minWidth="160" />
-                            <TableColumn fx:id="colAmount" text="AMOUNT" minWidth="110" />
-                            <TableColumn fx:id="colBank" text="BANK" minWidth="100" />
-                            <TableColumn fx:id="colDate" text="DATE" minWidth="100" />
-                            <TableColumn fx:id="colStatus" text="STATUS" minWidth="90" />
-                        </columns>
-                    </TableView>
-
-                    <HBox spacing="10">
-                        <Button text="🖨️  Print" styleClass="btn-primary"
-                            onAction="#onPrint" />
-                        <Button text="🗑  Delete" styleClass="btn-danger"
-                            onAction="#onDelete" />
-                        <Region HBox.hgrow="ALWAYS" />
-                        <Label text="Click a row to edit"
-                            style="-fx-text-fill:#94a3b8; -fx-font-size:12px;"
-                            alignment="CENTER_RIGHT" />
+                <VBox spacing="7">
+                    <Label text="Amount" styleClass="form-label" />
+                    <HBox alignment="CENTER_LEFT" spacing="0" styleClass="money-input-shell">
+                        <Label text="₹" styleClass="money-prefix" />
+                        <TextField fx:id="fldAmount" promptText="0.00"
+                            styleClass="money-input" HBox.hgrow="ALWAYS"
+                            maxWidth="Infinity" />
                     </HBox>
                 </VBox>
 
-                <!-- Form Panel — fixed width, grows vertically with parent -->
-                <VBox fx:id="formPanel" styleClass="card"
-                    spacing="16"
-                    minWidth="280" maxWidth="320"
-                    maxHeight="Infinity"
-                    HBox.hgrow="NEVER">
-
-                    <Label fx:id="lblFormTitle" text="New Cheque"
-                        styleClass="form-title" maxWidth="Infinity" />
-
-                    <VBox spacing="6">
-                        <Label text="PAYEE NAME" styleClass="form-label" />
-                        <TextField fx:id="fldPayee" promptText="Enter payee name"
-                            styleClass="form-input" maxWidth="Infinity" />
-                    </VBox>
-
-                    <VBox spacing="6">
-                        <Label text="AMOUNT (₹)" styleClass="form-label" />
-                        <TextField fx:id="fldAmount" promptText="0.00"
-                            styleClass="form-input" maxWidth="Infinity" />
-                    </VBox>
-
-                    <VBox spacing="6">
-                        <Label text="BANK" styleClass="form-label" />
-                        <ComboBox fx:id="cmbBank" styleClass="form-combo"
-                            maxWidth="Infinity" />
-                    </VBox>
-
-                    <VBox spacing="6">
-                        <Label text="ISSUE DATE" styleClass="form-label" />
-                        <DatePicker fx:id="datePicker" styleClass="form-date"
-                            maxWidth="Infinity" />
-                    </VBox>
-
-                    <Region VBox.vgrow="ALWAYS" />
-
-                    <VBox spacing="8">
-                        <Button text="💾  Save Cheque" styleClass="btn-primary"
-                            maxWidth="Infinity" onAction="#onSave" />
-                        <Button text=" Print" styleClass="btn-success"
-                            maxWidth="Infinity" onAction="#onSaveAndPrint" />
-                        <Button text="✕  Clear Form" styleClass="btn-secondary"
-                            maxWidth="Infinity" onAction="#onClear" />
-                    </VBox>
+                <VBox spacing="7">
+                    <Label text="Bank" styleClass="form-label" />
+                    <ComboBox fx:id="cmbBank" styleClass="form-combo"
+                        maxWidth="Infinity" />
                 </VBox>
-            </HBox>
-        </VBox>
+
+                <VBox spacing="7">
+                    <Label text="Issue Date" styleClass="form-label" />
+                    <DatePicker fx:id="datePicker" styleClass="form-date"
+                        maxWidth="Infinity" />
+                </VBox>
+
+                <Region VBox.vgrow="ALWAYS" />
+
+                <VBox spacing="9">
+                    <Button text="Print" styleClass="btn-print-main"
+                        maxWidth="Infinity" onAction="#onSaveAndPrint" />
+                    <HBox spacing="10">
+                        <Button text="Save" styleClass="btn-primary"
+                            maxWidth="Infinity" HBox.hgrow="ALWAYS" onAction="#onSave" />
+                        <Button text="Clear Form" styleClass="btn-outline-muted"
+                            maxWidth="Infinity" HBox.hgrow="ALWAYS" onAction="#onClear" />
+                    </HBox>
+                </VBox>
+            </VBox>
+        </HBox>
     </VBox>
-
-
 </ScrollPane>
