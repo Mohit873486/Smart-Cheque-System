@@ -1,13 +1,12 @@
 package com.chequeprint.service;
 
-import com.openai.client.OpenAIClient;
-import com.openai.client.okhttp.OpenAIOkHttpClient;
-import com.openai.models.ChatModel;
-import com.openai.models.responses.Response;
-import com.openai.models.responses.ResponseCreateParams;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class OpenAiChequeAssistantService {
 
+    private static final String MODEL = "gemini-1.5";
     private static final String SYSTEM_INSTRUCTIONS = """
             You are an AI assistant for a cheque management system.
 
@@ -43,13 +42,13 @@ public class OpenAiChequeAssistantService {
             }
             """;
 
-    private final OpenAIClient client;
+    private final GeminiApiClient client;
 
     public OpenAiChequeAssistantService() {
-        this(OpenAIOkHttpClient.fromEnv());
+        this(new GeminiApiClient());
     }
 
-    OpenAiChequeAssistantService(OpenAIClient client) {
+    OpenAiChequeAssistantService(GeminiApiClient client) {
         this.client = client;
     }
 
@@ -58,33 +57,36 @@ public class OpenAiChequeAssistantService {
             return emptyAction();
         }
 
-        ResponseCreateParams params = ResponseCreateParams.builder()
-                .model(ChatModel.GPT_5_2)
-                .instructions(SYSTEM_INSTRUCTIONS)
-                .input("Current date: " + java.time.LocalDate.now() + "\nUser input: " + userInput.trim())
-                .build();
+        List<Map<String, Object>> messages = List.of(
+                buildSystemMessage(SYSTEM_INSTRUCTIONS),
+                buildUserMessage("Current date: " + java.time.LocalDate.now() + "\nUser input: " + userInput.trim()));
 
-        Response response = client.responses().create(params);
-        return normalizeJson(extractOutputText(response));
+        try {
+            String output = client.generateText(MODEL, messages, Map.of(
+                    "temperature", 0.0,
+                    "max_output_tokens", 256));
+            return normalizeJson(output);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Gemini assistant request failed", ex);
+        }
     }
 
     public String runAgent(String userCommand) {
         return parseCommand(userCommand);
     }
 
-    private String extractOutputText(Response response) {
-        StringBuilder text = new StringBuilder();
+    private Map<String, Object> buildSystemMessage(String text) {
+        Map<String, Object> message = new LinkedHashMap<>();
+        message.put("author", "system");
+        message.put("content", List.of(Map.of("type", "text", "text", text)));
+        return message;
+    }
 
-        for (var outputItem : response.output()) {
-            if (outputItem.isMessage()) {
-                for (var content : outputItem.asMessage().content()) {
-                    content.outputText().ifPresent(outputText -> text.append(outputText.text()));
-                }
-            }
-        }
-
-        String result = text.toString().trim();
-        return result.isEmpty() ? emptyAction() : result;
+    private Map<String, Object> buildUserMessage(String text) {
+        Map<String, Object> message = new LinkedHashMap<>();
+        message.put("author", "user");
+        message.put("content", List.of(Map.of("type", "text", "text", text)));
+        return message;
     }
 
     private String normalizeJson(String raw) {

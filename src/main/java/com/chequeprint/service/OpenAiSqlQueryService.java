@@ -1,13 +1,12 @@
 package com.chequeprint.service;
 
-import com.openai.client.OpenAIClient;
-import com.openai.client.okhttp.OpenAIOkHttpClient;
-import com.openai.models.ChatModel;
-import com.openai.models.responses.Response;
-import com.openai.models.responses.ResponseCreateParams;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class OpenAiSqlQueryService {
 
+    private static final String MODEL = "gemini-1.5";
     private static final String SQL_INSTRUCTIONS = """
             You are an AI that converts natural language into SQL queries.
 
@@ -37,43 +36,44 @@ public class OpenAiSqlQueryService {
             - Output ONLY SQL query
             """;
 
-    private final OpenAIClient client;
+    private final GeminiApiClient client;
 
     public OpenAiSqlQueryService() {
-        this(OpenAIOkHttpClient.fromEnv());
+        this(new GeminiApiClient());
     }
 
-    OpenAiSqlQueryService(OpenAIClient client) {
+    OpenAiSqlQueryService(GeminiApiClient client) {
         this.client = client;
     }
 
-    public String generateSql(String userInput) {
+    public String generateSql(String userInput) throws Exception {
         if (userInput == null || userInput.isBlank()) {
             return "SELECT * FROM cheques LIMIT 50;";
         }
 
-        ResponseCreateParams params = ResponseCreateParams.builder()
-                .model(ChatModel.GPT_5_2)
-                .instructions(SQL_INSTRUCTIONS)
-                .input(userInput.trim())
-                .build();
+        List<Map<String, Object>> messages = List.of(
+                buildSystemMessage(SQL_INSTRUCTIONS),
+                buildUserMessage(userInput.trim()));
 
-        Response response = client.responses().create(params);
-        return normalizeSql(extractOutputText(response));
+        String output = client.generateText(MODEL, messages, Map.of(
+                "temperature", 0.0,
+                "max_output_tokens", 256));
+
+        return normalizeSql(output);
     }
 
-    private String extractOutputText(Response response) {
-        StringBuilder text = new StringBuilder();
+    private Map<String, Object> buildSystemMessage(String text) {
+        Map<String, Object> message = new LinkedHashMap<>();
+        message.put("author", "system");
+        message.put("content", List.of(Map.of("type", "text", "text", text)));
+        return message;
+    }
 
-        for (var outputItem : response.output()) {
-            if (outputItem.isMessage()) {
-                for (var content : outputItem.asMessage().content()) {
-                    content.outputText().ifPresent(outputText -> text.append(outputText.text()));
-                }
-            }
-        }
-
-        return text.toString().trim();
+    private Map<String, Object> buildUserMessage(String text) {
+        Map<String, Object> message = new LinkedHashMap<>();
+        message.put("author", "user");
+        message.put("content", List.of(Map.of("type", "text", "text", text)));
+        return message;
     }
 
     private String normalizeSql(String raw) {

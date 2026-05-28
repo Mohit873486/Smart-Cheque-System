@@ -59,6 +59,7 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\C
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\preview\BankTemplateStore.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\InvoiceController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\BankTemplateLayout.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\GeminiApiClient.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\printpreview\PrintPreviewController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\UserService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\preview\ChequeRenderer.java

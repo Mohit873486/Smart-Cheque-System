@@ -3,20 +3,16 @@ package com.chequeprint.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class OpenAiChequeOcrService {
 
-    private static final String RESPONSES_URL = "https://api.openai.com/v1/responses";
-    private static final String MODEL = "gpt-5.2";
+    private static final String MODEL = "gemini-1.5";
     private static final String OCR_PROMPT = """
             Extract name, amount, date from cheque image text.
 
@@ -36,15 +32,10 @@ public class OpenAiChequeOcrService {
             }
             """;
 
-    private final HttpClient httpClient;
+    private final GeminiApiClient geminiClient = new GeminiApiClient();
     private final ObjectMapper mapper = new ObjectMapper();
 
     public OpenAiChequeOcrService() {
-        this(HttpClient.newHttpClient());
-    }
-
-    OpenAiChequeOcrService(HttpClient httpClient) {
-        this.httpClient = httpClient;
     }
 
     public String extractChequeJson(Path imagePath) throws Exception {
@@ -52,33 +43,19 @@ public class OpenAiChequeOcrService {
             return emptyResult();
         }
 
-        String apiKey = System.getenv("OPENAI_API_KEY");
-        if (apiKey == null || apiKey.isBlank()) {
-            throw new IllegalStateException("OPENAI_API_KEY environment variable is not set.");
-        }
+        List<Map<String, Object>> messages = List.of(buildOcrMessage(imagePath));
+        String responseText = geminiClient.generateText(MODEL, messages, Map.of(
+                "temperature", 0.0,
+                "max_output_tokens", 1024));
 
-        String body = buildRequestBody(imagePath);
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(RESPONSES_URL))
-                .header("Authorization", "Bearer " + apiKey)
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new IllegalStateException("OpenAI OCR request failed: HTTP "
-                    + response.statusCode() + " - " + response.body());
-        }
-
-        return normalizeJson(extractOutputText(response.body()));
+        return normalizeJson(responseText);
     }
 
     public ChequeOcrResult extractCheque(Path imagePath) throws Exception {
         return mapper.readValue(extractChequeJson(imagePath), ChequeOcrResult.class);
     }
 
-    private String buildRequestBody(Path imagePath) throws Exception {
+    private Map<String, Object> buildOcrMessage(Path imagePath) throws Exception {
         String dataUrl = "data:" + detectMimeType(imagePath) + ";base64,"
                 + Base64.getEncoder().encodeToString(Files.readAllBytes(imagePath));
 
@@ -91,35 +68,9 @@ public class OpenAiChequeOcrService {
         textContent.put("text", OCR_PROMPT);
 
         Map<String, Object> message = new LinkedHashMap<>();
-        message.put("role", "user");
-        message.put("content", java.util.List.of(textContent, imageContent));
-
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("model", MODEL);
-        payload.put("input", java.util.List.of(message));
-
-        return mapper.writeValueAsString(payload);
-    }
-
-    private String extractOutputText(String responseBody) throws Exception {
-        JsonNode root = mapper.readTree(responseBody);
-        StringBuilder text = new StringBuilder();
-
-        JsonNode output = root.path("output");
-        if (output.isArray()) {
-            for (JsonNode item : output) {
-                JsonNode content = item.path("content");
-                if (content.isArray()) {
-                    for (JsonNode part : content) {
-                        if (part.hasNonNull("text")) {
-                            text.append(part.path("text").asText());
-                        }
-                    }
-                }
-            }
-        }
-
-        return text.toString().trim();
+        message.put("author", "user");
+        message.put("content", List.of(textContent, imageContent));
+        return message;
     }
 
     private String normalizeJson(String raw) {

@@ -112,13 +112,6 @@
             <version>1.7.36</version>
         </dependency>
 
-        <!-- OpenAI Java SDK -->
-        <dependency>
-            <groupId>com.openai</groupId>
-            <artifactId>openai-java</artifactId>
-            <version>4.37.0</version>
-        </dependency>
-
         <!-- JSON parsing for AI command responses -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -245,4 +238,3 @@
         </plugins>
     </build>
 </project>
-
