@@ -22,20 +22,24 @@ public class OpenAiChequeAssistantService {
             Output MUST be a single JSON object with these fields:
             {
               "action": "",
-              "name": "",
-              "amount": 0,
-              "date": ""
+              "data": {
+                "name": "",
+                "amount": "",
+                "date": "",
+                "query": ""
+              }
             }
 
             Rules:
             - Always return only valid JSON.
             - Do not wrap the result in additional fields.
             - Do not include any comments or notes.
-            - Use 0 for amount when no numeric amount is present.
+            - Use empty string for amount when no numeric amount is present.
             - Use empty string for name and date when unknown.
+            - Put search text in data.query for search or print requests.
             - Keep date values as plain text: "today", "tomorrow", or ISO yyyy-MM-dd.
             - If the command is an add cheque request, extract name, amount, and date.
-            - If the command is not add-cheque, set other fields to default values.
+            - If the command is not add-cheque, set unused data fields to default values.
             """;
 
     private final GeminiApiClient client;
@@ -98,7 +102,7 @@ public class OpenAiChequeAssistantService {
     }
 
     private String emptyJson() {
-        return "{\"action\":\"\",\"name\":\"\",\"amount\":0,\"date\":\"\"}";
+        return "{\"action\":\"\",\"data\":{\"name\":\"\",\"amount\":\"\",\"date\":\"\",\"query\":\"\"}}";
     }
 
     public static class ChequeCommand {

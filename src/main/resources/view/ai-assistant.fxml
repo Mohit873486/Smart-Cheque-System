@@ -57,8 +57,9 @@
         <TextArea fx:id="txtOutput"
                   editable="false"
                   wrapText="true"
-                  VBox.vgrow="ALWAYS"
+                  prefHeight="180"
                   maxHeight="Infinity"
                   style="-fx-font-family:'Consolas'; -fx-font-size:13px;" />
+    
     </VBox>
 </VBox>

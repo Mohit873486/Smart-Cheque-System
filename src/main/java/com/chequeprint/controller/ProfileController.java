@@ -137,6 +137,13 @@ public class ProfileController {
 
             userService.saveProfile(user);
 
+            if (mainController != null) {
+                Object dc = mainController.getController("dashboard");
+                if (dc instanceof DashboardController dashboardController) {
+                    dashboardController.reload();
+                }
+            }
+
             updateUIAfterSave();
 
             new Alert(Alert.AlertType.INFORMATION, "Profile saved successfully.").show();
@@ -155,10 +162,26 @@ public class ProfileController {
     @FXML
     private void onSaveBusiness() {
         try {
-            user.setCompany(tfCompany.getText().trim());
-            user.setAddress(taAddress.getText().trim());
+            if (user == null) {
+                user = new User();
+            }
+
+            String comp = tfCompany == null ? "" : tfCompany.getText().trim();
+            String addr = taAddress == null ? "" : taAddress.getText().trim();
+
+            user.setCompany(comp);
+            user.setAddress(addr);
 
             userService.saveProfile(user);
+
+            if (mainController != null) {
+                Object dc = mainController.getController("dashboard");
+                if (dc instanceof DashboardController dashboardController) {
+                    dashboardController.reload();
+                }
+            }
+
+            updateUIAfterSave();
 
             new Alert(Alert.AlertType.INFORMATION, "Business details updated.").show();
 
@@ -173,9 +196,17 @@ public class ProfileController {
     @FXML
     private void onChangePassword() {
         try {
-            String current = pfCurrentPassword.getText();
-            String newPass = pfNewPassword.getText();
-            String confirm = pfConfirmPassword.getText();
+            if (user == null || user.getId() == 0) {
+                throw new IllegalStateException("User profile not loaded.");
+            }
+
+            String current = pfCurrentPassword == null ? "" : pfCurrentPassword.getText();
+            String newPass = pfNewPassword == null ? "" : pfNewPassword.getText();
+            String confirm = pfConfirmPassword == null ? "" : pfConfirmPassword.getText();
+
+            if (newPass.isBlank() || confirm.isBlank()) {
+                throw new IllegalArgumentException("New password cannot be empty.");
+            }
 
             if (!newPass.equals(confirm)) {
                 throw new IllegalArgumentException("Passwords do not match");
@@ -183,9 +214,12 @@ public class ProfileController {
 
             userService.changePassword(user.getId(), current, newPass);
 
-            pfCurrentPassword.clear();
-            pfNewPassword.clear();
-            pfConfirmPassword.clear();
+            if (pfCurrentPassword != null)
+                pfCurrentPassword.clear();
+            if (pfNewPassword != null)
+                pfNewPassword.clear();
+            if (pfConfirmPassword != null)
+                pfConfirmPassword.clear();
 
             new Alert(Alert.AlertType.INFORMATION, "Password changed successfully").show();
 

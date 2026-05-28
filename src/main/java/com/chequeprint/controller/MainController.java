@@ -1,12 +1,15 @@
 package com.chequeprint.controller;
 
+import com.chequeprint.service.ChequeReminderService;
 import com.chequeprint.util.FxUtils;
 import javafx.animation.FadeTransition;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -26,6 +29,12 @@ public class MainController {
 
   @FXML
   private Label headerTitle;
+
+  @FXML
+  private TextField mainSearchField;
+
+  @FXML
+  private Label lblNotification;
 
   // Navigation items
   @FXML
@@ -88,6 +97,10 @@ public class MainController {
     for (Node child : sidebar.getChildren()) {
       FxUtils.animateIn(child, delay);
       delay += 40;
+    }
+
+    if (mainSearchField != null) {
+      mainSearchField.textProperty().addListener((obs, oldValue, newValue) -> handleMainSearch(newValue));
     }
 
     // Default page
@@ -297,5 +310,51 @@ public class MainController {
 
     if (item != null)
       item.getStyleClass().add("nav-active");
+  }
+
+  @FXML
+  private void onNotificationClicked() {
+    if (lblNotification == null) {
+      return;
+    }
+    try {
+      ChequeReminderService reminderService = new ChequeReminderService();
+      var cheques = reminderService.getUpcomingChequesWithinDays(2);
+      String message = reminderService.buildReminderMessage(cheques);
+      if (message.isBlank()) {
+        message = "No notifications at the moment.";
+      }
+      Alert alert = new Alert(Alert.AlertType.INFORMATION, message);
+      alert.setTitle("Notifications");
+      alert.setHeaderText("Upcoming cheque reminders");
+      alert.showAndWait();
+    } catch (Exception e) {
+      Alert alert = new Alert(Alert.AlertType.ERROR, "Could not load notifications: " + e.getMessage());
+      alert.setTitle("Notifications");
+      alert.setHeaderText("Error");
+      alert.showAndWait();
+    }
+  }
+
+  private void handleMainSearch(String query) {
+    Object controller = getCurrentController();
+    if (controller instanceof ChequeController cc) {
+      cc.applyMainSearch(query);
+    } else if (controller instanceof InvoiceController ic) {
+      ic.applyMainSearch(query);
+    }
+  }
+
+  private Object getCurrentController() {
+    if (contentPane == null || contentPane.getChildren().isEmpty()) {
+      return null;
+    }
+    Node current = contentPane.getChildren().get(0);
+    for (Map.Entry<String, Node> entry : pageCache.entrySet()) {
+      if (entry.getValue() == current) {
+        return controllerMap.get(entry.getKey());
+      }
+    }
+    return null;
   }
 }

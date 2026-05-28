@@ -185,6 +185,12 @@ public class InvoiceController {
         invoiceTable.setItems(sortedData);
     }
 
+    public void applyMainSearch(String query) {
+        if (searchField != null) {
+            searchField.setText(query == null ? "" : query.trim());
+        }
+    }
+
     // ── Save / Update ────────────────────────────────────────────────
     @FXML
     private void onSave() {

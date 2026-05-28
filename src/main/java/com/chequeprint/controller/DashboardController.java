@@ -2,8 +2,10 @@ package com.chequeprint.controller;
 
 import com.chequeprint.model.Cheque;
 import com.chequeprint.model.Invoice;
+import com.chequeprint.model.User;
 import com.chequeprint.service.ChequeService;
 import com.chequeprint.service.InvoiceService;
+import com.chequeprint.service.UserService;
 import com.chequeprint.util.FxUtils;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
@@ -138,6 +140,7 @@ public class DashboardController {
 
     private final ChequeService service = new ChequeService();
     private final InvoiceService invoiceService = new InvoiceService();
+    private final UserService userService = new UserService();
     private MainController mainController;
     private Timeline autoRefreshTimeline;
 
@@ -190,8 +193,15 @@ public class DashboardController {
                 int invoice = invoiceService.getTotalInvoices();
                 var recentCheques = service.getAll();
                 var recentInvoices = invoiceService.getAll();
+                User profile = userService.loadProfile();
 
                 Platform.runLater(() -> {
+                    String displayName = profile != null && profile.getName() != null && !profile.getName().isBlank()
+                            ? profile.getName()
+                            : "Admin";
+                    if (lblWelcome != null) {
+                        lblWelcome.setText("Welcome, " + displayName);
+                    }
                     // animations
                     animateCard(cardTotal, 80);
                     animateCard(cardPrinted, 160);
@@ -496,4 +506,3 @@ public class DashboardController {
         });
     }
 }
-

@@ -4,12 +4,14 @@ com\chequeprint\service\OpenAiSqlQueryService.class
 com\chequeprint\service\OpenAiChequeOcrService.class
 com\chequeprint\controller\DashboardController$1.class
 com\chequeprint\util\BankTemplatePdfExporter.class
+com\chequeprint\controller\AiAssistantController$2.class
 com\chequeprint\controller\ChequeController.class
 com\chequeprint\controller\SettingsController.class
 com\chequeprint\model\BankTemplateLayout.class
 com\chequeprint\model\Cheque$Status.class
 com\chequeprint\controller\DashboardController.class
 com\chequeprint\service\OpenAiChequeOcrService$ChequeOcrResult.class
+com\chequeprint\service\OpenAiChequeOcrService$OcrSaveResult.class
 com\chequeprint\util\BankTemplateLayoutStore.class
 com\chequeprint\controller\ProfileController.class
 com\chequeprint\util\SignatureService.class
@@ -50,6 +52,7 @@ com\chequeprint\controller\InvoiceController$1.class
 com\chequeprint\preview\ChequePrintService.class
 com\chequeprint\model\FieldPosition.class
 com\chequeprint\model\Settings.class
+com\chequeprint\service\GeminiApiClient.class
 com\chequeprint\preview\ChequePrintPreviewApp$1.class
 com\chequeprint\preview\ChequeField.class
 com\chequeprint\dao\BankDAO.class
@@ -86,6 +89,7 @@ com\chequeprint\util\SignatureOverlayHelper$Delta.class
 com\chequeprint\service\AiSqlDatabaseService$SqlResult.class
 com\chequeprint\controller\ChequeController$1.class
 com\chequeprint\model\Cheque.class
+com\chequeprint\service\OpenAiChequeAssistantService$ChequeCommand.class
 com\chequeprint\util\DateUtil.class
 com\chequeprint\controller\MainController.class
 com\chequeprint\service\ChequeAiCommand.class

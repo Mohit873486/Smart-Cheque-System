@@ -1,6 +1,7 @@
 package com.chequeprint.service;
 
 import com.chequeprint.model.Cheque;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
@@ -42,7 +43,21 @@ public class ChequeAiActionExecutor {
         if (json == null || json.isBlank()) {
             return new ChequeAiCommand();
         }
-        return mapper.readValue(json, ChequeAiCommand.class);
+        JsonNode root = mapper.readTree(json);
+        if (root.has("data")) {
+            return mapper.treeToValue(root, ChequeAiCommand.class);
+        }
+
+        ChequeAiCommand command = new ChequeAiCommand();
+        command.setAction(root.path("action").asText(""));
+        command.getData().setName(root.path("name").asText(""));
+        command.getData().setAmount(root.path("amount").asText(""));
+        command.getData().setDate(root.path("date").asText(""));
+        command.getData().setQuery(root.path("query").asText(""));
+        if (command.getData().getQuery().isBlank()) {
+            command.getData().setQuery(command.getData().getName());
+        }
+        return command;
     }
 
     public AiActionResult execute(ChequeAiCommand command) throws Exception {

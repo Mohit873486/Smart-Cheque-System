@@ -142,8 +142,8 @@
                 maxWidth="Infinity">
                 <Label fx:id="headerTitle" text="Dashboard" styleClass="header-title" />
                 <Region HBox.hgrow="ALWAYS" />
-                <!-- <TextField promptText="Search…" prefWidth="200" styleClass="search-input" />
-                <Label text="🔔" styleClass="icon-btn" /> -->
+                <TextField fx:id="mainSearchField" promptText="Search…" prefWidth="200" styleClass="search-input" />
+                <Label fx:id="lblNotification" text="🔔" styleClass="icon-btn" onMouseClicked="#onNotificationClicked" />
                 <Label text="AD" styleClass="header-avatar" /> 
             </HBox>
 

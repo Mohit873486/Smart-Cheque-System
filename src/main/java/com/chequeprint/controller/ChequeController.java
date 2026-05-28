@@ -183,6 +183,12 @@ public class ChequeController {
         });
     }
 
+    public void applyMainSearch(String query) {
+        if (searchField != null) {
+            searchField.setText(query == null ? "" : query.trim());
+        }
+    }
+
     // ── Load banks from DB into ComboBox ─────────────────────────────
     private void loadBanksIntoCombo() {
         new Thread(() -> {
@@ -222,6 +228,10 @@ public class ChequeController {
                 Platform.runLater(() -> showAlert("DB Error", e.getMessage(), Alert.AlertType.ERROR));
             }
         }, "load-cheques").start();
+    }
+
+    public void reload() {
+        loadData();
     }
 
     // ── Save / Update ────────────────────────────────────────────────
