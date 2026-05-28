@@ -8,7 +8,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -59,6 +62,29 @@ public class GeminiApiClient {
 
         String apiKey = getApiKey();
         String requestBody = buildPayload(text, maxOutputTokens);
+        String url = buildUrl(model, apiKey);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(REQUEST_TIMEOUT)
+                .header("Content-Type", "application/json")
+                .header("x-goog-api-key", apiKey)
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+        return executeWithRetry(request);
+    }
+
+    public String generateTextFromImage(String model, String text, Path imagePath, String mimeType, int maxOutputTokens)
+            throws Exception {
+        validateModel(model);
+        validateText(text);
+        validateImage(imagePath, mimeType);
+        validateMaxOutputTokens(maxOutputTokens);
+
+        String apiKey = getApiKey();
+        String imageBase64 = Base64.getEncoder().encodeToString(Files.readAllBytes(imagePath));
+        String requestBody = buildImagePayload(text, imageBase64, mimeType, maxOutputTokens);
         String url = buildUrl(model, apiKey);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -170,6 +196,26 @@ public class GeminiApiClient {
         return mapper.writeValueAsString(payload);
     }
 
+    private String buildImagePayload(String text, String imageBase64, String mimeType, int maxOutputTokens) throws Exception {
+        Map<String, Object> imagePart = Map.of(
+                "inline_data", Map.of(
+                        "mime_type", mimeType,
+                        "data", imageBase64
+                )
+        );
+        Map<String, Object> textPart = Map.of("text", text);
+        Map<String, Object> content = Map.of("parts", List.of(imagePart, textPart));
+        Map<String, Object> generationConfig = Map.of(
+                "temperature", 0.0,
+                "maxOutputTokens", maxOutputTokens
+        );
+        Map<String, Object> payload = Map.of(
+                "contents", List.of(content),
+                "generationConfig", generationConfig
+        );
+        return mapper.writeValueAsString(payload);
+    }
+
     private String getApiKey() {
         String apiKey = System.getenv(GEMINI_API_KEY_ENV);
         if (apiKey == null || apiKey.isBlank()) {
@@ -190,6 +236,15 @@ public class GeminiApiClient {
         }
         if (text.length() > MAX_PROMPT_LENGTH) {
             throw new IllegalArgumentException("Prompt text exceeds max length of " + MAX_PROMPT_LENGTH + " characters.");
+        }
+    }
+
+    private void validateImage(Path imagePath, String mimeType) {
+        if (imagePath == null || !Files.isRegularFile(imagePath)) {
+            throw new IllegalArgumentException("Image file must exist.");
+        }
+        if (mimeType == null || !mimeType.startsWith("image/")) {
+            throw new IllegalArgumentException("Image MIME type must be valid.");
         }
     }
 

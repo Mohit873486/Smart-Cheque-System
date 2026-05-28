@@ -5,14 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 public class OpenAiChequeOcrService {
 
-    private static final String MODEL = "gemini-1.5";
+    private static final String MODEL = "gemini-2.5-flash";
     private static final String OCR_PROMPT = """
             Extract name, amount, date from cheque image text.
 
@@ -43,25 +39,12 @@ public class OpenAiChequeOcrService {
             return emptyResult();
         }
 
-        String dataUrl = "data:" + detectMimeType(imagePath) + ";base64,"
-                + Base64.getEncoder().encodeToString(Files.readAllBytes(imagePath));
-        String prompt = OCR_PROMPT + "\nImage data: " + dataUrl;
-
-        String responseText = geminiClient.generateText(MODEL, prompt, 1024);
+        String responseText = geminiClient.generateTextFromImage(MODEL, OCR_PROMPT, imagePath, detectMimeType(imagePath), 512);
         return normalizeJson(responseText);
     }
 
     public ChequeOcrResult extractCheque(Path imagePath) throws Exception {
         return mapper.readValue(extractChequeJson(imagePath), ChequeOcrResult.class);
-    }
-
-    // The original OpenAI-style image payload is not compatible with the current Gemini client.
-    // We now send the image as base64 text in the prompt so compilation succeeds.
-    // In production, replace this with a proper Gemini image-supported request.
-    
-    // This helper is no longer used by the current implementation.
-    private Map<String, Object> buildOcrMessage(Path imagePath) throws Exception {
-        throw new UnsupportedOperationException("buildOcrMessage is no longer supported.");
     }
 
     private String normalizeJson(String raw) {
