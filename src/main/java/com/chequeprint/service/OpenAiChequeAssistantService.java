@@ -1,48 +1,45 @@
 package com.chequeprint.service;
 
-import java.util.LinkedHashMap;
-import java.util.List;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.Map;
 
 public class OpenAiChequeAssistantService {
 
-    private static final String MODEL = "gemini-1.5";
+    private static final String MODEL = "gemini-2.5-flash";
     private static final String SYSTEM_INSTRUCTIONS = """
-            You are an AI assistant for a cheque management system.
+            You are a cheque management assistant.
 
-            Your job is to convert user input into a structured JSON action.
+            Convert the user's natural language command into EXACT JSON only.
+            Do not add any explanation, markdown, or extra text.
+            If the user asks to add a cheque, set action to ADD_CHEQUE.
+            If the user asks for pending cheques, set action to SHOW_PENDING_CHEQUES.
+            If the user asks for cheque history, set action to SHOW_HISTORY.
+            If the user asks to print a cheque, set action to PRINT_CHEQUE.
+            If the user asks to search cheques, set action to SEARCH_CHEQUE.
+            If the user asks for reminders, set action to REMINDER_CHECK.
 
-            Available actions:
-            1. PRINT_CHEQUE(name, amount, date)
-            2. ADD_CHEQUE(name, amount, date)
-            3. SHOW_PENDING_CHEQUES
-            4. SHOW_HISTORY
-            5. SEARCH_CHEQUE(query)
-            6. REMINDER_CHECK
-
-            Rules:
-            - Understand user intent correctly
-            - Extract name, amount, and date if available
-            - Convert relative dates:
-              - "today" -> current date
-              - "tomorrow" -> next date
-            - If any value missing, keep it ""
-            - Do NOT explain anything
-            - Output ONLY valid JSON
-
-            Output format:
+            Output MUST be a single JSON object with these fields:
             {
               "action": "",
-              "data": {
-                "name": "",
-                "amount": "",
-                "date": "",
-                "query": ""
-              }
+              "name": "",
+              "amount": 0,
+              "date": ""
             }
+
+            Rules:
+            - Always return only valid JSON.
+            - Do not wrap the result in additional fields.
+            - Do not include any comments or notes.
+            - Use 0 for amount when no numeric amount is present.
+            - Use empty string for name and date when unknown.
+            - Keep date values as plain text: "today", "tomorrow", or ISO yyyy-MM-dd.
+            - If the command is an add cheque request, extract name, amount, and date.
+            - If the command is not add-cheque, set other fields to default values.
             """;
 
     private final GeminiApiClient client;
+    private final ObjectMapper mapper = new ObjectMapper();
 
     public OpenAiChequeAssistantService() {
         this(new GeminiApiClient());
@@ -52,50 +49,40 @@ public class OpenAiChequeAssistantService {
         this.client = client;
     }
 
-    public String parseCommand(String userInput) {
+    public String parseCommandJson(String userInput) {
         if (userInput == null || userInput.isBlank()) {
-            return emptyAction();
+            return emptyJson();
         }
 
-        List<Map<String, Object>> messages = List.of(
-                buildSystemMessage(SYSTEM_INSTRUCTIONS),
-                buildUserMessage("Current date: " + java.time.LocalDate.now() + "\nUser input: " + userInput.trim()));
-
+        String prompt = SYSTEM_INSTRUCTIONS + "\nUser input: " + userInput.trim();
         try {
-            String output = client.generateText(MODEL, messages, Map.of(
-                    "temperature", 0.0,
-                    "max_output_tokens", 256));
+            String output = client.generateText(MODEL, prompt, 256);
             return normalizeJson(output);
         } catch (Exception ex) {
             throw new IllegalStateException("Gemini assistant request failed", ex);
         }
     }
 
-    public String runAgent(String userCommand) {
-        return parseCommand(userCommand);
+    public String runAgent(String userInput) {
+        return parseCommandJson(userInput);
     }
 
-    private Map<String, Object> buildSystemMessage(String text) {
-        Map<String, Object> message = new LinkedHashMap<>();
-        message.put("author", "system");
-        message.put("content", List.of(Map.of("type", "text", "text", text)));
-        return message;
-    }
-
-    private Map<String, Object> buildUserMessage(String text) {
-        Map<String, Object> message = new LinkedHashMap<>();
-        message.put("author", "user");
-        message.put("content", List.of(Map.of("type", "text", "text", text)));
-        return message;
+    public ChequeCommand parseCommand(String userInput) {
+        String json = parseCommandJson(userInput);
+        try {
+            return mapper.readValue(json, ChequeCommand.class);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to parse Gemini JSON response", ex);
+        }
     }
 
     private String normalizeJson(String raw) {
         if (raw == null || raw.isBlank()) {
-            return emptyAction();
+            return emptyJson();
         }
 
         String cleaned = raw.trim();
-        if (cleaned.startsWith("```")) {
+        if (cleaned.startsWith("```") || cleaned.startsWith("``json")) {
             cleaned = cleaned.replaceFirst("^```(?:json)?\\s*", "")
                     .replaceFirst("\\s*```$", "")
                     .trim();
@@ -104,15 +91,52 @@ public class OpenAiChequeAssistantService {
         int start = cleaned.indexOf('{');
         int end = cleaned.lastIndexOf('}');
         if (start >= 0 && end > start) {
-            return cleaned.substring(start, end + 1);
+            return cleaned.substring(start, end + 1).trim();
         }
 
-        return emptyAction();
+        return emptyJson();
     }
 
-    private String emptyAction() {
-        return """
-                {"action":"","data":{"name":"","amount":"","date":"","query":""}}
-                """.trim();
+    private String emptyJson() {
+        return "{\"action\":\"\",\"name\":\"\",\"amount\":0,\"date\":\"\"}";
+    }
+
+    public static class ChequeCommand {
+        private String action = "";
+        private String name = "";
+        private int amount;
+        private String date = "";
+
+        public String getAction() {
+            return action;
+        }
+
+        public void setAction(String action) {
+            this.action = action;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public int getAmount() {
+            return amount;
+        }
+
+        public void setAmount(int amount) {
+            this.amount = amount;
+        }
+
+        public String getDate() {
+            return date;
+        }
+
+        public void setDate(String date) {
+            this.date = date;
+        }
     }
 }

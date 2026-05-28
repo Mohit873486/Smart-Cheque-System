@@ -127,7 +127,7 @@ public class AiAssistantController {
         task.setOnFailed(e -> {
             setButtonsDisabled(false);
             Throwable ex = task.getException();
-            appendOutput("\nError: " + (ex != null ? ex.getMessage() : "Unknown error"));
+            appendOutput("\nError: " + getDetailedErrorMessage(ex));
         });
 
         Thread thread = new Thread(task, "ai-assistant-task");
@@ -142,6 +142,23 @@ public class AiAssistantController {
             }
             txtOutput.appendText(text);
         });
+    }
+
+    private String getDetailedErrorMessage(Throwable ex) {
+        if (ex == null) {
+            return "Unknown error";
+        }
+
+        StringBuilder message = new StringBuilder(ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName());
+        Throwable cause = ex.getCause();
+        while (cause != null) {
+            String causeMessage = cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName();
+            if (!message.toString().contains(causeMessage)) {
+                message.append("\nCause: ").append(causeMessage);
+            }
+            cause = cause.getCause();
+        }
+        return message.toString();
     }
 
     private void setButtonsDisabled(boolean disabled) {

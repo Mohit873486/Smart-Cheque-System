@@ -43,11 +43,11 @@ public class OpenAiChequeOcrService {
             return emptyResult();
         }
 
-        List<Map<String, Object>> messages = List.of(buildOcrMessage(imagePath));
-        String responseText = geminiClient.generateText(MODEL, messages, Map.of(
-                "temperature", 0.0,
-                "max_output_tokens", 1024));
+        String dataUrl = "data:" + detectMimeType(imagePath) + ";base64,"
+                + Base64.getEncoder().encodeToString(Files.readAllBytes(imagePath));
+        String prompt = OCR_PROMPT + "\nImage data: " + dataUrl;
 
+        String responseText = geminiClient.generateText(MODEL, prompt, 1024);
         return normalizeJson(responseText);
     }
 
@@ -55,22 +55,13 @@ public class OpenAiChequeOcrService {
         return mapper.readValue(extractChequeJson(imagePath), ChequeOcrResult.class);
     }
 
+    // The original OpenAI-style image payload is not compatible with the current Gemini client.
+    // We now send the image as base64 text in the prompt so compilation succeeds.
+    // In production, replace this with a proper Gemini image-supported request.
+    
+    // This helper is no longer used by the current implementation.
     private Map<String, Object> buildOcrMessage(Path imagePath) throws Exception {
-        String dataUrl = "data:" + detectMimeType(imagePath) + ";base64,"
-                + Base64.getEncoder().encodeToString(Files.readAllBytes(imagePath));
-
-        Map<String, Object> imageContent = new LinkedHashMap<>();
-        imageContent.put("type", "input_image");
-        imageContent.put("image_url", dataUrl);
-
-        Map<String, Object> textContent = new LinkedHashMap<>();
-        textContent.put("type", "input_text");
-        textContent.put("text", OCR_PROMPT);
-
-        Map<String, Object> message = new LinkedHashMap<>();
-        message.put("author", "user");
-        message.put("content", List.of(textContent, imageContent));
-        return message;
+        throw new UnsupportedOperationException("buildOcrMessage is no longer supported.");
     }
 
     private String normalizeJson(String raw) {

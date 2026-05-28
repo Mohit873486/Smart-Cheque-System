@@ -51,14 +51,8 @@ public class OpenAiSqlQueryService {
             return "SELECT * FROM cheques LIMIT 50;";
         }
 
-        List<Map<String, Object>> messages = List.of(
-                buildSystemMessage(SQL_INSTRUCTIONS),
-                buildUserMessage(userInput.trim()));
-
-        String output = client.generateText(MODEL, messages, Map.of(
-                "temperature", 0.0,
-                "max_output_tokens", 256));
-
+        String prompt = SQL_INSTRUCTIONS + "\nUser input: " + userInput.trim();
+        String output = client.generateText(MODEL, prompt, 256);
         return normalizeSql(output);
     }
 
