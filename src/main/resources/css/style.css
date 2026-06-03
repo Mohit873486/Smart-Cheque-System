@@ -913,6 +913,7 @@
     -fx-border-color: #eef0f3;
     -fx-border-radius: 10px;
     -fx-border-width: 1px;
+    -fx-max-width: Infinity;
 }
 
 .modern-table .column-header-background {
@@ -989,6 +990,21 @@
 .status-cancelled {
     -fx-background-color: #fee2e2;
     -fx-text-fill: #991b1b;
+}
+
+.status-paid {
+    -fx-background-color: #d1fae5;
+    -fx-text-fill: #047857;
+}
+
+.status-unpaid {
+    -fx-background-color: #fef3c7;
+    -fx-text-fill: #92400e;
+}
+
+.status-partial {
+    -fx-background-color: #e0f2fe;
+    -fx-text-fill: #0369a1;
 }
 
 .status-neutral {

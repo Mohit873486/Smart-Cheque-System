@@ -403,6 +403,19 @@ public class DashboardController {
                     c.getValue().getDueDate() != null ? c.getValue().getDueDate().toString() : ""));
             colInvoiceStatus.setCellValueFactory(c -> new SimpleStringProperty(
                     c.getValue().getStatus() != null ? c.getValue().getStatus().name() : "Unpaid"));
+            colInvoiceStatus.setCellFactory(col -> new TableCell<>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                        setGraphic(null);
+                        return;
+                    }
+                    setText(null);
+                    setGraphic(invoiceStatusBadge(item));
+                }
+            });
         }
     }
 
@@ -413,6 +426,19 @@ public class DashboardController {
             case "Printed" -> badge.getStyleClass().add("status-printed");
             case "Pending" -> badge.getStyleClass().add("status-pending");
             case "Draft" -> badge.getStyleClass().add("status-draft");
+            case "Cancelled" -> badge.getStyleClass().add("status-cancelled");
+            default -> badge.getStyleClass().add("status-neutral");
+        }
+        return badge;
+    }
+
+    private Label invoiceStatusBadge(String status) {
+        Label badge = new Label(status);
+        badge.getStyleClass().add("status-badge");
+        switch (status) {
+            case "Paid" -> badge.getStyleClass().add("status-paid");
+            case "Unpaid" -> badge.getStyleClass().add("status-unpaid");
+            case "Partial" -> badge.getStyleClass().add("status-partial");
             case "Cancelled" -> badge.getStyleClass().add("status-cancelled");
             default -> badge.getStyleClass().add("status-neutral");
         }

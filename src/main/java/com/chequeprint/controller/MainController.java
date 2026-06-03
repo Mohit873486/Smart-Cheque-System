@@ -2,8 +2,11 @@ package com.chequeprint.controller;
 
 import com.chequeprint.model.User;
 import com.chequeprint.model.UserRole;
+import com.chequeprint.service.AccessControl;
 import com.chequeprint.service.ChequeReminderService;
+import com.chequeprint.service.Permission;
 import com.chequeprint.util.FxUtils;
+import com.chequeprint.util.SessionManager;
 import javafx.animation.FadeTransition;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -193,6 +196,7 @@ public class MainController {
 
   public void setCurrentUser(User currentUser) {
     this.currentUser = currentUser;
+    SessionManager.start(currentUser);
     applyRolePermissions();
     navigateRoleLanding();
   }
@@ -230,62 +234,26 @@ public class MainController {
       return;
     }
 
-    UserRole role = currentUser.getRoleEnum();
-    navDashboard.setVisible(true);
-    navDashboard.setManaged(true);
-    navProfile.setVisible(true);
-    navProfile.setManaged(true);
-    navSupport.setVisible(true);
-    navSupport.setManaged(true);
-    navSettings.setVisible(true);
-    navSettings.setManaged(true);
-    navCheques.setVisible(true);
-    navCheques.setManaged(true);
-    navInvoices.setVisible(true);
-    navInvoices.setManaged(true);
-    navBanks.setVisible(true);
-    navBanks.setManaged(true);
-    navAiAssistant.setVisible(true);
-    navAiAssistant.setManaged(true);
+    setSidebarItem(navDashboard, AccessControl.can(currentUser, Permission.VIEW_DASHBOARD));
+    setSidebarItem(navCheques, AccessControl.can(currentUser, Permission.VIEW_CHEQUES));
+    setSidebarItem(navInvoices, AccessControl.can(currentUser, Permission.VIEW_INVOICES));
+    setSidebarItem(navBanks, AccessControl.can(currentUser, Permission.VIEW_BANK_TEMPLATES));
+    setSidebarItem(navAiAssistant, AccessControl.can(currentUser, Permission.ACCESS_AI_ASSISTANT));
+    setSidebarItem(navProfile, AccessControl.can(currentUser, Permission.VIEW_PROFILE));
+    setSidebarItem(navSettings, AccessControl.can(currentUser, Permission.MANAGE_SETTINGS));
+    setSidebarItem(navSupport, AccessControl.can(currentUser, Permission.VIEW_SUPPORT));
+  }
 
-    switch (role) {
-      case ADMIN -> {
-        // full access
-      }
-      case MANAGER -> {
-        navInvoices.setVisible(false);
-        navInvoices.setManaged(false);
-        navBanks.setVisible(false);
-        navBanks.setManaged(false);
-        navAiAssistant.setVisible(false);
-        navAiAssistant.setManaged(false);
-      }
-      case OPERATOR -> {
-        navInvoices.setVisible(false);
-        navInvoices.setManaged(false);
-        navBanks.setVisible(false);
-      }
-      case AUDITOR -> {
-        navCheques.setVisible(false);
-        navCheques.setManaged(false);
-        navBanks.setVisible(false);
-        navAiAssistant.setVisible(false);
-        navSettings.setVisible(false);
-      }
+  private void setSidebarItem(HBox item, boolean visible) {
+    if (item == null) {
+      return;
     }
+    item.setVisible(visible);
+    item.setManaged(visible);
   }
 
   private boolean isPageAllowed(String page) {
-    if (currentUser == null) {
-      return true;
-    }
-    UserRole role = currentUser.getRoleEnum();
-    return switch (role) {
-      case ADMIN -> true;
-      case MANAGER -> page.equals("dashboard") || page.equals("cheques") || page.equals("profile") || page.equals("support") || page.equals("settings");
-      case OPERATOR -> page.equals("dashboard") || page.equals("cheques") || page.equals("ai") || page.equals("profile") || page.equals("support");
-      case AUDITOR -> page.equals("dashboard") || page.equals("invoices") || page.equals("profile") || page.equals("support");
-    };
+    return AccessControl.canAccessPage(currentUser, page);
   }
 
   /**

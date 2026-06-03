@@ -118,6 +118,12 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
+        </dependency>
+
         <!-- ── JUnit 5 ── -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

@@ -46,16 +46,38 @@ public class ChequeService {
 
     public boolean markPrinted(int id) throws SQLException {
         Cheque c = dao.findById(id);
-        if (c == null) return false;
+        if (c == null)
+            return false;
         return dao.updateStatus(c, Cheque.Status.Printed);
     }
 
+    public boolean setStatus(Cheque cheque, Cheque.Status status) throws SQLException {
+        if (cheque == null || status == null) {
+            return false;
+        }
+        return dao.updateStatus(cheque, status);
+    }
+
     // --- Dashboard stats ---
-    public int getTotalCheques()   throws SQLException { return dao.countTotal(); }
-    public int getPrintedCheques() throws SQLException { return dao.countPrinted(); }
-    public int getPendingCheques() throws SQLException { return dao.countPending(); }
-    public int getTodayCheques() throws SQLException { return dao.countTodayEntries(); }
-    public double getMonthlyAmount() throws SQLException { return dao.sumThisMonth(); }
+    public int getTotalCheques() throws SQLException {
+        return dao.countTotal();
+    }
+
+    public int getPrintedCheques() throws SQLException {
+        return dao.countPrinted();
+    }
+
+    public int getPendingCheques() throws SQLException {
+        return dao.countPending();
+    }
+
+    public int getTodayCheques() throws SQLException {
+        return dao.countTodayEntries();
+    }
+
+    public double getMonthlyAmount() throws SQLException {
+        return dao.sumThisMonth();
+    }
 
     // --- Helpers ---
     private void validate(Cheque c) {

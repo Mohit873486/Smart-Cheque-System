@@ -3,107 +3,93 @@ package com.chequeprint.service;
 import com.chequeprint.dao.UserDAO;
 import com.chequeprint.model.User;
 import com.chequeprint.model.UserRole;
+import com.chequeprint.model.UserStatus;
+import com.chequeprint.service.AccessControl;
+import com.chequeprint.util.PasswordUtil;
+import com.chequeprint.util.SessionManager;
 
 import java.sql.SQLException;
 
 public class AuthService {
 
+  private static final int MAX_LOGIN_ATTEMPTS = 3;
+
   private final UserDAO dao = new UserDAO();
-  private final int maxLoginAttempts = 3;
-  private int remainingLoginAttempts = maxLoginAttempts;
-  private User currentUser;
+  private final AuditService auditService = new AuditService();
 
-  public AuthenticationResult authenticate(String usernameOrEmail, String password, String roleName) {
-    if (isLocked()) {
-      return AuthenticationResult.failure("Account locked due to too many failed login attempts.");
-    }
-
-    if (usernameOrEmail == null || usernameOrEmail.isBlank()
-        || password == null || password.isBlank()
-        || roleName == null || roleName.isBlank()) {
-      decrementAttempts();
-      return AuthenticationResult.failure("Username, password, and role are required.");
-    }
-
-    UserRole role;
-    try {
-      role = UserRole.from(roleName);
-    } catch (IllegalArgumentException e) {
-      decrementAttempts();
-      return AuthenticationResult.failure("Selected role is invalid.");
+  public AuthenticationResult authenticate(String usernameOrEmail, String password) {
+    if (usernameOrEmail == null || usernameOrEmail.isBlank() || password == null || password.isBlank()) {
+      return AuthenticationResult.failure("Username/email and password are required.");
     }
 
     try {
-      User user = dao.findByUsernameOrEmailAndRole(usernameOrEmail.trim(), role.label());
+      User user = dao.findByUsernameOrEmail(usernameOrEmail.trim());
       if (user == null) {
-        decrementAttempts();
-        return AuthenticationResult.failure("Invalid username, password, or role.");
+        return AuthenticationResult.failure("Invalid username/email or password.");
       }
-      if (!password.equals(user.getPassword())) {
-        decrementAttempts();
-        return AuthenticationResult.failure("Invalid username, password, or role.");
+
+      if (user.isAccountLocked() || user.getStatusEnum() == UserStatus.Locked) {
+        return AuthenticationResult.failure("Account locked due to too many failed attempts or administrator action.");
       }
-      resetAttempts();
-      currentUser = user;
+      if (user.getStatusEnum() != UserStatus.Active) {
+        return AuthenticationResult.failure("Account is not active. Contact your administrator.");
+      }
+
+      if (!PasswordUtil.matches(password, user.getPassword())) {
+        dao.recordFailedLogin(user.getId(), MAX_LOGIN_ATTEMPTS);
+        int remaining = Math.max(0, MAX_LOGIN_ATTEMPTS - user.getFailedLoginAttempts() - 1);
+        return AuthenticationResult.failure(remaining == 0
+            ? "Account locked after 3 failed attempts."
+            : "Invalid username/email or password. " + remaining + " attempts remaining.");
+      }
+
+      if (!PasswordUtil.isBcryptHash(user.getPassword())) {
+        dao.updatePassword(user.getId(), PasswordUtil.hash(password));
+        user = dao.findById(user.getId());
+      } else {
+        dao.resetLoginFailures(user.getId());
+      }
+
+      SessionManager.start(user);
+      try {
+        auditService.recordLogin(user);
+      } catch (SQLException ignored) {
+        // Audit failure should not block authentication
+      }
       return AuthenticationResult.success(user);
     } catch (SQLException e) {
-      decrementAttempts();
-      return AuthenticationResult.failure("Login failed: " + e.getMessage());
+      return AuthenticationResult.failure("Login failed. Please check database connectivity.");
     }
-  }
-
-  public boolean isLocked() {
-    return remainingLoginAttempts <= 0;
-  }
-
-  public int getRemainingLoginAttempts() {
-    return remainingLoginAttempts;
   }
 
   public User getCurrentUser() {
-    return currentUser;
+    return SessionManager.currentUser().orElse(null);
   }
 
   public void logout() {
-    currentUser = null;
-    remainingLoginAttempts = maxLoginAttempts;
+    User currentUser = getCurrentUser();
+    try {
+      auditService.recordLogout(currentUser);
+    } catch (SQLException ignored) {
+      // Audit failure should not block logout flow
+    }
+    SessionManager.clear();
   }
 
   public String getLandingPage() {
+    User currentUser = getCurrentUser();
     if (currentUser == null) {
       return "dashboard";
     }
     return switch (UserRole.from(currentUser.getRole())) {
       case ADMIN -> "dashboard";
-      case MANAGER -> "cheques";
-      case OPERATOR -> "cheques";
+      case MANAGER, OPERATOR -> "cheques";
       case AUDITOR -> "invoices";
     };
   }
 
   public boolean canAccessPage(String page) {
-    if (currentUser == null) {
-      return false;
-    }
-    UserRole role = UserRole.from(currentUser.getRole());
-    return switch (role) {
-      case ADMIN -> true;
-      case MANAGER ->
-        page.equals("dashboard") || page.equals("cheques") || page.equals("profile") || page.equals("support");
-      case OPERATOR -> page.equals("dashboard") || page.equals("cheques") || page.equals("ai") || page.equals("profile")
-          || page.equals("support");
-      case AUDITOR ->
-        page.equals("dashboard") || page.equals("invoices") || page.equals("profile") || page.equals("support");
-    };
-  }
-
-  private void decrementAttempts() {
-    if (remainingLoginAttempts > 0) {
-      remainingLoginAttempts--;
-    }
-  }
-
-  private void resetAttempts() {
-    remainingLoginAttempts = maxLoginAttempts;
+    User currentUser = getCurrentUser();
+    return AccessControl.canAccessPage(currentUser, page);
   }
 }

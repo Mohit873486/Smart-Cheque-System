@@ -2,10 +2,10 @@ package com.chequeprint.service;
 
 import com.chequeprint.dao.UserDAO;
 import com.chequeprint.model.User;
+import com.chequeprint.util.PasswordUtil;
+import com.chequeprint.util.SessionManager;
 
 import java.sql.SQLException;
-
-import java.util.Objects;
 
 /**
  * UserService — business logic for user profile management.
@@ -22,6 +22,10 @@ public class UserService {
     // ── Profile CRUD ─────────────────────────────────────────────────
     /** Loads the first (and usually only) user profile from the database. */
     public User loadProfile() throws SQLException {
+        User sessionUser = SessionManager.currentUser().orElse(null);
+        if (sessionUser != null) {
+            return dao.findById(sessionUser.getId());
+        }
         return dao.findFirst();
     }
 
@@ -63,12 +67,10 @@ public class UserService {
         if (user == null) {
             throw new IllegalArgumentException("User not found.");
         }
-        // Verify current password
-        if (!currentPassword.equals(user.getPassword())) {
+        if (!PasswordUtil.matches(currentPassword, user.getPassword())) {
             throw new IllegalArgumentException("Current password is incorrect.");
         }
-        user.setPassword(newPassword);
-        dao.insertOrUpdate(user);
+        dao.updatePassword(userId, PasswordUtil.hash(newPassword));
     }
 
 }

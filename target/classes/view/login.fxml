@@ -15,13 +15,13 @@
 
         <VBox alignment="CENTER" spacing="10">
             <Label text="Smart Cheque System" styleClass="login-title" />
-            <Label text="AI-Powered Cheque Processing" styleClass="login-subtitle" />
+            <Label text="Secure Cheque Printing &amp; Approval" styleClass="login-subtitle" />
         </VBox>
 
         <VBox styleClass="login-card" spacing="22" maxWidth="520" minWidth="340">
             <VBox spacing="8">
                 <Label text="Welcome back" styleClass="card-heading" />
-                <Label text="Sign in to access the cheque automation dashboard" styleClass="card-subtitle" wrapText="true" />
+                <Label text="Sign in with your registered account" styleClass="card-subtitle" wrapText="true" />
             </VBox>
 
             <VBox spacing="14">
@@ -52,11 +52,6 @@
                                 onAction="#onTogglePassword"
                                 StackPane.alignment="CENTER_RIGHT" />
                     </StackPane>
-                </VBox>
-
-                <VBox spacing="8">
-                    <Label text="Role" styleClass="form-label" />
-                    <ChoiceBox fx:id="choiceRole" styleClass="form-input" maxWidth="Infinity" />
                 </VBox>
 
                 <HBox spacing="14" alignment="CENTER_LEFT">

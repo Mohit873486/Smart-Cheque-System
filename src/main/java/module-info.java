@@ -13,6 +13,7 @@ module com.chequeprint {
     requires java.desktop;
     requires java.prefs;
     requires java.net.http;
+    requires jbcrypt;
 
     // ── Third-party (automatic modules on the module path) ───────────
     requires jasperreports;

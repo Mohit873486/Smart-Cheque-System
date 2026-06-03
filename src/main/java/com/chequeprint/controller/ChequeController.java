@@ -3,9 +3,12 @@ package com.chequeprint.controller;
 import com.chequeprint.dao.BankDAO;
 import com.chequeprint.model.Bank;
 import com.chequeprint.model.Cheque;
+import com.chequeprint.model.User;
 import com.chequeprint.service.ChequeService;
+import com.chequeprint.service.ChequeWorkflowService;
 import com.chequeprint.service.PrintService;
 import com.chequeprint.util.FxUtils;
+import com.chequeprint.util.SessionManager;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -19,6 +22,7 @@ import javafx.scene.layout.VBox;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -80,6 +84,7 @@ public class ChequeController {
     private MainController mainController;
 
     private final ChequeService chequeService = new ChequeService();
+    private final ChequeWorkflowService workflowService = new ChequeWorkflowService();
     private final PrintService printService = new PrintService();
     private final BankDAO bankDAO = new BankDAO();
 
@@ -148,6 +153,8 @@ public class ChequeController {
         switch (status) {
             case "Printed" -> badge.getStyleClass().add("status-printed");
             case "Pending" -> badge.getStyleClass().add("status-pending");
+            case "Approved" -> badge.getStyleClass().add("status-approved");
+            case "Rejected" -> badge.getStyleClass().add("status-rejected");
             case "Draft" -> badge.getStyleClass().add("status-draft");
             case "Cancelled" -> badge.getStyleClass().add("status-cancelled");
             default -> badge.getStyleClass().add("status-neutral");
@@ -157,7 +164,7 @@ public class ChequeController {
 
     private void setupFilters() {
         filterStatus.setItems(FXCollections.observableArrayList(
-                "All", "Draft", "Pending", "Printed", "Cancelled"));
+                "All", "Draft", "Pending", "Approved", "Rejected", "Printed", "Cancelled"));
         filterStatus.setValue("All");
 
         filtered = new FilteredList<>(data, p -> true);
@@ -270,16 +277,15 @@ public class ChequeController {
             int bankId = bankNameToId.getOrDefault(selectedBankName,
                     Math.max(1, cmbBank.getSelectionModel().getSelectedIndex() + 1));
 
+            User actor = SessionManager.currentUser().orElse(null);
             if (selectedCheque == null) {
                 Cheque c = new Cheque(null, payee, amount, bankId, datePicker.getValue());
-                chequeService.save(c);
-                showAlert("Success", "Cheque saved successfully.", Alert.AlertType.INFORMATION);
+                workflowService.createPending(c, actor);
+                showAlert("Success", "Cheque created and submitted for approval.", Alert.AlertType.INFORMATION);
             } else {
-                selectedCheque.setPayeeName(payee);
-                selectedCheque.setAmount(amount);
-                selectedCheque.setBankId(bankId);
-                selectedCheque.setIssueDate(datePicker.getValue());
-                chequeService.update(selectedCheque);
+                if (!chequeService.update(selectedCheque)) {
+                    throw new SQLException("Could not update cheque.");
+                }
                 showAlert("Success", "Cheque updated.", Alert.AlertType.INFORMATION);
             }
             clearForm();
@@ -332,31 +338,25 @@ public class ChequeController {
             int bankId = bankNameToId.getOrDefault(selectedBankName,
                     Math.max(1, cmbBank.getSelectionModel().getSelectedIndex() + 1));
 
-            Cheque newCheque;
+            User actor = SessionManager.currentUser().orElse(null);
             if (selectedCheque == null) {
-                newCheque = new Cheque(null, payee, amount, bankId, datePicker.getValue());
-                chequeService.save(newCheque);
+                Cheque newCheque = new Cheque(null, payee, amount, bankId, datePicker.getValue());
+                workflowService.createPending(newCheque, actor);
+                showAlert("Success",
+                        "Cheque created and submitted for approval. Print is available after manager approval.",
+                        Alert.AlertType.INFORMATION);
             } else {
                 selectedCheque.setPayeeName(payee);
                 selectedCheque.setAmount(amount);
                 selectedCheque.setBankId(bankId);
                 selectedCheque.setIssueDate(datePicker.getValue());
                 chequeService.update(selectedCheque);
-                newCheque = selectedCheque;
+                workflowService.print(selectedCheque.getId(), actor);
+                showAlert("Success", "Cheque printed successfully.",
+                        Alert.AlertType.INFORMATION);
             }
 
             loadData();
-
-            boolean printed = printService.previewCheque(newCheque);
-            if (!printed) {
-                showAlert("Print Canceled", "Cheque printing was canceled.",
-                        Alert.AlertType.INFORMATION);
-                return;
-            }
-
-            showAlert("Success", "Cheque printed successfully.",
-                    Alert.AlertType.INFORMATION);
-
             clearForm();
             if (mainController != null) {
                 Object dc = mainController.getController("dashboard");
@@ -381,12 +381,8 @@ public class ChequeController {
         }
 
         try {
-            boolean printed = printService.previewCheque(sel);
-            if (!printed) {
-                showAlert("Print Canceled", "Cheque printing was canceled.",
-                        Alert.AlertType.INFORMATION);
-                return;
-            }
+            User actor = SessionManager.currentUser().orElse(null);
+            workflowService.print(sel.getId(), actor);
 
             loadData();
             if (mainController != null) {
