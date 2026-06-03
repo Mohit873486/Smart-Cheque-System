@@ -1,5 +1,7 @@
 package com.chequeprint.controller;
 
+import com.chequeprint.model.User;
+import com.chequeprint.model.UserRole;
 import com.chequeprint.service.ChequeReminderService;
 import com.chequeprint.util.FxUtils;
 import javafx.animation.FadeTransition;
@@ -55,6 +57,7 @@ public class MainController {
   private HBox navSupport;
 
   private HBox activeNavItem;
+  private User currentUser;
 
   // FXML mapping (MAIN SYSTEM)
   private final Map<String, String> fxmlMap = new HashMap<>() {
@@ -103,9 +106,7 @@ public class MainController {
       mainSearchField.textProperty().addListener((obs, oldValue, newValue) -> handleMainSearch(newValue));
     }
 
-    // Default page
-    navigate("dashboard");
-    setActiveNav(navDashboard);
+    // The landing page is selected after the authenticated user is injected.
   }
 
   // ================= NAVIGATION METHODS =================
@@ -190,6 +191,103 @@ public class MainController {
     onSupport();
   }
 
+  public void setCurrentUser(User currentUser) {
+    this.currentUser = currentUser;
+    applyRolePermissions();
+    navigateRoleLanding();
+  }
+
+  private void navigateRoleLanding() {
+    if (currentUser == null) {
+      navigate("dashboard");
+      setActiveNav(navDashboard);
+      return;
+    }
+
+    UserRole role = currentUser.getRoleEnum();
+    switch (role) {
+      case ADMIN -> {
+        navigate("dashboard");
+        setActiveNav(navDashboard);
+      }
+      case MANAGER -> {
+        navigate("cheques");
+        setActiveNav(navCheques);
+      }
+      case OPERATOR -> {
+        navigate("cheques");
+        setActiveNav(navCheques);
+      }
+      case AUDITOR -> {
+        navigate("invoices");
+        setActiveNav(navInvoices);
+      }
+    }
+  }
+
+  private void applyRolePermissions() {
+    if (currentUser == null) {
+      return;
+    }
+
+    UserRole role = currentUser.getRoleEnum();
+    navDashboard.setVisible(true);
+    navDashboard.setManaged(true);
+    navProfile.setVisible(true);
+    navProfile.setManaged(true);
+    navSupport.setVisible(true);
+    navSupport.setManaged(true);
+    navSettings.setVisible(true);
+    navSettings.setManaged(true);
+    navCheques.setVisible(true);
+    navCheques.setManaged(true);
+    navInvoices.setVisible(true);
+    navInvoices.setManaged(true);
+    navBanks.setVisible(true);
+    navBanks.setManaged(true);
+    navAiAssistant.setVisible(true);
+    navAiAssistant.setManaged(true);
+
+    switch (role) {
+      case ADMIN -> {
+        // full access
+      }
+      case MANAGER -> {
+        navInvoices.setVisible(false);
+        navInvoices.setManaged(false);
+        navBanks.setVisible(false);
+        navBanks.setManaged(false);
+        navAiAssistant.setVisible(false);
+        navAiAssistant.setManaged(false);
+      }
+      case OPERATOR -> {
+        navInvoices.setVisible(false);
+        navInvoices.setManaged(false);
+        navBanks.setVisible(false);
+      }
+      case AUDITOR -> {
+        navCheques.setVisible(false);
+        navCheques.setManaged(false);
+        navBanks.setVisible(false);
+        navAiAssistant.setVisible(false);
+        navSettings.setVisible(false);
+      }
+    }
+  }
+
+  private boolean isPageAllowed(String page) {
+    if (currentUser == null) {
+      return true;
+    }
+    UserRole role = currentUser.getRoleEnum();
+    return switch (role) {
+      case ADMIN -> true;
+      case MANAGER -> page.equals("dashboard") || page.equals("cheques") || page.equals("profile") || page.equals("support") || page.equals("settings");
+      case OPERATOR -> page.equals("dashboard") || page.equals("cheques") || page.equals("ai") || page.equals("profile") || page.equals("support");
+      case AUDITOR -> page.equals("dashboard") || page.equals("invoices") || page.equals("profile") || page.equals("support");
+    };
+  }
+
   /**
    * Returns the controller instance for a cached page, or null if not loaded.
    */
@@ -200,6 +298,15 @@ public class MainController {
   // ================= MAIN NAVIGATION (ADVANCED) =================
 
   public void navigate(String page) {
+
+    if (!isPageAllowed(page)) {
+      headerTitle.setText("Access Denied");
+      Label message = new Label("You do not have permission to access this page.");
+      message.setWrapText(true);
+      message.getStyleClass().add("empty-label");
+      contentPane.getChildren().setAll(message);
+      return;
+    }
 
     String path = fxmlMap.get(page);
     if (path == null)

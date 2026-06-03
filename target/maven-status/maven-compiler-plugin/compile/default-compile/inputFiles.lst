@@ -22,6 +22,7 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\Signatu
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\dao\ChequeDAO.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\Settings.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\User.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\AuthenticationResult.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\BankTemplateLayoutStore.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\SupportController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\AiAssistantController.java
@@ -57,6 +58,7 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\Cheq
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\config\AppConfig.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\ChequeController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\preview\BankTemplateStore.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\AuthService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\InvoiceController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\BankTemplateLayout.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\GeminiApiClient.java
@@ -64,4 +66,5 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\printpreview
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\UserService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\preview\ChequeRenderer.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\ChequeReminderScheduler.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\UserRole.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\SmartSuggestionService.java

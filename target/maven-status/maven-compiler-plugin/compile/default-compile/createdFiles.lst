@@ -17,6 +17,7 @@ com\chequeprint\controller\ProfileController.class
 com\chequeprint\util\SignatureService.class
 com\chequeprint\controller\BankController$1.class
 com\chequeprint\controller\MainController$2.class
+com\chequeprint\service\AuthenticationResult.class
 com\chequeprint\model\BankTemplateLayout$1.class
 com\chequeprint\service\MultiAgentCoordinatorService$MultiAgentResult.class
 com\chequeprint\service\SmartSuggestionService$SmartSuggestions.class
@@ -28,6 +29,8 @@ com\chequeprint\service\MultiAgentCoordinatorService$Intent.class
 com\chequeprint\service\PrintService.class
 com\chequeprint\dao\SettingDAO.class
 com\chequeprint\util\ChequeSizeCodec.class
+com\chequeprint\service\AuthService.class
+com\chequeprint\service\AuthService$1.class
 com\chequeprint\printpreview\PrintPreviewService.class
 com\chequeprint\controller\MainController$1.class
 com\chequeprint\preview\FieldPosition.class
@@ -41,6 +44,7 @@ com\chequeprint\controller\InvoiceController.class
 com\chequeprint\controller\BankController$Delta.class
 com\chequeprint\controller\SupportController.class
 com\chequeprint\model\Invoice.class
+com\chequeprint\model\UserRole.class
 com\chequeprint\service\MultiAgentCoordinatorService.class
 com\chequeprint\controller\AiAssistantController.class
 com\chequeprint\preview\BankTemplate.class
@@ -50,6 +54,7 @@ com\chequeprint\dao\UserDAO.class
 com\chequeprint\model\LayoutField.class
 com\chequeprint\controller\InvoiceController$1.class
 com\chequeprint\preview\ChequePrintService.class
+com\chequeprint\controller\MainController$3.class
 com\chequeprint\model\FieldPosition.class
 com\chequeprint\model\Settings.class
 com\chequeprint\service\GeminiApiClient.class

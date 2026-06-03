@@ -1,74 +1,90 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
 
 <StackPane xmlns="http://javafx.com/javafx/17"
            xmlns:fx="http://javafx.com/fxml"
            fx:controller="com.chequeprint.controller.LoginController"
            fx:id="rootPane"
-           style="-fx-background-color:#f1f5f9;"
+           styleClass="login-root"
            maxWidth="Infinity" maxHeight="Infinity">
 
-    <VBox spacing="0"
-          alignment="CENTER"
-          maxWidth="420" maxHeight="Infinity"
-          style="-fx-background-color:#ffffff;
-                 -fx-background-radius:20px;
-                 -fx-effect:dropshadow(three-pass-box,rgba(0,0,0,0.12),30,0,0,8);
-                 -fx-padding:48 44 44 44;">
+    <VBox spacing="24" alignment="CENTER" maxWidth="560" maxHeight="Infinity"
+          style="-fx-padding:40 24 40 24;">
 
-        <!-- Logo -->
-        <VBox spacing="6" alignment="CENTER" style="-fx-padding:0 0 32 0;">
-            <Label text="💼" style="-fx-font-size:48px;"/>
-            <Label text="ChequePro"
-                   style="-fx-font-size:26px;-fx-font-weight:bold;-fx-text-fill:#1a56db;"/>
-            <Label text="Professional Cheque &amp; Invoice Manager"
-                   style="-fx-font-size:12px;-fx-text-fill:#94a3b8;" alignment="CENTER"/>
+        <VBox alignment="CENTER" spacing="10">
+            <Label text="Smart Cheque System" styleClass="login-title" />
+            <Label text="AI-Powered Cheque Processing" styleClass="login-subtitle" />
         </VBox>
 
-        <!-- DB status -->
-        <Label fx:id="lblDbStatus" text="⏳ Checking database…"
-               style="-fx-font-size:11px;-fx-text-fill:#94a3b8;-fx-padding:0 0 20 0;"
-               alignment="CENTER" maxWidth="Infinity"/>
-
-        <!-- Form -->
-        <VBox spacing="14" maxWidth="Infinity">
-
-            <VBox spacing="6">
-                <Label text="USERNAME" styleClass="form-label"/>
-                <TextField fx:id="fldUsername"
-                           promptText="Enter username"
-                           styleClass="form-input"
-                           maxWidth="Infinity"/>
+        <VBox styleClass="login-card" spacing="22" maxWidth="520" minWidth="340">
+            <VBox spacing="8">
+                <Label text="Welcome back" styleClass="card-heading" />
+                <Label text="Sign in to access the cheque automation dashboard" styleClass="card-subtitle" wrapText="true" />
             </VBox>
 
-            <VBox spacing="6">
-                <Label text="PASSWORD" styleClass="form-label"/>
-                <PasswordField fx:id="fldPassword"
-                               promptText="Enter password"
+            <VBox spacing="14">
+                <VBox spacing="8">
+                    <Label text="Username or Email" styleClass="form-label" />
+                    <TextField fx:id="fldUsername"
+                               promptText="Enter username or email"
                                styleClass="form-input"
-                               maxWidth="Infinity"/>
+                               maxWidth="Infinity" />
+                </VBox>
+
+                <VBox spacing="8">
+                    <Label text="Password" styleClass="form-label" />
+                    <StackPane>
+                        <PasswordField fx:id="fldPassword"
+                                       promptText="Enter password"
+                                       styleClass="form-input"
+                                       maxWidth="Infinity" />
+                        <TextField fx:id="fldPasswordVisible"
+                                   promptText="Enter password"
+                                   styleClass="form-input"
+                                   visible="false"
+                                   managed="false"
+                                   maxWidth="Infinity" />
+                        <Button fx:id="btnTogglePassword"
+                                text="Show"
+                                styleClass="password-toggle"
+                                onAction="#onTogglePassword"
+                                StackPane.alignment="CENTER_RIGHT" />
+                    </StackPane>
+                </VBox>
+
+                <VBox spacing="8">
+                    <Label text="Role" styleClass="form-label" />
+                    <ChoiceBox fx:id="choiceRole" styleClass="form-input" maxWidth="Infinity" />
+                </VBox>
+
+                <HBox spacing="14" alignment="CENTER_LEFT">
+                    <CheckBox fx:id="chkRememberMe" text="Remember me" />
+                    <Hyperlink fx:id="linkForgotPassword"
+                               text="Forgot password?"
+                               onAction="#onForgotPassword"
+                               styleClass="link-button" />
+                </HBox>
+
+                <Label fx:id="lblError" text=""
+                       styleClass="login-error"
+                       visible="false"
+                       wrapText="true"
+                       maxWidth="Infinity" />
+
+                <Button fx:id="btnLogin"
+                        text="Login"
+                        styleClass="btn-primary"
+                        maxWidth="Infinity"
+                        onAction="#onLogin" />
+
+                <Label fx:id="lblAttempts" text="3 attempts remaining" styleClass="attempts-label" />
             </VBox>
 
-            <!-- Error label -->
-            <Label fx:id="lblError" text=""
-                   style="-fx-text-fill:#dc2626;-fx-font-size:12px;
-                          -fx-background-color:#fef2f2;-fx-background-radius:8px;
-                          -fx-padding:8 12 8 12;"
-                   maxWidth="Infinity" wrapText="true" visible="false"/>
-
-            <!-- Login button -->
-            <Button fx:id="btnLogin" text="🔐  Sign In"
-                    styleClass="btn-primary"
-                    maxWidth="Infinity"
-                    style="-fx-padding:12 0 12 0;-fx-font-size:14px;"
-                    onAction="#onLogin"/>
+            <Label fx:id="lblDbStatus" text="Checking database…"
+                   styleClass="db-status"
+                   wrapText="true" />
         </VBox>
-
-        <!-- Hint -->
-        <Label text="Default: admin / admin123"
-               style="-fx-font-size:11px;-fx-text-fill:#cbd5e1;-fx-padding:20 0 0 0;"
-               alignment="CENTER" maxWidth="Infinity"/>
-
     </VBox>
 </StackPane>

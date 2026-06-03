@@ -5,6 +5,8 @@ import com.chequeprint.model.User;
 
 import java.sql.SQLException;
 
+import java.util.Objects;
+
 /**
  * UserService — business logic for user profile management.
  *
@@ -16,23 +18,6 @@ import java.sql.SQLException;
 public class UserService {
 
     private final UserDAO dao = new UserDAO();
-
-    // Hard-coded default credentials — replace with DB lookup in production
-    private static final String DEFAULT_USER = "admin";
-    private static final String DEFAULT_PASS = "admin123";
-
-    // ── Authentication ───────────────────────────────────────────────
-    /**
-     * Returns true when the supplied credentials are valid.
-     * Currently checks against hard-coded defaults; swap for DB lookup
-     * once a proper users table with hashed passwords is in place.
-     */
-    public boolean authenticate(String username, String password) {
-        if (username == null || password == null)
-            return false;
-        return username.trim().equals(DEFAULT_USER)
-                && password.equals(DEFAULT_PASS);
-    }
 
     // ── Profile CRUD ─────────────────────────────────────────────────
     /** Loads the first (and usually only) user profile from the database. */
