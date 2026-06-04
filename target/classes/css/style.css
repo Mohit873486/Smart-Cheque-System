@@ -680,6 +680,194 @@
     -fx-padding: 48 44 44 44;
 }
 
+/* Production login experience */
+.login-root {
+    -fx-background-color: linear-gradient(to bottom right, #eef6f4 0%, #f8fafc 52%, #eaf1ff 100%);
+    -fx-padding: 34;
+}
+
+.login-shell {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 18px;
+    -fx-border-color: rgba(15, 23, 42, 0.08);
+    -fx-border-width: 1px;
+    -fx-border-radius: 18px;
+    -fx-effect: dropshadow(three-pass-box, rgba(15, 23, 42, 0.14), 34, 0, 0, 14);
+}
+
+.login-brand-pane {
+    -fx-background-color: linear-gradient(to bottom right, #0f2f2e, #163d5c);
+    -fx-background-radius: 18px 0 0 18px;
+    -fx-padding: 38;
+    -fx-pref-width: 470;
+}
+
+.login-logo {
+    -fx-background-color: #d7f5ea;
+    -fx-background-radius: 12px;
+    -fx-text-fill: #0f2f2e;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-alignment: center;
+    -fx-min-width: 48px;
+    -fx-min-height: 48px;
+}
+
+.login-brand-title {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.login-brand-subtitle {
+    -fx-text-fill: #b9d8d3;
+    -fx-font-size: 12px;
+}
+
+.login-hero-title {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+}
+
+.login-hero-copy {
+    -fx-text-fill: #c8d7e1;
+    -fx-font-size: 14px;
+    -fx-line-spacing: 3px;
+}
+
+.login-trust-row {
+    -fx-padding: 6 0 0 0;
+}
+
+.trust-chip {
+    -fx-background-color: rgba(255, 255, 255, 0.12);
+    -fx-background-radius: 999px;
+    -fx-text-fill: #e6f4f1;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 7 11 7 11;
+}
+
+.login-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 0 18px 18px 0;
+    -fx-padding: 42 42 34 42;
+    -fx-pref-width: 430;
+    -fx-effect: none;
+}
+
+.card-heading {
+    -fx-text-fill: #0f172a;
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+}
+
+.card-subtitle {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 13px;
+}
+
+.form-label {
+    -fx-text-fill: #334155;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.form-input {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #dbe4ee;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-border-width: 1px;
+    -fx-padding: 11 14 11 14;
+    -fx-font-size: 13px;
+    -fx-text-fill: #0f172a;
+    -fx-prompt-text-fill: #94a3b8;
+}
+
+.form-input:focused {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #2563eb;
+    -fx-effect: dropshadow(three-pass-box, rgba(37, 99, 235, 0.16), 10, 0, 0, 0);
+}
+
+.password-toggle {
+    -fx-background-color: transparent;
+    -fx-text-fill: #1d4ed8;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-padding: 0 10 0 10;
+}
+
+.login-submit {
+    -fx-background-color: #123c69;
+    -fx-background-radius: 8px;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 12 18 12 18;
+}
+
+.login-submit:hover {
+    -fx-background-color: #0f2f52;
+}
+
+.login-button-stack {
+    -fx-min-height: 44px;
+}
+
+.login-progress {
+    -fx-progress-color: #ffffff;
+}
+
+.link-button {
+    -fx-text-fill: #1d4ed8;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-underline: false;
+    -fx-border-width: 0;
+}
+
+.login-error {
+    -fx-background-color: #fff1f2;
+    -fx-background-radius: 8px;
+    -fx-border-color: #fecdd3;
+    -fx-border-radius: 8px;
+    -fx-text-fill: #be123c;
+    -fx-font-size: 12px;
+    -fx-padding: 10 12 10 12;
+}
+
+.attempts-label {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 12px;
+}
+
+.security-note {
+    -fx-background-color: #f0fdf4;
+    -fx-background-radius: 8px;
+    -fx-border-color: #bbf7d0;
+    -fx-border-radius: 8px;
+    -fx-padding: 12;
+}
+
+.security-title {
+    -fx-text-fill: #166534;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.security-copy {
+    -fx-text-fill: #3f6212;
+    -fx-font-size: 12px;
+}
+
+.db-status {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 11px;
+}
+
 /* ══════════════════════════════════════════
    FIX: Missing utility classes referenced in FXML
    (btn-link, empty-label, form-panel sizing)
@@ -913,7 +1101,6 @@
     -fx-border-color: #eef0f3;
     -fx-border-radius: 10px;
     -fx-border-width: 1px;
-    -fx-max-width: Infinity;
 }
 
 .modern-table .column-header-background {
@@ -990,21 +1177,6 @@
 .status-cancelled {
     -fx-background-color: #fee2e2;
     -fx-text-fill: #991b1b;
-}
-
-.status-paid {
-    -fx-background-color: #d1fae5;
-    -fx-text-fill: #047857;
-}
-
-.status-unpaid {
-    -fx-background-color: #fef3c7;
-    -fx-text-fill: #92400e;
-}
-
-.status-partial {
-    -fx-background-color: #e0f2fe;
-    -fx-text-fill: #0369a1;
 }
 
 .status-neutral {

@@ -79,6 +79,10 @@ public class ChequeService {
         return dao.sumThisMonth();
     }
 
+    public int getCountByDate(java.time.LocalDate date) throws SQLException {
+        return dao.countByIssueDate(date);
+    }
+
     // --- Helpers ---
     private void validate(Cheque c) {
         if (c.getPayeeName() == null || c.getPayeeName().isBlank())

@@ -1,34 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.geometry.Insets?>
 
 <StackPane xmlns="http://javafx.com/javafx/17"
            xmlns:fx="http://javafx.com/fxml"
            fx:controller="com.chequeprint.controller.LoginController"
            fx:id="rootPane"
-           styleClass="login-root"
-           maxWidth="Infinity" maxHeight="Infinity">
+           styleClass="login-root">
 
-    <VBox spacing="24" alignment="CENTER" maxWidth="560" maxHeight="Infinity"
-          style="-fx-padding:40 24 40 24;">
+    <HBox styleClass="login-shell" maxWidth="1040" maxHeight="620">
+        <VBox styleClass="login-brand-pane" spacing="22" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER_LEFT" spacing="12">
+                <Label text="SC" styleClass="login-logo" />
+                <VBox spacing="2">
+                    <Label text="Smart Cheque" styleClass="login-brand-title" />
+                    <Label text="Management System" styleClass="login-brand-subtitle" />
+                </VBox>
+            </HBox>
 
-        <VBox alignment="CENTER" spacing="10">
-            <Label text="Smart Cheque System" styleClass="login-title" />
-            <Label text="Secure Cheque Printing &amp; Approval" styleClass="login-subtitle" />
+            <Region VBox.vgrow="ALWAYS" />
+
+            <VBox spacing="12">
+                <Label text="Secure cheque operations, approvals, invoices, and audit controls in one workspace."
+                       styleClass="login-hero-title"
+                       wrapText="true" />
+                <Label text="Designed for finance teams that need controlled access, traceable actions, and reliable printing workflows."
+                       styleClass="login-hero-copy"
+                       wrapText="true" />
+            </VBox>
+
+            <HBox spacing="10" styleClass="login-trust-row">
+                <Label text="BCrypt" styleClass="trust-chip" />
+                <Label text="RBAC" styleClass="trust-chip" />
+                <Label text="Audit Ready" styleClass="trust-chip" />
+            </HBox>
         </VBox>
 
-        <VBox styleClass="login-card" spacing="22" maxWidth="520" minWidth="340">
-            <VBox spacing="8">
-                <Label text="Welcome back" styleClass="card-heading" />
-                <Label text="Sign in with your registered account" styleClass="card-subtitle" wrapText="true" />
+        <VBox styleClass="login-card" spacing="22">
+            <VBox spacing="6">
+                <Label text="Sign in" styleClass="card-heading" />
+                <Label text="Use your registered username or email." styleClass="card-subtitle" wrapText="true" />
             </VBox>
 
             <VBox spacing="14">
                 <VBox spacing="8">
                     <Label text="Username or Email" styleClass="form-label" />
                     <TextField fx:id="fldUsername"
-                               promptText="Enter username or email"
+                               promptText="admin@smartcheque.local"
                                styleClass="form-input"
                                maxWidth="Infinity" />
                 </VBox>
@@ -55,31 +73,55 @@
                 </VBox>
 
                 <HBox spacing="14" alignment="CENTER_LEFT">
-                    <CheckBox fx:id="chkRememberMe" text="Remember me" />
+                    <CheckBox fx:id="chkRememberMe" text="Remember me" HBox.hgrow="ALWAYS" />
+                    <Region HBox.hgrow="ALWAYS" />
                     <Hyperlink fx:id="linkForgotPassword"
                                text="Forgot password?"
                                onAction="#onForgotPassword"
                                styleClass="link-button" />
                 </HBox>
 
-                <Label fx:id="lblError" text=""
+                <Label fx:id="lblError"
+                       text=""
                        styleClass="login-error"
                        visible="false"
+                       managed="false"
                        wrapText="true"
                        maxWidth="Infinity" />
 
-                <Button fx:id="btnLogin"
-                        text="Login"
-                        styleClass="btn-primary"
-                        maxWidth="Infinity"
-                        onAction="#onLogin" />
+                <StackPane styleClass="login-button-stack">
+                    <Button fx:id="btnLogin"
+                            text="Login securely"
+                            styleClass="btn-primary login-submit"
+                            maxWidth="Infinity"
+                            onAction="#onLogin" />
+                    <ProgressIndicator fx:id="loginProgress"
+                                       maxWidth="22"
+                                       maxHeight="22"
+                                       visible="false"
+                                       managed="false"
+                                       styleClass="login-progress" />
+                </StackPane>
+
+                <Hyperlink fx:id="linkOtpLogin"
+                           text="Use OTP instead"
+                           onAction="#onOtpLogin"
+                           styleClass="link-button" />
 
                 <Label fx:id="lblAttempts" text="3 attempts remaining" styleClass="attempts-label" />
             </VBox>
 
-            <Label fx:id="lblDbStatus" text="Checking database…"
+            <VBox spacing="6" styleClass="security-note">
+                <Label text="Security" styleClass="security-title" />
+                <Label text="Passwords are verified with BCrypt. Accounts are blocked after 3 failed attempts."
+                       wrapText="true"
+                       styleClass="security-copy" />
+            </VBox>
+
+            <Label fx:id="lblDbStatus"
+                   text="Checking database..."
                    styleClass="db-status"
                    wrapText="true" />
         </VBox>
-    </VBox>
+    </HBox>
 </StackPane>

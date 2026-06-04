@@ -18,9 +18,9 @@ CREATE TABLE IF NOT EXISTS users (
     company VARCHAR(120),
     address VARCHAR(255),
     password VARCHAR(255) NOT NULL,
-    role ENUM('Admin','Manager','Operator','Auditor') NOT NULL DEFAULT 'Operator',
+    role ENUM('Admin','User','Manager','Operator','Auditor') NOT NULL DEFAULT 'User',
     status ENUM('Active','Disabled','Locked') NOT NULL DEFAULT 'Active',
-    failed_login_attempts INT NOT NULL DEFAULT 0,
+    login_attempts INT NOT NULL DEFAULT 0,
     account_locked BOOLEAN NOT NULL DEFAULT FALSE,
     locked_at TIMESTAMP NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -121,11 +121,12 @@ CREATE TABLE IF NOT EXISTS settings (
 
 -- DEFAULT USERS
 -- Passwords:
---   admin/admin123, manager/manager123, operator/operator123, auditor/auditor123
+--   admin/admin123, user/operator123, manager/manager123, operator/operator123, auditor/auditor123
 -- Stored with BCrypt. Do not replace these with plain text in production.
 INSERT INTO users (username, name, email, password, role)
 VALUES
 ('admin', 'System Administrator', 'admin@smartcheque.local', '$2a$12$2WjvDQuov1Ip4u3lLDJp8e0AL63OpXKoaure2qdPE03mppQGdMlzy', 'Admin'),
+('user', 'Finance User', 'user@smartcheque.local', '$2a$12$Z6i6s3tfmBzSfNuWF3TMnuM.XwcU.F/Db14AqeKr/Uvm7il4wFMvu', 'User'),
 ('manager', 'Jane Manager', 'manager@smartcheque.local', '$2a$12$NESffFiz1n53l/zxz7SEC.EtHK8EVFqaJMmNXtYaLMDLxJYDsvcXW', 'Manager'),
 ('operator', 'Operator One', 'operator@smartcheque.local', '$2a$12$Z6i6s3tfmBzSfNuWF3TMnuM.XwcU.F/Db14AqeKr/Uvm7il4wFMvu', 'Operator'),
 ('auditor', 'Audit Specialist', 'auditor@smartcheque.local', '$2a$12$KaIfxRet1c2C61EufUFF2On0krXBca20DDvy32CyU0K7Ko.LMjUHS', 'Auditor')
@@ -164,5 +165,5 @@ VALUES (1, 'ChequePro')
 ON DUPLICATE KEY UPDATE app_name = VALUES(app_name);
 
 -- Quick checks:
--- SELECT id, username, email, role, failed_login_attempts, account_locked FROM users;
+-- SELECT id, username, email, role, login_attempts, account_locked FROM users;
 -- SHOW TABLES;

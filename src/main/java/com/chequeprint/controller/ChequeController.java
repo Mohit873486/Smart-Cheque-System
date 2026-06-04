@@ -4,8 +4,10 @@ import com.chequeprint.dao.BankDAO;
 import com.chequeprint.model.Bank;
 import com.chequeprint.model.Cheque;
 import com.chequeprint.model.User;
+import com.chequeprint.service.AccessControl;
 import com.chequeprint.service.ChequeService;
 import com.chequeprint.service.ChequeWorkflowService;
+import com.chequeprint.service.Permission;
 import com.chequeprint.service.PrintService;
 import com.chequeprint.util.FxUtils;
 import com.chequeprint.util.SessionManager;
@@ -382,8 +384,63 @@ public class ChequeController {
 
         try {
             User actor = SessionManager.currentUser().orElse(null);
+
+            // === Handle Draft Status ===
+            if (sel.getStatus() == Cheque.Status.Draft) {
+                if (AccessControl.can(actor, Permission.APPROVE_CHEQUE)) {
+                    // Auto-submit Draft to Pending, then ask for approval
+                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                            "This cheque is a draft. Submit it for approval and proceed to print preview?",
+                            ButtonType.YES, ButtonType.NO);
+                    confirm.setTitle("Submit & Approve for Printing");
+                    confirm.setHeaderText(null);
+                    var choice = confirm.showAndWait();
+                    if (choice.isEmpty() || choice.get() != ButtonType.YES) {
+                        return;
+                    }
+                    // Change status from Draft to Pending first
+                    chequeService.setStatus(sel, Cheque.Status.Pending);
+                    // Now approve it
+                    workflowService.approve(sel.getId(), actor);
+                } else {
+                    showAlert("Approval Required",
+                            "This cheque is a draft. Save it first, then ask an Admin or Manager to approve it before printing.",
+                            Alert.AlertType.INFORMATION);
+                    return;
+                }
+            }
+            // === Handle Pending Status ===
+            else if (sel.getStatus() == Cheque.Status.Pending) {
+                if (AccessControl.can(actor, Permission.APPROVE_CHEQUE)) {
+                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                            "This cheque is pending approval. Approve it and continue to print preview?",
+                            ButtonType.YES, ButtonType.NO);
+                    confirm.setTitle("Approve Before Printing");
+                    confirm.setHeaderText(null);
+                    var choice = confirm.showAndWait();
+                    if (choice.isEmpty() || choice.get() != ButtonType.YES) {
+                        return;
+                    }
+                    workflowService.approve(sel.getId(), actor);
+                } else {
+                    showAlert("Approval Required",
+                            "This cheque is pending approval. Ask an Admin or Manager to approve it before printing.",
+                            Alert.AlertType.INFORMATION);
+                    return;
+                }
+            }
+            // === Handle Rejected / Cancelled ===
+            else if (sel.getStatus() == Cheque.Status.Rejected || sel.getStatus() == Cheque.Status.Cancelled) {
+                showAlert("Cannot Print",
+                        "Rejected or cancelled cheques cannot be printed.",
+                        Alert.AlertType.WARNING);
+                return;
+            }
+
+            // === Print (cheque should now be Approved or Printed) ===
             workflowService.print(sel.getId(), actor);
 
+            // Reload data to show updated status
             loadData();
             if (mainController != null) {
                 Object dc = mainController.getController("dashboard");
@@ -399,6 +456,57 @@ public class ChequeController {
         } catch (Exception e) {
             showAlert("Print Error", e.getMessage(), Alert.AlertType.ERROR);
         }
+    }
+
+    // ── Approve ──────────────────────────────────────────────────────
+    @FXML
+    private void onApprove() {
+        Cheque sel = chequeTable.getSelectionModel().getSelectedItem();
+        if (sel == null) {
+            showAlert("No Selection", "Please select a cheque to approve.",
+                    Alert.AlertType.WARNING);
+            return;
+        }
+
+        User actor = SessionManager.currentUser().orElse(null);
+        if (!AccessControl.can(actor, Permission.APPROVE_CHEQUE)) {
+            showAlert("Permission Denied",
+                    "You do not have permission to approve cheques.",
+                    Alert.AlertType.ERROR);
+            return;
+        }
+
+        if (sel.getStatus() != Cheque.Status.Pending && sel.getStatus() != Cheque.Status.Draft) {
+            showAlert("Cannot Approve",
+                    "Only Draft or Pending cheques can be approved. Current status: " + sel.getStatus().name(),
+                    Alert.AlertType.WARNING);
+            return;
+        }
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                "Approve cheque " + sel.getChequeNo() + " for " + sel.getPayeeName() + " (₹" + sel.getAmount() + ")?",
+                ButtonType.YES, ButtonType.NO);
+        confirm.setTitle("Confirm Approval");
+        confirm.setHeaderText(null);
+        confirm.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.YES) {
+                try {
+                    workflowService.approve(sel.getId(), actor);
+                    loadData();
+                    clearForm();
+                    if (mainController != null) {
+                        Object dc = mainController.getController("dashboard");
+                        if (dc instanceof DashboardController)
+                            ((DashboardController) dc).reload();
+                    }
+                    showAlert("Success",
+                            "Cheque approved successfully. Ready to print.",
+                            Alert.AlertType.INFORMATION);
+                } catch (Exception e) {
+                    showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
+                }
+            }
+        });
     }
 
     // ── Delete ───────────────────────────────────────────────────────

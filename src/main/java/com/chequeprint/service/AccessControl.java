@@ -34,6 +34,16 @@ public final class AccessControl {
         Permission.MANAGE_USERS,
         Permission.VIEW_AUDIT_LOG));
 
+    GRANTS.put(UserRole.USER, EnumSet.of(
+        Permission.VIEW_DASHBOARD,
+        Permission.VIEW_CHEQUES,
+        Permission.CREATE_CHEQUE,
+        Permission.UPDATE_CHEQUE,
+        Permission.SUBMIT_CHEQUE,
+        Permission.VIEW_SUPPORT,
+        Permission.VIEW_PROFILE,
+        Permission.UPDATE_PROFILE));
+
     GRANTS.put(UserRole.MANAGER, EnumSet.of(
         Permission.VIEW_DASHBOARD,
         Permission.VIEW_CHEQUES,
@@ -88,6 +98,8 @@ public final class AccessControl {
     UserRole role = user.getRoleEnum();
     return switch (role) {
       case ADMIN -> true;
+      case USER -> page.equals("dashboard") || page.equals("cheques") || page.equals("profile")
+          || page.equals("support");
       case MANAGER -> page.equals("dashboard") || page.equals("cheques") || page.equals("profile")
           || page.equals("support");
       case OPERATOR -> page.equals("dashboard") || page.equals("cheques") || page.equals("ai") || page.equals("profile")

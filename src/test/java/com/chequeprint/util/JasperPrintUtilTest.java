@@ -4,7 +4,6 @@ import com.chequeprint.model.Cheque;
 import com.chequeprint.model.Invoice;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -40,57 +39,49 @@ public class JasperPrintUtilTest {
   }
 
   @Test
-  void exportChequePdf_createsPdfFile() {
-    // JasperReports templates in this project currently fail to compile under
-    // JasperReports 6.21
-    // due to invalid UUID values inside the jrxml files (e.g. uuid="rect-outer").
-    // This test is therefore converted into an expected-failure smoke test.
-    assertThrows(Exception.class, () -> {
-      Path tempDir = Files.createTempDirectory("chequeprint-test-");
+  void exportChequePdf_createsPdfFile() throws Exception {
+    Path tempDir = Files.createTempDirectory("chequeprint-test-");
 
-      Cheque cheque = new Cheque("CHQ-1001", "Alice", new BigDecimal("2500.75"), 1, LocalDate.of(2024, 1, 20));
-      cheque.setBankName("Test Bank");
-      cheque.setAmountWords("Two Thousand Five Hundred Rupees Only");
+    Cheque cheque = new Cheque("CHQ-1001", "Alice", new BigDecimal("2500.75"), 1, LocalDate.of(2024, 1, 20));
+    cheque.setBankName("Test Bank");
+    cheque.setAmountWords("Two Thousand Five Hundred Rupees Only");
 
-      JasperPrintUtil.exportChequePdf(cheque, tempDir.toString());
-    });
+    String pdfPath = JasperPrintUtil.exportChequePdf(cheque, tempDir.toString());
+
+    assertEquals(tempDir.resolve("CHQ-1001.pdf").toString(), pdfPath);
+    assertTrue(Files.isRegularFile(Path.of(pdfPath)));
+    assertTrue(Files.size(Path.of(pdfPath)) > 0);
   }
 
   @Test
-  void exportInvoicePdf_createsPdfFile() {
-    // Same expected-failure reason as exportChequePdf_createsPdfFile.
-    assertThrows(Exception.class, () -> {
-      Path tempDir = Files.createTempDirectory("invoiceprint-test-");
+  void exportInvoicePdf_createsPdfFile() throws Exception {
+    Path tempDir = Files.createTempDirectory("invoiceprint-test-");
 
-      Invoice invoice = new Invoice("INV-2001", "Bob Client", new BigDecimal("999.00"),
-          LocalDate.of(2024, 2, 1), LocalDate.of(2024, 2, 15));
-      invoice.setStatus(Invoice.Status.Unpaid);
-      invoice.setNotes("Payment due soon");
+    Invoice invoice = new Invoice("INV-2001", "Bob Client", new BigDecimal("999.00"),
+        LocalDate.of(2024, 2, 1), LocalDate.of(2024, 2, 15));
+    invoice.setStatus(Invoice.Status.Unpaid);
+    invoice.setNotes("Payment due soon");
 
-      JasperPrintUtil.exportInvoicePdf(invoice, tempDir.toString());
-    });
+    String pdfPath = JasperPrintUtil.exportInvoicePdf(invoice, tempDir.toString());
+
+    assertEquals(tempDir.resolve("INV-2001.pdf").toString(), pdfPath);
+    assertTrue(Files.isRegularFile(Path.of(pdfPath)));
+    assertTrue(Files.size(Path.of(pdfPath)) > 0);
   }
 
   @Test
-  void nvl_viaNullBlankBehavior_isTrustedByExports() {
-
-    // We can't access the private nvl() directly.
-    // Instead, we rely on exports not crashing when optional strings are
-    // null/blank.
-    Path tempDir;
-    try {
-      tempDir = Files.createTempDirectory("nvlprint-test-");
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+  void nvl_viaNullBlankBehavior_isTrustedByExports() throws Exception {
+    Path tempDir = Files.createTempDirectory("nvlprint-test-");
 
     Cheque cheque = new Cheque(null, null, null, 1, null);
     cheque.setBankName("");
     cheque.setAmountWords("  ");
 
-    assertThrows(Exception.class, () -> {
-      JasperPrintUtil.exportChequePdf(cheque, tempDir.toString());
-    });
+    String pdfPath = JasperPrintUtil.exportChequePdf(cheque, tempDir.toString());
+
+    assertEquals(tempDir.resolve("cheque.pdf").toString(), pdfPath);
+    assertTrue(Files.isRegularFile(Path.of(pdfPath)));
+    assertTrue(Files.size(Path.of(pdfPath)) > 0);
   }
 
 }

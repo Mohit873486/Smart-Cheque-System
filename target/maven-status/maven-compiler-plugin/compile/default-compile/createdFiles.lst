@@ -1,4 +1,5 @@
 com\chequeprint\printpreview\PrintHtmlTemplateService.class
+com\chequeprint\controller\LoginController$PasswordResetRequest.class
 com\chequeprint\model\AuditAction.class
 com\chequeprint\printpreview\PrintPreviewController.class
 com\chequeprint\service\OpenAiSqlQueryService.class
@@ -35,6 +36,7 @@ com\chequeprint\dao\SettingDAO.class
 com\chequeprint\util\ChequeSizeCodec.class
 com\chequeprint\service\AuthService.class
 com\chequeprint\service\Permission.class
+com\chequeprint\controller\LoginController$1.class
 com\chequeprint\service\AuthService$1.class
 com\chequeprint\printpreview\PrintPreviewService.class
 com\chequeprint\controller\MainController$1.class
@@ -80,6 +82,7 @@ com\chequeprint\util\AmountToWords.class
 com\chequeprint\controller\AiAssistantController$Worker.class
 com\chequeprint\util\FxUtils.class
 com\chequeprint\preview\ChequePrintPreviewApp.class
+com\chequeprint\controller\DashboardController$DashboardData.class
 com\chequeprint\service\ChequeReminderService.class
 com\chequeprint\printpreview\PrintPreviewDocument$PdfSaveHandler.class
 com\chequeprint\dao\InvoiceDAO.class

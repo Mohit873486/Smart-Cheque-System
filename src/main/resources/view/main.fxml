@@ -56,31 +56,31 @@
                 <Label text="MAIN MENU" styleClass="sidebar-section-label" />
 
                 <HBox fx:id="navDashboard" styleClass="nav-item" spacing="12"
-                    alignment="CENTER_LEFT" onMouseClicked="#onDashboard">
+                    alignment="CENTER_LEFT" onMouseClicked="#onDashboard" pickOnBounds="true">
                     <Label text="📊" styleClass="nav-icon" mouseTransparent="true" />
                     <Label text="Dashboard" styleClass="nav-label" mouseTransparent="true" />
                 </HBox>
 
                 <HBox fx:id="navCheques" styleClass="nav-item" spacing="12"
-                    alignment="CENTER_LEFT" onMouseClicked="#onCheques">
+                    alignment="CENTER_LEFT" onMouseClicked="#onCheques" pickOnBounds="true">
                     <Label text="📝" styleClass="nav-icon" mouseTransparent="true" />
                     <Label text="Cheques" styleClass="nav-label" mouseTransparent="true" />
                 </HBox>
 
                 <HBox fx:id="navInvoices" styleClass="nav-item" spacing="12"
-                    alignment="CENTER_LEFT" onMouseClicked="#onInvoices">
+                    alignment="CENTER_LEFT" onMouseClicked="#onInvoices" pickOnBounds="true">
                     <Label text="🧾" styleClass="nav-icon" mouseTransparent="true" />
                     <Label text="Invoices" styleClass="nav-label" mouseTransparent="true" />
                 </HBox>
 
                 <HBox fx:id="navBanks" styleClass="nav-item" spacing="12"
-                    alignment="CENTER_LEFT" onMouseClicked="#onBanks">
+                    alignment="CENTER_LEFT" onMouseClicked="#onBanks" pickOnBounds="true">
                     <Label text="🏦" styleClass="nav-icon" mouseTransparent="true" />
                     <Label text="Banks" styleClass="nav-label" mouseTransparent="true" />
                 </HBox>
 
                 <HBox fx:id="navAiAssistant" styleClass="nav-item" spacing="12"
-                    alignment="CENTER_LEFT" onMouseClicked="#onAiAssistant">
+                    alignment="CENTER_LEFT" onMouseClicked="#onAiAssistant" pickOnBounds="true">
                     <Label text="AI" styleClass="nav-icon" mouseTransparent="true" />
                     <Label text="AI Assistant" styleClass="nav-label" mouseTransparent="true" />
                 </HBox>
@@ -88,19 +88,19 @@
                 <Label text="ACCOUNT" styleClass="sidebar-section-label" />
 
                 <HBox fx:id="navProfile" styleClass="nav-item" spacing="12"
-                    alignment="CENTER_LEFT" onMouseClicked="#onProfile">
+                    alignment="CENTER_LEFT" onMouseClicked="#onProfile" pickOnBounds="true">
                     <Label text="👤" styleClass="nav-icon" mouseTransparent="true" />
                     <Label text="Profile" styleClass="nav-label" mouseTransparent="true" />
                 </HBox>
 
                 <HBox fx:id="navSettings" styleClass="nav-item" spacing="12"
-                    alignment="CENTER_LEFT" onMouseClicked="#onSettings">
+                    alignment="CENTER_LEFT" onMouseClicked="#onSettings" pickOnBounds="true">
                     <Label text="⚙️" styleClass="nav-icon" mouseTransparent="true" />
                     <Label text="Settings" styleClass="nav-label" mouseTransparent="true" />
                 </HBox>
 
                 <HBox fx:id="navSupport" styleClass="nav-item" spacing="12"
-                    alignment="CENTER_LEFT" onMouseClicked="#onSupport">
+                    alignment="CENTER_LEFT" onMouseClicked="#onSupport" pickOnBounds="true">
                     <Label text="💬" styleClass="nav-icon" mouseTransparent="true" />
                     <Label text="Support" styleClass="nav-label" mouseTransparent="true" />
                 </HBox>

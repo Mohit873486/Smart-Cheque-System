@@ -1,7 +1,5 @@
 package com.chequeprint.model;
 
-import java.time.LocalDateTime;
-
 public class User {
     private int id;
     private String username;
@@ -12,10 +10,9 @@ public class User {
     private String address;
     private String role;
     private String password;
-    private String status = com.chequeprint.model.UserStatus.Active.name();
-    private int failedLoginAttempts;
+    private String status;
+    private int loginAttempts;
     private boolean accountLocked;
-    private LocalDateTime lockedAt;
 
     public User() {
     }
@@ -88,18 +85,6 @@ public class User {
         return com.chequeprint.model.UserRole.from(role);
     }
 
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public com.chequeprint.model.UserStatus getStatusEnum() {
-        return com.chequeprint.model.UserStatus.from(status);
-    }
-
     public String getPassword() {
         return password;
     }
@@ -108,12 +93,20 @@ public class User {
         this.password = pwd;
     }
 
-    public int getFailedLoginAttempts() {
-        return failedLoginAttempts;
+    public String getStatus() {
+        return status;
     }
 
-    public void setFailedLoginAttempts(int failedLoginAttempts) {
-        this.failedLoginAttempts = failedLoginAttempts;
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public int getLoginAttempts() {
+        return loginAttempts;
+    }
+
+    public void setLoginAttempts(int loginAttempts) {
+        this.loginAttempts = loginAttempts;
     }
 
     public boolean isAccountLocked() {
@@ -122,13 +115,5 @@ public class User {
 
     public void setAccountLocked(boolean accountLocked) {
         this.accountLocked = accountLocked;
-    }
-
-    public LocalDateTime getLockedAt() {
-        return lockedAt;
-    }
-
-    public void setLockedAt(LocalDateTime lockedAt) {
-        this.lockedAt = lockedAt;
     }
 }

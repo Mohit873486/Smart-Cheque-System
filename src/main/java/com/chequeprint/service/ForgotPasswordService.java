@@ -30,6 +30,9 @@ public class ForgotPasswordService {
     }
 
     public void resetPassword(String usernameOrEmail, String otp, String newPassword) throws SQLException {
+        if (usernameOrEmail == null || usernameOrEmail.isBlank()) {
+            throw new IllegalArgumentException("Enter your username or email first.");
+        }
         if (otp == null || !otp.matches("\\d{6}")) {
             throw new IllegalArgumentException("OTP must be a 6-digit code.");
         }
@@ -48,6 +51,30 @@ public class ForgotPasswordService {
         }
 
         dao.updatePassword(user.getId(), PasswordUtil.hash(newPassword));
+        dao.resetLoginAttempts(user.getId());
         dao.markOtpsUsed(user.getId());
+    }
+
+    public User verifyOtpLogin(String usernameOrEmail, String otp) throws SQLException {
+        if (usernameOrEmail == null || usernameOrEmail.isBlank()) {
+            throw new IllegalArgumentException("Enter your username or email first.");
+        }
+        if (otp == null || !otp.matches("\\d{6}")) {
+            throw new IllegalArgumentException("OTP must be a 6-digit code.");
+        }
+
+        User user = dao.findByUsernameOrEmail(usernameOrEmail.trim());
+        if (user == null) {
+            throw new IllegalArgumentException("Invalid OTP or user.");
+        }
+
+        String otpHash = dao.findActiveOtpHash(user.getId());
+        if (!PasswordUtil.matches(otp, otpHash)) {
+            throw new IllegalArgumentException("Invalid or expired OTP.");
+        }
+
+        dao.resetLoginAttempts(user.getId());
+        dao.markOtpsUsed(user.getId());
+        return user;
     }
 }

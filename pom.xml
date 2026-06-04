@@ -195,11 +195,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.1.2</version>
             </plugin>
-            <plugin>
-                <groupId>org.openjfx</groupId>
-                <artifactId>javafx-maven-plugin</artifactId>
-            </plugin>
-
             <!--
                 Fat JAR (mvn package) — produces a self-contained executable jar.
                 NOTE: JavaFX native libs are NOT bundled; use 'mvn javafx:run'

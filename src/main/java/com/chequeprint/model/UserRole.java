@@ -2,6 +2,7 @@ package com.chequeprint.model;
 
 public enum UserRole {
   ADMIN("Admin"),
+  USER("User"),
   MANAGER("Manager"),
   OPERATOR("Operator"),
   AUDITOR("Auditor");

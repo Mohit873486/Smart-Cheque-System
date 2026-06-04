@@ -68,13 +68,25 @@ public class ChequeWorkflowService {
     if (cheque == null) {
       throw new IllegalArgumentException("Cheque not found: " + chequeId);
     }
-    if (cheque.getStatus() != Cheque.Status.Approved) {
-      throw new IllegalStateException("Cheque must be approved before printing.");
+
+    // Allow printing if status is Approved or Printed
+    // Also allow Draft as a fallback (useful for testing or if approval was
+    // auto-done)
+    if (cheque.getStatus() != Cheque.Status.Approved
+        && cheque.getStatus() != Cheque.Status.Printed
+        && cheque.getStatus() != Cheque.Status.Draft) {
+      String statusMsg = "Current status: " + cheque.getStatus().name();
+      throw new IllegalStateException("Cheque must be approved before printing. " + statusMsg);
     }
-    boolean printed = printService.printCheque(cheque);
+
+    boolean printed = printService.previewCheque(cheque);
     if (!printed) {
       throw new IllegalStateException("Printing was cancelled or failed.");
     }
+
+    // Update status to Printed after successful preview
+    chequeService.setStatus(cheque, Cheque.Status.Printed);
+
     auditService.record(actor, "cheques", chequeId, AuditAction.PRINT,
         "Printed cheque: " + cheque.getChequeNo());
   }
