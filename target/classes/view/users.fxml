@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+    styleClass="page-scroll"
+    xmlns:fx="http://javafx.com/fxml/1"
+    fx:controller="com.chequeprint.controller.UserManagementController">
+
+    <VBox fx:id="rootPane" spacing="22" maxWidth="Infinity" maxHeight="Infinity">
+        <padding>
+            <Insets top="26" right="28" bottom="28" left="28" />
+        </padding>
+
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="User Management" styleClass="dashboard-title" />
+                <Label text="Create users, assign roles, and control system access"
+                    styleClass="dashboard-subtitle" />
+            </VBox>
+            <Button text="+ New User" styleClass="btn-primary" onAction="#onClear" />
+        </HBox>
+
+        <HBox spacing="20" VBox.vgrow="ALWAYS" maxWidth="Infinity" maxHeight="Infinity">
+            <VBox spacing="14" styleClass="cheque-list-panel"
+                HBox.hgrow="ALWAYS" maxWidth="Infinity" maxHeight="Infinity">
+                <TableView fx:id="userTable" styleClass="modern-table"
+                    VBox.vgrow="ALWAYS" maxHeight="Infinity">
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                    </columnResizePolicy>
+                    <placeholder>
+                        <Label text="No users found." styleClass="table-placeholder" />
+                    </placeholder>
+                    <columns>
+                        <TableColumn fx:id="colUsername" text="Username" minWidth="110" />
+                        <TableColumn fx:id="colName" text="Name" minWidth="150" />
+                        <TableColumn fx:id="colEmail" text="Email" minWidth="180" />
+                        <TableColumn fx:id="colRole" text="Role" minWidth="110" />
+                        <TableColumn fx:id="colStatus" text="Status" minWidth="90" />
+                    </columns>
+                </TableView>
+
+                <HBox spacing="10" alignment="CENTER_LEFT" styleClass="table-action-footer">
+                    <Button text="Delete Selected" styleClass="btn-danger-low" onAction="#onDelete" />
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Label text="Select a row to edit user access" styleClass="footer-hint" />
+                </HBox>
+            </VBox>
+
+            <VBox spacing="16" styleClass="edit-cheque-card"
+                prefWidth="350" minWidth="330" maxWidth="390" maxHeight="Infinity">
+                <Label fx:id="lblFormTitle" text="New User"
+                    styleClass="form-title-clean" maxWidth="Infinity" />
+
+                <VBox spacing="7">
+                    <Label text="Username" styleClass="form-label" />
+                    <TextField fx:id="fldUsername" promptText="username"
+                        styleClass="form-input" maxWidth="Infinity" />
+                </VBox>
+
+                <VBox spacing="7">
+                    <Label text="Name" styleClass="form-label" />
+                    <TextField fx:id="fldName" promptText="Full name"
+                        styleClass="form-input" maxWidth="Infinity" />
+                </VBox>
+
+                <VBox spacing="7">
+                    <Label text="Email" styleClass="form-label" />
+                    <TextField fx:id="fldEmail" promptText="email@example.com"
+                        styleClass="form-input" maxWidth="Infinity" />
+                </VBox>
+
+                <VBox spacing="7">
+                    <Label text="Password" styleClass="form-label" />
+                    <PasswordField fx:id="fldPassword" promptText="Required for new user"
+                        styleClass="form-input" maxWidth="Infinity" />
+                </VBox>
+
+                <VBox spacing="7">
+                    <Label text="Role" styleClass="form-label" />
+                    <ComboBox fx:id="cmbRole" styleClass="form-combo" maxWidth="Infinity" />
+                </VBox>
+
+                <Region VBox.vgrow="ALWAYS" />
+
+                <HBox spacing="10">
+                    <Button text="Save User" styleClass="btn-primary"
+                        maxWidth="Infinity" HBox.hgrow="ALWAYS" onAction="#onSave" />
+                    <Button text="Clear" styleClass="btn-outline-muted"
+                        maxWidth="Infinity" HBox.hgrow="ALWAYS" onAction="#onClear" />
+                </HBox>
+            </VBox>
+        </HBox>
+    </VBox>
+</ScrollPane>

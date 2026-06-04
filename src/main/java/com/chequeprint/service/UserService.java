@@ -2,6 +2,7 @@ package com.chequeprint.service;
 
 import com.chequeprint.dao.UserDAO;
 import com.chequeprint.model.User;
+import com.chequeprint.model.UserRole;
 
 import java.sql.SQLException;
 
@@ -69,6 +70,41 @@ public class UserService {
         }
         user.setPassword(newPassword);
         dao.insertOrUpdate(user);
+    }
+
+    // ── Admin user management helpers ─────────────────────────────────
+    public java.util.List<User> findAllUsers(User actor) throws SQLException {
+        // Caller is expected to have performed permission checks; keep service focused
+        return dao.findAll();
+    }
+
+    public void createUser(User actor, String username, String name, String email, String password, UserRole role)
+            throws SQLException {
+        User u = new User();
+        u.setUsername(username);
+        u.setName(name);
+        u.setEmail(email);
+        u.setPassword(password);
+        u.setRole(role == null ? UserRole.OPERATOR.label() : role.label());
+        validateUser(u);
+        dao.insertOrUpdate(u);
+    }
+
+    public void updateUser(User actor, User target, String newPassword) throws SQLException {
+        if (target == null)
+            throw new IllegalArgumentException("User cannot be null");
+        validateUser(target);
+        // Only set password when provided
+        if (newPassword == null || newPassword.isBlank()) {
+            target.setPassword(null);
+        } else {
+            target.setPassword(newPassword);
+        }
+        dao.insertOrUpdate(target);
+    }
+
+    public void deleteUser(User actor, int userId) throws SQLException {
+        dao.deleteById(userId);
     }
 
 }

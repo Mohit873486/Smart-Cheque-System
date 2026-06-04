@@ -47,6 +47,7 @@ com\chequeprint\model\Invoice$Status.class
 module-info.class
 com\chequeprint\service\AuditService.class
 com\chequeprint\preview\ChequePreviewPanel.class
+com\chequeprint\controller\UserManagementController.class
 com\chequeprint\controller\BankController.class
 com\chequeprint\controller\InvoiceController.class
 com\chequeprint\controller\BankController$Delta.class

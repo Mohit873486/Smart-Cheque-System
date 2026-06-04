@@ -104,7 +104,8 @@ public class UserDAO {
         return null;
     }
 
-    public void createPasswordResetOtp(int userId, String otpHash, java.time.LocalDateTime expiresAt) throws SQLException {
+    public void createPasswordResetOtp(int userId, String otpHash, java.time.LocalDateTime expiresAt)
+            throws SQLException {
         String sql = "INSERT INTO password_reset_otps (user_id, otp_hash, expires_at) VALUES (?, ?, ?)";
         try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(sql)) {
             ps.setInt(1, userId);
@@ -170,7 +171,8 @@ public class UserDAO {
 
     public void resetLoginAttempts(int userId) throws SQLException {
         String attemptsColumn = loginAttemptColumn();
-        String sql = "UPDATE users SET " + attemptsColumn + " = 0, account_locked = FALSE, locked_at = NULL WHERE id = ?";
+        String sql = "UPDATE users SET " + attemptsColumn
+                + " = 0, account_locked = FALSE, locked_at = NULL WHERE id = ?";
         try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(sql)) {
             ps.setInt(1, userId);
             ps.executeUpdate();
@@ -260,5 +262,25 @@ public class UserDAO {
             }
         }
 
+    }
+
+    public java.util.List<User> findAll() throws SQLException {
+        java.util.List<User> list = new java.util.ArrayList<>();
+        String sql = "SELECT * FROM users ORDER BY id DESC";
+        try (Statement st = AppConfig.getConnection().createStatement();
+                ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                list.add(mapUser(rs));
+            }
+        }
+        return list;
+    }
+
+    public boolean deleteById(int id) throws SQLException {
+        String sql = "DELETE FROM users WHERE id = ?";
+        try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(sql)) {
+            ps.setInt(1, id);
+            return ps.executeUpdate() > 0;
+        }
     }
 }
