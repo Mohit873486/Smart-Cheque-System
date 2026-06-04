@@ -42,6 +42,32 @@ CREATE TABLE IF NOT EXISTS password_reset_otps (
     INDEX idx_password_reset_active (user_id, used_at, expires_at)
 );
 
+CREATE TABLE IF NOT EXISTS roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(40) NOT NULL UNIQUE,
+    description VARCHAR(255),
+    is_system_role BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS permissions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(64) NOT NULL UNIQUE,
+    description VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS role_permissions (
+    role_id INT NOT NULL,
+    permission_id INT NOT NULL,
+    PRIMARY KEY (role_id, permission_id),
+    CONSTRAINT fk_role_permissions_role
+        FOREIGN KEY (role_id) REFERENCES roles(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_role_permissions_permission
+        FOREIGN KEY (permission_id) REFERENCES permissions(id)
+        ON DELETE CASCADE
+);
+
 -- BANK TEMPLATES
 CREATE TABLE IF NOT EXISTS bank_templates (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -97,7 +123,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
     user_id INT NULL,
     table_name VARCHAR(50),
     record_id INT,
-    action ENUM('LOGIN','LOGOUT','INSERT','UPDATE','DELETE','PRINT','APPROVE','RESET_PASSWORD','LOCK') NOT NULL,
+    action ENUM('LOGIN','LOGOUT','INSERT','UPDATE','DELETE','PRINT','APPROVE','REJECT','RESET_PASSWORD','LOCK','UNLOCK') NOT NULL,
     details TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_audit_log_user
@@ -105,6 +131,36 @@ CREATE TABLE IF NOT EXISTS audit_log (
         ON DELETE SET NULL,
     INDEX idx_audit_log_created (created_at),
     INDEX idx_audit_log_user (user_id)
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL,
+    title VARCHAR(160) NOT NULL,
+    message TEXT NOT NULL,
+    type ENUM('INFO','APPROVAL','REMINDER','AUDIT','SYSTEM') NOT NULL DEFAULT 'INFO',
+    status ENUM('Unread','Read') NOT NULL DEFAULT 'Unread',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    read_at TIMESTAMP NULL,
+    CONSTRAINT fk_notifications_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+        ON DELETE CASCADE,
+    INDEX idx_notifications_user_status (user_id, status)
+);
+
+CREATE TABLE IF NOT EXISTS reminders (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL,
+    table_name VARCHAR(50),
+    record_id INT,
+    title VARCHAR(160) NOT NULL,
+    remind_at TIMESTAMP NOT NULL,
+    status ENUM('Pending','Sent','Cancelled') NOT NULL DEFAULT 'Pending',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_reminders_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+        ON DELETE CASCADE,
+    INDEX idx_reminders_due (status, remind_at)
 );
 
 -- SETTINGS
@@ -133,6 +189,68 @@ VALUES
 ON DUPLICATE KEY UPDATE
     name = VALUES(name),
     role = VALUES(role);
+
+INSERT INTO roles (name, description) VALUES
+('Admin', 'Full system administrator'),
+('Manager', 'Approves and prints cheques'),
+('Operator', 'Creates and submits cheques'),
+('Auditor', 'Read-only compliance reviewer')
+ON DUPLICATE KEY UPDATE description = VALUES(description);
+
+INSERT INTO permissions (code, description) VALUES
+('VIEW_DASHBOARD', 'Open role dashboard'),
+('VIEW_CHEQUES', 'View cheque records'),
+('CREATE_CHEQUE', 'Create and submit cheques'),
+('UPDATE_CHEQUE', 'Edit cheque drafts or submitted records'),
+('DELETE_CHEQUE', 'Delete cheque records'),
+('SUBMIT_CHEQUE', 'Submit cheque for approval'),
+('APPROVE_CHEQUE', 'Approve pending cheques'),
+('REJECT_CHEQUE', 'Reject pending cheques'),
+('PRINT_CHEQUE', 'Print approved cheques'),
+('VIEW_INVOICES', 'View invoice records'),
+('VIEW_REPORTS', 'View finance and audit reports'),
+('VIEW_BANK_TEMPLATES', 'View bank templates'),
+('ACCESS_AI_ASSISTANT', 'Use AI assistant tools'),
+('VIEW_SUPPORT', 'Open support page'),
+('VIEW_PROFILE', 'Open own profile'),
+('UPDATE_PROFILE', 'Update own profile'),
+('MANAGE_SETTINGS', 'Manage system settings'),
+('MANAGE_USERS', 'Manage users and roles'),
+('VIEW_AUDIT_LOG', 'View audit compliance logs')
+ON DUPLICATE KEY UPDATE description = VALUES(description);
+
+INSERT IGNORE INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r
+JOIN permissions p
+WHERE r.name = 'Admin';
+
+INSERT IGNORE INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r
+JOIN permissions p ON p.code IN (
+    'VIEW_DASHBOARD','VIEW_CHEQUES','APPROVE_CHEQUE','REJECT_CHEQUE','PRINT_CHEQUE',
+    'VIEW_INVOICES','VIEW_REPORTS','VIEW_SUPPORT','VIEW_PROFILE','UPDATE_PROFILE'
+)
+WHERE r.name = 'Manager';
+
+INSERT IGNORE INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r
+JOIN permissions p ON p.code IN (
+    'VIEW_DASHBOARD','VIEW_CHEQUES','CREATE_CHEQUE','UPDATE_CHEQUE','SUBMIT_CHEQUE',
+    'VIEW_SUPPORT','VIEW_PROFILE','UPDATE_PROFILE'
+)
+WHERE r.name = 'Operator';
+
+INSERT IGNORE INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r
+JOIN permissions p ON p.code IN (
+    'VIEW_DASHBOARD','VIEW_CHEQUES','VIEW_INVOICES','VIEW_REPORTS',
+    'VIEW_BANK_TEMPLATES','VIEW_SUPPORT','VIEW_PROFILE','VIEW_AUDIT_LOG'
+)
+WHERE r.name = 'Auditor';
 
 -- BANK TEMPLATES
 INSERT IGNORE INTO bank_templates (bank_name, bank_code, cheque_size, micr) VALUES

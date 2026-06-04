@@ -71,6 +71,18 @@ public class ChequeController {
     private Label lblFormTitle;
     @FXML
     private VBox formPanel;
+    @FXML
+    private Button btnNewCheque;
+    @FXML
+    private Button btnApprove;
+    @FXML
+    private Button btnPrint;
+    @FXML
+    private Button btnDelete;
+    @FXML
+    private Button btnSaveAndPrint;
+    @FXML
+    private Button btnSave;
 
     // ── Filters ──
     @FXML
@@ -104,8 +116,38 @@ public class ChequeController {
         setupFilters();
         loadBanksIntoCombo();
         datePicker.setValue(LocalDate.now());
+        applyPermissions();
         loadData();
         FxUtils.animateIn(rootPane, 0);
+    }
+
+    private void applyPermissions() {
+        User actor = SessionManager.currentUser().orElse(null);
+        boolean canCreate = AccessControl.can(actor, Permission.CREATE_CHEQUE);
+        boolean canUpdate = AccessControl.can(actor, Permission.UPDATE_CHEQUE);
+        boolean canApprove = AccessControl.can(actor, Permission.APPROVE_CHEQUE);
+        boolean canPrint = AccessControl.can(actor, Permission.PRINT_CHEQUE);
+        boolean canDelete = AccessControl.can(actor, Permission.DELETE_CHEQUE);
+        boolean canEdit = canCreate || canUpdate;
+
+        setVisibleManaged(btnNewCheque, canCreate);
+        setVisibleManaged(btnSave, canEdit);
+        setVisibleManaged(btnSaveAndPrint, canPrint);
+        setVisibleManaged(btnApprove, canApprove);
+        setVisibleManaged(btnPrint, canPrint);
+        setVisibleManaged(btnDelete, canDelete);
+
+        fldPayee.setEditable(canEdit);
+        fldAmount.setEditable(canEdit);
+        cmbBank.setDisable(!canEdit);
+        datePicker.setDisable(!canEdit);
+    }
+
+    private void setVisibleManaged(javafx.scene.Node node, boolean visible) {
+        if (node != null) {
+            node.setVisible(visible);
+            node.setManaged(visible);
+        }
     }
 
     // ── Table setup ──────────────────────────────────────────────────
@@ -246,6 +288,11 @@ public class ChequeController {
     // ── Save / Update ────────────────────────────────────────────────
     @FXML
     private void onSave() {
+        User actor = SessionManager.currentUser().orElse(null);
+        if (!AccessControl.can(actor, selectedCheque == null ? Permission.CREATE_CHEQUE : Permission.UPDATE_CHEQUE)) {
+            showAlert("Permission Denied", "You do not have permission to save cheques.", Alert.AlertType.ERROR);
+            return;
+        }
         try {
             String payee = fldPayee.getText().trim();
             String amtStr = fldAmount.getText().trim();
@@ -279,12 +326,15 @@ public class ChequeController {
             int bankId = bankNameToId.getOrDefault(selectedBankName,
                     Math.max(1, cmbBank.getSelectionModel().getSelectedIndex() + 1));
 
-            User actor = SessionManager.currentUser().orElse(null);
             if (selectedCheque == null) {
                 Cheque c = new Cheque(null, payee, amount, bankId, datePicker.getValue());
                 workflowService.createPending(c, actor);
                 showAlert("Success", "Cheque created and submitted for approval.", Alert.AlertType.INFORMATION);
             } else {
+                selectedCheque.setPayeeName(payee);
+                selectedCheque.setAmount(amount);
+                selectedCheque.setBankId(bankId);
+                selectedCheque.setIssueDate(datePicker.getValue());
                 if (!chequeService.update(selectedCheque)) {
                     throw new SQLException("Could not update cheque.");
                 }
@@ -307,6 +357,11 @@ public class ChequeController {
     // ── Save and Direct Print ────────────────────────────────────────
     @FXML
     private void onSaveAndPrint() {
+        User actor = SessionManager.currentUser().orElse(null);
+        if (!AccessControl.can(actor, Permission.PRINT_CHEQUE)) {
+            showAlert("Permission Denied", "You do not have permission to print cheques.", Alert.AlertType.ERROR);
+            return;
+        }
         try {
             String payee = fldPayee.getText().trim();
             String amtStr = fldAmount.getText().trim();
@@ -340,7 +395,6 @@ public class ChequeController {
             int bankId = bankNameToId.getOrDefault(selectedBankName,
                     Math.max(1, cmbBank.getSelectionModel().getSelectedIndex() + 1));
 
-            User actor = SessionManager.currentUser().orElse(null);
             if (selectedCheque == null) {
                 Cheque newCheque = new Cheque(null, payee, amount, bankId, datePicker.getValue());
                 workflowService.createPending(newCheque, actor);
@@ -375,6 +429,11 @@ public class ChequeController {
     // ── Print ────────────────────────────────────────────────────────
     @FXML
     private void onPrint() {
+        User actor = SessionManager.currentUser().orElse(null);
+        if (!AccessControl.can(actor, Permission.PRINT_CHEQUE)) {
+            showAlert("Permission Denied", "You do not have permission to print cheques.", Alert.AlertType.ERROR);
+            return;
+        }
         Cheque sel = chequeTable.getSelectionModel().getSelectedItem();
         if (sel == null) {
             showAlert("No Selection", "Please select a cheque to print.",
@@ -383,7 +442,6 @@ public class ChequeController {
         }
 
         try {
-            User actor = SessionManager.currentUser().orElse(null);
 
             // === Handle Draft Status ===
             if (sel.getStatus() == Cheque.Status.Draft) {
@@ -476,9 +534,9 @@ public class ChequeController {
             return;
         }
 
-        if (sel.getStatus() != Cheque.Status.Pending && sel.getStatus() != Cheque.Status.Draft) {
+        if (sel.getStatus() != Cheque.Status.Pending) {
             showAlert("Cannot Approve",
-                    "Only Draft or Pending cheques can be approved. Current status: " + sel.getStatus().name(),
+                    "Only pending cheques can be approved. Current status: " + sel.getStatus().name(),
                     Alert.AlertType.WARNING);
             return;
         }
@@ -512,6 +570,11 @@ public class ChequeController {
     // ── Delete ───────────────────────────────────────────────────────
     @FXML
     private void onDelete() {
+        User actor = SessionManager.currentUser().orElse(null);
+        if (!AccessControl.can(actor, Permission.DELETE_CHEQUE)) {
+            showAlert("Permission Denied", "You do not have permission to delete cheques.", Alert.AlertType.ERROR);
+            return;
+        }
         Cheque sel = chequeTable.getSelectionModel().getSelectedItem();
         if (sel == null) {
             showAlert("No Selection", "Please select a cheque to delete.",

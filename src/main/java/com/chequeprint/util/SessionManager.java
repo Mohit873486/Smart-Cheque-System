@@ -2,6 +2,8 @@ package com.chequeprint.util;
 
 import com.chequeprint.model.User;
 import com.chequeprint.model.UserRole;
+import com.chequeprint.service.AccessControl;
+import com.chequeprint.service.Permission;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -28,6 +30,10 @@ public final class SessionManager {
 
     public static boolean hasRole(UserRole role) {
         return currentUser != null && currentUser.getRoleEnum() == role;
+    }
+
+    public static boolean hasPermission(Permission permission) {
+        return AccessControl.can(currentUser, permission);
     }
 
     public static Instant loginTime() {

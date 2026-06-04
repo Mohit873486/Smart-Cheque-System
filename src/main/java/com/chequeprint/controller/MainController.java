@@ -1,7 +1,7 @@
 package com.chequeprint.controller;
 
 import com.chequeprint.model.User;
-import com.chequeprint.model.UserRole;
+import com.chequeprint.service.AccessControl;
 import com.chequeprint.service.ChequeReminderService;
 import com.chequeprint.util.FxUtils;
 import javafx.animation.FadeTransition;
@@ -198,98 +198,49 @@ public class MainController {
   }
 
   private void navigateRoleLanding() {
-    if (currentUser == null) {
-      navigate("dashboard");
-      setActiveNav(navDashboard);
-      return;
-    }
-
-    UserRole role = currentUser.getRoleEnum();
-    switch (role) {
-      case ADMIN -> {
-        navigate("dashboard");
-        setActiveNav(navDashboard);
-      }
-      case MANAGER -> {
-        navigate("cheques");
-        setActiveNav(navCheques);
-      }
-      case OPERATOR -> {
-        navigate("cheques");
-        setActiveNav(navCheques);
-      }
-      case AUDITOR -> {
-        navigate("invoices");
-        setActiveNav(navInvoices);
+    String[] preferredPages = {"dashboard", "cheques", "invoices", "banks", "profile", "support"};
+    for (String page : preferredPages) {
+      if (isPageAllowed(page)) {
+        navigate(page);
+        setActiveNav(navItemFor(page));
+        return;
       }
     }
+    navigate("support");
+    setActiveNav(navSupport);
   }
 
   private void applyRolePermissions() {
-    if (currentUser == null) {
-      return;
-    }
-
-    UserRole role = currentUser.getRoleEnum();
-    navDashboard.setVisible(true);
-    navDashboard.setManaged(true);
-    navProfile.setVisible(true);
-    navProfile.setManaged(true);
-    navSupport.setVisible(true);
-    navSupport.setManaged(true);
-    navSettings.setVisible(true);
-    navSettings.setManaged(true);
-    navCheques.setVisible(true);
-    navCheques.setManaged(true);
-    navInvoices.setVisible(true);
-    navInvoices.setManaged(true);
-    navBanks.setVisible(true);
-    navBanks.setManaged(true);
-    navAiAssistant.setVisible(true);
-    navAiAssistant.setManaged(true);
-
-    switch (role) {
-      case ADMIN -> {
-        // full access
-      }
-      case MANAGER -> {
-        navInvoices.setVisible(false);
-        navInvoices.setManaged(false);
-        navBanks.setVisible(false);
-        navBanks.setManaged(false);
-        navAiAssistant.setVisible(false);
-        navAiAssistant.setManaged(false);
-      }
-      case OPERATOR -> {
-        navInvoices.setVisible(false);
-        navInvoices.setManaged(false);
-        navBanks.setVisible(false);
-      }
-      case AUDITOR -> {
-        navCheques.setVisible(false);
-        navCheques.setManaged(false);
-        navBanks.setVisible(false);
-        navAiAssistant.setVisible(false);
-        navSettings.setVisible(false);
-      }
-    }
+    setNavAllowed(navDashboard, "dashboard");
+    setNavAllowed(navCheques, "cheques");
+    setNavAllowed(navInvoices, "invoices");
+    setNavAllowed(navBanks, "banks");
+    setNavAllowed(navAiAssistant, "ai");
+    setNavAllowed(navProfile, "profile");
+    setNavAllowed(navSettings, "settings");
+    setNavAllowed(navSupport, "support");
   }
 
   private boolean isPageAllowed(String page) {
-    if (currentUser == null) {
-      return true;
-    }
-    UserRole role = currentUser.getRoleEnum();
-    return switch (role) {
-      case ADMIN -> true;
-      case USER ->
-        page.equals("dashboard") || page.equals("cheques") || page.equals("profile") || page.equals("support");
-      case MANAGER -> page.equals("dashboard") || page.equals("cheques") || page.equals("profile")
-          || page.equals("support") || page.equals("settings");
-      case OPERATOR -> page.equals("dashboard") || page.equals("cheques") || page.equals("ai") || page.equals("profile")
-          || page.equals("support");
-      case AUDITOR ->
-        page.equals("dashboard") || page.equals("invoices") || page.equals("profile") || page.equals("support");
+    return currentUser != null && AccessControl.canAccessPage(currentUser, page);
+  }
+
+  private void setNavAllowed(HBox item, String page) {
+    boolean allowed = isPageAllowed(page);
+    item.setVisible(allowed);
+    item.setManaged(allowed);
+  }
+
+  private HBox navItemFor(String page) {
+    return switch (page) {
+      case "cheques" -> navCheques;
+      case "invoices" -> navInvoices;
+      case "banks" -> navBanks;
+      case "ai" -> navAiAssistant;
+      case "profile" -> navProfile;
+      case "settings" -> navSettings;
+      case "support" -> navSupport;
+      default -> navDashboard;
     };
   }
 

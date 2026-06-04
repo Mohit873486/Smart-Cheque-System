@@ -12,6 +12,15 @@ import java.util.Set;
 public final class AccessControl {
 
   private static final Map<UserRole, Set<Permission>> GRANTS = new EnumMap<>(UserRole.class);
+  private static final Map<String, Permission> PAGE_PERMISSIONS = Map.of(
+      "dashboard", Permission.VIEW_DASHBOARD,
+      "cheques", Permission.VIEW_CHEQUES,
+      "invoices", Permission.VIEW_INVOICES,
+      "banks", Permission.VIEW_BANK_TEMPLATES,
+      "ai", Permission.ACCESS_AI_ASSISTANT,
+      "profile", Permission.VIEW_PROFILE,
+      "settings", Permission.MANAGE_SETTINGS,
+      "support", Permission.VIEW_SUPPORT);
 
   static {
     GRANTS.put(UserRole.ADMIN, EnumSet.of(
@@ -25,6 +34,7 @@ public final class AccessControl {
         Permission.REJECT_CHEQUE,
         Permission.PRINT_CHEQUE,
         Permission.VIEW_INVOICES,
+        Permission.VIEW_REPORTS,
         Permission.VIEW_BANK_TEMPLATES,
         Permission.ACCESS_AI_ASSISTANT,
         Permission.VIEW_SUPPORT,
@@ -49,7 +59,9 @@ public final class AccessControl {
         Permission.VIEW_CHEQUES,
         Permission.APPROVE_CHEQUE,
         Permission.REJECT_CHEQUE,
+        Permission.PRINT_CHEQUE,
         Permission.VIEW_INVOICES,
+        Permission.VIEW_REPORTS,
         Permission.VIEW_SUPPORT,
         Permission.VIEW_PROFILE,
         Permission.UPDATE_PROFILE));
@@ -60,14 +72,15 @@ public final class AccessControl {
         Permission.CREATE_CHEQUE,
         Permission.UPDATE_CHEQUE,
         Permission.SUBMIT_CHEQUE,
-        Permission.PRINT_CHEQUE,
         Permission.VIEW_SUPPORT,
         Permission.VIEW_PROFILE,
         Permission.UPDATE_PROFILE));
 
     GRANTS.put(UserRole.AUDITOR, EnumSet.of(
         Permission.VIEW_DASHBOARD,
+        Permission.VIEW_CHEQUES,
         Permission.VIEW_INVOICES,
+        Permission.VIEW_REPORTS,
         Permission.VIEW_BANK_TEMPLATES,
         Permission.VIEW_SUPPORT,
         Permission.VIEW_PROFILE,
@@ -85,6 +98,10 @@ public final class AccessControl {
     return GRANTS.getOrDefault(role, Set.of()).contains(permission);
   }
 
+  public static boolean hasPermission(User user, Permission permission) {
+    return can(user, permission);
+  }
+
   public static void requirePermission(User user, Permission permission) {
     if (!can(user, permission)) {
       throw new AccessDeniedException("User does not have permission: " + permission);
@@ -95,17 +112,11 @@ public final class AccessControl {
     if (user == null || page == null) {
       return false;
     }
-    UserRole role = user.getRoleEnum();
-    return switch (role) {
-      case ADMIN -> true;
-      case USER -> page.equals("dashboard") || page.equals("cheques") || page.equals("profile")
-          || page.equals("support");
-      case MANAGER -> page.equals("dashboard") || page.equals("cheques") || page.equals("profile")
-          || page.equals("support");
-      case OPERATOR -> page.equals("dashboard") || page.equals("cheques") || page.equals("ai") || page.equals("profile")
-          || page.equals("support");
-      case AUDITOR -> page.equals("dashboard") || page.equals("invoices") || page.equals("profile")
-          || page.equals("support");
-    };
+    Permission permission = PAGE_PERMISSIONS.get(page);
+    return permission != null && can(user, permission);
+  }
+
+  public static Permission pagePermission(String page) {
+    return PAGE_PERMISSIONS.get(page);
   }
 }

@@ -2,7 +2,6 @@ package com.chequeprint.service;
 
 import com.chequeprint.dao.UserDAO;
 import com.chequeprint.model.User;
-import com.chequeprint.model.UserRole;
 import com.chequeprint.util.PasswordUtil;
 import com.chequeprint.util.SessionManager;
 
@@ -11,6 +10,7 @@ import java.sql.SQLException;
 public class AuthService {
 
   private final UserDAO dao = new UserDAO();
+  private final AuditService auditService = new AuditService();
   private static final int MAX_LOGIN_ATTEMPTS = 3;
   private int remainingLoginAttempts = MAX_LOGIN_ATTEMPTS;
   private User currentUser;
@@ -46,6 +46,7 @@ public class AuthService {
       resetAttempts();
       currentUser = user;
       SessionManager.start(user);
+      auditService.recordLogin(user);
       return AuthenticationResult.success(user);
     } catch (SQLException e) {
       return AuthenticationResult.failure("Login failed: " + e.getMessage());
@@ -86,31 +87,17 @@ public class AuthService {
     if (currentUser == null) {
       return "dashboard";
     }
-    return switch (UserRole.from(currentUser.getRole())) {
-      case ADMIN -> "dashboard";
-      case USER -> "cheques";
-      case MANAGER -> "cheques";
-      case OPERATOR -> "cheques";
-      case AUDITOR -> "invoices";
-    };
+    String[] preferredPages = {"dashboard", "cheques", "invoices", "banks", "profile", "support"};
+    for (String page : preferredPages) {
+      if (AccessControl.canAccessPage(currentUser, page)) {
+        return page;
+      }
+    }
+    return "support";
   }
 
   public boolean canAccessPage(String page) {
-    if (currentUser == null) {
-      return false;
-    }
-    UserRole role = UserRole.from(currentUser.getRole());
-    return switch (role) {
-      case ADMIN -> true;
-      case USER -> page.equals("dashboard") || page.equals("cheques") || page.equals("profile")
-          || page.equals("support");
-      case MANAGER ->
-        page.equals("dashboard") || page.equals("cheques") || page.equals("profile") || page.equals("support");
-      case OPERATOR -> page.equals("dashboard") || page.equals("cheques") || page.equals("ai") || page.equals("profile")
-          || page.equals("support");
-      case AUDITOR ->
-        page.equals("dashboard") || page.equals("invoices") || page.equals("profile") || page.equals("support");
-    };
+    return AccessControl.canAccessPage(currentUser, page);
   }
 
   private void resetAttempts() {

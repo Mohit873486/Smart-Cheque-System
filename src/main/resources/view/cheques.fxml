@@ -21,7 +21,7 @@
                 <Label text="Create, edit, and print cheque records"
                     styleClass="dashboard-subtitle" />
             </VBox>
-            <Button text="+ New Cheque" styleClass="btn-primary" onAction="#onClear" />
+            <Button fx:id="btnNewCheque" text="+ New Cheque" styleClass="btn-primary" onAction="#onClear" />
         </HBox>
 
         <HBox spacing="20" VBox.vgrow="ALWAYS" maxWidth="Infinity" maxHeight="Infinity">
@@ -59,9 +59,9 @@
                 </TableView>
 
                 <HBox spacing="10" alignment="CENTER_LEFT" styleClass="table-action-footer">
-                    <Button text="Approve Selected" styleClass="btn-secondary" onAction="#onApprove" />
-                    <Button text="Print Selected" styleClass="btn-primary" onAction="#onPrint" />
-                    <Button text="Delete" styleClass="btn-danger-low" onAction="#onDelete" />
+                    <Button fx:id="btnApprove" text="Approve Selected" styleClass="btn-secondary" onAction="#onApprove" />
+                    <Button fx:id="btnPrint" text="Print Selected" styleClass="btn-primary" onAction="#onPrint" />
+                    <Button fx:id="btnDelete" text="Delete" styleClass="btn-danger-low" onAction="#onDelete" />
                     <Region HBox.hgrow="ALWAYS" />
                     <Label text="Select a row to edit" styleClass="footer-hint" />
                 </HBox>
@@ -104,10 +104,10 @@
                 <Region VBox.vgrow="ALWAYS" />
 
                 <VBox spacing="9">
-                    <Button text="Print" styleClass="btn-print-main"
+                    <Button fx:id="btnSaveAndPrint" text="Print" styleClass="btn-print-main"
                         maxWidth="Infinity" onAction="#onSaveAndPrint" />
                     <HBox spacing="10">
-                        <Button text="Save" styleClass="btn-primary"
+                        <Button fx:id="btnSave" text="Save" styleClass="btn-primary"
                             maxWidth="Infinity" HBox.hgrow="ALWAYS" onAction="#onSave" />
                         <Button text="Clear Form" styleClass="btn-outline-muted"
                             maxWidth="Infinity" HBox.hgrow="ALWAYS" onAction="#onClear" />

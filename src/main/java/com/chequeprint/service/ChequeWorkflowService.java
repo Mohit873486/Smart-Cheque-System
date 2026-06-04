@@ -69,12 +69,8 @@ public class ChequeWorkflowService {
       throw new IllegalArgumentException("Cheque not found: " + chequeId);
     }
 
-    // Allow printing if status is Approved or Printed
-    // Also allow Draft as a fallback (useful for testing or if approval was
-    // auto-done)
     if (cheque.getStatus() != Cheque.Status.Approved
-        && cheque.getStatus() != Cheque.Status.Printed
-        && cheque.getStatus() != Cheque.Status.Draft) {
+        && cheque.getStatus() != Cheque.Status.Printed) {
       String statusMsg = "Current status: " + cheque.getStatus().name();
       throw new IllegalStateException("Cheque must be approved before printing. " + statusMsg);
     }

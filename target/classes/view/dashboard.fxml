@@ -138,9 +138,9 @@
                                     <Label text="Quick Actions" styleClass="section-title" />
                                 </HBox>
                                 <VBox spacing="12">
-                                    <Button text="Create New Cheque" onAction="#onNewCheque" styleClass="btn-primary" />
-                                    <Button text="Review Cheques" onAction="#onViewAllCheques" styleClass="btn-secondary" />
-                                    <Button text="Open Invoices" onAction="#onViewAllInvoices" styleClass="btn-link" />
+                                    <Button fx:id="btnQuickNewCheque" text="Create New Cheque" onAction="#onNewCheque" styleClass="btn-primary" />
+                                    <Button fx:id="btnQuickReviewCheques" text="Review Cheques" onAction="#onViewAllCheques" styleClass="btn-secondary" />
+                                    <Button fx:id="btnQuickOpenInvoices" text="Open Invoices" onAction="#onViewAllInvoices" styleClass="btn-link" />
                                 </VBox>
                             </VBox>
                         </VBox>

@@ -3,10 +3,13 @@ package com.chequeprint.controller;
 import com.chequeprint.model.Cheque;
 import com.chequeprint.model.Invoice;
 import com.chequeprint.model.User;
+import com.chequeprint.service.AccessControl;
 import com.chequeprint.service.ChequeService;
 import com.chequeprint.service.InvoiceService;
+import com.chequeprint.service.Permission;
 import com.chequeprint.service.UserService;
 import com.chequeprint.util.FxUtils;
+import com.chequeprint.util.SessionManager;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -58,6 +61,9 @@ public class DashboardController {
     @FXML private Button btnViewAllCheques;
     @FXML private Button btnViewAllInvoices;
     @FXML private Button btnRefreshCheques;
+    @FXML private Button btnQuickNewCheque;
+    @FXML private Button btnQuickReviewCheques;
+    @FXML private Button btnQuickOpenInvoices;
     @FXML private TextField txtChequeSearch;
 
     @FXML private LineChart<Number, Number> chequeChart;
@@ -93,6 +99,7 @@ public class DashboardController {
         configureTables();
         configureCharts();
         configureSearch();
+        applyPermissions();
         showEmptyDashboard();
         animateInitialView();
         reload();
@@ -101,6 +108,7 @@ public class DashboardController {
 
     public void setMainController(MainController mainController) {
         this.mainController = mainController;
+        applyPermissions();
     }
 
     public void reload() {
@@ -119,6 +127,10 @@ public class DashboardController {
 
     @FXML
     private void onNewCheque() {
+        if (!can(Permission.CREATE_CHEQUE)) {
+            showPermissionDenied();
+            return;
+        }
         if (mainController != null) {
             mainController.showCheques();
         }
@@ -126,6 +138,10 @@ public class DashboardController {
 
     @FXML
     private void onNewInvoice() {
+        if (!can(Permission.VIEW_INVOICES)) {
+            showPermissionDenied();
+            return;
+        }
         if (mainController != null) {
             mainController.showInvoices();
         }
@@ -133,6 +149,10 @@ public class DashboardController {
 
     @FXML
     private void onViewAllCheques() {
+        if (!can(Permission.VIEW_CHEQUES)) {
+            showPermissionDenied();
+            return;
+        }
         if (mainController != null) {
             mainController.showCheques();
         }
@@ -140,9 +160,47 @@ public class DashboardController {
 
     @FXML
     private void onViewAllInvoices() {
+        if (!can(Permission.VIEW_INVOICES)) {
+            showPermissionDenied();
+            return;
+        }
         if (mainController != null) {
             mainController.showInvoices();
         }
+    }
+
+    private void applyPermissions() {
+        boolean canCreateCheque = can(Permission.CREATE_CHEQUE);
+        boolean canViewCheques = can(Permission.VIEW_CHEQUES);
+        boolean canViewInvoices = can(Permission.VIEW_INVOICES);
+
+        setVisibleManaged(btnNewCheque, canCreateCheque);
+        setVisibleManaged(btnQuickNewCheque, canCreateCheque);
+        setVisibleManaged(btnViewAllCheques, canViewCheques);
+        setVisibleManaged(btnQuickReviewCheques, canViewCheques);
+        setVisibleManaged(btnNewInvoice, canViewInvoices);
+        setVisibleManaged(btnViewAllInvoices, canViewInvoices);
+        setVisibleManaged(btnQuickOpenInvoices, canViewInvoices);
+    }
+
+    private boolean can(Permission permission) {
+        return AccessControl.can(SessionManager.currentUser().orElse(null), permission);
+    }
+
+    private void setVisibleManaged(javafx.scene.Node node, boolean visible) {
+        if (node != null) {
+            node.setVisible(visible);
+            node.setManaged(visible);
+        }
+    }
+
+    private void showPermissionDenied() {
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                javafx.scene.control.Alert.AlertType.ERROR,
+                "You do not have permission to perform this action.");
+        alert.setTitle("Permission Denied");
+        alert.setHeaderText(null);
+        alert.showAndWait();
     }
 
     private void configureRootSizing() {
