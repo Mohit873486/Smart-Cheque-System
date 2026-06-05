@@ -107,6 +107,10 @@
                            text="Use OTP instead"
                            onAction="#onOtpLogin"
                            styleClass="link-button" />
+                <Hyperlink fx:id="linkCreateAccount"
+                           text="Create a new account"
+                           onAction="#onCreateAccountLink"
+                           styleClass="link-button" />
 
                 <Label fx:id="lblAttempts" text="3 attempts remaining" styleClass="attempts-label" />
             </VBox>

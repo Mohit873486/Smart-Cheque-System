@@ -51,6 +51,8 @@ public class LoginController {
   @FXML
   private Hyperlink linkOtpLogin;
   @FXML
+  private Hyperlink linkCreateAccount;
+  @FXML
   private ProgressIndicator loginProgress;
   @FXML
   private Label lblError;
@@ -210,6 +212,50 @@ public class LoginController {
     } catch (Exception ex) {
       showError(ex.getMessage());
       FxUtils.shake(rootPane);
+    }
+  }
+
+  @FXML
+  private void onCreateAccountLink() {
+    try {
+      java.net.URL resource = LoginController.class.getResource("/view/signup.fxml");
+      if (resource == null) {
+        throw new IllegalStateException("Signup FXML resource not found at /view/signup.fxml.");
+      }
+      FXMLLoader loader = new FXMLLoader(resource);
+      Parent root = loader.load();
+
+      Stage stage = null;
+      if (rootPane != null && rootPane.getScene() != null) {
+        stage = (Stage) rootPane.getScene().getWindow();
+      }
+      if (stage == null && btnLogin != null && btnLogin.getScene() != null) {
+        stage = (Stage) btnLogin.getScene().getWindow();
+      }
+      if (stage == null) {
+        throw new IllegalStateException("Unable to determine application window.");
+      }
+
+      Scene scene = new Scene(root, 900, 720);
+      var stylesheet = getClass().getResource("/css/style.css");
+      if (stylesheet != null) {
+        scene.getStylesheets().add(stylesheet.toExternalForm());
+      }
+      stage.setScene(scene);
+      stage.setTitle("ChequePro — Create Account");
+      stage.centerOnScreen();
+    } catch (Exception e) {
+      writeSignupErrorLog(e);
+      showError("Unable to open signup page: " + e.getClass().getSimpleName() + " (see signup-error.log)");
+      e.printStackTrace();
+    }
+  }
+
+  private void writeSignupErrorLog(Exception e) {
+    try (java.io.PrintWriter writer = new java.io.PrintWriter("signup-error.log")) {
+      writer.println("Signup page load failure:");
+      e.printStackTrace(writer);
+    } catch (java.io.IOException ignored) {
     }
   }
 

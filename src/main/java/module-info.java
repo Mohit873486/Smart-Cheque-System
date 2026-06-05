@@ -1,15 +1,15 @@
 module com.chequeprint {
 
     // ── JavaFX ──────────────────────────────────────────────────────
-    requires javafx.controls;
-    requires javafx.fxml;
-    requires javafx.graphics;
-    requires javafx.base;
-    requires javafx.swing;
-    requires javafx.web;
+    requires transitive javafx.controls;
+    requires transitive javafx.fxml;
+    requires transitive javafx.graphics;
+    requires transitive javafx.base;
+    requires transitive javafx.swing;
+    requires transitive javafx.web;
 
     // ── Database ─────────────────────────────────────────────────────
-    requires java.sql;
+    requires transitive java.sql;
     requires java.desktop;
     requires java.prefs;
     requires java.net.http;

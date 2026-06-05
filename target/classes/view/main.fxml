@@ -109,12 +109,14 @@
                 <Region VBox.vgrow="ALWAYS" />
 
                 <!-- User footer -->
-                <HBox spacing="10" alignment="CENTER_LEFT" styleClass="sidebar-user">
-                    <Label text="AD" styleClass="user-avatar" />
+                <HBox fx:id="userFooter" spacing="10" alignment="CENTER_LEFT" styleClass="sidebar-user">
+                    <Label fx:id="lblUserAvatar" text="AD" styleClass="user-avatar" />
                     <VBox spacing="1">
-                        <Label text="Admin User" styleClass="user-name" />
-                        <Label text="Administrator" styleClass="user-role" />
+                        <Label fx:id="lblUserName" text="Admin User" styleClass="user-name" />
+                        <Label fx:id="lblUserRole" text="Administrator" styleClass="user-role" />
                     </VBox>
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Button fx:id="btnLogout" text="Logout" styleClass="btn-ghost" onAction="#onLogout" />
                 </HBox>
 
             </VBox>

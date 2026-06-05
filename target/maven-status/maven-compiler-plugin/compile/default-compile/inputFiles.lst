@@ -51,6 +51,7 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\BankTem
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\preview\ChequeLayout.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\ChequeReminderService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\OpenAiSqlQueryService.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\SignupController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\ChequeSizeCodec.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\preview\FieldPosition.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\ChequeAiActionExecutor.java

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.chequeprint.controller.SignupController">
+  <center>
+    <VBox alignment="CENTER" spacing="12" BorderPane.alignment="CENTER">
+      <VBox styleClass="card" spacing="12" alignment="CENTER" maxWidth="420">
+        <padding>
+          <Insets top="20" right="20" bottom="20" left="20" />
+        </padding>
+        <Label text="Create Account" styleClass="title" />
+        <GridPane hgap="10" vgap="8">
+          <columnConstraints>
+            <ColumnConstraints halignment="RIGHT" minWidth="120"/>
+            <ColumnConstraints hgrow="ALWAYS"/>
+          </columnConstraints>
+          <Label text="Username:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+          <TextField fx:id="fldUsername" promptText="username" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+          <Label fx:id="errUsername" styleClass="error" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+          <Label text="Password:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+          <PasswordField fx:id="fldPassword" promptText="password" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+          <Label fx:id="errPassword" styleClass="error" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+          <Label text="Confirm:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+          <PasswordField fx:id="fldConfirm" promptText="confirm password" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+          <Label fx:id="errConfirm" styleClass="error" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+
+          <!-- Role dropdown hidden by default; visible only for admins -->
+          <Label text="Role:" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+          <ComboBox fx:id="cmbRole" GridPane.rowIndex="6" GridPane.columnIndex="1" visible="false"/>
+          <Label fx:id="errRole" styleClass="error" GridPane.rowIndex="7" GridPane.columnIndex="1"/>
+        </GridPane>
+
+        <HBox spacing="8" alignment="CENTER_RIGHT" maxWidth="420">
+          <Button text="Create Account" fx:id="btnCreate" onAction="#onCreateAccount" styleClass="btn-primary"/>
+        </HBox>
+
+        <Hyperlink fx:id="linkLogin" text="Already have an account? Sign in" onAction="#onBackToLogin" styleClass="link-button" />
+        <Label fx:id="lblStatus" styleClass="status" />
+      </VBox>
+    </VBox>
+  </center>
+</BorderPane>

@@ -65,6 +65,7 @@ com\chequeprint\controller\InvoiceController$1.class
 com\chequeprint\preview\ChequePrintService.class
 com\chequeprint\model\FieldPosition.class
 com\chequeprint\model\Settings.class
+com\chequeprint\controller\SignupController.class
 com\chequeprint\service\GeminiApiClient.class
 com\chequeprint\preview\ChequePrintPreviewApp$1.class
 com\chequeprint\util\AccessDeniedException.class

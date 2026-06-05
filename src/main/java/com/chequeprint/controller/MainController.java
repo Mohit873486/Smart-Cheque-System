@@ -59,6 +59,21 @@ public class MainController {
   private HBox activeNavItem;
   private User currentUser;
 
+  @FXML
+  private HBox userFooter;
+
+  @FXML
+  private javafx.scene.control.Label lblUserAvatar;
+
+  @FXML
+  private javafx.scene.control.Label lblUserName;
+
+  @FXML
+  private javafx.scene.control.Label lblUserRole;
+
+  @FXML
+  private javafx.scene.control.Button btnLogout;
+
   // FXML mapping (MAIN SYSTEM)
   private final Map<String, String> fxmlMap = new HashMap<>() {
     {
@@ -194,7 +209,64 @@ public class MainController {
   public void setCurrentUser(User currentUser) {
     this.currentUser = currentUser;
     applyRolePermissions();
+    updateUserFooter();
     navigateRoleLanding();
+  }
+
+  private void updateUserFooter() {
+    if (currentUser == null) {
+      lblUserName.setText("-");
+      lblUserRole.setText("");
+      lblUserAvatar.setText("-");
+      btnLogout.setVisible(false);
+      btnLogout.setManaged(false);
+      return;
+    }
+    String display = currentUser.getName() != null && !currentUser.getName().isBlank()
+        ? currentUser.getName()
+        : currentUser.getUsername();
+    lblUserName.setText(display != null ? display : "User");
+    lblUserRole.setText(currentUser.getRole() != null ? currentUser.getRole() : "");
+    String avatar = display != null && display.length() > 0 ? display.substring(0, 1).toUpperCase() : "U";
+    lblUserAvatar.setText(avatar);
+    btnLogout.setVisible(true);
+    btnLogout.setManaged(true);
+  }
+
+  @FXML
+  private void onLogout() {
+    try {
+      javafx.scene.control.Alert confirm = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION,
+          "Are you sure you want to sign out?");
+      confirm.setTitle("Sign out");
+      var res = confirm.showAndWait();
+      if (res.isEmpty() || res.get() != javafx.scene.control.ButtonType.OK) {
+        return;
+      }
+
+      // Perform logout
+      com.chequeprint.service.AuthService authService = new com.chequeprint.service.AuthService();
+      authService.logout();
+      com.chequeprint.util.SessionManager.clear();
+
+      // Load login scene
+      javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/login.fxml"));
+      javafx.scene.Parent root = loader.load();
+      javafx.stage.Stage stage = (javafx.stage.Stage) contentPane.getScene().getWindow();
+      javafx.scene.Scene scene = new javafx.scene.Scene(root, 900, 620);
+      var stylesheet = getClass().getResource("/css/style.css");
+      if (stylesheet != null) {
+        scene.getStylesheets().add(stylesheet.toExternalForm());
+      }
+      stage.setScene(scene);
+      stage.setTitle("Smart Cheque Management System - Sign In");
+      stage.centerOnScreen();
+    } catch (Exception e) {
+      e.printStackTrace();
+      javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR,
+          "Logout failed: " + e.getMessage());
+      alert.showAndWait();
+    }
   }
 
   private void navigateRoleLanding() {

@@ -3,6 +3,9 @@ package com.chequeprint.service;
 import com.chequeprint.dao.UserDAO;
 import com.chequeprint.model.User;
 import com.chequeprint.model.UserRole;
+import com.chequeprint.service.AccessControl;
+import com.chequeprint.service.Permission;
+import com.chequeprint.util.PasswordUtil;
 
 import java.sql.SQLException;
 
@@ -65,10 +68,13 @@ public class UserService {
             throw new IllegalArgumentException("User not found.");
         }
         // Verify current password
-        if (!currentPassword.equals(user.getPassword())) {
+        if (!PasswordUtil.matches(currentPassword, user.getPassword())) {
             throw new IllegalArgumentException("Current password is incorrect.");
         }
-        user.setPassword(newPassword);
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new IllegalArgumentException("New password must be at least 6 characters.");
+        }
+        user.setPassword(PasswordUtil.hash(newPassword));
         dao.insertOrUpdate(user);
     }
 
@@ -78,32 +84,79 @@ public class UserService {
         return dao.findAll();
     }
 
-    public void createUser(User actor, String username, String name, String email, String password, UserRole role)
-            throws SQLException {
+    public boolean userExists(String usernameOrEmail) throws SQLException {
+        return dao.findByUsernameOrEmail(usernameOrEmail) != null;
+    }
+
+    public void registerUser(String username, String password, UserRole role, User createdBy) throws SQLException {
+        if (username == null || username.isBlank()) {
+            throw new IllegalArgumentException("Username is required.");
+        }
+        if (password == null || password.length() < 6) {
+            throw new IllegalArgumentException("Password must be at least 6 characters.");
+        }
+        if (userExists(username)) {
+            throw new IllegalArgumentException("Username already exists.");
+        }
+
         User u = new User();
         u.setUsername(username);
-        u.setName(name);
+        u.setName(username);
+        u.setEmail(username.contains("@") ? username : username + "@example.com");
+        u.setPassword(PasswordUtil.hash(password));
+        u.setRole((createdBy != null && AccessControl.can(createdBy, Permission.MANAGE_USERS) && role != null)
+                ? role.label()
+                : UserRole.OPERATOR.label());
+        u.setStatus("Active");
+        validateUser(u);
+        dao.insertOrUpdate(u);
+    }
+
+    public void createUser(User actor, String username, String name, String email, String password, UserRole role)
+            throws SQLException {
+        if (actor == null || !AccessControl.can(actor, Permission.MANAGE_USERS)) {
+            throw new IllegalArgumentException("Only administrators can create users.");
+        }
+        if (userExists(username)) {
+            throw new IllegalArgumentException("Username or email already exists.");
+        }
+        if (password == null || password.length() < 6) {
+            throw new IllegalArgumentException("Password must be at least 6 characters.");
+        }
+
+        User u = new User();
+        u.setUsername(username);
+        u.setName(name == null || name.isBlank() ? username : name);
         u.setEmail(email);
-        u.setPassword(password);
+        u.setPassword(PasswordUtil.hash(password));
         u.setRole(role == null ? UserRole.OPERATOR.label() : role.label());
+        u.setStatus("Active");
         validateUser(u);
         dao.insertOrUpdate(u);
     }
 
     public void updateUser(User actor, User target, String newPassword) throws SQLException {
+        if (actor == null || !AccessControl.can(actor, Permission.MANAGE_USERS)) {
+            throw new IllegalArgumentException("Only administrators can update users.");
+        }
         if (target == null)
             throw new IllegalArgumentException("User cannot be null");
-        validateUser(target);
-        // Only set password when provided
-        if (newPassword == null || newPassword.isBlank()) {
-            target.setPassword(null);
+        if (newPassword != null && !newPassword.isBlank()) {
+            if (newPassword.length() < 6) {
+                throw new IllegalArgumentException("Password must be at least 6 characters.");
+            }
+            target.setPassword(PasswordUtil.hash(newPassword));
         } else {
-            target.setPassword(newPassword);
+            target.setPassword(null);
         }
+        validateUser(target);
         dao.insertOrUpdate(target);
     }
 
     public void deleteUser(User actor, int userId) throws SQLException {
+        if (actor == null || !AccessControl.can(actor, Permission.MANAGE_USERS)) {
+            throw new IllegalArgumentException("Only administrators can delete users.");
+        }
         dao.deleteById(userId);
     }
 
