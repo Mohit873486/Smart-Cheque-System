@@ -135,6 +135,22 @@ public class ChequeDAO {
         }
     }
 
+    // Convenience API requested by product requirements
+    /** Save a cheque into DB. Returns true if persisted and will set generated id on the model. */
+    public boolean saveCheque(Cheque cheque) throws SQLException {
+        return insert(cheque);
+    }
+
+    /** Update status by cheque id or cheque number. */
+    public boolean updateChequeStatus(Cheque cheque, Cheque.Status status) throws SQLException {
+        return updateStatus(cheque, status);
+    }
+
+    /** Return all cheques ordered by created_at desc. */
+    public List<Cheque> getAllCheques() throws SQLException {
+        return findAll();
+    }
+
     // ---- COUNTS ----
     public int countTotal() throws SQLException {
         return querySingleInt(COUNT_TOTAL);

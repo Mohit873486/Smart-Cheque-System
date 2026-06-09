@@ -68,4 +68,13 @@ public final class AppConfig {
             return false;
         }
     }
+
+    /** Optional helper: path to tessdata for OCR. Returns system property `tessdata.path` or env `TESSDATA_PREFIX` when set, otherwise null. */
+    public static String getTessDataPath() {
+        String p = System.getProperty("tessdata.path");
+        if (p != null && !p.isBlank()) return p;
+        String e = System.getenv("TESSDATA_PREFIX");
+        if (e != null && !e.isBlank()) return e;
+        return null;
+    }
 }

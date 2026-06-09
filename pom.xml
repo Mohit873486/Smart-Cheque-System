@@ -124,6 +124,13 @@
             <version>0.4</version>
         </dependency>
 
+        <!-- Tess4J for Tesseract OCR integration -->
+        <dependency>
+            <groupId>net.sourceforge.tess4j</groupId>
+            <artifactId>tess4j</artifactId>
+            <version>5.4.0</version>
+        </dependency>
+
         <!-- ── JUnit 5 ── -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

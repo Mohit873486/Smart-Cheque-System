@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.*?>
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.chequeprint.controller.ModernDashboardController"
+            prefWidth="1200" prefHeight="800">
+
+  <!-- Sidebar -->
+  <left>
+    <VBox spacing="12" styleClass="sidebar" prefWidth="220" alignment="TOP_LEFT" BorderPane.alignment="CENTER">
+      <Label text="ChequePro" styleClass="sidebar-logo" />
+      <Separator />
+      <VBox spacing="6">
+        <Button text="Dashboard" styleClass="nav-btn" />
+        <Button text="Cheques" styleClass="nav-btn" />
+        <Button text="Invoices" styleClass="nav-btn" />
+        <Button text="Banks" styleClass="nav-btn" />
+      </VBox>
+      <Region VBox.vgrow="ALWAYS" />
+      <Label text="© ChequePro" styleClass="sidebar-foot" />
+    </VBox>
+  </left>
+
+  <center>
+    <VBox spacing="12" padding="16">
+      <!-- Header -->
+      <HBox alignment="CENTER_LEFT">
+        <Label text="Dashboard" styleClass="page-title" HBox.hgrow="ALWAYS" />
+        <HBox spacing="8">
+          <Button fx:id="btnScan" text="Scan" onAction="#onScan" />
+          <Button fx:id="btnQuickAdd" text="Add" onAction="#onAddCheque" />
+          <Button fx:id="btnView" text="View" onAction="#onViewSelected" />
+        </HBox>
+        <Button fx:id="btnAddChequeTop" text="Add Cheque" onAction="#onAddCheque" styleClass="btn-primary" />
+      </HBox>
+
+      <!-- Status control -->
+      <HBox spacing="8" alignment="CENTER_LEFT">
+        <Label text="Change Status:" />
+        <ComboBox fx:id="cmbStatus" />
+        <Button fx:id="btnUpdateStatus" text="Update Status" onAction="#onUpdateStatus" />
+      </HBox>
+
+      <!-- Summary cards -->
+      <HBox spacing="12">
+        <VBox styleClass="card" spacing="6" padding="12" prefWidth="220">
+          <Label text="Total Cheques" />
+          <Label fx:id="lblTotal" text="0" styleClass="stat-large" />
+        </VBox>
+        <VBox styleClass="card" spacing="6" padding="12" prefWidth="220">
+          <Label text="Pending" />
+          <Label fx:id="lblPending" text="0" styleClass="stat-large" />
+        </VBox>
+        <VBox styleClass="card" spacing="6" padding="12" prefWidth="220">
+          <Label text="Cleared" />
+          <Label fx:id="lblCleared" text="0" styleClass="stat-large" />
+        </VBox>
+        <VBox styleClass="card" spacing="6" padding="12" prefWidth="220">
+          <Label text="Bounced" />
+          <Label fx:id="lblBounced" text="0" styleClass="stat-large" />
+        </VBox>
+      </HBox>
+
+      <!-- Recent cheques table -->
+      <VBox spacing="8" VBox.vgrow="ALWAYS">
+        <Label text="Recent Cheques" styleClass="section-title" />
+        <TableView fx:id="tblCheques" VBox.vgrow="ALWAYS">
+          <columns>
+            <TableColumn fx:id="colNo" text="Cheque No" prefWidth="120" />
+            <TableColumn fx:id="colPayee" text="Payee" prefWidth="240" />
+            <TableColumn fx:id="colAmount" text="Amount" prefWidth="120" />
+            <TableColumn fx:id="colDate" text="Issue Date" prefWidth="140" />
+            <TableColumn fx:id="colStatus" text="Status" prefWidth="120" />
+          </columns>
+        </TableView>
+      </VBox>
+    </VBox>
+  </center>
+
+</BorderPane>

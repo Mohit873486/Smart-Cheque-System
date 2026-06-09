@@ -7,7 +7,16 @@ import java.time.LocalDate;
 public class Cheque {
 
     public enum Status {
-        Draft, Pending, Approved, Rejected, Printed, Cancelled
+        Draft,
+        Pending,
+        Deposited,
+        Cleared,
+        Bounced,
+        // legacy values retained for compatibility
+        Approved,
+        Rejected,
+        Printed,
+        Cancelled
     }
 
     private int id;

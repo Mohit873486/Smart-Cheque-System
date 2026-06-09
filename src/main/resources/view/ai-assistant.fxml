@@ -60,6 +60,13 @@
                   prefHeight="180"
                   maxHeight="Infinity"
                   style="-fx-font-family:'Consolas'; -fx-font-size:13px;" />
-    
+    </VBox>
+
+    <VBox spacing="14" styleClass="card" VBox.vgrow="ALWAYS" maxHeight="Infinity">
+        <Label text="Results" styleClass="section-title" />
+        <TableView fx:id="tblResults"
+                   VBox.vgrow="ALWAYS"
+                   prefHeight="200"
+                   maxHeight="Infinity" />
     </VBox>
 </VBox>
