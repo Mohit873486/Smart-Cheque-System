@@ -86,4 +86,69 @@ public class ChequeWorkflowService {
     auditService.record(actor, "cheques", chequeId, AuditAction.PRINT,
         "Printed cheque: " + cheque.getChequeNo());
   }
+
+  public void deposit(int chequeId, User actor) throws SQLException {
+    Cheque cheque = chequeService.getById(chequeId);
+    if (cheque == null) {
+      throw new IllegalArgumentException("Cheque not found: " + chequeId);
+    }
+    if (cheque.getStatus() != Cheque.Status.Printed && cheque.getStatus() != Cheque.Status.Approved) {
+      throw new IllegalStateException("Only approved or printed cheques can be marked as Deposited. Current status: " + cheque.getStatus());
+    }
+    boolean updated = chequeService.setStatus(cheque, Cheque.Status.Deposited);
+    if (!updated) {
+      throw new SQLException("Could not mark cheque as Deposited: " + cheque.getChequeNo());
+    }
+    auditService.record(actor, "cheques", chequeId, AuditAction.UPDATE,
+        "Marked cheque as Deposited: " + cheque.getChequeNo());
+  }
+
+  public void clear(int chequeId, User actor) throws SQLException {
+    Cheque cheque = chequeService.getById(chequeId);
+    if (cheque == null) {
+      throw new IllegalArgumentException("Cheque not found: " + chequeId);
+    }
+    if (cheque.getStatus() != Cheque.Status.Deposited && cheque.getStatus() != Cheque.Status.Printed) {
+      throw new IllegalStateException("Only printed or deposited cheques can be marked as Cleared. Current status: " + cheque.getStatus());
+    }
+    boolean updated = chequeService.setStatus(cheque, Cheque.Status.Cleared);
+    if (!updated) {
+      throw new SQLException("Could not mark cheque as Cleared: " + cheque.getChequeNo());
+    }
+    auditService.record(actor, "cheques", chequeId, AuditAction.UPDATE,
+        "Marked cheque as Cleared: " + cheque.getChequeNo());
+  }
+
+  public void bounce(int chequeId, User actor) throws SQLException {
+    Cheque cheque = chequeService.getById(chequeId);
+    if (cheque == null) {
+      throw new IllegalArgumentException("Cheque not found: " + chequeId);
+    }
+    if (cheque.getStatus() != Cheque.Status.Deposited && cheque.getStatus() != Cheque.Status.Printed) {
+      throw new IllegalStateException("Only printed or deposited cheques can be marked as Bounced. Current status: " + cheque.getStatus());
+    }
+    boolean updated = chequeService.setStatus(cheque, Cheque.Status.Bounced);
+    if (!updated) {
+      throw new SQLException("Could not mark cheque as Bounced: " + cheque.getChequeNo());
+    }
+    auditService.record(actor, "cheques", chequeId, AuditAction.UPDATE,
+        "Marked cheque as Bounced: " + cheque.getChequeNo());
+  }
+
+  public void cancel(int chequeId, User actor) throws SQLException {
+    Cheque cheque = chequeService.getById(chequeId);
+    if (cheque == null) {
+      throw new IllegalArgumentException("Cheque not found: " + chequeId);
+    }
+    Cheque.Status current = cheque.getStatus();
+    if (current == Cheque.Status.Cleared || current == Cheque.Status.Bounced || current == Cheque.Status.Rejected || current == Cheque.Status.Cancelled) {
+      throw new IllegalStateException("Cannot cancel a cheque that is in " + current.name() + " status.");
+    }
+    boolean updated = chequeService.setStatus(cheque, Cheque.Status.Cancelled);
+    if (!updated) {
+      throw new SQLException("Could not cancel cheque: " + cheque.getChequeNo());
+    }
+    auditService.record(actor, "cheques", chequeId, AuditAction.UPDATE,
+        "Cancelled cheque: " + cheque.getChequeNo());
+  }
 }

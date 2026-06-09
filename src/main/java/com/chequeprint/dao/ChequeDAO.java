@@ -192,6 +192,18 @@ public class ChequeDAO {
         }
     }
 
+    public boolean existsByChequeNo(String chequeNo, int excludeId) throws SQLException {
+        if (chequeNo == null || chequeNo.isBlank()) return false;
+        String sql = "SELECT COUNT(*) FROM cheques WHERE cheque_no = ? AND id != ?";
+        try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(sql)) {
+            ps.setString(1, chequeNo);
+            ps.setInt(2, excludeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        }
+    }
+
     // ---- HELPERS ----
     private int querySingleInt(String sql) throws SQLException {
         try (Statement st = AppConfig.getConnection().createStatement();

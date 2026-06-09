@@ -78,6 +78,8 @@ public class ChequeController {
     @FXML
     private Button btnPrint;
     @FXML
+    private MenuButton btnLifecycle;
+    @FXML
     private Button btnDelete;
     @FXML
     private Button btnSaveAndPrint;
@@ -135,6 +137,7 @@ public class ChequeController {
         setVisibleManaged(btnSaveAndPrint, canPrint);
         setVisibleManaged(btnApprove, canApprove);
         setVisibleManaged(btnPrint, canPrint);
+        setVisibleManaged(btnLifecycle, canUpdate || canApprove);
         setVisibleManaged(btnDelete, canDelete);
 
         fldPayee.setEditable(canEdit);
@@ -637,6 +640,100 @@ public class ChequeController {
         a.setTitle(title);
         a.setHeaderText(null);
         a.showAndWait();
+    }
+
+    @FXML
+    private void onDeposit() {
+        User actor = SessionManager.currentUser().orElse(null);
+        Cheque sel = chequeTable.getSelectionModel().getSelectedItem();
+        if (sel == null) {
+            showAlert("No Selection", "Please select a cheque to mark as deposited.", Alert.AlertType.WARNING);
+            return;
+        }
+        try {
+            workflowService.deposit(sel.getId(), actor);
+            showAlert("Success", "Cheque " + sel.getChequeNo() + " marked as Deposited.", Alert.AlertType.INFORMATION);
+            loadData();
+            clearForm();
+            refreshDashboard();
+        } catch (Exception e) {
+            showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+
+    @FXML
+    private void onClearCheque() {
+        User actor = SessionManager.currentUser().orElse(null);
+        Cheque sel = chequeTable.getSelectionModel().getSelectedItem();
+        if (sel == null) {
+            showAlert("No Selection", "Please select a cheque to mark as cleared.", Alert.AlertType.WARNING);
+            return;
+        }
+        try {
+            workflowService.clear(sel.getId(), actor);
+            showAlert("Success", "Cheque " + sel.getChequeNo() + " marked as Cleared.", Alert.AlertType.INFORMATION);
+            loadData();
+            clearForm();
+            refreshDashboard();
+        } catch (Exception e) {
+            showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+
+    @FXML
+    private void onBounce() {
+        User actor = SessionManager.currentUser().orElse(null);
+        Cheque sel = chequeTable.getSelectionModel().getSelectedItem();
+        if (sel == null) {
+            showAlert("No Selection", "Please select a cheque to mark as bounced.", Alert.AlertType.WARNING);
+            return;
+        }
+        try {
+            workflowService.bounce(sel.getId(), actor);
+            showAlert("Success", "Cheque " + sel.getChequeNo() + " marked as Bounced.", Alert.AlertType.INFORMATION);
+            loadData();
+            clearForm();
+            refreshDashboard();
+        } catch (Exception e) {
+            showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+
+    @FXML
+    private void onCancel() {
+        User actor = SessionManager.currentUser().orElse(null);
+        Cheque sel = chequeTable.getSelectionModel().getSelectedItem();
+        if (sel == null) {
+            showAlert("No Selection", "Please select a cheque to cancel.", Alert.AlertType.WARNING);
+            return;
+        }
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                "Are you sure you want to cancel / void cheque " + sel.getChequeNo() + "?",
+                ButtonType.YES, ButtonType.NO);
+        confirm.setTitle("Confirm Cancellation");
+        confirm.setHeaderText(null);
+        confirm.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.YES) {
+                try {
+                    workflowService.cancel(sel.getId(), actor);
+                    showAlert("Success", "Cheque " + sel.getChequeNo() + " has been cancelled.", Alert.AlertType.INFORMATION);
+                    loadData();
+                    clearForm();
+                    refreshDashboard();
+                } catch (Exception e) {
+                    showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
+                }
+            }
+        });
+    }
+
+    private void refreshDashboard() {
+        if (mainController != null) {
+            Object dc = mainController.getController("dashboard");
+            if (dc instanceof DashboardController) {
+                ((DashboardController) dc).reload();
+            }
+        }
     }
 
     public void setMainController(MainController mc) {

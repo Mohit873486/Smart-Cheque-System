@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS cheques (
     amount_words VARCHAR(600),
     bank_id INT,
     issue_date DATE NOT NULL,
-    status ENUM('Draft','Pending','Approved','Rejected','Printed','Cancelled') NOT NULL DEFAULT 'Draft',
+    status ENUM('Draft','Pending','Approved','Rejected','Printed','Cancelled','Deposited','Cleared','Bounced') NOT NULL DEFAULT 'Draft',
     printed_at TIMESTAMP NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
