@@ -1,11 +1,10 @@
 package com.chequeprint.controller;
 
-import com.chequeprint.dao.BankDAO;
 import com.chequeprint.model.Bank;
 import com.chequeprint.model.BankTemplateLayout;
 import com.chequeprint.model.FieldPosition;
 import com.chequeprint.model.LayoutField;
-import com.chequeprint.util.BankTemplateLayoutStore;
+import com.chequeprint.service.BankService;
 import com.chequeprint.util.BankTemplatePdfExporter;
 import com.chequeprint.util.ChequeSizeCodec;
 import com.chequeprint.util.ChequeSizePreset;
@@ -85,8 +84,7 @@ public class BankController {
     @FXML
     private TextField fldAdjustHeight;
 
-    private final BankDAO dao = new BankDAO();
-    private final BankTemplateLayoutStore layoutStore = new BankTemplateLayoutStore();
+    private final BankService bankService = new BankService();
     private final ObservableList<Bank> data = FXCollections.observableArrayList();
 
     private final Map<String, BankTemplateLayout> layoutByBankCode = new HashMap<>();
@@ -314,13 +312,13 @@ public class BankController {
 
     private void loadLayouts() {
         layoutByBankCode.clear();
-        layoutByBankCode.putAll(layoutStore.loadAll());
+        layoutByBankCode.putAll(bankService.loadAllLayouts());
     }
 
     private void loadData() {
         new Thread(() -> {
             try {
-                List<Bank> list = dao.findAll();
+                List<Bank> list = bankService.getAll();
                 Platform.runLater(() -> data.setAll(list));
             } catch (SQLException e) {
                 Platform.runLater(() -> showAlert("Load Error", e.getMessage(), Alert.AlertType.ERROR));
@@ -346,26 +344,18 @@ public class BankController {
         String encodedSize = ChequeSizeCodec.encode(preset, formLayout.getWidthInches(), formLayout.getHeightInches());
 
         try {
-            if (selectedBank == null) {
-                Bank bank = new Bank(name, code, encodedSize, chkMicr.isSelected());
-                dao.insert(bank);
+            Bank bank = selectedBank;
+            if (bank == null) {
+                bank = new Bank(name, code, encodedSize, chkMicr.isSelected());
             } else {
-                String oldCode = safeCode(selectedBank.getBankCode());
-                selectedBank.setBankName(name);
-                selectedBank.setBankCode(code);
-                selectedBank.setChequeSize(encodedSize);
-                selectedBank.setMicr(chkMicr.isSelected());
-                dao.update(selectedBank);
-                if (!oldCode.equals(code)) {
-                    BankTemplateLayout moved = layoutByBankCode.remove(oldCode);
-                    if (moved != null) {
-                        layoutByBankCode.put(code, moved);
-                    }
-                }
+                bank.setBankName(name);
+                bank.setBankCode(code);
+                bank.setChequeSize(encodedSize);
+                bank.setMicr(chkMicr.isSelected());
             }
 
-            layoutByBankCode.put(code, currentLayout != null ? currentLayout.copy() : formLayout.copy());
-            layoutStore.saveAll(layoutByBankCode);
+            BankTemplateLayout layoutToSave = currentLayout != null ? currentLayout.copy() : formLayout.copy();
+            bankService.save(bank, layoutToSave, layoutByBankCode);
 
             clearForm();
             loadData();
@@ -390,9 +380,7 @@ public class BankController {
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.YES) {
                 try {
-                    dao.delete(sel.getId());
-                    layoutByBankCode.remove(safeCode(sel.getBankCode()));
-                    layoutStore.saveAll(layoutByBankCode);
+                    bankService.delete(sel, layoutByBankCode);
                     clearForm();
                     loadData();
                 } catch (Exception e) {
@@ -607,7 +595,7 @@ public class BankController {
 
         try {
             layoutByBankCode.put(code, currentLayout.copy());
-            layoutStore.saveAll(layoutByBankCode);
+            bankService.saveLayouts(layoutByBankCode);
         } catch (Exception ex) {
             showAlert("Layout Save Error", "Unable to save cheque alignment: " + ex.getMessage(), Alert.AlertType.ERROR);
         }

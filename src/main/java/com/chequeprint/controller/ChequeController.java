@@ -1,6 +1,6 @@
 package com.chequeprint.controller;
 
-import com.chequeprint.dao.BankDAO;
+import com.chequeprint.service.BankService;
 import com.chequeprint.model.Bank;
 import com.chequeprint.model.Cheque;
 import com.chequeprint.model.User;
@@ -102,7 +102,7 @@ public class ChequeController {
     private final ChequeService chequeService = new ChequeService();
     private final ChequeWorkflowService workflowService = new ChequeWorkflowService();
     private final PrintService printService = new PrintService();
-    private final BankDAO bankDAO = new BankDAO();
+    private final BankService bankService = new BankService();
 
     private final ObservableList<Cheque> data = FXCollections.observableArrayList();
     private FilteredList<Cheque> filtered;
@@ -247,7 +247,7 @@ public class ChequeController {
     private void loadBanksIntoCombo() {
         new Thread(() -> {
             try {
-                List<Bank> banks = bankDAO.findAll();
+                List<Bank> banks = bankService.getAll();
                 Platform.runLater(() -> {
                     bankNameToId.clear();
                     ObservableList<String> names = FXCollections.observableArrayList();
@@ -300,9 +300,11 @@ public class ChequeController {
             String payee = fldPayee.getText().trim();
             String amtStr = fldAmount.getText().trim();
 
-            if (payee.isEmpty() || amtStr.isEmpty()) {
-                FxUtils.shake(fldPayee.getParent());
-                showAlert("Validation", "Payee name and amount are required.",
+            if (payee.isEmpty() || amtStr.isEmpty() || datePicker.getValue() == null) {
+                if (payee.isEmpty()) FxUtils.shake(fldPayee);
+                if (amtStr.isEmpty()) FxUtils.shake(fldAmount);
+                if (datePicker.getValue() == null) FxUtils.shake(datePicker);
+                showAlert("Validation", "Payee name, amount, and issue date are required.",
                         Alert.AlertType.WARNING);
                 return;
             }
@@ -369,9 +371,11 @@ public class ChequeController {
             String payee = fldPayee.getText().trim();
             String amtStr = fldAmount.getText().trim();
 
-            if (payee.isEmpty() || amtStr.isEmpty()) {
-                FxUtils.shake(fldPayee.getParent());
-                showAlert("Validation", "Payee name and amount are required.",
+            if (payee.isEmpty() || amtStr.isEmpty() || datePicker.getValue() == null) {
+                if (payee.isEmpty()) FxUtils.shake(fldPayee);
+                if (amtStr.isEmpty()) FxUtils.shake(fldAmount);
+                if (datePicker.getValue() == null) FxUtils.shake(datePicker);
+                showAlert("Validation", "Payee name, amount, and issue date are required.",
                         Alert.AlertType.WARNING);
                 return;
             }

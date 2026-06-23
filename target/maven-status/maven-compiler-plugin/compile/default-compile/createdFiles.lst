@@ -6,6 +6,7 @@ com\chequeprint\printpreview\PrintPreviewController.class
 com\chequeprint\service\OpenAiSqlQueryService.class
 com\chequeprint\service\OpenAiChequeOcrService.class
 com\chequeprint\controller\DashboardController$1.class
+com\chequeprint\service\SettingService.class
 com\chequeprint\controller\ModernDashboardController$4.class
 com\chequeprint\util\BankTemplatePdfExporter.class
 com\chequeprint\model\UserStatus.class
@@ -65,6 +66,7 @@ com\chequeprint\service\ChequeService.class
 com\chequeprint\preview\ChequeData.class
 com\chequeprint\dao\UserDAO.class
 com\chequeprint\model\LayoutField.class
+com\chequeprint\service\BankService.class
 com\chequeprint\controller\InvoiceController$1.class
 com\chequeprint\preview\ChequePrintService.class
 com\chequeprint\model\FieldPosition.class
@@ -84,6 +86,7 @@ com\chequeprint\model\ChequePrint.class
 com\chequeprint\preview\ChequeRenderer.class
 com\chequeprint\controller\ModernDashboardController$5.class
 com\chequeprint\util\AmountToWords.class
+com\chequeprint\util\NumberToWordsConverter.class
 com\chequeprint\controller\AiAssistantController$Worker.class
 com\chequeprint\util\FxUtils.class
 com\chequeprint\preview\ChequePrintPreviewApp.class

@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
-import com.chequeprint.dao.ChequeDAO;
+import com.chequeprint.service.ChequeService;
 import com.chequeprint.service.ChequeOcrResult;
 import com.chequeprint.service.ChequeOcrService;
 import com.chequeprint.service.OcrException;
@@ -51,6 +51,7 @@ public class ModernDashboardController {
     private Button btnUpdateStatus;
 
     private final ObservableList<Cheque> cheques = FXCollections.observableArrayList();
+    private final ChequeService chequeService = new ChequeService();
 
     @FXML
     public void initialize() {
@@ -99,8 +100,7 @@ public class ModernDashboardController {
         Task<List<Cheque>> task = new Task<>() {
             @Override
             protected List<Cheque> call() throws Exception {
-                ChequeDAO dao = new ChequeDAO();
-                return dao.getAllCheques();
+                return chequeService.getAll();
             }
         };
         task.setOnSucceeded(evt -> {
@@ -167,8 +167,7 @@ public class ModernDashboardController {
         }
 
         try {
-            ChequeDAO dao = new ChequeDAO();
-            boolean ok = dao.updateStatus(sel, chosen);
+            boolean ok = chequeService.setStatus(sel, chosen);
             if (ok) {
                 sel.setStatus(chosen);
                 tblCheques.refresh();
@@ -214,13 +213,14 @@ public class ModernDashboardController {
 
         dlg.setResultConverter(button -> button);
 
-        // validation: enable Add only when payee present and amount looks numeric
+        // validation: enable Add only when payee present, date present and amount looks numeric
         Node addBtn = dlg.getDialogPane().lookupButton(add);
         Runnable validate = () -> {
             boolean ok = true;
             String p = payee.getText();
             String a = amt.getText();
             if (p == null || p.isBlank()) ok = false;
+            if (dp.getValue() == null) ok = false;
             try {
                 if (a == null || a.isBlank()) ok = false;
                 else {
@@ -232,6 +232,7 @@ public class ModernDashboardController {
         };
         payee.textProperty().addListener((s,o,n) -> validate.run());
         amt.textProperty().addListener((s,o,n) -> validate.run());
+        dp.valueProperty().addListener((s,o,n) -> validate.run());
         validate.run();
 
         var res = dlg.showAndWait();
@@ -244,15 +245,14 @@ public class ModernDashboardController {
             c.setChequeNo(chequeNo.isBlank() ? "CHQ-" + (1000 + cheques.size()+1) : chequeNo);
             c.setPayeeName(payeeName);
             c.setAmount(BigDecimal.valueOf(amount));
-            c.setIssueDate(dp.getValue() != null ? dp.getValue() : LocalDate.now());
+            c.setIssueDate(dp.getValue());
             c.setStatus(Cheque.Status.Pending);
 
             // persist using DAO in background
             Task<Boolean> saveTask = new Task<>() {
                 @Override
                 protected Boolean call() throws Exception {
-                    ChequeDAO dao = new ChequeDAO();
-                    return dao.saveCheque(c);
+                    return chequeService.save(c);
                 }
             };
             saveTask.setOnSucceeded(evt -> {

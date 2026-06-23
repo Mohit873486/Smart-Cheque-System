@@ -1,6 +1,6 @@
 package com.chequeprint.controller;
 
-import com.chequeprint.dao.SettingDAO;
+import com.chequeprint.service.SettingService;
 import com.chequeprint.model.Settings;
 import com.chequeprint.util.FxUtils;
 import javafx.collections.FXCollections;
@@ -95,6 +95,7 @@ public class SettingsController {
     private TextField tfSigY;
 
     private MainController mainController;
+    private final SettingService settingService = new SettingService();
 
     public void setMainController(MainController mainController) {
         this.mainController = mainController;
@@ -234,9 +235,8 @@ public class SettingsController {
                     language, chequePrefix,
                     invoicePrefix, theme);
 
-            // 🔥 DAO CALL
-            SettingDAO dao = new SettingDAO();
-            dao.saveSettings(s);
+            // 🔥 Service Call
+            settingService.saveSettings(s);
 
             // persist signature metadata
             try {

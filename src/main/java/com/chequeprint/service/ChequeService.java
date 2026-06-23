@@ -2,7 +2,7 @@ package com.chequeprint.service;
 
 import com.chequeprint.dao.ChequeDAO;
 import com.chequeprint.model.Cheque;
-import com.chequeprint.util.AmountToWords;
+import com.chequeprint.util.NumberToWordsConverter;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
@@ -26,20 +26,24 @@ public class ChequeService {
     }
 
     public boolean save(Cheque c) throws SQLException {
+        return createCheque(c);
+    }
+
+    public boolean createCheque(Cheque c) throws SQLException {
         if (c.getChequeNo() == null || c.getChequeNo().isBlank()) {
             c.setChequeNo(generateChequeNo());
             while (dao.existsByChequeNo(c.getChequeNo(), c.getId())) {
                 c.setChequeNo(generateChequeNo());
             }
         }
-        validate(c);
-        c.setAmountWords(AmountToWords.convert(c.getAmount().doubleValue()));
+        validateCheque(c);
+        c.setAmountWords(convertAmountToWords(c.getAmount()));
         return dao.insert(c);
     }
 
     public boolean update(Cheque c) throws SQLException {
-        validate(c);
-        c.setAmountWords(AmountToWords.convert(c.getAmount().doubleValue()));
+        validateCheque(c);
+        c.setAmountWords(convertAmountToWords(c.getAmount()));
         return dao.update(c);
     }
 
@@ -87,7 +91,7 @@ public class ChequeService {
     }
 
     // --- Helpers ---
-    private void validate(Cheque c) throws SQLException {
+    public void validateCheque(Cheque c) throws SQLException {
         if (c.getPayeeName() == null || c.getPayeeName().isBlank())
             throw new IllegalArgumentException("Payee name is required.");
         if (c.getPayeeName().length() > 150)
@@ -101,15 +105,14 @@ public class ChequeService {
             throw new IllegalArgumentException("Amount exceeds maximum allowed limit.");
 
         if (c.getIssueDate() == null) {
-            c.setIssueDate(LocalDate.now());
-        } else {
-            LocalDate today = LocalDate.now();
-            if (c.getIssueDate().isBefore(today.minusDays(90))) {
-                throw new IllegalArgumentException("Cheque date cannot be older than 90 days (stale cheque).");
-            }
-            if (c.getIssueDate().isAfter(today.plusDays(180))) {
-                throw new IllegalArgumentException("Cheque date cannot be more than 180 days in the future.");
-            }
+            throw new IllegalArgumentException("Issue date is required.");
+        }
+        LocalDate today = LocalDate.now();
+        if (c.getIssueDate().isBefore(today.minusDays(90))) {
+            throw new IllegalArgumentException("Cheque date cannot be older than 90 days (stale cheque).");
+        }
+        if (c.getIssueDate().isAfter(today.plusDays(180))) {
+            throw new IllegalArgumentException("Cheque date cannot be more than 180 days in the future.");
         }
 
         if (c.getChequeNo() != null && !c.getChequeNo().isBlank()) {
@@ -117,6 +120,13 @@ public class ChequeService {
                 throw new IllegalArgumentException("Cheque number '" + c.getChequeNo() + "' already exists.");
             }
         }
+    }
+
+    public String convertAmountToWords(BigDecimal amount) {
+        if (amount == null) {
+            return "";
+        }
+        return NumberToWordsConverter.convert(amount);
     }
 
     private String generateChequeNo() {
