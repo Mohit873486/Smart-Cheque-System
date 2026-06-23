@@ -16,6 +16,7 @@ com\chequeprint\controller\ChequeController.class
 com\chequeprint\controller\SettingsController.class
 com\chequeprint\model\BankTemplateLayout.class
 com\chequeprint\model\Cheque$Status.class
+com\chequeprint\util\JasperPrintUtil$1.class
 com\chequeprint\controller\DashboardController.class
 com\chequeprint\service\AccessControl.class
 com\chequeprint\service\OpenAiChequeOcrService$ChequeOcrResult.class
@@ -71,9 +72,11 @@ com\chequeprint\controller\InvoiceController$1.class
 com\chequeprint\preview\ChequePrintService.class
 com\chequeprint\model\FieldPosition.class
 com\chequeprint\model\Settings.class
+com\chequeprint\controller\ChequeHistoryController.class
 com\chequeprint\controller\SignupController.class
 com\chequeprint\controller\ModernDashboardController$2.class
 com\chequeprint\service\GeminiApiClient.class
+com\chequeprint\controller\ChequeHistoryController$1.class
 com\chequeprint\preview\ChequePrintPreviewApp$1.class
 com\chequeprint\util\AccessDeniedException.class
 com\chequeprint\preview\ChequeField.class
@@ -111,6 +114,7 @@ com\chequeprint\service\OpenAiChequeAssistantService.class
 com\chequeprint\util\JasperPrintUtil.class
 com\chequeprint\service\MultiAgentCoordinatorService$1.class
 com\chequeprint\MainApp.class
+com\chequeprint\printpreview\PrintPreviewDocument$PrintHandler.class
 com\chequeprint\service\SmartSuggestionService.class
 com\chequeprint\util\SessionManager.class
 com\chequeprint\service\OcrException.class

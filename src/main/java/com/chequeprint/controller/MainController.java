@@ -16,6 +16,11 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
+import com.chequeprint.util.SessionManager;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.application.Platform;
+import javafx.scene.input.InputEvent;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -43,6 +48,8 @@ public class MainController {
   private HBox navDashboard;
   @FXML
   private HBox navCheques;
+  @FXML
+  private HBox navChequeHistory;
   @FXML
   private HBox navInvoices;
   @FXML
@@ -79,6 +86,7 @@ public class MainController {
     {
       put("dashboard", "/view/dashboard.fxml");
       put("cheques", "/view/cheques.fxml");
+      put("history", "/view/cheque_history.fxml");
       put("invoices", "/view/invoices.fxml");
       put("banks", "/view/banks.fxml");
       put("ai", "/view/ai-assistant.fxml");
@@ -96,6 +104,7 @@ public class MainController {
     {
       put("dashboard", "Dashboard");
       put("cheques", "Cheque Management");
+      put("history", "Cheque History");
       put("invoices", "Invoice Management");
       put("banks", "Bank Templates");
       put("ai", "AI Assistant");
@@ -136,6 +145,12 @@ public class MainController {
   private void onCheques() {
     navigate("cheques");
     setActiveNav(navCheques);
+  }
+
+  @FXML
+  private void onChequeHistory() {
+    navigate("history");
+    setActiveNav(navChequeHistory);
   }
 
   @FXML
@@ -206,11 +221,74 @@ public class MainController {
     onSupport();
   }
 
+  private Timeline sessionTimeoutTimeline;
+
   public void setCurrentUser(User currentUser) {
     this.currentUser = currentUser;
     applyRolePermissions();
     updateUserFooter();
     navigateRoleLanding();
+    startSessionTimeoutCheck();
+  }
+
+  private void startSessionTimeoutCheck() {
+    if (sessionTimeoutTimeline != null) {
+      sessionTimeoutTimeline.stop();
+    }
+    SessionManager.updateActivity();
+
+    Platform.runLater(() -> {
+      if (contentPane != null && contentPane.getScene() != null) {
+        contentPane.getScene().addEventFilter(InputEvent.ANY, e -> {
+          SessionManager.updateActivity();
+        });
+      }
+    });
+
+    sessionTimeoutTimeline = new Timeline(new KeyFrame(Duration.seconds(10), e -> checkSessionTimeout()));
+    sessionTimeoutTimeline.setCycleCount(Timeline.INDEFINITE);
+    sessionTimeoutTimeline.play();
+  }
+
+  private void checkSessionTimeout() {
+    if (SessionManager.isExpired()) {
+      if (sessionTimeoutTimeline != null) {
+        sessionTimeoutTimeline.stop();
+      }
+      handleAutoLogout();
+    }
+  }
+
+  private void handleAutoLogout() {
+    Platform.runLater(() -> {
+      try {
+        if (sessionTimeoutTimeline != null) {
+          sessionTimeoutTimeline.stop();
+        }
+        com.chequeprint.service.AuthService authService = new com.chequeprint.service.AuthService();
+        authService.logout();
+        SessionManager.clear();
+
+        javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/login.fxml"));
+        Parent root = loader.load();
+        javafx.stage.Stage stage = (javafx.stage.Stage) contentPane.getScene().getWindow();
+        javafx.scene.Scene scene = new javafx.scene.Scene(root, 900, 620);
+        var stylesheet = getClass().getResource("/css/style.css");
+        if (stylesheet != null) {
+          scene.getStylesheets().add(stylesheet.toExternalForm());
+        }
+        stage.setScene(scene);
+        stage.setTitle("Smart Cheque Management System - Sign In");
+        stage.centerOnScreen();
+
+        Alert alert = new Alert(Alert.AlertType.WARNING, "Your session has expired due to inactivity. Please log in again.");
+        alert.setTitle("Session Expired");
+        alert.setHeaderText(null);
+        alert.show();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    });
   }
 
   private void updateUserFooter() {
@@ -242,6 +320,10 @@ public class MainController {
       var res = confirm.showAndWait();
       if (res.isEmpty() || res.get() != javafx.scene.control.ButtonType.OK) {
         return;
+      }
+
+      if (sessionTimeoutTimeline != null) {
+        sessionTimeoutTimeline.stop();
       }
 
       // Perform logout
@@ -285,6 +367,7 @@ public class MainController {
   private void applyRolePermissions() {
     setNavAllowed(navDashboard, "dashboard");
     setNavAllowed(navCheques, "cheques");
+    setNavAllowed(navChequeHistory, "history");
     setNavAllowed(navInvoices, "invoices");
     setNavAllowed(navBanks, "banks");
     setNavAllowed(navAiAssistant, "ai");
@@ -306,6 +389,7 @@ public class MainController {
   private HBox navItemFor(String page) {
     return switch (page) {
       case "cheques" -> navCheques;
+      case "history" -> navChequeHistory;
       case "invoices" -> navInvoices;
       case "banks" -> navBanks;
       case "ai" -> navAiAssistant;
@@ -326,6 +410,10 @@ public class MainController {
   // ================= MAIN NAVIGATION (ADVANCED) =================
 
   public void navigate(String page) {
+    if (SessionManager.isExpired()) {
+      handleAutoLogout();
+      return;
+    }
 
     if (!isPageAllowed(page)) {
       headerTitle.setText("Access Denied");

@@ -80,7 +80,7 @@
                 <text><![CDATA[Date:]]></text>
             </staticText>
             <textField>
-                <reportElement x="452" y="50" width="112" height="18" />
+                <reportElement key="date" x="452" y="50" width="112" height="18" />
                 <box>
                     <bottomPen lineWidth="0.75" lineColor="#1e293b"/>
                 </box>
@@ -95,7 +95,7 @@
                 <text><![CDATA[Pay:]]></text>
             </staticText>
             <textField>
-                <reportElement x="62" y="82" width="500" height="20" />
+                <reportElement key="payee" x="62" y="82" width="500" height="20" />
                 <box>
                     <bottomPen lineWidth="0.75" lineColor="#1e293b"/>
                 </box>
@@ -131,7 +131,7 @@
                 <graphicElement><pen lineWidth="1.2" lineColor="#1a56db"/></graphicElement>
             </rectangle>
             <textField>
-                <reportElement x="518" y="112" width="46" height="24" />
+                <reportElement key="amount" x="518" y="112" width="46" height="24" />
                 <textElement textAlignment="Center" verticalAlignment="Middle">
                     <font size="10" isBold="true"/>
                 </textElement>

@@ -15,6 +15,7 @@ public final class AccessControl {
   private static final Map<String, Permission> PAGE_PERMISSIONS = Map.of(
       "dashboard", Permission.VIEW_DASHBOARD,
       "cheques", Permission.VIEW_CHEQUES,
+      "history", Permission.VIEW_CHEQUES,
       "invoices", Permission.VIEW_INVOICES,
       "banks", Permission.VIEW_BANK_TEMPLATES,
       "ai", Permission.ACCESS_AI_ASSISTANT,

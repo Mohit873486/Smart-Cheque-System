@@ -6,12 +6,18 @@ public final class PrintPreviewDocument {
         String savePdf() throws Exception;
     }
 
+    @FunctionalInterface
+    public interface PrintHandler {
+        boolean print() throws Exception;
+    }
+
     private final String windowTitle;
     private final String documentTitle;
     private final String jobName;
     private final String htmlContent;
     private final double widthMm;
     private final double heightMm;
+    private final PrintHandler printHandler;
     private final PdfSaveHandler pdfSaveHandler;
 
     public PrintPreviewDocument(
@@ -21,6 +27,7 @@ public final class PrintPreviewDocument {
             String htmlContent,
             double widthMm,
             double heightMm,
+            PrintHandler printHandler,
             PdfSaveHandler pdfSaveHandler) {
         this.windowTitle = windowTitle;
         this.documentTitle = documentTitle;
@@ -28,6 +35,7 @@ public final class PrintPreviewDocument {
         this.htmlContent = htmlContent;
         this.widthMm = widthMm;
         this.heightMm = heightMm;
+        this.printHandler = printHandler;
         this.pdfSaveHandler = pdfSaveHandler;
     }
 
@@ -53,6 +61,10 @@ public final class PrintPreviewDocument {
 
     public double getHeightMm() {
         return heightMm;
+    }
+
+    public PrintHandler getPrintHandler() {
+        return printHandler;
     }
 
     public PdfSaveHandler getPdfSaveHandler() {

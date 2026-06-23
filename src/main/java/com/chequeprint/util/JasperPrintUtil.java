@@ -15,6 +15,13 @@ import net.sf.jasperreports.engine.export.JRPdfExporter;
 import net.sf.jasperreports.export.SimpleExporterInput;
 import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
 import net.sf.jasperreports.export.SimplePdfExporterConfiguration;
+import net.sf.jasperreports.engine.xml.JRXmlLoader;
+import net.sf.jasperreports.engine.design.JasperDesign;
+import net.sf.jasperreports.engine.design.JRDesignElement;
+import net.sf.jasperreports.engine.JRBand;
+import net.sf.jasperreports.engine.JRElement;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.io.File;
 import java.io.InputStream;
@@ -35,9 +42,7 @@ public class JasperPrintUtil {
     }
 
     public static boolean printCheque(Cheque cheque, Bank bankTemplate) throws JRException {
-        JasperReport jr = compileChequeReport(cheque, bankTemplate);
-        Map<String, Object> params = buildChequeParams(cheque);
-        JasperPrint print = JasperFillManager.fillReport(jr, params, new JREmptyDataSource());
+        JasperPrint print = generateChequePrintObject(cheque, bankTemplate);
         JasperPrintManager.printReport(print, false);
         cheque.setStatus(Cheque.Status.Printed);
         return true;
@@ -88,10 +93,7 @@ public class JasperPrintUtil {
     }
 
     public static String exportChequePdf(Cheque cheque, String outputDir, Bank bankTemplate) throws JRException {
-        JasperReport jr = compileChequeReport(cheque, bankTemplate);
-        Map<String, Object> params = buildChequeParams(cheque);
-
-        JasperPrint print = JasperFillManager.fillReport(jr, params, new JREmptyDataSource());
+        JasperPrint print = generateChequePrintObject(cheque, bankTemplate);
 
         File dir = new File(outputDir);
         if (!dir.exists()) {
@@ -148,6 +150,12 @@ public class JasperPrintUtil {
         return pdfPath;
     }
 
+    public static JasperPrint generateChequePrintObject(Cheque cheque, Bank bankTemplate) throws JRException {
+        JasperReport jr = compileChequeReport(cheque, bankTemplate);
+        Map<String, Object> params = buildChequeParams(cheque);
+        return JasperFillManager.fillReport(jr, params, new JREmptyDataSource());
+    }
+
     private static JasperReport compileChequeReport(Cheque cheque, Bank bankTemplate) throws JRException {
         List<String> candidates = resolveChequeTemplateCandidates(cheque, bankTemplate);
 
@@ -156,14 +164,22 @@ public class JasperPrintUtil {
                 String path = candidate.substring("file:".length());
                 File file = new File(path);
                 if (file.isFile()) {
-                    return JasperCompileManager.compileReport(path);
+                    try {
+                        JasperDesign design = JRXmlLoader.load(path);
+                        applyTemplatePositions(design);
+                        return JasperCompileManager.compileReport(design);
+                    } catch (Exception ex) {
+                        throw new JRException("Failed to compile file template: " + path, ex);
+                    }
                 }
                 continue;
             }
 
             try (InputStream template = JasperPrintUtil.class.getResourceAsStream(candidate)) {
                 if (template != null) {
-                    return JasperCompileManager.compileReport(template);
+                    JasperDesign design = JRXmlLoader.load(template);
+                    applyTemplatePositions(design);
+                    return JasperCompileManager.compileReport(design);
                 }
             } catch (Exception ex) {
                 throw new JRException("Failed to compile cheque template: " + candidate, ex);
@@ -173,6 +189,61 @@ public class JasperPrintUtil {
         throw new JRException("No cheque template found for bank '"
                 + nvl(cheque.getBankName(), "Unknown")
                 + "'. Tried: " + String.join(", ", candidates));
+    }
+
+    private static Map<String, Map<String, Integer>> loadTemplatePositions() {
+        try (InputStream is = JasperPrintUtil.class.getResourceAsStream("/config/template.json")) {
+            if (is == null) {
+                return new HashMap<>();
+            }
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(is, new TypeReference<Map<String, Map<String, Integer>>>() {});
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new HashMap<>();
+        }
+    }
+
+    private static void applyTemplatePositions(JasperDesign design) {
+        Map<String, Map<String, Integer>> positions = loadTemplatePositions();
+        if (positions.isEmpty()) {
+            return;
+        }
+
+        List<JRBand> bands = new ArrayList<>();
+        if (design.getTitle() != null) bands.add((JRBand) design.getTitle());
+        if (design.getPageHeader() != null) bands.add((JRBand) design.getPageHeader());
+        if (design.getColumnHeader() != null) bands.add((JRBand) design.getColumnHeader());
+        
+        if (design.getDetailSection() != null) {
+            JRBand[] detailBands = design.getDetailSection().getBands();
+            if (detailBands != null) {
+                for (JRBand detailBand : detailBands) {
+                    if (detailBand != null) {
+                        bands.add(detailBand);
+                    }
+                }
+            }
+        }
+        if (design.getColumnFooter() != null) bands.add((JRBand) design.getColumnFooter());
+        if (design.getPageFooter() != null) bands.add((JRBand) design.getPageFooter());
+        if (design.getSummary() != null) bands.add((JRBand) design.getSummary());
+
+        for (JRBand band : bands) {
+            for (JRElement element : band.getElements()) {
+                String key = element.getKey();
+                if (key != null && positions.containsKey(key)) {
+                    Map<String, Integer> coords = positions.get(key);
+                    if (element instanceof JRDesignElement) {
+                        JRDesignElement de = (JRDesignElement) element;
+                        if (coords.containsKey("x")) de.setX(coords.get("x"));
+                        if (coords.containsKey("y")) de.setY(coords.get("y"));
+                        if (coords.containsKey("width")) de.setWidth(coords.get("width"));
+                        if (coords.containsKey("height")) de.setHeight(coords.get("height"));
+                    }
+                }
+            }
+        }
     }
 
     private static Map<String, Object> buildInvoiceParams(Invoice invoice) {

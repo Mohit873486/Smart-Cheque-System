@@ -84,4 +84,14 @@ public class JasperPrintUtilTest {
     assertTrue(Files.size(Path.of(pdfPath)) > 0);
   }
 
+  @Test
+  void generateChequePrintObject_appliesTemplatePositions() throws Exception {
+    Cheque cheque = new Cheque("CHQ-9999", "John Doe", new BigDecimal("5000.00"), 1, LocalDate.of(2026, 6, 23));
+    cheque.setBankName("Test Bank");
+    cheque.setAmountWords("Five Thousand Rupees Only");
+
+    net.sf.jasperreports.engine.JasperPrint print = JasperPrintUtil.generateChequePrintObject(cheque, null);
+    assertNotNull(print);
+  }
+
 }

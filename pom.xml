@@ -154,6 +154,7 @@
                     <include>**/*.properties</include>
                     <include>**/*.sql</include>
                     <include>**/*.html</include>
+                    <include>**/*.json</include>
                 </includes>
             </resource>
         </resources>

@@ -11,6 +11,8 @@ import java.util.Optional;
 public final class SessionManager {
     private static User currentUser;
     private static Instant loginTime;
+    private static Instant lastActivityTime;
+    private static final long SESSION_TIMEOUT_SECONDS = 900; // 15 minutes
 
     private SessionManager() {
     }
@@ -18,6 +20,7 @@ public final class SessionManager {
     public static void start(User user) {
         currentUser = user;
         loginTime = Instant.now();
+        lastActivityTime = Instant.now();
     }
 
     public static Optional<User> currentUser() {
@@ -26,6 +29,17 @@ public final class SessionManager {
 
     public static User requireUser() {
         return currentUser().orElseThrow(() -> new IllegalStateException("No authenticated user in session."));
+    }
+
+    public static void updateActivity() {
+        lastActivityTime = Instant.now();
+    }
+
+    public static boolean isExpired() {
+        if (currentUser == null) {
+            return false;
+        }
+        return lastActivityTime != null && Instant.now().isAfter(lastActivityTime.plusSeconds(SESSION_TIMEOUT_SECONDS));
     }
 
     public static boolean hasRole(UserRole role) {
@@ -43,5 +57,6 @@ public final class SessionManager {
     public static void clear() {
         currentUser = null;
         loginTime = null;
+        lastActivityTime = null;
     }
 }

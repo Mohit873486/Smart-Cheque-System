@@ -137,6 +137,9 @@ public class UserDAO {
     }
 
     public void updatePassword(int userId, String passwordHash) throws SQLException {
+        if (passwordHash != null && !com.chequeprint.util.PasswordUtil.isBcryptHash(passwordHash)) {
+            passwordHash = com.chequeprint.util.PasswordUtil.hash(passwordHash);
+        }
         String sql = "UPDATE users SET password = ? WHERE id = ?";
         try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(sql)) {
             ps.setString(1, passwordHash);
@@ -206,6 +209,9 @@ public class UserDAO {
     }
 
     public boolean insertOrUpdate(User u) throws SQLException {
+        if (u.getPassword() != null && !u.getPassword().isEmpty() && !com.chequeprint.util.PasswordUtil.isBcryptHash(u.getPassword())) {
+            u.setPassword(com.chequeprint.util.PasswordUtil.hash(u.getPassword()));
+        }
         if (u.getId() == 0) {
 
             String sql = "INSERT INTO users (username,name,email,phone,company,address,password,role) VALUES(?,?,?,?,?,?,?,?)";

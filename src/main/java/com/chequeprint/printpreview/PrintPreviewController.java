@@ -123,64 +123,30 @@ public class PrintPreviewController {
 
     @FXML
     private void onPrint() {
-
-        if (document == null) {
+        if (document == null || document.getPrintHandler() == null) {
             showAlert(
                     "Print",
-                    "Unable to print: no document loaded.",
+                    "Unable to print: no print handler configured.",
                     Alert.AlertType.ERROR);
             return;
         }
-
-        String printerName = cmbPrinter.getValue();
-        Printer printer = selectPrinter(printerName);
-        if (printer == null) {
-            showAlert(
-                    "Print",
-                    "No printer is available. Please add/select a printer in Windows printer settings.",
-                    Alert.AlertType.ERROR);
-            return;
-        }
-
-        PrinterJob job = PrinterJob.createPrinterJob(printer);
-        if (job == null) {
-            showAlert(
-                    "Printer",
-                    "Unable to create a printer job.",
-                    Alert.AlertType.ERROR);
-            return;
-        }
-
-        if (document.getJobName() != null && !document.getJobName().isBlank()) {
-            job.getJobSettings().setJobName(document.getJobName());
-        }
-
-        PageOrientation orientation = document.getWidthMm() >= document.getHeightMm()
-                ? PageOrientation.LANDSCAPE
-                : PageOrientation.PORTRAIT;
-        Paper paper = choosePaper(printer, orientation);
-        PageLayout layout = printer.createPageLayout(paper, orientation, 0, 0, 0, 0);
-        job.getJobSettings().setPageLayout(layout);
 
         try {
-            previewWebView.getEngine().print(job);
+            boolean ok = document.getPrintHandler().print();
+            if (ok) {
+                printed = true;
+                closeWindow();
+            } else {
+                showAlert(
+                        "Print",
+                        "Print job failed or was cancelled.",
+                        Alert.AlertType.INFORMATION);
+            }
         } catch (Exception ex) {
             showAlert(
-                    "Print",
-                    "Unable to print the preview content: " + ex.getMessage(),
+                    "Print Error",
+                    "Failed to print document: " + ex.getMessage(),
                     Alert.AlertType.ERROR);
-            return;
-        }
-
-        boolean ended = job.endJob();
-        if (ended) {
-            printed = true;
-            closeWindow();
-        } else {
-            showAlert(
-                    "Print",
-                    "Print job was cancelled or failed.",
-                    Alert.AlertType.INFORMATION);
         }
     }
 
@@ -228,7 +194,18 @@ public class PrintPreviewController {
                 Files.createDirectories(targetPath.getParent());
             }
 
-            exportCurrentPreviewPdf(targetPath);
+            String tempPdfPath = document.getPdfSaveHandler().savePdf();
+            if (tempPdfPath != null && !tempPdfPath.isBlank()) {
+                Path tempPath = Path.of(tempPdfPath);
+                if (Files.exists(tempPath)) {
+                    Files.copy(tempPath, targetPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    Files.deleteIfExists(tempPath);
+                } else {
+                    throw new Exception("Temp PDF file was not generated.");
+                }
+            } else {
+                throw new Exception("PDF export handler returned empty path.");
+            }
 
             lastSaveDirectory = targetPath.getParent();
 
@@ -393,48 +370,7 @@ public class PrintPreviewController {
         return mm * 72.0 / 25.4;
     }
 
-    private void exportCurrentPreviewPdf(Path targetPath) throws Exception {
-        String selectedZoom = cmbZoom.getValue();
-        double previousZoom = previewWebView.getZoom();
-
-        previewWebView.setZoom(1.0);
-        resizePreviewWebView(1.0);
-        previewWebView.applyCss();
-        previewWebView.layout();
-
-        SnapshotParameters params = new SnapshotParameters();
-        params.setFill(Color.WHITE);
-        WritableImage snapshot = previewWebView.snapshot(params, null);
-
-        if (selectedZoom != null) {
-            applyZoom(selectedZoom);
-        } else {
-            previewWebView.setZoom(previousZoom);
-            resizePreviewWebView(previousZoom);
-        }
-
-        BufferedImage buffered = SwingFXUtils.fromFXImage(snapshot, null);
-        ByteArrayOutputStream imageBytes = new ByteArrayOutputStream();
-        ImageIO.write(buffered, "png", imageBytes);
-
-        Rectangle pageSize = new Rectangle(
-                (float) mmToPt(document.getWidthMm()),
-                (float) mmToPt(document.getHeightMm()));
-
-        Document pdf = new Document(pageSize, 0, 0, 0, 0);
-        try (var out = Files.newOutputStream(targetPath)) {
-            PdfWriter.getInstance(pdf, out);
-            pdf.open();
-            com.lowagie.text.Image image = com.lowagie.text.Image.getInstance(imageBytes.toByteArray());
-            image.setAbsolutePosition(0, 0);
-            image.scaleAbsolute(pageSize.getWidth(), pageSize.getHeight());
-            pdf.add(image);
-        } finally {
-            if (pdf.isOpen()) {
-                pdf.close();
-            }
-        }
-    }
+    // WebView snapshot PDF exporter removed to use JasperReports exclusively
 
     private void openContainingFolder(Path file) {
         try {

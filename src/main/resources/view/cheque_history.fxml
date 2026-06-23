@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+    styleClass="page-scroll"
+    xmlns:fx="http://javafx.com/fxml/1"
+    fx:controller="com.chequeprint.controller.ChequeHistoryController">
+
+    <VBox fx:id="rootPane" spacing="22" styleClass="cheque-page"
+        maxWidth="Infinity" maxHeight="Infinity">
+        <padding>
+            <Insets top="26" right="28" bottom="28" left="28" />
+        </padding>
+
+        <!-- Title -->
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Cheque History" styleClass="dashboard-title" />
+                <Label text="View, search, and audit all cheque records and printing activity"
+                    styleClass="dashboard-subtitle" />
+            </VBox>
+        </HBox>
+
+        <!-- Filters Bar -->
+        <VBox spacing="14" styleClass="cheque-list-panel" VBox.vgrow="ALWAYS" maxWidth="Infinity" maxHeight="Infinity">
+            <HBox spacing="14" alignment="CENTER_LEFT" styleClass="cheque-filter-bar">
+                <HBox spacing="8" alignment="CENTER_LEFT" styleClass="search-shell"
+                    prefWidth="220" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+                    <Label text="⌕" styleClass="search-icon" />
+                    <TextField fx:id="searchField" promptText="Search payee name, cheque #..."
+                        styleClass="search-input-field" HBox.hgrow="ALWAYS"
+                        maxWidth="Infinity" />
+                </HBox>
+                
+                <DatePicker fx:id="filterDate" promptText="Filter by issue date" styleClass="form-date" prefWidth="170" />
+                
+                <ComboBox fx:id="filterStatus" styleClass="filter-combo" promptText="Status: All" prefWidth="150" />
+                
+                <ComboBox fx:id="filterBank" styleClass="filter-combo" promptText="Bank: All" prefWidth="160" />
+                
+                <Button text="Reset Filters" styleClass="btn-outline-muted" onAction="#onResetFilters" />
+            </HBox>
+
+            <!-- TableView -->
+            <TableView fx:id="chequeTable" styleClass="modern-table"
+                VBox.vgrow="ALWAYS" maxHeight="Infinity">
+                <columnResizePolicy>
+                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                </columnResizePolicy>
+                <placeholder>
+                    <Label text="No matching cheques found in history."
+                        styleClass="table-placeholder" />
+                </placeholder>
+                <columns>
+                    <TableColumn fx:id="colChequeNo" text="Cheque #" minWidth="110" />
+                    <TableColumn fx:id="colPayee" text="Payee" minWidth="180" />
+                    <TableColumn fx:id="colAmount" text="Amount" minWidth="130" />
+                    <TableColumn fx:id="colBank" text="Bank Name" minWidth="140" />
+                    <TableColumn fx:id="colDate" text="Issue Date" minWidth="120" />
+                    <TableColumn fx:id="colStatus" text="Status" minWidth="110" />
+                </columns>
+            </TableView>
+
+            <!-- Action / Summary Footer -->
+            <HBox spacing="16" alignment="CENTER_LEFT" styleClass="table-action-footer">
+                <Button fx:id="btnPrint" text="Print Selected" styleClass="btn-primary" onAction="#onPrint" />
+                <Region HBox.hgrow="ALWAYS" />
+                <HBox spacing="20" alignment="CENTER_RIGHT">
+                    <HBox spacing="8" alignment="CENTER_LEFT">
+                        <Label text="Total Cheques:" styleClass="footer-hint" style="-fx-font-weight: bold;" />
+                        <Label fx:id="lblTotalCount" text="0" styleClass="footer-hint" />
+                    </HBox>
+                    <HBox spacing="8" alignment="CENTER_LEFT">
+                        <Label text="Total Amount:" styleClass="footer-hint" style="-fx-font-weight: bold;" />
+                        <Label fx:id="lblTotalAmount" text="₹0.00" styleClass="footer-hint" style="-fx-text-fill: #1a56db;" />
+                    </HBox>
+                </HBox>
+            </HBox>
+        </VBox>
+    </VBox>
+</ScrollPane>
