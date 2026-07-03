@@ -16,7 +16,7 @@ import java.util.List;
 
 public class ChequeApiClient {
 
-    private static final String BASE_URL = "http://localhost:8080/api/cheques";
+    private static final String BASE_URL = "http://localhost:8081/api/cheques";
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
@@ -135,6 +135,23 @@ public class ChequeApiClient {
             return Boolean.parseBoolean(response.body());
         } else {
             throw new IOException("Failed to check cheque number existence. HTTP: " + response.statusCode());
+        }
+    }
+
+    public List<Cheque> searchCheques(String query) throws Exception {
+        String url = BASE_URL + "/search?query=" + java.net.URLEncoder.encode(query, java.nio.charset.StandardCharsets.UTF_8);
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .GET()
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200) {
+            return objectMapper.readValue(response.body(), 
+                objectMapper.getTypeFactory().constructCollectionType(List.class, Cheque.class));
+        } else {
+            throw new IOException("Failed to search cheques. HTTP: " + response.statusCode());
         }
     }
 }

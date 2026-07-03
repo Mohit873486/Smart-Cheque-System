@@ -132,4 +132,8 @@ public class ChequeService {
     private String generateChequeNo() {
         return "CHQ-" + System.currentTimeMillis();
     }
+
+    public List<Cheque> search(String query) throws SQLException {
+        return dao.search(query);
+    }
 }

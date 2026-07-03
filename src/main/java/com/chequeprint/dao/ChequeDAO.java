@@ -128,4 +128,12 @@ public class ChequeDAO {
             throw new SQLException("Failed to check cheque existence via REST API", e);
         }
     }
+
+    public List<Cheque> search(String query) throws SQLException {
+        try {
+            return client.searchCheques(query);
+        } catch (Exception e) {
+            throw new SQLException("Failed to search cheques via REST API", e);
+        }
+    }
 }

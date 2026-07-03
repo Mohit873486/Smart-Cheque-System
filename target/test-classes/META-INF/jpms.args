@@ -1,6 +1,0 @@
---add-reads
-com.chequeprint=ALL-UNNAMED
---patch-module
-com.chequeprint=_
---add-reads
-com.chequeprint=ALL-UNNAMED

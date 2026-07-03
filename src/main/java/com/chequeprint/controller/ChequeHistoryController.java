@@ -150,24 +150,56 @@ public class ChequeHistoryController {
         String status = filterStatus.getValue();
         String bank = filterBank.getValue();
 
-        filtered.setPredicate(c -> {
-            boolean matchSearch = search.isEmpty()
-                    || (c.getPayeeName() != null && c.getPayeeName().toLowerCase().contains(search))
-                    || (c.getChequeNo() != null && c.getChequeNo().toLowerCase().contains(search));
-            
-            boolean matchDate = pickedDate == null
-                    || (c.getIssueDate() != null && c.getIssueDate().equals(pickedDate));
+        if (!search.isEmpty()) {
+            new Thread(() -> {
+                try {
+                    List<Cheque> results = chequeService.search(search);
+                    Platform.runLater(() -> {
+                        ObservableList<Cheque> filteredResults = FXCollections.observableArrayList();
+                        for (Cheque c : results) {
+                            boolean matchDate = pickedDate == null
+                                    || (c.getIssueDate() != null && c.getIssueDate().equals(pickedDate));
+                            boolean matchStatus = status == null || "All".equals(status)
+                                    || (c.getStatus() != null && c.getStatus().name().equals(status));
+                            boolean matchBank = bank == null || "All".equals(bank)
+                                    || (c.getBankName() != null && c.getBankName().equals(bank));
+                            if (matchDate && matchStatus && matchBank) {
+                                filteredResults.add(c);
+                            }
+                        }
+                        chequeTable.setItems(filteredResults);
+                        
+                        // Recalculate summary based on current table items
+                        int count = filteredResults.size();
+                        BigDecimal total = BigDecimal.ZERO;
+                        for (Cheque c : filteredResults) {
+                            if (c.getAmount() != null) {
+                                total = total.add(c.getAmount());
+                            }
+                        }
+                        lblTotalCount.setText(String.valueOf(count));
+                        lblTotalAmount.setText("₹" + String.format("%,.2f", total));
+                    });
+                } catch (Exception e) {
+                    Platform.runLater(() -> showAlert("Search Error", e.getMessage(), Alert.AlertType.ERROR));
+                }
+            }, "api-search-history").start();
+        } else {
+            filtered.setPredicate(c -> {
+                boolean matchDate = pickedDate == null
+                        || (c.getIssueDate() != null && c.getIssueDate().equals(pickedDate));
 
-            boolean matchStatus = status == null || "All".equals(status)
-                    || (c.getStatus() != null && c.getStatus().name().equals(status));
+                boolean matchStatus = status == null || "All".equals(status)
+                        || (c.getStatus() != null && c.getStatus().name().equals(status));
 
-            boolean matchBank = bank == null || "All".equals(bank)
-                    || (c.getBankName() != null && c.getBankName().equals(bank));
+                boolean matchBank = bank == null || "All".equals(bank)
+                        || (c.getBankName() != null && c.getBankName().equals(bank));
 
-            return matchSearch && matchDate && matchStatus && matchBank;
-        });
-
-        recalculateSummary();
+                return matchDate && matchStatus && matchBank;
+            });
+            chequeTable.setItems(filtered);
+            recalculateSummary();
+        }
     }
 
     private void recalculateSummary() {

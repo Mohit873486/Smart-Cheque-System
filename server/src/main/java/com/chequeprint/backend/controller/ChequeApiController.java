@@ -65,4 +65,9 @@ public class ChequeApiController {
         boolean exists = service.existsByChequeNo(chequeNo, excludeId);
         return ResponseEntity.ok(exists);
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<Cheque>> searchCheques(@RequestParam String query) {
+        return ResponseEntity.ok(service.searchCheques(query));
+    }
 }

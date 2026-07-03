@@ -61,4 +61,8 @@ public class ChequeService {
     public Optional<Cheque> findByChequeNo(String chequeNo) {
         return repository.findByChequeNo(chequeNo);
     }
+
+    public List<Cheque> searchCheques(String query) {
+        return repository.searchCheques(query);
+    }
 }

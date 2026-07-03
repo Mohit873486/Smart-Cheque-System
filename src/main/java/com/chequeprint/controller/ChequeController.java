@@ -226,15 +226,31 @@ public class ChequeController {
                 : searchField.getText().toLowerCase().trim();
         String status = filterStatus.getValue();
 
-        filtered.setPredicate(c -> {
-            boolean matchSearch = search.isEmpty()
-                    || (c.getPayeeName() != null && c.getPayeeName().toLowerCase().contains(search))
-                    || (c.getChequeNo() != null && c.getChequeNo().toLowerCase().contains(search))
-                    || (c.getBankName() != null && c.getBankName().toLowerCase().contains(search));
-            boolean matchStatus = "All".equals(status)
-                    || (c.getStatus() != null && c.getStatus().name().equals(status));
-            return matchSearch && matchStatus;
-        });
+        if (!search.isEmpty()) {
+            new Thread(() -> {
+                try {
+                    List<Cheque> results = chequeService.search(search);
+                    Platform.runLater(() -> {
+                        ObservableList<Cheque> filteredResults = FXCollections.observableArrayList();
+                        for (Cheque c : results) {
+                            if ("All".equals(status) || (c.getStatus() != null && c.getStatus().name().equals(status))) {
+                                filteredResults.add(c);
+                            }
+                        }
+                        chequeTable.setItems(filteredResults);
+                    });
+                } catch (Exception e) {
+                    Platform.runLater(() -> showAlert("Search Error", e.getMessage(), Alert.AlertType.ERROR));
+                }
+            }, "api-search-cheques").start();
+        } else {
+            filtered.setPredicate(c -> {
+                boolean matchStatus = "All".equals(status)
+                        || (c.getStatus() != null && c.getStatus().name().equals(status));
+                return matchStatus;
+            });
+            chequeTable.setItems(filtered);
+        }
     }
 
     public void applyMainSearch(String query) {
