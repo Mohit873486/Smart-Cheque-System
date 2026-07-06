@@ -2,6 +2,7 @@ package com.chequeprint.service;
 
 import com.chequeprint.model.User;
 import com.chequeprint.model.UserRole;
+import com.chequeprint.dao.UserDAO;
 import com.chequeprint.util.PasswordUtil;
 import com.chequeprint.util.SessionManager;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -47,7 +48,9 @@ public class UserService {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
-                return objectMapper.readValue(response.body(), User.class);
+                User loadedUser = objectMapper.readValue(response.body(), User.class);
+                SessionManager.start(loadedUser);
+                return loadedUser;
             } else {
                 throw new IOException("Failed to load profile. HTTP: " + response.statusCode());
             }
@@ -67,9 +70,21 @@ public class UserService {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-            return response.statusCode() == 200;
+            if (response.statusCode() == 200) {
+                SessionManager.start(user);
+                return true;
+            }
+            return false;
         } catch (Exception e) {
-            throw new SQLException("Failed to update profile via REST API", e);
+            try {
+                UserDAO dao = new UserDAO();
+                boolean success = dao.insertOrUpdate(user);
+                if (success) {
+                    SessionManager.start(user);
+                    return true;
+                }
+            } catch (Exception ignored) {}
+            throw new SQLException("Failed to update profile via REST API and JDBC fallback", e);
         }
     }
 

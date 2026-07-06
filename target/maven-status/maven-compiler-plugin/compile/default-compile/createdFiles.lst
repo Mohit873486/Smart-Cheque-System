@@ -99,6 +99,7 @@ com\chequeprint\controller\AiAssistantController$Worker.class
 com\chequeprint\util\FxUtils.class
 com\chequeprint\preview\ChequePrintPreviewApp.class
 com\chequeprint\controller\DashboardController$DashboardData.class
+com\chequeprint\controller\EditProfileDialogController.class
 com\chequeprint\controller\ModernDashboardController$3.class
 com\chequeprint\service\ChequeReminderService.class
 com\chequeprint\printpreview\PrintPreviewDocument$PdfSaveHandler.class

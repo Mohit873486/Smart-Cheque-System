@@ -181,16 +181,20 @@
                                                  promptText="Administrator" />
                                    </VBox>
 
-                                   <!-- Save Button -->
-                                   <HBox alignment="CENTER_RIGHT" spacing="12">
-                                          <Button fx:id="btnCancelProfile" text="Discard Changes"
-                                                 onAction="#onCancel"
-                                                 style="-fx-background-color: white; -fx-text-fill: #374151; -fx-font-weight: 600; -fx-font-size: 13px; -fx-background-radius: 8; -fx-padding: 10 20; -fx-cursor: hand; -fx-border-color: #d1d5db; -fx-border-radius: 8;"
-                                          />
-                                          <Button fx:id="btnSaveProfile" text="Save Changes"
-                                                 style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: 600; -fx-font-size: 13px; -fx-background-radius: 8; -fx-padding: 10 20; -fx-cursor: hand;"
-                                                 onAction="#onSave" />
-                                   </HBox>
+                                    <!-- Edit / Save Buttons -->
+                                    <HBox alignment="CENTER_RIGHT" spacing="12">
+                                           <Button fx:id="btnEditProfile" text="Edit Profile"
+                                                  onAction="#onEditProfile"
+                                                  style="-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: 600; -fx-font-size: 13px; -fx-background-radius: 8; -fx-padding: 10 20; -fx-cursor: hand;"
+                                           />
+                                           <Button fx:id="btnCancelProfile" text="Discard Changes"
+                                                  onAction="#onCancel" visible="false" managed="false"
+                                                  style="-fx-background-color: white; -fx-text-fill: #374151; -fx-font-weight: 600; -fx-font-size: 13px; -fx-background-radius: 8; -fx-padding: 10 20; -fx-cursor: hand; -fx-border-color: #d1d5db; -fx-border-radius: 8;"
+                                           />
+                                           <Button fx:id="btnSaveProfile" text="Save Changes" visible="false" managed="false"
+                                                  style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: 600; -fx-font-size: 13px; -fx-background-radius: 8; -fx-padding: 10 20; -fx-cursor: hand;"
+                                                  onAction="#onSave" />
+                                    </HBox>
                             </VBox>
 
                             <!-- Business Info -->
@@ -245,6 +249,24 @@
                                            <TableColumn fx:id="colAction" text="Action" prefWidth="120" />
                                            <TableColumn fx:id="colDetails" text="Details" prefWidth="350" />
                                            <TableColumn fx:id="colTimestamp" text="Timestamp" prefWidth="180" />
+                                       </columns>
+                                   </TableView>
+                            </VBox>
+
+                            <!-- Recent Cheque Activity Card -->
+                            <VBox spacing="16"
+                                   style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 24; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
+                                   <Label text="Recent Cheque Activity"
+                                          style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
+                                   <Separator style="-fx-opacity: 0.5;" />
+
+                                   <TableView fx:id="tblRecentCheques" prefHeight="220"
+                                              style="-fx-background-color: transparent; -fx-background-radius: 8; -fx-border-color: #e5e7eb; -fx-border-radius: 8;">
+                                       <columns>
+                                           <TableColumn fx:id="colChequeNo" text="Cheque No" prefWidth="120" />
+                                           <TableColumn fx:id="colPayee" text="Payee" prefWidth="250" />
+                                           <TableColumn fx:id="colAmount" text="Amount" prefWidth="120" />
+                                           <TableColumn fx:id="colStatus" text="Status" prefWidth="120" />
                                        </columns>
                                    </TableView>
                             </VBox>

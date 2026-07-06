@@ -8,6 +8,7 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\MainApp.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\Invoice.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\OpenAiChequeAssistantService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\OpenAiChequeOcrService.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\EditProfileDialogController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\BankController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\MultiAgentCoordinatorService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\JasperPrintUtil.java

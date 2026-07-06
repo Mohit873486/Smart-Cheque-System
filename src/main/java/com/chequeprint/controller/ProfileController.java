@@ -2,8 +2,10 @@ package com.chequeprint.controller;
 
 import com.chequeprint.model.User;
 import com.chequeprint.model.AuditLog;
+import com.chequeprint.model.Cheque;
 import com.chequeprint.service.UserService;
 import com.chequeprint.util.FxUtils;
+import com.chequeprint.util.SessionManager;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -51,7 +53,7 @@ public class ProfileController {
     private PasswordField pfCurrentPassword, pfNewPassword, pfConfirmPassword;
 
     @FXML
-    private Button btnSaveProfile, btnCancelProfile, btnSaveBusiness, btnChangePassword;
+    private Button btnSaveProfile, btnCancelProfile, btnSaveBusiness, btnChangePassword, btnEditProfile;
 
     @FXML
     private TableView<AuditLog> tblActivity;
@@ -61,6 +63,17 @@ public class ProfileController {
     private TableColumn<AuditLog, String> colDetails;
     @FXML
     private TableColumn<AuditLog, String> colTimestamp;
+
+    @FXML
+    private TableView<Cheque> tblRecentCheques;
+    @FXML
+    private TableColumn<Cheque, String> colChequeNo;
+    @FXML
+    private TableColumn<Cheque, String> colPayee;
+    @FXML
+    private TableColumn<Cheque, String> colAmount;
+    @FXML
+    private TableColumn<Cheque, String> colStatus;
 
     private final UserService userService = new UserService();
     private final com.chequeprint.service.ChequeService chequeService = new com.chequeprint.service.ChequeService();
@@ -79,7 +92,9 @@ public class ProfileController {
             FxUtils.animateIn(rootPane, 0);
         }
 
+        disableEditingMode();
         setupActivityTable();
+        setupRecentChequesTable();
         loadProfile();
     }
 
@@ -89,11 +104,19 @@ public class ProfileController {
     private void loadProfile() {
         new Thread(() -> {
             try {
-                user = userService.loadProfile();
+                try {
+                    user = userService.loadProfile();
+                } catch (Exception e) {
+                    try {
+                        user = SessionManager.requireUser();
+                    } catch (Exception ignored) {}
+                }
 
                 int chequesCount = 0;
+                List<Cheque> chequeList = Collections.emptyList();
                 try {
-                    chequesCount = chequeService.getAll().size();
+                    chequeList = chequeService.getAll();
+                    chequesCount = chequeList.size();
                 } catch (Exception ignored) {}
 
                 int invoicesCount = 0;
@@ -125,6 +148,7 @@ public class ProfileController {
                 final int finalInvoices = invoicesCount;
                 final int finalBanks = banksCount;
                 final List<AuditLog> finalActivity = activityList;
+                final List<Cheque> finalChequeList = chequeList;
                 final LocalDateTime finalLastLogin = lastLoginTime;
 
                 if (user != null) {
@@ -185,6 +209,10 @@ public class ProfileController {
                             tblActivity.setItems(FXCollections.observableArrayList(finalActivity));
                         }
 
+                        if (tblRecentCheques != null) {
+                            tblRecentCheques.setItems(FXCollections.observableArrayList(finalChequeList));
+                        }
+
                         updateAvatarImage();
                     });
                 }
@@ -208,6 +236,27 @@ public class ProfileController {
             colTimestamp.setCellValueFactory(cellData -> {
                 LocalDateTime dt = cellData.getValue().getCreatedAt();
                 return new SimpleStringProperty(dt != null ? dt.toString().replace("T", " ") : "");
+            });
+        }
+    }
+
+    private void setupRecentChequesTable() {
+        if (colChequeNo != null) {
+            colChequeNo.setCellValueFactory(new PropertyValueFactory<>("chequeNo"));
+        }
+        if (colPayee != null) {
+            colPayee.setCellValueFactory(new PropertyValueFactory<>("payeeName"));
+        }
+        if (colAmount != null) {
+            colAmount.setCellValueFactory(cellData -> {
+                java.math.BigDecimal amt = cellData.getValue().getAmount();
+                return new SimpleStringProperty(amt != null ? amt.toString() : "0.00");
+            });
+        }
+        if (colStatus != null) {
+            colStatus.setCellValueFactory(cellData -> {
+                Object status = cellData.getValue().getStatus();
+                return new SimpleStringProperty(status != null ? status.toString() : "");
             });
         }
     }
@@ -239,6 +288,7 @@ public class ProfileController {
             }
 
             updateUIAfterSave();
+            disableEditingMode();
 
             new Alert(Alert.AlertType.INFORMATION, "Profile saved successfully.").show();
 
@@ -329,6 +379,7 @@ public class ProfileController {
     private void onCancel() {
         System.out.println("Cancel Clicked");
         loadProfile();
+        disableEditingMode();
     }
 
     // =========================
@@ -428,6 +479,62 @@ public class ProfileController {
             } catch (Exception e) {
                 new Alert(Alert.AlertType.ERROR, "Failed to copy image: " + e.getMessage()).show();
             }
+        }
+    }
+
+    private void setFieldsEditable(boolean editable) {
+        if (tfFirstName != null) tfFirstName.setEditable(editable);
+        if (tfLastName != null) tfLastName.setEditable(editable);
+        if (tfEmail != null) tfEmail.setEditable(editable);
+        if (tfPhone != null) tfPhone.setEditable(editable);
+        if (tfCompany != null) tfCompany.setEditable(editable);
+
+        double opacity = editable ? 1.0 : 0.85;
+        if (tfFirstName != null) tfFirstName.setOpacity(opacity);
+        if (tfLastName != null) tfLastName.setOpacity(opacity);
+        if (tfEmail != null) tfEmail.setOpacity(opacity);
+        if (tfPhone != null) tfPhone.setOpacity(opacity);
+        if (tfCompany != null) tfCompany.setOpacity(opacity);
+    }
+
+    @FXML
+    private void onEditProfile() {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/edit_profile_dialog.fxml"));
+            javafx.scene.Parent root = loader.load();
+
+            EditProfileDialogController controller = loader.getController();
+            controller.initData(user);
+
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            stage.initOwner(rootPane.getScene().getWindow());
+            stage.setTitle("Edit Profile");
+            stage.setScene(new javafx.scene.Scene(root));
+            stage.showAndWait();
+
+            if (controller.isSaved()) {
+                loadProfile();
+            }
+        } catch (Exception e) {
+            new Alert(Alert.AlertType.ERROR, "Could not open edit profile window: " + e.getMessage()).show();
+            e.printStackTrace();
+        }
+    }
+
+    private void disableEditingMode() {
+        setFieldsEditable(false);
+        if (btnEditProfile != null) {
+            btnEditProfile.setVisible(true);
+            btnEditProfile.setManaged(true);
+        }
+        if (btnCancelProfile != null) {
+            btnCancelProfile.setVisible(false);
+            btnCancelProfile.setManaged(false);
+        }
+        if (btnSaveProfile != null) {
+            btnSaveProfile.setVisible(false);
+            btnSaveProfile.setManaged(false);
         }
     }
 }
