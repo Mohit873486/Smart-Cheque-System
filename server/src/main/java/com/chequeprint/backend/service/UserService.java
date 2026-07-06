@@ -89,6 +89,29 @@ public class UserService {
         auditLogService.record(null, "users", id, "DELETE", "Deleted user: " + existing.get().getUsername());
     }
 
+    public void changePassword(int id, String currentPassword, String newPassword) {
+        User user = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + id));
+
+        if (!BCrypt.checkpw(currentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect.");
+        }
+
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new IllegalArgumentException("New password must be at least 6 characters long.");
+        }
+
+        String hashedPassword = BCrypt.hashpw(newPassword, BCrypt.gensalt(12));
+        user.setPassword(hashedPassword);
+        repository.save(user);
+
+        auditLogService.record(null, "users", user.getId(), "UPDATE", "Changed password for user: " + user.getUsername());
+    }
+
+    public List<com.chequeprint.backend.entity.AuditLog> getUserActivity(int id) {
+        return auditLogService.getHistoryByUserId(id);
+    }
+
     private void validateNewUser(User user) {
         if (user.getUsername() == null || user.getUsername().isBlank()) {
             throw new IllegalArgumentException("Username is required.");

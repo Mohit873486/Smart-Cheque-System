@@ -13,6 +13,7 @@ com\chequeprint\backend\repository\ChequeRepository.class
 com\chequeprint\backend\service\ChequeService.class
 com\chequeprint\backend\controller\BankTemplateApiController.class
 com\chequeprint\backend\repository\UserRepository.class
+com\chequeprint\backend\model\ChangePasswordRequest.class
 com\chequeprint\backend\dto\LoginResponse$UserDto.class
 com\chequeprint\backend\service\AuthService.class
 com\chequeprint\backend\ChequeBackendApplication.class

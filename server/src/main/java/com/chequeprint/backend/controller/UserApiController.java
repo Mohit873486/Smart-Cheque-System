@@ -62,6 +62,21 @@ public class UserApiController {
         }
     }
 
+    @PostMapping("/{id}/change-password")
+    public ResponseEntity<?> changePassword(@PathVariable int id, @RequestBody com.chequeprint.backend.model.ChangePasswordRequest request) {
+        try {
+            userService.changePassword(id, request.getCurrentPassword(), request.getNewPassword());
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/activity")
+    public ResponseEntity<List<com.chequeprint.backend.entity.AuditLog>> getUserActivity(@PathVariable int id) {
+        return ResponseEntity.ok(userService.getUserActivity(id));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('Admin')")
     public ResponseEntity<?> deleteUser(@PathVariable int id) {

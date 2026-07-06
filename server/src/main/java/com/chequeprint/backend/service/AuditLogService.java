@@ -42,4 +42,9 @@ public class AuditLogService {
     public List<AuditLog> getRecent(int limit) {
         return auditLogRepository.findAll(PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "id"))).getContent();
     }
+
+    @Transactional(readOnly = true)
+    public List<AuditLog> getHistoryByUserId(Integer userId) {
+        return auditLogRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    }
 }

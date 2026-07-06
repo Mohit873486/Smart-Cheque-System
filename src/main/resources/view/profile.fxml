@@ -37,9 +37,9 @@
                                    style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 28 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
 
                                    <!-- Avatar Circle -->
-                                   <StackPane>
+                                   <StackPane onMouseClicked="#onUploadAvatar" style="-fx-cursor: hand;">
                                           <Circle fx:id="avatarCircle" radius="48"
-                                                 style="-fx-fill: #2563eb;" />
+                                                 fill="#2563eb" />
                                           <Label fx:id="lblAvatarInitials" text="AD"
                                                  style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;" />
                                    </StackPane>
@@ -49,6 +49,8 @@
                                                  style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
                                           <Label fx:id="lblProfileRole" text="Administrator"
                                                  style="-fx-font-size: 13px; -fx-text-fill: #6b7280;" />
+                                          <Label fx:id="lblLastLogin" text="Last Login: N/A"
+                                                 style="-fx-font-size: 11px; -fx-text-fill: #9ca3af; -fx-font-weight: 500;" />
                                    </VBox>
 
                                    <!-- Status Badge -->
@@ -73,7 +75,7 @@
                                           <VBox spacing="4" alignment="CENTER" HBox.hgrow="ALWAYS">
                                                  <Label fx:id="lblStatInvoices" text="0"
                                                         style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
-                                                 <Label text="Invoices"
+                                                 <Label text="Transactions"
                                                         style="-fx-font-size: 11px; -fx-text-fill: #9ca3af;" />
                                           </VBox>
                                           <Separator orientation="VERTICAL" prefHeight="36" />
@@ -230,6 +232,22 @@
                                    </HBox>
                             </VBox>
 
+                            <!-- Activity History Card -->
+                            <VBox spacing="16"
+                                   style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 24; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
+                                   <Label text="Recent Activity &amp; Cheque History"
+                                          style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
+                                   <Separator style="-fx-opacity: 0.5;" />
+
+                                   <TableView fx:id="tblActivity" prefHeight="220"
+                                              style="-fx-background-color: transparent; -fx-background-radius: 8; -fx-border-color: #e5e7eb; -fx-border-radius: 8;">
+                                       <columns>
+                                           <TableColumn fx:id="colAction" text="Action" prefWidth="120" />
+                                           <TableColumn fx:id="colDetails" text="Details" prefWidth="350" />
+                                           <TableColumn fx:id="colTimestamp" text="Timestamp" prefWidth="180" />
+                                       </columns>
+                                   </TableView>
+                            </VBox>
                      </VBox>
               </HBox>
        </VBox>

@@ -1,12 +1,19 @@
 package com.chequeprint.controller;
 
 import com.chequeprint.model.User;
+import com.chequeprint.model.AuditLog;
 import com.chequeprint.service.UserService;
 import com.chequeprint.util.FxUtils;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
+import javafx.collections.FXCollections;
+import javafx.beans.property.SimpleStringProperty;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Collections;
 
 public class ProfileController {
 
@@ -26,7 +33,9 @@ public class ProfileController {
     // NEW UI FIELDS (MERGED)
     // =========================
     @FXML
-    private Label lblAvatarInitials, lblProfileName, lblProfileRole;
+    private Label lblAvatarInitials, lblProfileName, lblProfileRole, lblLastLogin;
+    @FXML
+    private javafx.scene.shape.Circle avatarCircle;
 
     @FXML
     private Label lblStatCheques, lblStatInvoices, lblStatBanks;
@@ -44,7 +53,19 @@ public class ProfileController {
     @FXML
     private Button btnSaveProfile, btnCancelProfile, btnSaveBusiness, btnChangePassword;
 
+    @FXML
+    private TableView<AuditLog> tblActivity;
+    @FXML
+    private TableColumn<AuditLog, String> colAction;
+    @FXML
+    private TableColumn<AuditLog, String> colDetails;
+    @FXML
+    private TableColumn<AuditLog, String> colTimestamp;
+
     private final UserService userService = new UserService();
+    private final com.chequeprint.service.ChequeService chequeService = new com.chequeprint.service.ChequeService();
+    private final com.chequeprint.service.InvoiceService invoiceService = new com.chequeprint.service.InvoiceService();
+    private final com.chequeprint.service.BankService bankService = new com.chequeprint.service.BankService();
     private User user;
     private MainController mainController;
 
@@ -58,6 +79,7 @@ public class ProfileController {
             FxUtils.animateIn(rootPane, 0);
         }
 
+        setupActivityTable();
         loadProfile();
     }
 
@@ -68,6 +90,42 @@ public class ProfileController {
         new Thread(() -> {
             try {
                 user = userService.loadProfile();
+
+                int chequesCount = 0;
+                try {
+                    chequesCount = chequeService.getAll().size();
+                } catch (Exception ignored) {}
+
+                int invoicesCount = 0;
+                try {
+                    invoicesCount = invoiceService.getAll().size();
+                } catch (Exception ignored) {}
+
+                int banksCount = 0;
+                try {
+                    banksCount = bankService.getAll().size();
+                } catch (Exception ignored) {}
+
+                List<AuditLog> activityList = Collections.emptyList();
+                if (user != null) {
+                    try {
+                        activityList = userService.loadUserActivity(user.getId());
+                    } catch (Exception ignored) {}
+                }
+
+                LocalDateTime lastLoginTime = null;
+                for (AuditLog log : activityList) {
+                    if ("LOGIN".equalsIgnoreCase(String.valueOf(log.getAction()))) {
+                        lastLoginTime = log.getCreatedAt();
+                        break;
+                    }
+                }
+
+                final int finalCheques = chequesCount;
+                final int finalInvoices = invoicesCount;
+                final int finalBanks = banksCount;
+                final List<AuditLog> finalActivity = activityList;
+                final LocalDateTime finalLastLogin = lastLoginTime;
 
                 if (user != null) {
                     Platform.runLater(() -> {
@@ -91,6 +149,7 @@ public class ProfileController {
                         set(tfEmail, user.getEmail());
                         set(tfPhone, user.getPhone());
                         set(tfCompany, user.getCompany());
+                        set(tfRole, user.getRole());
 
                         // =========================
                         // PROFILE UI HEADER
@@ -104,10 +163,29 @@ public class ProfileController {
                         if (lblProfileName != null)
                             lblProfileName.setText(user.getName());
 
-                        // default role (if not in DB)
                         if (lblProfileRole != null)
-                            lblProfileRole.setText("User");
+                            lblProfileRole.setText(user.getRole() != null ? user.getRole() : "User");
 
+                        if (lblLastLogin != null) {
+                            if (finalLastLogin != null) {
+                                lblLastLogin.setText("Last Login: " + finalLastLogin.toString().replace("T", " "));
+                            } else {
+                                lblLastLogin.setText("Last Login: N/A");
+                            }
+                        }
+
+                        if (lblStatCheques != null)
+                            lblStatCheques.setText(String.valueOf(finalCheques));
+                        if (lblStatInvoices != null)
+                            lblStatInvoices.setText(String.valueOf(finalInvoices));
+                        if (lblStatBanks != null)
+                            lblStatBanks.setText(String.valueOf(finalBanks));
+
+                        if (tblActivity != null) {
+                            tblActivity.setItems(FXCollections.observableArrayList(finalActivity));
+                        }
+
+                        updateAvatarImage();
                     });
                 }
 
@@ -116,6 +194,22 @@ public class ProfileController {
                         "Could not load profile: " + e.getMessage()).show());
             }
         }, "load-profile").start();
+    }
+
+    private void setupActivityTable() {
+        if (colAction != null) {
+            colAction.setCellValueFactory(cellData -> new SimpleStringProperty(
+                    cellData.getValue().getAction() != null ? cellData.getValue().getAction().name() : ""));
+        }
+        if (colDetails != null) {
+            colDetails.setCellValueFactory(new PropertyValueFactory<>("details"));
+        }
+        if (colTimestamp != null) {
+            colTimestamp.setCellValueFactory(cellData -> {
+                LocalDateTime dt = cellData.getValue().getCreatedAt();
+                return new SimpleStringProperty(dt != null ? dt.toString().replace("T", " ") : "");
+            });
+        }
     }
 
     // =========================
@@ -282,5 +376,58 @@ public class ProfileController {
             return new String[] { "", "" };
         String[] parts = fullName.trim().split(" ", 2);
         return parts.length == 2 ? parts : new String[] { parts[0], "" };
+    }
+
+    private java.io.File getProfileImageFile(int userId) {
+        java.io.File dir = new java.io.File(System.getProperty("user.home") + "/.chequeprint/profiles");
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        return new java.io.File(dir, userId + ".png");
+    }
+
+    private void updateAvatarImage() {
+        if (user == null) return;
+        java.io.File imageFile = getProfileImageFile(user.getId());
+        if (imageFile.exists()) {
+            try {
+                javafx.scene.image.Image img = new javafx.scene.image.Image(imageFile.toURI().toString());
+                avatarCircle.setFill(new javafx.scene.paint.ImagePattern(img));
+                if (lblAvatarInitials != null) {
+                    lblAvatarInitials.setVisible(false);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            avatarCircle.setFill(javafx.scene.paint.Color.web("#2563eb"));
+            if (lblAvatarInitials != null) {
+                lblAvatarInitials.setVisible(true);
+            }
+        }
+    }
+
+    @FXML
+    private void onUploadAvatar() {
+        if (user == null || user.getId() == 0) {
+            new Alert(Alert.AlertType.WARNING, "Please wait until profile is loaded.").show();
+            return;
+        }
+        javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+        fileChooser.setTitle("Select Profile Image");
+        fileChooser.getExtensionFilters().addAll(
+                new javafx.stage.FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
+        );
+        java.io.File selectedFile = fileChooser.showOpenDialog(rootPane.getScene().getWindow());
+        if (selectedFile != null) {
+            try {
+                java.io.File targetFile = getProfileImageFile(user.getId());
+                java.nio.file.Files.copy(selectedFile.toPath(), targetFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                updateAvatarImage();
+                new Alert(Alert.AlertType.INFORMATION, "Profile image updated successfully.").show();
+            } catch (Exception e) {
+                new Alert(Alert.AlertType.ERROR, "Failed to copy image: " + e.getMessage()).show();
+            }
+        }
     }
 }
