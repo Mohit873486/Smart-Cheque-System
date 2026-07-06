@@ -80,6 +80,18 @@ CREATE TABLE IF NOT EXISTS bank_templates (
     UNIQUE KEY uq_bank_code (bank_code)
 );
 
+-- ACCOUNTS
+CREATE TABLE IF NOT EXISTS accounts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    account_number VARCHAR(30) NOT NULL UNIQUE,
+    account_holder_name VARCHAR(150) NOT NULL,
+    bank_name VARCHAR(100) NOT NULL,
+    branch_name VARCHAR(100) NOT NULL,
+    ifsc_code VARCHAR(20) NOT NULL,
+    balance DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- CHEQUES
 CREATE TABLE IF NOT EXISTS cheques (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -88,6 +100,7 @@ CREATE TABLE IF NOT EXISTS cheques (
     amount DECIMAL(15,2) NOT NULL CHECK (amount > 0),
     amount_words VARCHAR(600),
     bank_id INT,
+    account_id INT NOT NULL,
     issue_date DATE NOT NULL,
     status ENUM('Draft','Pending','Approved','Rejected','Printed','Cancelled','Deposited','Cleared','Bounced') NOT NULL DEFAULT 'Draft',
     printed_at TIMESTAMP NULL,
@@ -96,8 +109,12 @@ CREATE TABLE IF NOT EXISTS cheques (
     CONSTRAINT fk_cheques_bank
         FOREIGN KEY (bank_id) REFERENCES bank_templates(id)
         ON DELETE SET NULL,
+    CONSTRAINT fk_cheques_account
+        FOREIGN KEY (account_id) REFERENCES accounts(id)
+        ON DELETE RESTRICT,
     INDEX idx_cheque_status (status),
-    INDEX idx_cheque_date (issue_date)
+    INDEX idx_cheque_date (issue_date),
+    INDEX idx_cheque_account (account_id)
 );
 
 -- INVOICES
@@ -186,16 +203,18 @@ VALUES
 ('manager', 'Jane Manager', 'manager@smartcheque.local', '$2a$12$NESffFiz1n53l/zxz7SEC.EtHK8EVFqaJMmNXtYaLMDLxJYDsvcXW', 'Manager'),
 ('operator', 'Operator One', 'operator@smartcheque.local', '$2a$12$Z6i6s3tfmBzSfNuWF3TMnuM.XwcU.F/Db14AqeKr/Uvm7il4wFMvu', 'Operator'),
 ('auditor', 'Audit Specialist', 'auditor@smartcheque.local', '$2a$12$KaIfxRet1c2C61EufUFF2On0krXBca20DDvy32CyU0K7Ko.LMjUHS', 'Auditor')
+AS new_users
 ON DUPLICATE KEY UPDATE
-    name = VALUES(name),
-    role = VALUES(role);
+    name = new_users.name,
+    role = new_users.role;
 
 INSERT INTO roles (name, description) VALUES
 ('Admin', 'Full system administrator'),
 ('Manager', 'Approves and prints cheques'),
 ('Operator', 'Creates and submits cheques'),
 ('Auditor', 'Read-only compliance reviewer')
-ON DUPLICATE KEY UPDATE description = VALUES(description);
+AS new_roles
+ON DUPLICATE KEY UPDATE description = new_roles.description;
 
 INSERT INTO permissions (code, description) VALUES
 ('VIEW_DASHBOARD', 'Open role dashboard'),
@@ -217,7 +236,8 @@ INSERT INTO permissions (code, description) VALUES
 ('MANAGE_SETTINGS', 'Manage system settings'),
 ('MANAGE_USERS', 'Manage users and roles'),
 ('VIEW_AUDIT_LOG', 'View audit compliance logs')
-ON DUPLICATE KEY UPDATE description = VALUES(description);
+AS new_perms
+ON DUPLICATE KEY UPDATE description = new_perms.description;
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id
@@ -263,13 +283,19 @@ INSERT IGNORE INTO bank_templates (bank_name, bank_code, cheque_size, micr) VALU
 ('Kotak Mahindra Bank', 'KMB', '8.5x3.66in', TRUE),
 ('IndusInd Bank', 'IIB', '8.5x3.66in', TRUE);
 
--- SAMPLE CHEQUES
-INSERT IGNORE INTO cheques (cheque_no, payee_name, amount, amount_words, bank_id, issue_date, status)
+-- SAMPLE ACCOUNTS
+INSERT IGNORE INTO accounts (id, account_number, account_holder_name, bank_name, branch_name, ifsc_code, balance)
 VALUES
-('CHQ-2025-001', 'Raj Electricals', 25000.00, 'Rupees Twenty Five Thousand Only', 1, CURDATE(), 'Printed'),
-('CHQ-2025-002', 'Sharma Traders', 12500.50, 'Rupees Twelve Thousand Five Hundred Only', 2, CURDATE(), 'Pending'),
-('CHQ-2025-003', 'City Suppliers', 8750.00, 'Rupees Eight Thousand Seven Hundred Fifty Only', 3, CURDATE(), 'Draft'),
-('CHQ-2025-004', 'Global Tech Pvt Ltd', 55000.00, 'Rupees Fifty Five Thousand Only', 4, CURDATE(), 'Printed');
+(1, '123456789012', 'Acme Corp Operating Account', 'State Bank of India', 'Mumbai Main Branch', 'SBIN0000123', 5000000.00),
+(2, '987654321098', 'Acme Corp Payroll Account', 'HDFC Bank', 'Delhi Connaught Place Branch', 'HDFC0000456', 2500000.00);
+
+-- SAMPLE CHEQUES
+INSERT IGNORE INTO cheques (cheque_no, payee_name, amount, amount_words, bank_id, account_id, issue_date, status)
+VALUES
+('CHQ-2025-001', 'Raj Electricals', 25000.00, 'Rupees Twenty Five Thousand Only', 1, 1, CURDATE(), 'Printed'),
+('CHQ-2025-002', 'Sharma Traders', 12500.50, 'Rupees Twelve Thousand Five Hundred Only', 2, 1, CURDATE(), 'Pending'),
+('CHQ-2025-003', 'City Suppliers', 8750.00, 'Rupees Eight Thousand Seven Hundred Fifty Only', 3, 2, CURDATE(), 'Draft'),
+('CHQ-2025-004', 'Global Tech Pvt Ltd', 55000.00, 'Rupees Fifty Five Thousand Only', 4, 2, CURDATE(), 'Printed');
 
 -- SAMPLE INVOICES
 INSERT IGNORE INTO invoices (invoice_no, client_name, amount, issue_date, due_date, status, notes)
@@ -280,7 +306,8 @@ VALUES
 
 INSERT INTO settings (id, app_name)
 VALUES (1, 'ChequePro')
-ON DUPLICATE KEY UPDATE app_name = VALUES(app_name);
+AS new_settings
+ON DUPLICATE KEY UPDATE app_name = new_settings.app_name;
 
 -- Quick checks:
 -- SELECT id, username, email, role, login_attempts, account_locked FROM users;

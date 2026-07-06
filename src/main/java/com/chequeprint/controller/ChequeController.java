@@ -295,7 +295,12 @@ public class ChequeController {
                 var list = chequeService.getAll();
                 Platform.runLater(() -> data.setAll(list));
             } catch (Exception e) {
-                Platform.runLater(() -> showAlert("DB Error", e.getMessage(), Alert.AlertType.ERROR));
+                String message = e.getMessage();
+                if (message != null && message.contains("Failed to fetch cheques from REST API")) {
+                    message = "Unable to connect to the backend server. Please start the REST API service and try again.";
+                }
+                final String alertMessage = message;
+                Platform.runLater(() -> showAlert("Server Connection Error", alertMessage, Alert.AlertType.ERROR));
             }
         }, "load-cheques").start();
     }

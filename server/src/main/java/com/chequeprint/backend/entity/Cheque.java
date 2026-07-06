@@ -27,6 +27,9 @@ public class Cheque {
     @Column(name = "bank_id", nullable = false)
     private int bankId;
 
+    @Column(name = "account_id", nullable = false)
+    private int accountId;
+
     @Column(name = "issue_date", nullable = false)
     private LocalDate issueDate;
 
@@ -54,6 +57,17 @@ public class Cheque {
         this.status = status;
     }
 
+    public Cheque(String chequeNo, String payeeName, BigDecimal amount, String amountWords, int bankId, int accountId, LocalDate issueDate, Status status) {
+        this.chequeNo = chequeNo;
+        this.payeeName = payeeName;
+        this.amount = amount;
+        this.amountWords = amountWords;
+        this.bankId = bankId;
+        this.accountId = accountId;
+        this.issueDate = issueDate;
+        this.status = status;
+    }
+
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
@@ -71,6 +85,9 @@ public class Cheque {
 
     public int getBankId() { return bankId; }
     public void setBankId(int bankId) { this.bankId = bankId; }
+
+    public int getAccountId() { return accountId; }
+    public void setAccountId(int accountId) { this.accountId = accountId; }
 
     public LocalDate getIssueDate() { return issueDate; }
     public void setIssueDate(LocalDate issueDate) { this.issueDate = issueDate; }

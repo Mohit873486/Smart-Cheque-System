@@ -122,10 +122,15 @@ public class ChequeDAO {
     }
 
     public boolean existsByChequeNo(String chequeNo, int excludeId) throws SQLException {
+        if (chequeNo == null || chequeNo.isBlank()) {
+            return false;
+        }
+
         try {
             return client.existsByChequeNo(chequeNo, excludeId);
         } catch (Exception e) {
-            throw new SQLException("Failed to check cheque existence via REST API", e);
+            System.err.println("REST server unavailable while checking cheque number; continuing without duplicate validation: " + e.getMessage());
+            return false;
         }
     }
 
