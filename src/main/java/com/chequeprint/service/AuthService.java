@@ -1,19 +1,26 @@
 package com.chequeprint.service;
 
-import com.chequeprint.dao.UserDAO;
 import com.chequeprint.model.User;
-import com.chequeprint.util.PasswordUtil;
 import com.chequeprint.util.SessionManager;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.sql.SQLException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AuthService {
 
-  private final UserDAO dao = new UserDAO();
+  private final HttpClient httpClient = HttpClient.newBuilder().build();
+  private final ObjectMapper objectMapper = new ObjectMapper();
   private final AuditService auditService = new AuditService();
   private static final int MAX_LOGIN_ATTEMPTS = 3;
   private int remainingLoginAttempts = MAX_LOGIN_ATTEMPTS;
   private User currentUser;
+  private boolean accountLocked = false;
 
   public AuthenticationResult authenticate(String usernameOrEmail, String password) {
     if (usernameOrEmail == null || usernameOrEmail.isBlank()
@@ -21,35 +28,72 @@ public class AuthService {
       return AuthenticationResult.failure("Username/email and password are required.");
     }
 
+    if (accountLocked) {
+      return AuthenticationResult.failure("Blocked account. Contact an administrator to unlock it.");
+    }
+
     try {
-      User user = dao.findByUsernameOrEmail(usernameOrEmail.trim());
-      if (user == null) {
-        return AuthenticationResult.failure("Invalid user. Please check your username or email.");
-      }
+      // 1. Prepare request body JSON
+      Map<String, String> requestBody = new HashMap<>();
+      requestBody.put("username", usernameOrEmail.trim());
+      requestBody.put("password", password);
+      String requestBodyJson = objectMapper.writeValueAsString(requestBody);
 
-      if (isBlocked(user)) {
-        remainingLoginAttempts = 0;
-        return AuthenticationResult.failure("Blocked account. Contact an administrator to unlock it.");
-      }
+      // 2. Build HTTP POST request
+      HttpRequest request = HttpRequest.newBuilder()
+              .uri(URI.create("http://localhost:8081/api/auth/login"))
+              .header("Content-Type", "application/json")
+              .POST(HttpRequest.BodyPublishers.ofString(requestBodyJson))
+              .build();
 
-      if (!PasswordUtil.matches(password, user.getPassword())) {
-        int attempts = dao.incrementFailedLoginAttempts(user.getId());
-        remainingLoginAttempts = Math.max(0, MAX_LOGIN_ATTEMPTS - attempts);
-        if (attempts >= MAX_LOGIN_ATTEMPTS) {
-          dao.lockUser(user.getId());
+      // 3. Send request
+      HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+      if (response.statusCode() == 200) {
+        // Successful login
+        JsonNode rootNode = objectMapper.readTree(response.body());
+        String token = rootNode.get("token").asText();
+        JsonNode userNode = rootNode.get("user");
+
+        // 4. Map properties from userNode to client User model
+        User user = new User();
+        user.setId(userNode.get("id").asInt());
+        user.setUsername(userNode.get("username").asText());
+        user.setName(userNode.get("name").asText());
+        user.setEmail(userNode.get("email").asText());
+        user.setRole(userNode.get("role").asText());
+        user.setStatus("Active");
+
+        // 5. Store session context
+        SessionManager.start(user);
+        SessionManager.setJwtToken(token);
+        
+        remainingLoginAttempts = MAX_LOGIN_ATTEMPTS;
+        currentUser = user;
+        
+        auditService.recordLogin(user);
+        return AuthenticationResult.success(user);
+
+      } else if (response.statusCode() == 401) {
+        // Bad credentials
+        remainingLoginAttempts--;
+        if (remainingLoginAttempts <= 0) {
+          accountLocked = true;
           return AuthenticationResult.failure("Blocked account. Maximum login attempts reached.");
         }
         return AuthenticationResult.failure("Wrong password. " + remainingLoginAttempts + " attempt(s) remaining.");
+      } else if (response.statusCode() == 403) {
+        // Locked / Disabled user
+        return AuthenticationResult.failure("Blocked account. Contact an administrator to unlock it.");
+      } else {
+        // General error details
+        JsonNode errNode = objectMapper.readTree(response.body());
+        String msg = errNode.has("message") ? errNode.get("message").asText() : "HTTP error: " + response.statusCode();
+        return AuthenticationResult.failure("Login failed: " + msg);
       }
 
-      dao.resetLoginAttempts(user.getId());
-      resetAttempts();
-      currentUser = user;
-      SessionManager.start(user);
-      auditService.recordLogin(user);
-      return AuthenticationResult.success(user);
-    } catch (SQLException e) {
-      return AuthenticationResult.failure("Login failed: " + e.getMessage());
+    } catch (Exception e) {
+      return AuthenticationResult.failure("REST server unavailable: " + e.getMessage());
     }
   }
 
@@ -57,16 +101,8 @@ public class AuthService {
     return authenticate(usernameOrEmail, password);
   }
 
-  private boolean isBlocked(User user) {
-    String status = user.getStatus();
-    return user.isAccountLocked()
-        || user.getLoginAttempts() >= MAX_LOGIN_ATTEMPTS
-        || "Locked".equalsIgnoreCase(status)
-        || "Disabled".equalsIgnoreCase(status);
-  }
-
   public boolean isLocked() {
-    return remainingLoginAttempts <= 0;
+    return accountLocked || remainingLoginAttempts <= 0;
   }
 
   public int getRemainingLoginAttempts() {
@@ -80,6 +116,7 @@ public class AuthService {
   public void logout() {
     currentUser = null;
     remainingLoginAttempts = MAX_LOGIN_ATTEMPTS;
+    accountLocked = false;
     SessionManager.clear();
   }
 
@@ -98,9 +135,5 @@ public class AuthService {
 
   public boolean canAccessPage(String page) {
     return AccessControl.canAccessPage(currentUser, page);
-  }
-
-  private void resetAttempts() {
-    remainingLoginAttempts = MAX_LOGIN_ATTEMPTS;
   }
 }

@@ -20,8 +20,12 @@ com\chequeprint\backend\entity\AuditLog.class
 com\chequeprint\backend\repository\BankTemplateRepository.class
 com\chequeprint\backend\security\JwtRequestFilter.class
 com\chequeprint\backend\dto\LoginRequest.class
+com\chequeprint\backend\service\UserService.class
 com\chequeprint\backend\controller\AccountApiController.class
+com\chequeprint\backend\controller\AuditLogApiController.class
 com\chequeprint\backend\security\SecurityConfig.class
+com\chequeprint\backend\controller\UserApiController.class
 com\chequeprint\backend\dto\LoginResponse.class
 com\chequeprint\backend\security\JwtUtils.class
+com\chequeprint\backend\exception\GlobalExceptionHandler.class
 com\chequeprint\backend\entity\Account.class

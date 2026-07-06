@@ -10,6 +10,7 @@ import java.util.Optional;
 
 public final class SessionManager {
     private static User currentUser;
+    private static String jwtToken;
     private static Instant loginTime;
     private static Instant lastActivityTime;
     private static final long SESSION_TIMEOUT_SECONDS = 900; // 15 minutes
@@ -21,6 +22,14 @@ public final class SessionManager {
         currentUser = user;
         loginTime = Instant.now();
         lastActivityTime = Instant.now();
+    }
+
+    public static void setJwtToken(String token) {
+        jwtToken = token;
+    }
+
+    public static String getJwtToken() {
+        return jwtToken;
     }
 
     public static Optional<User> currentUser() {
@@ -56,6 +65,7 @@ public final class SessionManager {
 
     public static void clear() {
         currentUser = null;
+        jwtToken = null;
         loginTime = null;
         lastActivityTime = null;
     }

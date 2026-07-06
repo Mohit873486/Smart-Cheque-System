@@ -288,6 +288,14 @@ public class JasperPrintUtil {
         } catch (Exception ignored) {
             params.put("signaturePath", "");
         }
+        // QR Code path for cheque verification
+        try {
+            String qrPath = com.chequeprint.util.QrCodeGenerator.generateQrCode(cheque);
+            params.put("qrCodePath", qrPath != null ? qrPath : "");
+        } catch (Exception e) {
+            e.printStackTrace();
+            params.put("qrCodePath", "");
+        }
         return params;
     }
 

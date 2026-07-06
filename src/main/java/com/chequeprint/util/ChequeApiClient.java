@@ -23,6 +23,7 @@ public class ChequeApiClient {
     public ChequeApiClient() {
         this.httpClient = HttpClient.newBuilder().build();
         this.objectMapper = new ObjectMapper();
+        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         
         // Add custom LocalDate serializer/deserializer to avoid dependency on jackson-datatype-jsr310 module
         SimpleModule module = new SimpleModule();
@@ -46,9 +47,17 @@ public class ChequeApiClient {
         this.objectMapper.registerModule(module);
     }
 
+    private HttpRequest.Builder requestBuilder(String url) {
+        HttpRequest.Builder builder = HttpRequest.newBuilder().uri(URI.create(url));
+        String token = SessionManager.getJwtToken();
+        if (token != null && !token.isBlank()) {
+            builder.header("Authorization", "Bearer " + token);
+        }
+        return builder;
+    }
+
     public List<Cheque> getAllCheques() throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL))
+        HttpRequest request = requestBuilder(BASE_URL)
                 .GET()
                 .build();
 
@@ -63,8 +72,7 @@ public class ChequeApiClient {
     }
 
     public Cheque getChequeById(int id) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/" + id))
+        HttpRequest request = requestBuilder(BASE_URL + "/" + id)
                 .GET()
                 .build();
 
@@ -82,8 +90,7 @@ public class ChequeApiClient {
     public Cheque createCheque(Cheque cheque) throws Exception {
         String json = objectMapper.writeValueAsString(cheque);
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL))
+        HttpRequest request = requestBuilder(BASE_URL)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
@@ -100,8 +107,7 @@ public class ChequeApiClient {
     public boolean updateCheque(Cheque cheque) throws Exception {
         String json = objectMapper.writeValueAsString(cheque);
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/" + cheque.getId()))
+        HttpRequest request = requestBuilder(BASE_URL + "/" + cheque.getId())
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(json))
                 .build();
@@ -112,8 +118,7 @@ public class ChequeApiClient {
     }
 
     public boolean deleteCheque(int id) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/" + id))
+        HttpRequest request = requestBuilder(BASE_URL + "/" + id)
                 .DELETE()
                 .build();
 
@@ -124,8 +129,7 @@ public class ChequeApiClient {
 
     public boolean existsByChequeNo(String chequeNo, int excludeId) throws Exception {
         String url = BASE_URL + "/exists?chequeNo=" + chequeNo + "&excludeId=" + excludeId;
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
+        HttpRequest request = requestBuilder(url)
                 .GET()
                 .build();
 
@@ -140,8 +144,7 @@ public class ChequeApiClient {
 
     public List<Cheque> searchCheques(String query) throws Exception {
         String url = BASE_URL + "/search?query=" + java.net.URLEncoder.encode(query, java.nio.charset.StandardCharsets.UTF_8);
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
+        HttpRequest request = requestBuilder(url)
                 .GET()
                 .build();
 

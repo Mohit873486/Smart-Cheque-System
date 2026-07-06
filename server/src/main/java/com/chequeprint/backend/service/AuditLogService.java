@@ -3,6 +3,8 @@ package com.chequeprint.backend.service;
 import com.chequeprint.backend.entity.AuditLog;
 import com.chequeprint.backend.repository.AuditLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,5 +36,10 @@ public class AuditLogService {
     @Transactional(readOnly = true)
     public List<AuditLog> getHistory(String tableName, int recordId) {
         return auditLogRepository.findByTableNameAndRecordIdOrderByCreatedAtDesc(tableName, recordId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AuditLog> getRecent(int limit) {
+        return auditLogRepository.findAll(PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "id"))).getContent();
     }
 }

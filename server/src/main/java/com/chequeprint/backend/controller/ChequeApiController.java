@@ -1,6 +1,4 @@
-// package com.chequeprint.backend.controller;
 package com.chequeprint.backend.controller;
-
 
 import com.chequeprint.backend.entity.Cheque;
 import com.chequeprint.backend.service.ChequeService;

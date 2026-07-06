@@ -51,6 +51,7 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\S
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\AiSqlDatabaseService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\dao\SettingDAO.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\dao\UserDAO.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\QrCodeGenerator.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\dao\BankDAO.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\NumberToWordsConverter.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\Bank.java

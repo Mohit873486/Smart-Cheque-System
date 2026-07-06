@@ -17,6 +17,7 @@
     <parameter name="bankName"    class="java.lang.String"/>
     <parameter name="issueDate"   class="java.lang.String"/>
     <parameter name="signaturePath" class="java.lang.String"/>
+    <parameter name="qrCodePath" class="java.lang.String"/>
 
     <background>
         <band splitType="Stretch"/>
@@ -150,6 +151,12 @@
                 </textElement>
                 <text><![CDATA[⑆ 000000 ⑆ 0000000000 ⑆]]></text>
             </staticText>
+
+            <!-- QR Code image for cheque verification -->
+            <image scaleImage="RetainShape">
+                <reportElement x="20" y="140" width="60" height="60" />
+                <imageExpression><![CDATA[$P{qrCodePath} != null && !$P{qrCodePath}.isEmpty() ? new java.io.File($P{qrCodePath}).toURI().toURL() : null]]></imageExpression>
+            </image>
 
             <!-- Signature image -->
             <image scaleImage="RetainShape">

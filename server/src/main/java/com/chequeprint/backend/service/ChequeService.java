@@ -31,12 +31,17 @@ public class ChequeService {
     }
 
     public Cheque createCheque(Cheque cheque) {
+        if (cheque.getAccountId() == 0) {
+            cheque.setAccountId(1);
+        }
+        validateCheque(cheque, 0);
         Cheque saved = repository.save(cheque);
         auditLogService.record(null, "cheques", saved.getId(), "INSERT", "Created cheque: " + saved.getChequeNo());
         return saved;
     }
 
     public Cheque updateCheque(int id, Cheque updatedCheque) {
+        validateCheque(updatedCheque, id);
         return repository.findById(id)
                 .map(existing -> {
                     String oldStatus = existing.getStatus() != null ? existing.getStatus().name() : "";
@@ -62,6 +67,21 @@ public class ChequeService {
                     return saved;
                 })
                 .orElseThrow(() -> new IllegalArgumentException("Cheque not found with ID: " + id));
+    }
+
+    private void validateCheque(Cheque cheque, int excludeId) {
+        if (cheque.getChequeNo() == null || cheque.getChequeNo().isBlank()) {
+            throw new IllegalArgumentException("Cheque number is required.");
+        }
+        if (cheque.getPayeeName() == null || cheque.getPayeeName().isBlank()) {
+            throw new IllegalArgumentException("Payee name is required.");
+        }
+        if (cheque.getAmount() == null || cheque.getAmount().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Cheque amount must be greater than zero.");
+        }
+        if (repository.existsByChequeNoAndIdNot(cheque.getChequeNo(), excludeId)) {
+            throw new IllegalArgumentException("Cheque number '" + cheque.getChequeNo() + "' already exists.");
+        }
     }
 
     public void deleteCheque(int id) {

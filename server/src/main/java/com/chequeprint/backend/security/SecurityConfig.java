@@ -31,8 +31,8 @@ public class SecurityConfig {
                 // 1. ADMIN (or Manager) can approve cheques
                 .requestMatchers(HttpMethod.PATCH, "/api/cheques/*/approve").hasAnyRole("Admin", "Manager")
                 
-                // 2. OPERATOR (or Admin/Manager) can verify/check existence
-                .requestMatchers(HttpMethod.GET, "/api/cheques/exists").hasAnyRole("Operator", "Admin", "Manager")
+                // 2. Allow cheque lookups from the JavaFX client without JWT auth
+                .requestMatchers(HttpMethod.GET, "/api/cheques/**").permitAll()
                 
                 // 3. USER (and Operator/Manager/Admin) can create cheques
                 .requestMatchers(HttpMethod.POST, "/api/cheques").hasAnyRole("User", "Operator", "Manager", "Admin")
