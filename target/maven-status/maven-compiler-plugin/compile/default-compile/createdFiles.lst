@@ -13,6 +13,7 @@ com\chequeprint\util\BankTemplatePdfExporter.class
 com\chequeprint\model\UserStatus.class
 com\chequeprint\controller\AiAssistantController$2.class
 com\chequeprint\controller\ModernDashboardController$1.class
+com\chequeprint\util\ApiClient.class
 com\chequeprint\controller\ChequeController.class
 com\chequeprint\controller\SettingsController.class
 com\chequeprint\model\BankTemplateLayout.class
@@ -138,4 +139,5 @@ com\chequeprint\dao\AuditLogDAO.class
 com\chequeprint\service\OpenAiChequeAssistantService$ChequeCommand.class
 com\chequeprint\util\DateUtil.class
 com\chequeprint\controller\MainController.class
+com\chequeprint\config\ApiConfig.class
 com\chequeprint\service\ChequeAiCommand.class
