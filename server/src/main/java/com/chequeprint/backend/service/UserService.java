@@ -63,6 +63,10 @@ public class UserService {
                     existing.setEmail(updatedUser.getEmail());
                     existing.setRole(updatedUser.getRole());
                     existing.setStatus(updatedUser.getStatus());
+                    existing.setPhone(updatedUser.getPhone());
+                    existing.setCompany(updatedUser.getCompany());
+                    existing.setAddress(updatedUser.getAddress());
+                    existing.setGstNumber(updatedUser.getGstNumber());
 
                     // If a new password is provided, hash and update it
                     if (updatedUser.getPassword() != null && !updatedUser.getPassword().isBlank()) {

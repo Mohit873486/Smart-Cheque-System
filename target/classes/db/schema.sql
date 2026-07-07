@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
     phone VARCHAR(32),
     company VARCHAR(120),
     address VARCHAR(255),
+    gst_number VARCHAR(50),
     password VARCHAR(255) NOT NULL,
     role ENUM('Admin','User','Manager','Operator','Auditor') NOT NULL DEFAULT 'User',
     status ENUM('Active','Disabled','Locked') NOT NULL DEFAULT 'Active',

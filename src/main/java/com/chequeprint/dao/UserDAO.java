@@ -16,6 +16,7 @@ public class UserDAO {
         u.setPhone(rs.getString("phone"));
         u.setCompany(rs.getString("company"));
         u.setAddress(rs.getString("address"));
+        u.setGstNumber(readStringIfPresent(rs, "gst_number"));
         u.setPassword(rs.getString("password"));
         u.setRole(rs.getString("role"));
         u.setStatus(readStringIfPresent(rs, "status"));
@@ -214,7 +215,7 @@ public class UserDAO {
         }
         if (u.getId() == 0) {
 
-            String sql = "INSERT INTO users (username,name,email,phone,company,address,password,role) VALUES(?,?,?,?,?,?,?,?)";
+            String sql = "INSERT INTO users (username,name,email,phone,company,address,password,role,gst_number) VALUES(?,?,?,?,?,?,?,?,?)";
 
             try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(sql)) {
 
@@ -226,13 +227,14 @@ public class UserDAO {
                 ps.setString(6, u.getAddress());
                 ps.setString(7, u.getPassword());
                 ps.setString(8, u.getRole());
+                ps.setString(9, u.getGstNumber());
 
                 return ps.executeUpdate() > 0;
             }
 
         } else if (u.getPassword() != null && !u.getPassword().isEmpty()) {
 
-            String sql = "UPDATE users SET username=?,name=?,email=?,phone=?,company=?,address=?,password=?,role=? WHERE id=?";
+            String sql = "UPDATE users SET username=?,name=?,email=?,phone=?,company=?,address=?,password=?,role=?,gst_number=? WHERE id=?";
 
             try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(sql)) {
 
@@ -244,14 +246,15 @@ public class UserDAO {
                 ps.setString(6, u.getAddress());
                 ps.setString(7, u.getPassword());
                 ps.setString(8, u.getRole());
-                ps.setInt(9, u.getId());
+                ps.setString(9, u.getGstNumber());
+                ps.setInt(10, u.getId());
 
                 return ps.executeUpdate() > 0;
             }
 
         } else {
 
-            String sql = "UPDATE users SET username=?,name=?,email=?,phone=?,company=?,address=?,role=? WHERE id=?";
+            String sql = "UPDATE users SET username=?,name=?,email=?,phone=?,company=?,address=?,role=?,gst_number=? WHERE id=?";
 
             try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(sql)) {
 
@@ -262,7 +265,8 @@ public class UserDAO {
                 ps.setString(5, u.getCompany());
                 ps.setString(6, u.getAddress());
                 ps.setString(7, u.getRole());
-                ps.setInt(8, u.getId());
+                ps.setString(8, u.getGstNumber());
+                ps.setInt(9, u.getId());
 
                 return ps.executeUpdate() > 0;
             }

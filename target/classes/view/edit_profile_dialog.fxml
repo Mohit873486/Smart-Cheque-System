@@ -7,7 +7,7 @@
 <VBox spacing="20" style="-fx-background-color: white; -fx-background-radius: 12; -fx-border-color: #e5e7eb; -fx-border-radius: 12; -fx-border-width: 1;"
       xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.chequeprint.controller.EditProfileDialogController"
-      prefWidth="400" prefHeight="280">
+      prefWidth="400" prefHeight="350">
     
     <padding>
         <Insets top="24" right="24" bottom="24" left="24"/>
@@ -15,7 +15,7 @@
 
     <VBox spacing="6">
         <Label text="Edit Personal Details" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
-        <Label text="Update your profile name and email address" style="-fx-font-size: 12px; -fx-text-fill: #6b7280;" />
+        <Label text="Update your profile name, email and phone number" style="-fx-font-size: 12px; -fx-text-fill: #6b7280;" />
     </VBox>
 
     <Separator style="-fx-opacity: 0.5;"/>
@@ -31,6 +31,12 @@
         <VBox spacing="6">
             <Label text="EMAIL ADDRESS" style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;" />
             <TextField fx:id="tfEmail" style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;" promptText="email@example.com" />
+        </VBox>
+
+        <!-- Phone Field -->
+        <VBox spacing="6">
+            <Label text="PHONE NUMBER" style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;" />
+            <TextField fx:id="tfPhone" style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;" promptText="+91 00000 00000" />
         </VBox>
     </VBox>
 

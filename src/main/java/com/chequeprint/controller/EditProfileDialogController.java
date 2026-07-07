@@ -17,6 +17,9 @@ public class EditProfileDialogController {
     private TextField tfEmail;
 
     @FXML
+    private TextField tfPhone;
+
+    @FXML
     private Button btnCancel;
 
     @FXML
@@ -31,6 +34,7 @@ public class EditProfileDialogController {
         if (user != null) {
             tfName.setText(user.getName() != null ? user.getName() : "");
             tfEmail.setText(user.getEmail() != null ? user.getEmail() : "");
+            tfPhone.setText(user.getPhone() != null ? user.getPhone() : "");
         }
     }
 
@@ -42,9 +46,13 @@ public class EditProfileDialogController {
     private void onSave() {
         tfName.setStyle("-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;");
         tfEmail.setStyle("-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;");
+        if (tfPhone != null) {
+            tfPhone.setStyle("-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;");
+        }
 
         String name = tfName.getText().trim();
         String email = tfEmail.getText().trim();
+        String phone = tfPhone != null ? tfPhone.getText().trim() : "";
 
         boolean hasError = false;
 
@@ -67,6 +75,7 @@ public class EditProfileDialogController {
         try {
             user.setName(name);
             user.setEmail(email);
+            user.setPhone(phone);
 
             boolean success = userService.saveProfile(user);
             if (success) {

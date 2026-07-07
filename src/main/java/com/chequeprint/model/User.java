@@ -8,6 +8,7 @@ public class User {
     private String phone;
     private String company;
     private String address;
+    private String gstNumber;
     private String role;
     private String password;
     private String status;
@@ -71,6 +72,14 @@ public class User {
 
     public void setAddress(String a) {
         this.address = a;
+    }
+
+    public String getGstNumber() {
+        return gstNumber;
+    }
+
+    public void setGstNumber(String gstNumber) {
+        this.gstNumber = gstNumber;
     }
 
     public String getRole() {

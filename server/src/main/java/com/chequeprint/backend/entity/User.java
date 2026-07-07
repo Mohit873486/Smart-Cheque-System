@@ -29,6 +29,18 @@ public class User {
     @Column(nullable = false, length = 50)
     private String status = "Active";
 
+    @Column(length = 32)
+    private String phone;
+
+    @Column(length = 120)
+    private String company;
+
+    @Column(length = 255)
+    private String address;
+
+    @Column(name = "gst_number", length = 50)
+    private String gstNumber;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -57,6 +69,18 @@ public class User {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+
+    public String getCompany() { return company; }
+    public void setCompany(String company) { this.company = company; }
+
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+
+    public String getGstNumber() { return gstNumber; }
+    public void setGstNumber(String gstNumber) { this.gstNumber = gstNumber; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

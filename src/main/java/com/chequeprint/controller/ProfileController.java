@@ -173,6 +173,7 @@ public class ProfileController {
                         set(tfEmail, user.getEmail());
                         set(tfPhone, user.getPhone());
                         set(tfCompany, user.getCompany());
+                        set(tfGST, user.getGstNumber());
                         set(tfRole, user.getRole());
 
                         // =========================
@@ -312,9 +313,11 @@ public class ProfileController {
 
             String comp = tfCompany == null ? "" : tfCompany.getText().trim();
             String addr = taAddress == null ? "" : taAddress.getText().trim();
+            String gst = tfGST == null ? "" : tfGST.getText().trim();
 
             user.setCompany(comp);
             user.setAddress(addr);
+            user.setGstNumber(gst);
 
             userService.saveProfile(user);
 
@@ -487,14 +490,12 @@ public class ProfileController {
         if (tfLastName != null) tfLastName.setEditable(editable);
         if (tfEmail != null) tfEmail.setEditable(editable);
         if (tfPhone != null) tfPhone.setEditable(editable);
-        if (tfCompany != null) tfCompany.setEditable(editable);
 
         double opacity = editable ? 1.0 : 0.85;
         if (tfFirstName != null) tfFirstName.setOpacity(opacity);
         if (tfLastName != null) tfLastName.setOpacity(opacity);
         if (tfEmail != null) tfEmail.setOpacity(opacity);
         if (tfPhone != null) tfPhone.setOpacity(opacity);
-        if (tfCompany != null) tfCompany.setOpacity(opacity);
     }
 
     @FXML
