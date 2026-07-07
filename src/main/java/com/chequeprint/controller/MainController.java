@@ -235,12 +235,12 @@ public class MainController {
     if (sessionTimeoutTimeline != null) {
       sessionTimeoutTimeline.stop();
     }
-    SessionManager.updateActivity();
+    SessionManager.getInstance().updateActivity();
 
     Platform.runLater(() -> {
       if (contentPane != null && contentPane.getScene() != null) {
         contentPane.getScene().addEventFilter(InputEvent.ANY, e -> {
-          SessionManager.updateActivity();
+          SessionManager.getInstance().updateActivity();
         });
       }
     });
@@ -251,7 +251,7 @@ public class MainController {
   }
 
   private void checkSessionTimeout() {
-    if (SessionManager.isExpired()) {
+    if (SessionManager.getInstance().isExpired()) {
       if (sessionTimeoutTimeline != null) {
         sessionTimeoutTimeline.stop();
       }
@@ -267,7 +267,7 @@ public class MainController {
         }
         com.chequeprint.service.AuthService authService = new com.chequeprint.service.AuthService();
         authService.logout();
-        SessionManager.clear();
+        SessionManager.getInstance().clear();
 
         for (Object ctrl : controllerMap.values()) {
           if (ctrl instanceof DashboardController dc) {
@@ -340,7 +340,7 @@ public class MainController {
       // Perform logout
       com.chequeprint.service.AuthService authService = new com.chequeprint.service.AuthService();
       authService.logout();
-      com.chequeprint.util.SessionManager.clear();
+      SessionManager.getInstance().clear();
 
       for (Object ctrl : controllerMap.values()) {
         if (ctrl instanceof DashboardController dc) {
@@ -432,7 +432,7 @@ public class MainController {
   // ================= MAIN NAVIGATION (ADVANCED) =================
 
   public void navigate(String page) {
-    if (SessionManager.isExpired()) {
+    if (SessionManager.getInstance().isExpired()) {
       handleAutoLogout();
       return;
     }

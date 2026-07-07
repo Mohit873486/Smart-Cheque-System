@@ -85,7 +85,7 @@ public class UserManagementController {
     }
 
     private void loadUsers() {
-        User actor = SessionManager.currentUser().orElse(null);
+        User actor = SessionManager.getInstance().currentUser().orElse(null);
         if (!AccessControl.can(actor, Permission.MANAGE_USERS)) {
             showAlert("Permission Denied", "You do not have permission to manage users.", Alert.AlertType.ERROR);
             return;
@@ -105,7 +105,7 @@ public class UserManagementController {
 
     @FXML
     private void onSave() {
-        User actor = SessionManager.currentUser().orElse(null);
+        User actor = SessionManager.getInstance().currentUser().orElse(null);
         if (!AccessControl.can(actor, Permission.MANAGE_USERS)) {
             showAlert("Permission Denied", "You do not have permission to manage users.", Alert.AlertType.ERROR);
             return;
@@ -137,7 +137,7 @@ public class UserManagementController {
 
     @FXML
     private void onDelete() {
-        User actor = SessionManager.currentUser().orElse(null);
+        User actor = SessionManager.getInstance().currentUser().orElse(null);
         if (!AccessControl.can(actor, Permission.MANAGE_USERS)) {
             showAlert("Permission Denied", "You do not have permission to manage users.", Alert.AlertType.ERROR);
             return;

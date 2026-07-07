@@ -29,7 +29,7 @@ public class UserService {
     
     public User loadProfile() throws SQLException {
         try {
-            int userId = SessionManager.requireUser().getId();
+            int userId = SessionManager.getInstance().requireUser().getId();
             HttpRequest request = RestApiClient.requestBuilder(BASE_URL + "/" + userId)
                     .GET()
                     .build();
@@ -38,7 +38,7 @@ public class UserService {
 
             if (response.statusCode() == 200) {
                 User loadedUser = objectMapper.readValue(response.body(), User.class);
-                SessionManager.start(loadedUser);
+                SessionManager.getInstance().start(loadedUser);
                 return loadedUser;
             } else {
                 throw new IOException("Failed to load profile. HTTP: " + response.statusCode());
@@ -60,7 +60,7 @@ public class UserService {
             HttpResponse<String> response = RestApiClient.send(request);
 
             if (response.statusCode() == 200) {
-                SessionManager.start(user);
+                SessionManager.getInstance().start(user);
                 return true;
             }
 
@@ -83,7 +83,7 @@ public class UserService {
                 UserDAO dao = new UserDAO();
                 boolean success = dao.insertOrUpdate(user);
                 if (success) {
-                    SessionManager.start(user);
+                    SessionManager.getInstance().start(user);
                     return true;
                 }
             } catch (Exception ignored) {}

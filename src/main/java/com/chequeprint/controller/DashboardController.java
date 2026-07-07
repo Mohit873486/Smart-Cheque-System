@@ -184,7 +184,7 @@ public class DashboardController {
     }
 
     private boolean can(Permission permission) {
-        return AccessControl.can(SessionManager.currentUser().orElse(null), permission);
+        return AccessControl.can(SessionManager.getInstance().currentUser().orElse(null), permission);
     }
 
     private void setVisibleManaged(javafx.scene.Node node, boolean visible) {

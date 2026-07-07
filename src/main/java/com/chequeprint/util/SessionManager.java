@@ -9,72 +9,78 @@ import java.time.Instant;
 import java.util.Optional;
 
 public final class SessionManager {
-    private static User currentUser;
-    private static String jwtToken;
-    private static Instant loginTime;
-    private static Instant lastActivityTime;
-    private static final long SESSION_TIMEOUT_SECONDS = 900; // 15 minutes
+    private static final SessionManager INSTANCE = new SessionManager();
+
+    private User currentUser;
+    private String jwtToken;
+    private Instant loginTime;
+    private Instant lastActivityTime;
+    private final long SESSION_TIMEOUT_SECONDS = 900; // 15 minutes
 
     private SessionManager() {
     }
 
-    public static void start(User user) {
-        currentUser = user;
-        loginTime = Instant.now();
-        lastActivityTime = Instant.now();
+    public static SessionManager getInstance() {
+        return INSTANCE;
     }
 
-    public static void setToken(String token) {
-        jwtToken = token;
+    public void start(User user) {
+        this.currentUser = user;
+        this.loginTime = Instant.now();
+        this.lastActivityTime = Instant.now();
     }
 
-    public static String getToken() {
-        return jwtToken;
+    public void setToken(String token) {
+        this.jwtToken = token;
     }
 
-    public static void setJwtToken(String token) {
+    public String getToken() {
+        return this.jwtToken;
+    }
+
+    public void setJwtToken(String token) {
         setToken(token);
     }
 
-    public static String getJwtToken() {
+    public String getJwtToken() {
         return getToken();
     }
 
-    public static Optional<User> currentUser() {
+    public Optional<User> currentUser() {
         return Optional.ofNullable(currentUser);
     }
 
-    public static User requireUser() {
+    public User requireUser() {
         return currentUser().orElseThrow(() -> new IllegalStateException("No authenticated user in session."));
     }
 
-    public static void updateActivity() {
-        lastActivityTime = Instant.now();
+    public void updateActivity() {
+        this.lastActivityTime = Instant.now();
     }
 
-    public static boolean isExpired() {
+    public boolean isExpired() {
         if (currentUser == null) {
             return false;
         }
         return lastActivityTime != null && Instant.now().isAfter(lastActivityTime.plusSeconds(SESSION_TIMEOUT_SECONDS));
     }
 
-    public static boolean hasRole(UserRole role) {
+    public boolean hasRole(UserRole role) {
         return currentUser != null && currentUser.getRoleEnum() == role;
     }
 
-    public static boolean hasPermission(Permission permission) {
+    public boolean hasPermission(Permission permission) {
         return AccessControl.can(currentUser, permission);
     }
 
-    public static Instant loginTime() {
+    public Instant loginTime() {
         return loginTime;
     }
 
-    public static void clear() {
-        currentUser = null;
-        jwtToken = null;
-        loginTime = null;
-        lastActivityTime = null;
+    public void clear() {
+        this.currentUser = null;
+        this.jwtToken = null;
+        this.loginTime = null;
+        this.lastActivityTime = null;
     }
 }

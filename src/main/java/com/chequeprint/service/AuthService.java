@@ -66,8 +66,8 @@ public class AuthService {
         user.setStatus("Active");
 
         // 5. Store session context
-        SessionManager.start(user);
-        SessionManager.setToken(token);
+        SessionManager.getInstance().start(user);
+        SessionManager.getInstance().setToken(token);
         
         remainingLoginAttempts = MAX_LOGIN_ATTEMPTS;
         currentUser = user;
@@ -118,7 +118,7 @@ public class AuthService {
     currentUser = null;
     remainingLoginAttempts = MAX_LOGIN_ATTEMPTS;
     accountLocked = false;
-    SessionManager.clear();
+    SessionManager.getInstance().clear();
   }
 
   public String getLandingPage() {

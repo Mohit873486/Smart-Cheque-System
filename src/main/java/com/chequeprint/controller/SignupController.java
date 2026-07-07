@@ -34,7 +34,7 @@ public class SignupController {
     cmbRole.getItems().setAll(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR, UserRole.AUDITOR, UserRole.USER);
     cmbRole.setValue(UserRole.OPERATOR);
     // Only show role selector to Admin users (if session exists)
-    var actor = SessionManager.currentUser().orElse(null);
+    var actor = SessionManager.getInstance().currentUser().orElse(null);
     cmbRole.setVisible(actor != null && AccessControl.can(actor, Permission.MANAGE_USERS));
   }
 
@@ -64,7 +64,7 @@ public class SignupController {
       return;
 
     // Prevent self-assigning ADMIN when no admin actor
-    var actor = SessionManager.currentUser().orElse(null);
+    var actor = SessionManager.getInstance().currentUser().orElse(null);
     if ((actor == null || !AccessControl.can(actor, Permission.MANAGE_USERS)) && selectedRole == UserRole.ADMIN) {
       errRole.setText("Cannot self-assign ADMIN");
       return;

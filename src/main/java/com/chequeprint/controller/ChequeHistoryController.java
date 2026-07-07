@@ -74,7 +74,7 @@ public class ChequeHistoryController {
     }
 
     private void applyPermissions() {
-        User actor = SessionManager.currentUser().orElse(null);
+        User actor = SessionManager.getInstance().currentUser().orElse(null);
         boolean canPrint = AccessControl.can(actor, Permission.PRINT_CHEQUE);
         if (btnPrint != null) {
             btnPrint.setVisible(canPrint);
@@ -261,7 +261,7 @@ public class ChequeHistoryController {
 
     @FXML
     private void onPrint() {
-        User actor = SessionManager.currentUser().orElse(null);
+        User actor = SessionManager.getInstance().currentUser().orElse(null);
         if (!AccessControl.can(actor, Permission.PRINT_CHEQUE)) {
             showAlert("Permission Denied", "You do not have permission to print cheques.", Alert.AlertType.ERROR);
             return;

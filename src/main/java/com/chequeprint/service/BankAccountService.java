@@ -48,8 +48,8 @@ public class BankAccountService {
             connection.setConnectTimeout(10000);
             connection.setReadTimeout(10000);
 
-            // Add Authorization header: "Bearer " + SessionManager.getToken()
-            String token = SessionManager.getToken();
+            // Add Authorization header: "Bearer " + SessionManager.getInstance().getToken()
+            String token = SessionManager.getInstance().getToken();
             System.out.println("Debug - Token Value: " + token);
             if (token != null && !token.isBlank()) {
                 connection.setRequestProperty("Authorization", "Bearer " + token);
@@ -61,7 +61,7 @@ public class BankAccountService {
             // Handle 401 Unauthorized error
             if (responseCode == HttpURLConnection.HTTP_UNAUTHORIZED) {
                 System.err.println("Debug: 401 Unauthorized returned from " + urlStr);
-                SessionManager.clear();
+                SessionManager.getInstance().clear();
 
                 // Redirect to login page and show "Session expired" alert
                 Platform.runLater(() -> {

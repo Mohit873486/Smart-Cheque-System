@@ -124,7 +124,7 @@ public class ChequeController {
     }
 
     private void applyPermissions() {
-        User actor = SessionManager.currentUser().orElse(null);
+        User actor = SessionManager.getInstance().currentUser().orElse(null);
         boolean canCreate = AccessControl.can(actor, Permission.CREATE_CHEQUE);
         boolean canUpdate = AccessControl.can(actor, Permission.UPDATE_CHEQUE);
         boolean canApprove = AccessControl.can(actor, Permission.APPROVE_CHEQUE);
@@ -312,7 +312,7 @@ public class ChequeController {
     // ── Save / Update ────────────────────────────────────────────────
     @FXML
     private void onSave() {
-        User actor = SessionManager.currentUser().orElse(null);
+        User actor = SessionManager.getInstance().currentUser().orElse(null);
         if (!AccessControl.can(actor, selectedCheque == null ? Permission.CREATE_CHEQUE : Permission.UPDATE_CHEQUE)) {
             showAlert("Permission Denied", "You do not have permission to save cheques.", Alert.AlertType.ERROR);
             return;
@@ -383,7 +383,7 @@ public class ChequeController {
     // ── Save and Direct Print ────────────────────────────────────────
     @FXML
     private void onSaveAndPrint() {
-        User actor = SessionManager.currentUser().orElse(null);
+        User actor = SessionManager.getInstance().currentUser().orElse(null);
         if (!AccessControl.can(actor, Permission.PRINT_CHEQUE)) {
             showAlert("Permission Denied", "You do not have permission to print cheques.", Alert.AlertType.ERROR);
             return;
@@ -457,7 +457,7 @@ public class ChequeController {
     // ── Print ────────────────────────────────────────────────────────
     @FXML
     private void onPrint() {
-        User actor = SessionManager.currentUser().orElse(null);
+        User actor = SessionManager.getInstance().currentUser().orElse(null);
         if (!AccessControl.can(actor, Permission.PRINT_CHEQUE)) {
             showAlert("Permission Denied", "You do not have permission to print cheques.", Alert.AlertType.ERROR);
             return;
@@ -554,7 +554,7 @@ public class ChequeController {
             return;
         }
 
-        User actor = SessionManager.currentUser().orElse(null);
+        User actor = SessionManager.getInstance().currentUser().orElse(null);
         if (!AccessControl.can(actor, Permission.APPROVE_CHEQUE)) {
             showAlert("Permission Denied",
                     "You do not have permission to approve cheques.",
@@ -598,7 +598,7 @@ public class ChequeController {
     // ── Delete ───────────────────────────────────────────────────────
     @FXML
     private void onDelete() {
-        User actor = SessionManager.currentUser().orElse(null);
+        User actor = SessionManager.getInstance().currentUser().orElse(null);
         if (!AccessControl.can(actor, Permission.DELETE_CHEQUE)) {
             showAlert("Permission Denied", "You do not have permission to delete cheques.", Alert.AlertType.ERROR);
             return;
@@ -669,7 +669,7 @@ public class ChequeController {
 
     @FXML
     private void onDeposit() {
-        User actor = SessionManager.currentUser().orElse(null);
+        User actor = SessionManager.getInstance().currentUser().orElse(null);
         Cheque sel = chequeTable.getSelectionModel().getSelectedItem();
         if (sel == null) {
             showAlert("No Selection", "Please select a cheque to mark as deposited.", Alert.AlertType.WARNING);
@@ -688,7 +688,7 @@ public class ChequeController {
 
     @FXML
     private void onClearCheque() {
-        User actor = SessionManager.currentUser().orElse(null);
+        User actor = SessionManager.getInstance().currentUser().orElse(null);
         Cheque sel = chequeTable.getSelectionModel().getSelectedItem();
         if (sel == null) {
             showAlert("No Selection", "Please select a cheque to mark as cleared.", Alert.AlertType.WARNING);
@@ -707,7 +707,7 @@ public class ChequeController {
 
     @FXML
     private void onBounce() {
-        User actor = SessionManager.currentUser().orElse(null);
+        User actor = SessionManager.getInstance().currentUser().orElse(null);
         Cheque sel = chequeTable.getSelectionModel().getSelectedItem();
         if (sel == null) {
             showAlert("No Selection", "Please select a cheque to mark as bounced.", Alert.AlertType.WARNING);
@@ -726,7 +726,7 @@ public class ChequeController {
 
     @FXML
     private void onCancel() {
-        User actor = SessionManager.currentUser().orElse(null);
+        User actor = SessionManager.getInstance().currentUser().orElse(null);
         Cheque sel = chequeTable.getSelectionModel().getSelectedItem();
         if (sel == null) {
             showAlert("No Selection", "Please select a cheque to cancel.", Alert.AlertType.WARNING);

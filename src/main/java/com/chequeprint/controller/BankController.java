@@ -315,13 +315,26 @@ public class BankController {
         layoutByBankCode.putAll(bankService.loadAllLayouts());
     }
 
+    private void setLoading(boolean loading) {
+        Platform.runLater(() -> {
+            if (bankTable.getScene() != null && bankTable.getScene().getRoot() != null) {
+                bankTable.getScene().getRoot().setCursor(loading ? Cursor.WAIT : Cursor.DEFAULT);
+            }
+            btnSave.setDisable(loading);
+            bankTable.setDisable(loading);
+        });
+    }
+
     private void loadData() {
+        setLoading(true);
         new Thread(() -> {
             try {
                 List<Bank> list = bankService.getAll();
                 Platform.runLater(() -> data.setAll(list));
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 Platform.runLater(() -> showAlert("Load Error", e.getMessage(), Alert.AlertType.ERROR));
+            } finally {
+                setLoading(false);
             }
         }, "load-banks").start();
     }
@@ -356,6 +369,7 @@ public class BankController {
         final Bank finalBank = bank;
         final BankTemplateLayout layoutToSave = currentLayout != null ? currentLayout.copy() : formLayout.copy();
 
+        setLoading(true);
         new Thread(() -> {
             try {
                 bankService.save(finalBank, layoutToSave, layoutByBankCode);
@@ -366,6 +380,8 @@ public class BankController {
                 });
             } catch (Exception e) {
                 Platform.runLater(() -> showAlert("Save Error", e.getMessage(), Alert.AlertType.ERROR));
+            } finally {
+                setLoading(false);
             }
         }, "save-bank").start();
     }
@@ -384,6 +400,7 @@ public class BankController {
         confirm.setHeaderText(null);
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.YES) {
+                setLoading(true);
                 new Thread(() -> {
                     try {
                         bankService.delete(sel, layoutByBankCode);
@@ -393,6 +410,8 @@ public class BankController {
                         });
                     } catch (Exception e) {
                         Platform.runLater(() -> showAlert("Delete Error", e.getMessage(), Alert.AlertType.ERROR));
+                    } finally {
+                        setLoading(false);
                     }
                 }, "delete-bank").start();
             }

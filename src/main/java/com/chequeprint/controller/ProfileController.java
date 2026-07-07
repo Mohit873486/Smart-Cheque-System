@@ -108,7 +108,7 @@ public class ProfileController {
                     user = userService.loadProfile();
                 } catch (Exception e) {
                     try {
-                        user = SessionManager.requireUser();
+                        user = SessionManager.getInstance().requireUser();
                     } catch (Exception ignored) {}
                 }
 

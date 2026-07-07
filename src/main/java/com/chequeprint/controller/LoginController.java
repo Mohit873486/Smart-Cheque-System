@@ -206,7 +206,7 @@ public class LoginController {
       }
 
       User user = forgotPasswordService.verifyOtpLogin(identity.get(), enteredOtp.get());
-      SessionManager.start(user);
+      SessionManager.getInstance().start(user);
       persistRememberMe(identity.get());
       loadMainApp(user);
     } catch (Exception ex) {
