@@ -265,9 +265,34 @@ public class ProfileController {
     // =========================
     // SAVE PROFILE
     // =========================
+    private void validateProfileForm() {
+        String firstName = tfFirstName.getText() == null ? "" : tfFirstName.getText().trim();
+        String lastName = tfLastName.getText() == null ? "" : tfLastName.getText().trim();
+        String email = tfEmail.getText() == null ? "" : tfEmail.getText().trim();
+        String phone = tfPhone.getText() == null ? "" : tfPhone.getText().trim();
+
+        if (firstName.isEmpty() || lastName.isEmpty()) {
+            throw new IllegalArgumentException("First name and last name fields cannot be empty.");
+        }
+        if (email.isEmpty()) {
+            throw new IllegalArgumentException("Email address cannot be empty.");
+        }
+        if (!email.contains("@")) {
+            throw new IllegalArgumentException("Email address must contain '@' symbol.");
+        }
+        if (phone.isEmpty()) {
+            throw new IllegalArgumentException("Phone number cannot be empty.");
+        }
+        if (!phone.matches("^\\d{10}$")) {
+            throw new IllegalArgumentException("Phone number must contain exactly 10 digits.");
+        }
+    }
+
     @FXML
     private void onSave() {
         try {
+            validateProfileForm();
+
             if (user == null)
                 user = new User();
 

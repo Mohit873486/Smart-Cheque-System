@@ -7,6 +7,7 @@ com\chequeprint\service\OpenAiSqlQueryService.class
 com\chequeprint\service\OpenAiChequeOcrService.class
 com\chequeprint\controller\DashboardController$1.class
 com\chequeprint\util\ChequeApiClient$1.class
+com\chequeprint\model\BankAccount.class
 com\chequeprint\service\SettingService.class
 com\chequeprint\controller\ModernDashboardController$4.class
 com\chequeprint\util\BankTemplatePdfExporter.class
