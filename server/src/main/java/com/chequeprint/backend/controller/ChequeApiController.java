@@ -1,6 +1,7 @@
 package com.chequeprint.backend.controller;
 
 import com.chequeprint.backend.entity.Cheque;
+import com.chequeprint.backend.dto.ChequeDTO;
 import com.chequeprint.backend.service.ChequeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -8,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/cheques")
@@ -22,29 +24,49 @@ public class ChequeApiController {
         this.auditLogService = auditLogService;
     }
 
+    private ChequeDTO toDTO(Cheque c) {
+        if (c == null) return null;
+        return new ChequeDTO(
+            c.getId(),
+            c.getChequeNo(),
+            c.getPayeeName(),
+            c.getAmount(),
+            c.getAmountWords(),
+            c.getBankId(),
+            c.getAccountId(),
+            c.getIssueDate(),
+            c.getStatus() != null ? c.getStatus().name() : null,
+            c.getBankName()
+        );
+    }
+
     @GetMapping
-    public ResponseEntity<List<Cheque>> getAllCheques() {
-        return ResponseEntity.ok(service.getAllCheques());
+    public ResponseEntity<List<ChequeDTO>> getAllCheques() {
+        List<ChequeDTO> dtos = service.getAllCheques().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Cheque> getChequeById(@PathVariable int id) {
+    public ResponseEntity<ChequeDTO> getChequeById(@PathVariable int id) {
         return service.getChequeById(id)
+                .map(this::toDTO)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<Cheque> createCheque(@RequestBody Cheque cheque) {
+    public ResponseEntity<ChequeDTO> createCheque(@RequestBody Cheque cheque) {
         Cheque created = service.createCheque(cheque);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        return ResponseEntity.status(HttpStatus.CREATED).body(toDTO(created));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Cheque> updateCheque(@PathVariable int id, @RequestBody Cheque cheque) {
+    public ResponseEntity<ChequeDTO> updateCheque(@PathVariable int id, @RequestBody Cheque cheque) {
         try {
             Cheque updated = service.updateCheque(id, cheque);
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(toDTO(updated));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.notFound().build();
         }
@@ -69,8 +91,11 @@ public class ChequeApiController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<Cheque>> searchCheques(@RequestParam String query) {
-        return ResponseEntity.ok(service.searchCheques(query));
+    public ResponseEntity<List<ChequeDTO>> searchCheques(@RequestParam String query) {
+        List<ChequeDTO> dtos = service.searchCheques(query).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 
     @PatchMapping("/{id}/approve")
@@ -92,7 +117,7 @@ public class ChequeApiController {
             }
             cheque.setStatus(Cheque.Status.Approved);
             Cheque updated = service.updateCheque(id, cheque);
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(toDTO(updated));
         } catch (Exception ex) {
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

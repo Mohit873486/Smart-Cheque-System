@@ -7,8 +7,6 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.LocalDate;
@@ -17,15 +15,12 @@ import java.util.List;
 public class ChequeApiClient {
 
     private static final String BASE_URL = "http://localhost:8081/api/cheques";
-    private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
     public ChequeApiClient() {
-        this.httpClient = HttpClient.newBuilder().build();
         this.objectMapper = new ObjectMapper();
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         
-        // Add custom LocalDate serializer/deserializer to avoid dependency on jackson-datatype-jsr310 module
         SimpleModule module = new SimpleModule();
         module.addSerializer(LocalDate.class, new JsonSerializer<>() {
             @Override
@@ -47,21 +42,12 @@ public class ChequeApiClient {
         this.objectMapper.registerModule(module);
     }
 
-    private HttpRequest.Builder requestBuilder(String url) {
-        HttpRequest.Builder builder = HttpRequest.newBuilder().uri(URI.create(url));
-        String token = SessionManager.getJwtToken();
-        if (token != null && !token.isBlank()) {
-            builder.header("Authorization", "Bearer " + token);
-        }
-        return builder;
-    }
-
     public List<Cheque> getAllCheques() throws Exception {
-        HttpRequest request = requestBuilder(BASE_URL)
+        HttpRequest request = RestApiClient.requestBuilder(BASE_URL)
                 .GET()
                 .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = RestApiClient.send(request);
 
         if (response.statusCode() == 200) {
             return objectMapper.readValue(response.body(), 
@@ -72,11 +58,11 @@ public class ChequeApiClient {
     }
 
     public Cheque getChequeById(int id) throws Exception {
-        HttpRequest request = requestBuilder(BASE_URL + "/" + id)
+        HttpRequest request = RestApiClient.requestBuilder(BASE_URL + "/" + id)
                 .GET()
                 .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = RestApiClient.send(request);
 
         if (response.statusCode() == 200) {
             return objectMapper.readValue(response.body(), Cheque.class);
@@ -90,12 +76,12 @@ public class ChequeApiClient {
     public Cheque createCheque(Cheque cheque) throws Exception {
         String json = objectMapper.writeValueAsString(cheque);
 
-        HttpRequest request = requestBuilder(BASE_URL)
+        HttpRequest request = RestApiClient.requestBuilder(BASE_URL)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = RestApiClient.send(request);
 
         if (response.statusCode() == 201) {
             return objectMapper.readValue(response.body(), Cheque.class);
@@ -107,33 +93,44 @@ public class ChequeApiClient {
     public boolean updateCheque(Cheque cheque) throws Exception {
         String json = objectMapper.writeValueAsString(cheque);
 
-        HttpRequest request = requestBuilder(BASE_URL + "/" + cheque.getId())
+        HttpRequest request = RestApiClient.requestBuilder(BASE_URL + "/" + cheque.getId())
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(json))
                 .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = RestApiClient.send(request);
+
+        return response.statusCode() == 200;
+    }
+
+    public boolean approveCheque(int id) throws Exception {
+        HttpRequest request = RestApiClient.requestBuilder(BASE_URL + "/" + id + "/approve")
+                .header("Content-Type", "application/json")
+                .method("PATCH", HttpRequest.BodyPublishers.noBody())
+                .build();
+
+        HttpResponse<String> response = RestApiClient.send(request);
 
         return response.statusCode() == 200;
     }
 
     public boolean deleteCheque(int id) throws Exception {
-        HttpRequest request = requestBuilder(BASE_URL + "/" + id)
+        HttpRequest request = RestApiClient.requestBuilder(BASE_URL + "/" + id)
                 .DELETE()
                 .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = RestApiClient.send(request);
 
         return response.statusCode() == 204;
     }
 
     public boolean existsByChequeNo(String chequeNo, int excludeId) throws Exception {
         String url = BASE_URL + "/exists?chequeNo=" + chequeNo + "&excludeId=" + excludeId;
-        HttpRequest request = requestBuilder(url)
+        HttpRequest request = RestApiClient.requestBuilder(url)
                 .GET()
                 .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = RestApiClient.send(request);
 
         if (response.statusCode() == 200) {
             return Boolean.parseBoolean(response.body());
@@ -144,11 +141,11 @@ public class ChequeApiClient {
 
     public List<Cheque> searchCheques(String query) throws Exception {
         String url = BASE_URL + "/search?query=" + java.net.URLEncoder.encode(query, java.nio.charset.StandardCharsets.UTF_8);
-        HttpRequest request = requestBuilder(url)
+        HttpRequest request = RestApiClient.requestBuilder(url)
                 .GET()
                 .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = RestApiClient.send(request);
 
         if (response.statusCode() == 200) {
             return objectMapper.readValue(response.body(), 

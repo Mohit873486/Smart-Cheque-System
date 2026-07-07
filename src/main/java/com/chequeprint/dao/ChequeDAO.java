@@ -59,6 +59,14 @@ public class ChequeDAO {
         return update(c);
     }
 
+    public boolean approveCheque(int id) throws SQLException {
+        try {
+            return client.approveCheque(id);
+        } catch (Exception e) {
+            throw new SQLException("Failed to approve cheque via REST API", e);
+        }
+    }
+
     // ---- DELETE ----
     public boolean delete(int id) throws SQLException {
         try {

@@ -2,6 +2,7 @@ package com.chequeprint.backend.service;
 
 import com.chequeprint.backend.entity.User;
 import com.chequeprint.backend.repository.UserRepository;
+import com.chequeprint.backend.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
@@ -81,13 +82,13 @@ public class UserService {
                     auditLogService.record(null, "users", saved.getId(), "UPDATE", "Updated user profile: " + saved.getUsername());
                     return saved;
                 })
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
     }
 
     public void deleteUser(int id) {
         Optional<User> existing = repository.findById(id);
         if (existing.isEmpty()) {
-            throw new IllegalArgumentException("User not found with ID: " + id);
+            throw new ResourceNotFoundException("User not found with ID: " + id);
         }
         repository.deleteById(id);
         auditLogService.record(null, "users", id, "DELETE", "Deleted user: " + existing.get().getUsername());
@@ -95,7 +96,7 @@ public class UserService {
 
     public void changePassword(int id, String currentPassword, String newPassword) {
         User user = repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
 
         if (!BCrypt.checkpw(currentPassword, user.getPassword())) {
             throw new IllegalArgumentException("Current password is incorrect.");

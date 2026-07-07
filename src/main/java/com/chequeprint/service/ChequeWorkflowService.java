@@ -37,7 +37,7 @@ public class ChequeWorkflowService {
     if (cheque.getStatus() != Cheque.Status.Pending) {
       throw new IllegalStateException("Only pending cheques can be approved.");
     }
-    boolean updated = chequeService.setStatus(cheque, Cheque.Status.Approved);
+    boolean updated = chequeService.approveCheque(chequeId);
     if (!updated) {
       throw new SQLException("Could not approve cheque: " + cheque.getChequeNo());
     }

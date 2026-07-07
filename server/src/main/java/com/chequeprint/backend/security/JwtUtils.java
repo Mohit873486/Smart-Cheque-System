@@ -4,20 +4,31 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import jakarta.annotation.PostConstruct;
 
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.Base64;
 
 @Component
 public class JwtUtils {
 
-    // A secure signing key generated for HMAC-SHA256
-    private final Key signingKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    @Value("${jwt.secret}")
+    private String secret;
+
+    private Key signingKey;
     private final long EXPIRATION_TIME = 86400000; // 24 Hours in Milliseconds
+
+    @PostConstruct
+    public void init() {
+        byte[] keyBytes = Base64.getDecoder().decode(secret);
+        this.signingKey = Keys.hmacShaKeyFor(keyBytes);
+    }
 
     // 1. Generate token containing Username and Role claims
     public String generateToken(String username, String role) {

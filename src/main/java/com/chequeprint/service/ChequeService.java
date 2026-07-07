@@ -65,6 +65,10 @@ public class ChequeService {
         return dao.updateStatus(cheque, status);
     }
 
+    public boolean approveCheque(int id) throws SQLException {
+        return dao.approveCheque(id);
+    }
+
     // --- Dashboard stats ---
     public int getTotalCheques() throws SQLException {
         return dao.countTotal();

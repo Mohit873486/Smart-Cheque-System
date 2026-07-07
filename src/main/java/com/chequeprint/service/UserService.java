@@ -9,17 +9,15 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.sql.SQLException;
 import java.util.List;
+import com.chequeprint.util.RestApiClient;
 
 public class UserService {
 
     private static final String BASE_URL = "http://localhost:8081/api/users";
-    private final HttpClient httpClient = HttpClient.newBuilder().build();
     private final ObjectMapper objectMapper;
 
     public UserService() {
@@ -27,25 +25,16 @@ public class UserService {
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
-    private HttpRequest.Builder requestBuilder(String url) {
-        HttpRequest.Builder builder = HttpRequest.newBuilder().uri(URI.create(url));
-        String token = SessionManager.getJwtToken();
-        if (token != null && !token.isBlank()) {
-            builder.header("Authorization", "Bearer " + token);
-        }
-        return builder;
-    }
-
     // ── Profile CRUD ─────────────────────────────────────────────────
     
     public User loadProfile() throws SQLException {
         try {
             int userId = SessionManager.requireUser().getId();
-            HttpRequest request = requestBuilder(BASE_URL + "/" + userId)
+            HttpRequest request = RestApiClient.requestBuilder(BASE_URL + "/" + userId)
                     .GET()
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = RestApiClient.send(request);
 
             if (response.statusCode() == 200) {
                 User loadedUser = objectMapper.readValue(response.body(), User.class);
@@ -63,18 +52,32 @@ public class UserService {
         validateUser(user);
         try {
             String json = objectMapper.writeValueAsString(user);
-            HttpRequest request = requestBuilder(BASE_URL + "/" + user.getId())
+            HttpRequest request = RestApiClient.requestBuilder(BASE_URL + "/" + user.getId())
                     .header("Content-Type", "application/json")
                     .PUT(HttpRequest.BodyPublishers.ofString(json))
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = RestApiClient.send(request);
 
             if (response.statusCode() == 200) {
                 SessionManager.start(user);
                 return true;
             }
-            return false;
+
+            String errorMsg = "HTTP error " + response.statusCode();
+            try {
+                com.fasterxml.jackson.databind.JsonNode node = objectMapper.readTree(response.body());
+                if (node.has("message")) {
+                    errorMsg = node.get("message").asText();
+                } else if (node.isTextual()) {
+                    errorMsg = node.asText();
+                }
+            } catch (Exception ignored) {}
+            
+            throw new IllegalArgumentException(errorMsg);
+
+        } catch (IllegalArgumentException iae) {
+            throw iae;
         } catch (Exception e) {
             try {
                 UserDAO dao = new UserDAO();
@@ -115,12 +118,12 @@ public class UserService {
             payload.put("newPassword", newPassword);
 
             String json = objectMapper.writeValueAsString(payload);
-            HttpRequest request = requestBuilder(BASE_URL + "/" + userId + "/change-password")
+            HttpRequest request = RestApiClient.requestBuilder(BASE_URL + "/" + userId + "/change-password")
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = RestApiClient.send(request);
 
             if (response.statusCode() != 200) {
                 String error = response.body();
@@ -139,11 +142,11 @@ public class UserService {
     // ── Admin user management helpers ─────────────────────────────────
     public List<User> findAllUsers(User actor) throws SQLException {
         try {
-            HttpRequest request = requestBuilder(BASE_URL)
+            HttpRequest request = RestApiClient.requestBuilder(BASE_URL)
                     .GET()
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = RestApiClient.send(request);
 
             if (response.statusCode() == 200) {
                 return objectMapper.readValue(response.body(),
@@ -158,11 +161,11 @@ public class UserService {
 
     public boolean userExists(String usernameOrEmail) throws SQLException {
         try {
-            HttpRequest request = requestBuilder(BASE_URL + "/username/" + usernameOrEmail)
+            HttpRequest request = RestApiClient.requestBuilder(BASE_URL + "/username/" + usernameOrEmail)
                     .GET()
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = RestApiClient.send(request);
 
             return response.statusCode() == 200;
         } catch (Exception e) {
@@ -184,15 +187,24 @@ public class UserService {
             validateUser(u);
 
             String json = objectMapper.writeValueAsString(u);
-            HttpRequest request = requestBuilder(BASE_URL)
+            HttpRequest request = RestApiClient.requestBuilder(BASE_URL)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = RestApiClient.send(request);
 
             if (response.statusCode() != 201) {
-                throw new IOException("Failed to register user. HTTP: " + response.statusCode());
+                String errorMsg = "HTTP " + response.statusCode();
+                try {
+                    com.fasterxml.jackson.databind.JsonNode node = objectMapper.readTree(response.body());
+                    if (node.has("message")) {
+                        errorMsg = node.get("message").asText();
+                    } else if (node.isTextual()) {
+                        errorMsg = node.asText();
+                    }
+                } catch (Exception ignored) {}
+                throw new IOException(errorMsg);
             }
         } catch (Exception e) {
             throw new SQLException("Registration failed: " + e.getMessage(), e);
@@ -212,12 +224,12 @@ public class UserService {
             validateUser(u);
 
             String json = objectMapper.writeValueAsString(u);
-            HttpRequest request = requestBuilder(BASE_URL)
+            HttpRequest request = RestApiClient.requestBuilder(BASE_URL)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = RestApiClient.send(request);
 
             if (response.statusCode() != 201) {
                 throw new IOException("Failed to create user. HTTP: " + response.statusCode());
@@ -240,11 +252,11 @@ public class UserService {
 
     public void deleteUser(User actor, int userId) throws SQLException {
         try {
-            HttpRequest request = requestBuilder(BASE_URL + "/" + userId)
+            HttpRequest request = RestApiClient.requestBuilder(BASE_URL + "/" + userId)
                     .DELETE()
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = RestApiClient.send(request);
 
             if (response.statusCode() != 204) {
                 throw new IOException("Failed to delete user. HTTP: " + response.statusCode());
@@ -256,11 +268,11 @@ public class UserService {
 
     public List<com.chequeprint.model.AuditLog> loadUserActivity(int userId) throws SQLException {
         try {
-            HttpRequest request = requestBuilder(BASE_URL + "/" + userId + "/activity")
+            HttpRequest request = RestApiClient.requestBuilder(BASE_URL + "/" + userId + "/activity")
                     .GET()
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = RestApiClient.send(request);
 
             if (response.statusCode() == 200) {
                 return objectMapper.readValue(response.body(),

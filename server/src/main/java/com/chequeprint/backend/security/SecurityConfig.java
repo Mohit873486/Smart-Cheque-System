@@ -25,8 +25,9 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable()) // Disable CSRF for stateless REST APIs using JWT
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Allow login endpoint publicly
+                // Allow login and registration endpoint publicly
                 .requestMatchers("/api/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                 
                 // 1. ADMIN (or Manager) can approve cheques
                 .requestMatchers(HttpMethod.PATCH, "/api/cheques/*/approve").hasAnyRole("Admin", "Manager")
