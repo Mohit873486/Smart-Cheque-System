@@ -24,12 +24,20 @@ public final class SessionManager {
         lastActivityTime = Instant.now();
     }
 
-    public static void setJwtToken(String token) {
+    public static void setToken(String token) {
         jwtToken = token;
     }
 
-    public static String getJwtToken() {
+    public static String getToken() {
         return jwtToken;
+    }
+
+    public static void setJwtToken(String token) {
+        setToken(token);
+    }
+
+    public static String getJwtToken() {
+        return getToken();
     }
 
     public static Optional<User> currentUser() {

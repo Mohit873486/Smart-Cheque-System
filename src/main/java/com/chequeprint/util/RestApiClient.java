@@ -15,7 +15,7 @@ public final class RestApiClient {
 
     public static HttpRequest.Builder requestBuilder(String url) {
         HttpRequest.Builder builder = HttpRequest.newBuilder().uri(URI.create(url));
-        String token = SessionManager.getJwtToken();
+        String token = SessionManager.getToken();
         if (token != null && !token.isBlank()) {
             builder.header("Authorization", "Bearer " + token);
         }

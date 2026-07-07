@@ -343,26 +343,31 @@ public class BankController {
 
         String encodedSize = ChequeSizeCodec.encode(preset, formLayout.getWidthInches(), formLayout.getHeightInches());
 
-        try {
-            Bank bank = selectedBank;
-            if (bank == null) {
-                bank = new Bank(name, code, encodedSize, chkMicr.isSelected());
-            } else {
-                bank.setBankName(name);
-                bank.setBankCode(code);
-                bank.setChequeSize(encodedSize);
-                bank.setMicr(chkMicr.isSelected());
-            }
-
-            BankTemplateLayout layoutToSave = currentLayout != null ? currentLayout.copy() : formLayout.copy();
-            bankService.save(bank, layoutToSave, layoutByBankCode);
-
-            clearForm();
-            loadData();
-            showAlert("Success", "Bank template saved successfully.", Alert.AlertType.INFORMATION);
-        } catch (Exception e) {
-            showAlert("Save Error", e.getMessage(), Alert.AlertType.ERROR);
+        Bank bank = selectedBank;
+        if (bank == null) {
+            bank = new Bank(name, code, encodedSize, chkMicr.isSelected());
+        } else {
+            bank.setBankName(name);
+            bank.setBankCode(code);
+            bank.setChequeSize(encodedSize);
+            bank.setMicr(chkMicr.isSelected());
         }
+
+        final Bank finalBank = bank;
+        final BankTemplateLayout layoutToSave = currentLayout != null ? currentLayout.copy() : formLayout.copy();
+
+        new Thread(() -> {
+            try {
+                bankService.save(finalBank, layoutToSave, layoutByBankCode);
+                Platform.runLater(() -> {
+                    clearForm();
+                    loadData();
+                    showAlert("Success", "Bank template saved successfully.", Alert.AlertType.INFORMATION);
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> showAlert("Save Error", e.getMessage(), Alert.AlertType.ERROR));
+            }
+        }, "save-bank").start();
     }
 
     @FXML
@@ -379,13 +384,17 @@ public class BankController {
         confirm.setHeaderText(null);
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.YES) {
-                try {
-                    bankService.delete(sel, layoutByBankCode);
-                    clearForm();
-                    loadData();
-                } catch (Exception e) {
-                    showAlert("Delete Error", e.getMessage(), Alert.AlertType.ERROR);
-                }
+                new Thread(() -> {
+                    try {
+                        bankService.delete(sel, layoutByBankCode);
+                        Platform.runLater(() -> {
+                            clearForm();
+                            loadData();
+                        });
+                    } catch (Exception e) {
+                        Platform.runLater(() -> showAlert("Delete Error", e.getMessage(), Alert.AlertType.ERROR));
+                    }
+                }, "delete-bank").start();
             }
         });
     }
@@ -593,12 +602,15 @@ public class BankController {
             return;
         }
 
-        try {
-            layoutByBankCode.put(code, currentLayout.copy());
-            bankService.saveLayouts(layoutByBankCode);
-        } catch (Exception ex) {
-            showAlert("Layout Save Error", "Unable to save cheque alignment: " + ex.getMessage(), Alert.AlertType.ERROR);
-        }
+        final BankTemplateLayout layoutToSave = currentLayout.copy();
+        new Thread(() -> {
+            try {
+                layoutByBankCode.put(code, layoutToSave);
+                bankService.saveLayouts(layoutByBankCode);
+            } catch (Exception ex) {
+                Platform.runLater(() -> showAlert("Layout Save Error", "Unable to save cheque alignment: " + ex.getMessage(), Alert.AlertType.ERROR));
+            }
+        }, "persist-layout").start();
     }
 
     private String safeCode(String code) {

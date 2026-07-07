@@ -453,37 +453,27 @@ public class MainController {
     try {
       Node view;
 
-      // ✅ CACHE FIX (IMPORTANT)
-      if (pageCache.containsKey(page)) {
-        view = pageCache.get(page);
-      } else {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource(path));
-        view = loader.load();
+      FXMLLoader loader = new FXMLLoader(getClass().getResource(path));
+      view = loader.load();
 
-        view.setOpacity(0);
+      view.setOpacity(0);
 
-        // Inject controller
-        Object ctrl = loader.getController();
-        if (ctrl instanceof DashboardController dc)
-          dc.setMainController(this);
-        if (ctrl instanceof ChequeController cc)
-          cc.setMainController(this);
-        if (ctrl instanceof InvoiceController ic)
-          ic.setMainController(this);
-        if (ctrl instanceof AiAssistantController ac)
-          ac.setMainController(this);
-        if (ctrl instanceof ProfileController pc)
-          pc.setMainController(this);
-        if (ctrl instanceof SettingsController sc)
-          sc.setMainController(this);
-        if (ctrl instanceof SupportController sc)
-          sc.setMainController(this);
-
-        // store in cache
-        pageCache.put(page, view);
-        // also keep controller reference for cross-page notifications
-        controllerMap.put(page, ctrl);
-      }
+      // Inject controller
+      Object ctrl = loader.getController();
+      if (ctrl instanceof DashboardController dc)
+        dc.setMainController(this);
+      if (ctrl instanceof ChequeController cc)
+        cc.setMainController(this);
+      if (ctrl instanceof InvoiceController ic)
+        ic.setMainController(this);
+      if (ctrl instanceof AiAssistantController ac)
+        ac.setMainController(this);
+      if (ctrl instanceof ProfileController pc)
+        pc.setMainController(this);
+      if (ctrl instanceof SettingsController sc)
+        sc.setMainController(this);
+      if (ctrl instanceof SupportController sc)
+        sc.setMainController(this);
 
       Node current = contentPane.getChildren().isEmpty()
           ? null

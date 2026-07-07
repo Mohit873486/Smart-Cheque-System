@@ -53,6 +53,7 @@ public class AuthService {
         // Successful login
         JsonNode rootNode = objectMapper.readTree(response.body());
         String token = rootNode.get("token").asText();
+        System.out.println("Debug - Extracted Token: " + token);
         JsonNode userNode = rootNode.get("user");
 
         // 4. Map properties from userNode to client User model
@@ -66,7 +67,7 @@ public class AuthService {
 
         // 5. Store session context
         SessionManager.start(user);
-        SessionManager.setJwtToken(token);
+        SessionManager.setToken(token);
         
         remainingLoginAttempts = MAX_LOGIN_ATTEMPTS;
         currentUser = user;
