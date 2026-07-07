@@ -269,9 +269,20 @@ public class MainController {
         authService.logout();
         SessionManager.clear();
 
+        for (Object ctrl : controllerMap.values()) {
+          if (ctrl instanceof DashboardController dc) {
+            dc.cleanup();
+          }
+        }
+        controllerMap.clear();
+        pageCache.clear();
+
         javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/login.fxml"));
         Parent root = loader.load();
         javafx.stage.Stage stage = (javafx.stage.Stage) contentPane.getScene().getWindow();
+        
+        stage.setMaximized(false); // Restore normal window size
+        
         javafx.scene.Scene scene = new javafx.scene.Scene(root, 900, 620);
         var stylesheet = getClass().getResource("/css/style.css");
         if (stylesheet != null) {
@@ -331,10 +342,21 @@ public class MainController {
       authService.logout();
       com.chequeprint.util.SessionManager.clear();
 
+      for (Object ctrl : controllerMap.values()) {
+        if (ctrl instanceof DashboardController dc) {
+          dc.cleanup();
+        }
+      }
+      controllerMap.clear();
+      pageCache.clear();
+
       // Load login scene
       javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/login.fxml"));
       javafx.scene.Parent root = loader.load();
       javafx.stage.Stage stage = (javafx.stage.Stage) contentPane.getScene().getWindow();
+      
+      stage.setMaximized(false); // Restore normal window size
+      
       javafx.scene.Scene scene = new javafx.scene.Scene(root, 900, 620);
       var stylesheet = getClass().getResource("/css/style.css");
       if (stylesheet != null) {

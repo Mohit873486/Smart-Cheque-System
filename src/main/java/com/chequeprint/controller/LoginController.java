@@ -296,10 +296,6 @@ public class LoginController {
     try {
       FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/main.fxml"));
       Parent root = loader.load();
-
-      MainController mainController = loader.getController();
-      mainController.setCurrentUser(authenticatedUser);
-
       Stage stage = (Stage) btnLogin.getScene().getWindow();
       Scene scene = new Scene(root, 1280, 800);
       scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
@@ -310,6 +306,9 @@ public class LoginController {
       stage.setMinHeight(600);
       stage.setMaximized(true);
       stage.centerOnScreen();
+
+      MainController mainController = loader.getController();
+      mainController.setCurrentUser(authenticatedUser);
 
       root.setOpacity(0);
       FadeTransition ft = new FadeTransition(Duration.millis(350), root);

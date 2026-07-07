@@ -529,6 +529,12 @@ public class DashboardController {
         autoRefreshTimeline.play();
     }
 
+    public void cleanup() {
+        if (autoRefreshTimeline != null) {
+            autoRefreshTimeline.stop();
+        }
+    }
+
     private record DashboardData(List<Cheque> cheques, List<Invoice> invoices, User profile, String error) {
     }
 }
