@@ -1,0 +1,158 @@
+/* ═══════════════════════════════════════════════════════════════
+   ChequePro — Professional Dark Theme  (JavaFX CSS Override)
+   ═══════════════════════════════════════════════════════════════ */
+
+.root {
+    -fx-background-color: #0f172a !important;
+    -fx-text-fill: #f8fafc !important;
+}
+
+.page-root {
+    -fx-background-color: #0f172a !important;
+}
+
+.scroll-pane {
+    -fx-background: #0f172a !important;
+    -fx-background-color: #0f172a !important;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: #0f172a !important;
+}
+
+/* Card overrides */
+.card {
+    -fx-background-color: #1e293b !important;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0, 0, 2) !important;
+    -fx-border-color: #334155 !important;
+    -fx-border-width: 1 !important;
+    -fx-border-radius: 12 !important;
+}
+
+/* Forms & Text Fields */
+.text-field {
+    -fx-background-color: #1e293b !important;
+    -fx-text-fill: #f8fafc !important;
+    -fx-border-color: #334155 !important;
+}
+
+.text-field:focused {
+    -fx-border-color: #3b82f6 !important;
+}
+
+/* Labels */
+.label {
+    -fx-text-fill: #f8fafc !important;
+}
+
+/* Form headers and titles */
+.page-title {
+    -fx-text-fill: #ffffff !important;
+}
+
+.section-title {
+    -fx-text-fill: #f8fafc !important;
+}
+
+/* Checkbox and Radio buttons text */
+.check-box {
+    -fx-text-fill: #f8fafc !important;
+}
+.check-box > .box {
+    -fx-background-color: #1e293b !important;
+    -fx-border-color: #334155 !important;
+}
+.check-box:selected > .box > .mark {
+    -fx-background-color: #3b82f6 !important;
+}
+
+.radio-button {
+    -fx-text-fill: #f8fafc !important;
+}
+.radio-button > .radio {
+    -fx-background-color: #1e293b !important;
+    -fx-border-color: #334155 !important;
+}
+.radio-button:selected > .radio > .dot {
+    -fx-background-color: #3b82f6 !important;
+}
+
+/* ComboBox overrides */
+.combo-box {
+    -fx-background-color: #1e293b !important;
+    -fx-border-color: #334155 !important;
+}
+
+.combo-box .label {
+    -fx-text-fill: #f8fafc !important;
+}
+
+.combo-box > .arrow-button > .arrow {
+    -fx-background-color: #94a3b8 !important;
+}
+
+.combo-box-popup > .list-view {
+    -fx-background-color: #1e293b !important;
+    -fx-border-color: #334155 !important;
+}
+
+.combo-box-popup > .list-view > .list-cell {
+    -fx-text-fill: #f8fafc !important;
+    -fx-background-color: #1e293b !important;
+}
+
+.combo-box-popup > .list-view > .list-cell:hover {
+    -fx-background-color: #334155 !important;
+}
+
+/* TableViews */
+.table-view {
+    -fx-background-color: #1e293b !important;
+    -fx-border-color: #334155 !important;
+}
+
+.table-view .column-header {
+    -fx-background-color: #0f172a !important;
+    -fx-border-color: #334155 !important;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #94a3b8 !important;
+}
+
+.table-view .table-cell {
+    -fx-text-fill: #f8fafc !important;
+    -fx-border-color: #334155 transparent transparent transparent !important;
+}
+
+.table-row-cell {
+    -fx-background-color: #1e293b !important;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #162238 !important;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #3b82f6 !important;
+}
+
+.table-row-cell:selected .table-cell {
+    -fx-text-fill: #ffffff !important;
+}
+
+/* Separator styling */
+.separator *.line {
+    -fx-border-color: #334155 !important;
+}
+
+/* Dialog and Alerts in dark mode */
+.dialog-pane {
+    -fx-background-color: #1e293b !important;
+}
+.dialog-pane > .content.label {
+    -fx-text-fill: #f8fafc !important;
+}
+.dialog-pane > .button-bar > .container {
+    -fx-background-color: #1e293b !important;
+}

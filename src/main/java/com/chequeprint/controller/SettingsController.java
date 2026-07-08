@@ -306,6 +306,11 @@ public class SettingsController {
 
                 System.out.println("[Settings] Configuration loaded from REST API");
                 showStatusMessage("Settings loaded successfully.", false);
+
+                // Update theme dynamically on load
+                if (btnSaveSettings.getScene() != null) {
+                    com.chequeprint.util.ThemeManager.applyTheme(btnSaveSettings.getScene(), s.getTheme());
+                }
             } else {
                 loadDefaultFormFields();
                 showStatusMessage("No settings found on server. Defaults loaded.", false);
@@ -406,6 +411,11 @@ public class SettingsController {
                 btnSaveSettings.setText("Save Settings");
                 showStatusMessage("Settings saved successfully!", false);
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Settings saved successfully!");
+
+                // Update theme dynamically on save (utilizing outer scope 'theme')
+                if (btnSaveSettings.getScene() != null) {
+                    com.chequeprint.util.ThemeManager.applyTheme(btnSaveSettings.getScene(), theme);
+                }
             });
 
             task.setOnFailed(event -> {

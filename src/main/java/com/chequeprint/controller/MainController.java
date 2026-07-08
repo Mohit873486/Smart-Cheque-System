@@ -229,6 +229,25 @@ public class MainController {
     updateUserFooter();
     navigateRoleLanding();
     startSessionTimeoutCheck();
+
+    // Load and apply the theme asynchronously on startup
+    Thread themeLoaderThread = new Thread(() -> {
+        try {
+            com.chequeprint.service.SettingService service = new com.chequeprint.service.SettingService();
+            com.chequeprint.model.Settings settings = service.getSettings();
+            if (settings != null) {
+                Platform.runLater(() -> {
+                    if (contentPane != null && contentPane.getScene() != null) {
+                        com.chequeprint.util.ThemeManager.applyTheme(contentPane.getScene(), settings.getTheme());
+                    }
+                });
+            }
+        } catch (Exception ex) {
+            System.err.println("[MainController] Error applying theme: " + ex.getMessage());
+        }
+    });
+    themeLoaderThread.setDaemon(true);
+    themeLoaderThread.start();
   }
 
   private void startSessionTimeoutCheck() {

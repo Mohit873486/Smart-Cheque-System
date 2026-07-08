@@ -33,7 +33,7 @@
                maxWidth="Infinity" />
 
         <!-- 👤 SECTION 1: USER & APPLICATION SETTINGS -->
-        <VBox spacing="0"
+        <VBox spacing="0" styleClass="card"
             style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.04), 8, 0, 0, 2);">
 
             <HBox alignment="CENTER_LEFT" spacing="10"
@@ -97,7 +97,7 @@
         </VBox>
 
         <!-- 🏦 SECTION 2: BANK SETTINGS -->
-        <VBox spacing="0"
+        <VBox spacing="0" styleClass="card"
             style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.04), 8, 0, 0, 2);">
 
             <HBox alignment="CENTER_LEFT" spacing="10"
@@ -138,7 +138,7 @@
         </VBox>
 
         <!-- 🖨️ SECTION 3: PRINT SETTINGS & SIGNATURES -->
-        <VBox spacing="0"
+        <VBox spacing="0" styleClass="card"
             style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.04), 8, 0, 0, 2);">
 
             <HBox alignment="CENTER_LEFT" spacing="10"

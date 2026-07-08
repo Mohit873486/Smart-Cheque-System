@@ -71,6 +71,7 @@ com\chequeprint\service\MultiAgentCoordinatorService.class
 com\chequeprint\controller\AiAssistantController.class
 com\chequeprint\preview\BankTemplate.class
 com\chequeprint\service\ChequeService.class
+com\chequeprint\util\ThemeManager.class
 com\chequeprint\preview\ChequeData.class
 com\chequeprint\controller\SettingsController$3.class
 com\chequeprint\dao\UserDAO.class
