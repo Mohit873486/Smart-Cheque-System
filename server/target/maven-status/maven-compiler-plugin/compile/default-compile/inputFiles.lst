@@ -1,10 +1,13 @@
 E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\exception\ResourceNotFoundException.java
 E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\entity\BankTemplate.java
+E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\service\SettingsService.java
 E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\service\UserService.java
 E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\controller\AuditLogApiController.java
 E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\dto\LoginRequest.java
 E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\security\JwtUtils.java
+E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\entity\Settings.java
 E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\exception\GlobalExceptionHandler.java
+E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\controller\SettingsApiController.java
 E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\controller\AccountApiController.java
 E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\controller\ChequeApiController.java
 E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\entity\Account.java
@@ -28,6 +31,7 @@ E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backe
 E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\repository\BankTemplateRepository.java
 E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\service\AuthService.java
 E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\entity\AuditLog.java
+E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\repository\SettingsRepository.java
 E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\entity\User.java
 E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\service\AccountService.java
 E:\JAVAFXProjects\Smart-Cheque-System\server\src\main\java\com\chequeprint\backend\service\AuditLogService.java

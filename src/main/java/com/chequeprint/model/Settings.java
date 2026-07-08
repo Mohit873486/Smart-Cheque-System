@@ -15,7 +15,7 @@ public class Settings implements Serializable{
   private boolean autoPrint;
   private boolean amountConfirm;
   private boolean autoGST;
-  private String paymentTerms;
+  private String paymentTerms;  private String defaultBank;
 
   // 🔹 Default Constructor (IMPORTANT)
   public Settings() {
@@ -23,14 +23,20 @@ public class Settings implements Serializable{
 
   // 🔹 Parameterized Constructor
   public Settings(String appName, String currency, String dateFormat,
-      String language, String chequePrefix,
-      String invoicePrefix, String theme) {
+      String language, String chequePrefix, String defaultBank,
+      boolean autoPrint, boolean amountConfirm, String invoicePrefix,
+      String paymentTerms, boolean autoGST, String theme) {
     this.appName = appName;
     this.currency = currency;
     this.dateFormat = dateFormat;
     this.language = language;
     this.chequePrefix = chequePrefix;
+    this.defaultBank = defaultBank;
+    this.autoPrint = autoPrint;
+    this.amountConfirm = amountConfirm;
     this.invoicePrefix = invoicePrefix;
+    this.paymentTerms = paymentTerms;
+    this.autoGST = autoGST;
     this.theme = theme;
   }
 
@@ -98,5 +104,45 @@ public class Settings implements Serializable{
 
   public void setTheme(String theme) {
     this.theme = theme;
+  }
+
+  public String getDefaultBank() {
+    return defaultBank;
+  }
+
+  public void setDefaultBank(String defaultBank) {
+    this.defaultBank = defaultBank;
+  }
+
+  public boolean isAutoPrint() {
+    return autoPrint;
+  }
+
+  public void setAutoPrint(boolean autoPrint) {
+    this.autoPrint = autoPrint;
+  }
+
+  public boolean isAmountConfirm() {
+    return amountConfirm;
+  }
+
+  public void setAmountConfirm(boolean amountConfirm) {
+    this.amountConfirm = amountConfirm;
+  }
+
+  public boolean isAutoGST() {
+    return autoGST;
+  }
+
+  public void setAutoGST(boolean autoGST) {
+    this.autoGST = autoGST;
+  }
+
+  public String getPaymentTerms() {
+    return paymentTerms;
+  }
+
+  public void setPaymentTerms(String paymentTerms) {
+    this.paymentTerms = paymentTerms;
   }
 }

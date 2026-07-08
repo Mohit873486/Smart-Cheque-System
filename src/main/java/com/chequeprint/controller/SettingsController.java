@@ -94,8 +94,35 @@ public class SettingsController {
     @FXML
     private TextField tfSigY;
 
+    @FXML
+    private Label lblStatusMessage;
+
     private MainController mainController;
     private final SettingService settingService = new SettingService();
+
+    private void showStatusMessage(String message, boolean isError) {
+        if (lblStatusMessage == null) return;
+        
+        javafx.application.Platform.runLater(() -> {
+            lblStatusMessage.setText(message);
+            if (isError) {
+                lblStatusMessage.setStyle("-fx-background-color: #fef2f2; -fx-text-fill: #b91c1c; -fx-padding: 12 16; -fx-background-radius: 8; -fx-border-color: #fecaca; -fx-border-radius: 8; -fx-font-size: 13px; -fx-font-weight: 500;");
+            } else {
+                lblStatusMessage.setStyle("-fx-background-color: #ecfdf5; -fx-text-fill: #047857; -fx-padding: 12 16; -fx-background-radius: 8; -fx-border-color: #a7f3d0; -fx-border-radius: 8; -fx-font-size: 13px; -fx-font-weight: 500;");
+            }
+            lblStatusMessage.setVisible(true);
+            lblStatusMessage.setManaged(true);
+        });
+
+        javafx.animation.PauseTransition delay = new javafx.animation.PauseTransition(javafx.util.Duration.seconds(4));
+        delay.setOnFinished(e -> {
+            javafx.application.Platform.runLater(() -> {
+                lblStatusMessage.setVisible(false);
+                lblStatusMessage.setManaged(false);
+            });
+        });
+        delay.play();
+    }
 
     public void setMainController(MainController mainController) {
         this.mainController = mainController;
@@ -112,10 +139,32 @@ public class SettingsController {
             initializeLanguages();
             initializePaymentTerms();
 
-            // Load current settings from preferences/database
-            loadSettings();
+            // Populate cbDefaultBank dropdown asynchronously
+            javafx.concurrent.Task<java.util.List<com.chequeprint.model.Bank>> bankTask = new javafx.concurrent.Task<>() {
+                @Override
+                protected java.util.List<com.chequeprint.model.Bank> call() throws Exception {
+                    com.chequeprint.service.BankService bankService = new com.chequeprint.service.BankService();
+                    return bankService.getAll();
+                }
+            };
+            bankTask.setOnSucceeded(e -> {
+                java.util.List<com.chequeprint.model.Bank> banks = bankTask.getValue();
+                javafx.collections.ObservableList<String> bankNames = FXCollections.observableArrayList();
+                for (com.chequeprint.model.Bank b : banks) {
+                    bankNames.add(b.getBankName());
+                }
+                cbDefaultBank.setItems(bankNames);
+                
+                // Load current settings from database/REST API AFTER banks are loaded
+                loadSettings();
+            });
+            bankTask.setOnFailed(e -> {
+                System.err.println("[Settings] Error loading banks list: " + bankTask.getException().getMessage());
+                // Fallback to load settings even if bank list fetch failed
+                loadSettings();
+            });
 
-            // Load signature preview if available
+            // Load signature preview if available (local and safe)
             try {
                 javafx.scene.image.Image img = com.chequeprint.util.SignatureService.loadSignatureImage();
                 if (img != null && ivSignature != null) {
@@ -129,6 +178,10 @@ public class SettingsController {
                 tfSigY.setText(meta.getProperty("y", "0"));
             } catch (Exception ignored) {
             }
+
+            Thread bt = new Thread(bankTask);
+            bt.setDaemon(true);
+            bt.start();
 
             System.out.println("[SettingsController] Initialization completed successfully");
         } catch (Exception e) {
@@ -183,36 +236,119 @@ public class SettingsController {
         cbPaymentTerms.setValue("Net 30");
     }
 
+    private void setControlsDisabled(boolean disabled) {
+        tfAppName.setDisable(disabled);
+        cbCurrency.setDisable(disabled);
+        cbDateFormat.setDisable(disabled);
+        cbLanguage.setDisable(disabled);
+        tfChequePrefix.setDisable(disabled);
+        cbDefaultBank.setDisable(disabled);
+        cbAutoPrint.setDisable(disabled);
+        cbAmountConfirm.setDisable(disabled);
+        tfInvoicePrefix.setDisable(disabled);
+        cbPaymentTerms.setDisable(disabled);
+        cbAutoGST.setDisable(disabled);
+        if (rbLight != null) rbLight.setDisable(disabled);
+        if (rbDark != null) rbDark.setDisable(disabled);
+        btnSaveSettings.setDisable(disabled);
+        btnResetSettings.setDisable(disabled);
+        if (btnUploadSignature != null) btnUploadSignature.setDisable(disabled);
+        if (btnRemoveSignature != null) btnRemoveSignature.setDisable(disabled);
+        if (cbAutoSignature != null) cbAutoSignature.setDisable(disabled);
+        if (tfSigWidth != null) tfSigWidth.setDisable(disabled);
+        if (tfSigHeight != null) tfSigHeight.setDisable(disabled);
+        if (tfSigX != null) tfSigX.setDisable(disabled);
+        if (tfSigY != null) tfSigY.setDisable(disabled);
+    }
+
     // ========================================
     // LOAD SETTINGS FROM PREFERENCES
     // ========================================
 
     private void loadSettings() {
-        try {
-            // General Settings
-            tfAppName.setText("ChequePro");
-            cbCurrency.setValue("₹ Indian Rupee (INR)");
-            cbDateFormat.setValue("dd/MM/yyyy");
-            cbLanguage.setValue("English (India)");
+        setControlsDisabled(true);
+        btnSaveSettings.setText("Loading...");
+        showStatusMessage("Loading settings from server...", false);
 
-            // Cheque Settings
-            tfChequePrefix.setText("CHQ-");
-            cbAutoPrint.setSelected(false);
-            cbAmountConfirm.setSelected(true);
+        javafx.concurrent.Task<Settings> task = new javafx.concurrent.Task<>() {
+            @Override
+            protected Settings call() throws Exception {
+                return settingService.getSettings();
+            }
+        };
 
-            // Invoice Settings
-            tfInvoicePrefix.setText("INV-");
-            cbPaymentTerms.setValue("Net 30");
-            cbAutoGST.setSelected(true);
+        task.setOnSucceeded(event -> {
+            Settings s = task.getValue();
+            if (s != null) {
+                // General Settings
+                tfAppName.setText(s.getAppName() != null ? s.getAppName() : "ChequePro");
+                cbCurrency.setValue(s.getCurrency() != null ? s.getCurrency() : "₹ Indian Rupee (INR)");
+                cbDateFormat.setValue(s.getDateFormat() != null ? s.getDateFormat() : "dd/MM/yyyy");
+                cbLanguage.setValue(s.getLanguage() != null ? s.getLanguage() : "English (India)");
 
-            // Appearance
-            if (rbLight != null)
-                rbLight.setSelected(true);
+                // Cheque Settings
+                tfChequePrefix.setText(s.getChequePrefix() != null ? s.getChequePrefix() : "CHQ-");
+                cbDefaultBank.setValue(s.getDefaultBank());
+                cbAutoPrint.setSelected(s.isAutoPrint());
+                cbAmountConfirm.setSelected(s.isAmountConfirm());
 
-            System.out.println("[Settings] Default settings loaded");
-        } catch (Exception e) {
-            System.err.println("[Settings] Error loading settings: " + e.getMessage());
-        }
+                // Invoice Settings
+                tfInvoicePrefix.setText(s.getInvoicePrefix() != null ? s.getInvoicePrefix() : "INV-");
+                cbPaymentTerms.setValue(s.getPaymentTerms() != null ? s.getPaymentTerms() : "Net 30");
+                cbAutoGST.setSelected(s.isAutoGST());
+
+                // Appearance
+                if ("dark".equalsIgnoreCase(s.getTheme())) {
+                    if (rbDark != null) rbDark.setSelected(true);
+                } else {
+                    if (rbLight != null) rbLight.setSelected(true);
+                }
+
+                System.out.println("[Settings] Configuration loaded from REST API");
+                showStatusMessage("Settings loaded successfully.", false);
+            } else {
+                loadDefaultFormFields();
+                showStatusMessage("No settings found on server. Defaults loaded.", false);
+            }
+            setControlsDisabled(false);
+            btnSaveSettings.setText("Save Settings");
+        });
+
+        task.setOnFailed(event -> {
+            Throwable ex = task.getException();
+            String details = ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage();
+            System.err.println("[Settings] Error loading settings: " + details);
+            loadDefaultFormFields();
+            setControlsDisabled(false);
+            btnSaveSettings.setText("Save Settings");
+            showStatusMessage("Connection offline. Loaded local defaults.", true);
+            showAlert(Alert.AlertType.ERROR, "Connection Error",
+                    "Failed to retrieve settings from REST server (http://localhost:8081/api/settings).\n" +
+                    "Details: " + details + "\nLocal fallback defaults have been loaded.");
+        });
+
+        Thread t = new Thread(task);
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private void loadDefaultFormFields() {
+        tfAppName.setText("ChequePro");
+        cbCurrency.setValue("₹ Indian Rupee (INR)");
+        cbDateFormat.setValue("dd/MM/yyyy");
+        cbLanguage.setValue("English (India)");
+
+        tfChequePrefix.setText("CHQ-");
+        cbDefaultBank.setValue(null);
+        cbAutoPrint.setSelected(false);
+        cbAmountConfirm.setSelected(true);
+
+        tfInvoicePrefix.setText("INV-");
+        cbPaymentTerms.setValue("Net 30");
+        cbAutoGST.setSelected(true);
+
+        if (rbLight != null) rbLight.setSelected(true);
+        System.out.println("[Settings] Loaded local fallback default values");
     }
 
     // ========================================
@@ -227,30 +363,63 @@ public class SettingsController {
             String dateFormat = cbDateFormat.getValue();
             String language = cbLanguage.getValue();
             String chequePrefix = tfChequePrefix.getText().trim();
+            String defaultBank = cbDefaultBank.getValue();
+            boolean autoPrint = cbAutoPrint.isSelected();
+            boolean amountConfirm = cbAmountConfirm.isSelected();
             String invoicePrefix = tfInvoicePrefix.getText().trim();
-            String theme = rbDark.isSelected() ? "dark" : "light";
+            String paymentTerms = cbPaymentTerms.getValue();
+            boolean autoGST = cbAutoGST.isSelected();
+            String theme = (rbDark != null && rbDark.isSelected()) ? "dark" : "light";
 
             Settings s = new Settings(
                     appName, currency, dateFormat,
-                    language, chequePrefix,
-                    invoicePrefix, theme);
+                    language, chequePrefix, defaultBank,
+                    autoPrint, amountConfirm, invoicePrefix,
+                    paymentTerms, autoGST, theme);
 
-            // 🔥 Service Call
-            settingService.saveSettings(s);
+            setControlsDisabled(true);
+            btnSaveSettings.setText("Saving...");
+            showStatusMessage("Saving settings to server...", false);
 
-            // persist signature metadata
-            try {
-                java.util.Properties meta = com.chequeprint.util.SignatureService.loadMetadata();
-                meta.setProperty("enabled", Boolean.toString(cbAutoSignature.isSelected()));
-                meta.setProperty("width", tfSigWidth.getText() == null ? "120px" : tfSigWidth.getText());
-                meta.setProperty("height", tfSigHeight.getText() == null ? "40px" : tfSigHeight.getText());
-                meta.setProperty("x", tfSigX.getText() == null ? "0" : tfSigX.getText());
-                meta.setProperty("y", tfSigY.getText() == null ? "0" : tfSigY.getText());
-                com.chequeprint.util.SignatureService.saveMetadata(meta);
-            } catch (Exception ignored) {
-            }
+            javafx.concurrent.Task<Void> task = new javafx.concurrent.Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    settingService.saveSettings(s);
 
-            showAlert(Alert.AlertType.INFORMATION, "Success", "Settings saved successfully!");
+                    // persist signature metadata
+                    try {
+                        java.util.Properties meta = com.chequeprint.util.SignatureService.loadMetadata();
+                        meta.setProperty("enabled", Boolean.toString(cbAutoSignature.isSelected()));
+                        meta.setProperty("width", tfSigWidth.getText() == null ? "120px" : tfSigWidth.getText());
+                        meta.setProperty("height", tfSigHeight.getText() == null ? "40px" : tfSigHeight.getText());
+                        meta.setProperty("x", tfSigX.getText() == null ? "0" : tfSigX.getText());
+                        meta.setProperty("y", tfSigY.getText() == null ? "0" : tfSigY.getText());
+                        com.chequeprint.util.SignatureService.saveMetadata(meta);
+                    } catch (Exception ignored) {
+                    }
+                    return null;
+                }
+            };
+
+            task.setOnSucceeded(event -> {
+                setControlsDisabled(false);
+                btnSaveSettings.setText("Save Settings");
+                showStatusMessage("Settings saved successfully!", false);
+                showAlert(Alert.AlertType.INFORMATION, "Success", "Settings saved successfully!");
+            });
+
+            task.setOnFailed(event -> {
+                Throwable ex = task.getException();
+                String details = ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage();
+                setControlsDisabled(false);
+                btnSaveSettings.setText("Save Settings");
+                showStatusMessage("Failed to save settings.", true);
+                showAlert(Alert.AlertType.ERROR, "Error", "Failed to save settings: " + details);
+            });
+
+            Thread t = new Thread(task);
+            t.setDaemon(true);
+            t.start();
 
         } catch (Exception e) {
             showAlert(Alert.AlertType.ERROR, "Error", "Failed to save settings: " + e.getMessage());

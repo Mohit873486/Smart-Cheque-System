@@ -33,6 +33,7 @@ com\chequeprint\service\AuthenticationResult.class
 com\chequeprint\model\BankTemplateLayout$1.class
 com\chequeprint\service\MultiAgentCoordinatorService$MultiAgentResult.class
 com\chequeprint\service\SmartSuggestionService$SmartSuggestions.class
+com\chequeprint\controller\SettingsController$1.class
 com\chequeprint\service\UserService.class
 com\chequeprint\util\DBConnection.class
 com\chequeprint\service\ChequeReminderScheduler.class
@@ -62,6 +63,7 @@ com\chequeprint\controller\BankController.class
 com\chequeprint\controller\InvoiceController.class
 com\chequeprint\controller\BankController$Delta.class
 com\chequeprint\controller\SupportController.class
+com\chequeprint\controller\SettingsController$2.class
 com\chequeprint\model\Invoice.class
 com\chequeprint\service\ChequeOcrService.class
 com\chequeprint\model\UserRole.class
@@ -70,6 +72,7 @@ com\chequeprint\controller\AiAssistantController.class
 com\chequeprint\preview\BankTemplate.class
 com\chequeprint\service\ChequeService.class
 com\chequeprint\preview\ChequeData.class
+com\chequeprint\controller\SettingsController$3.class
 com\chequeprint\dao\UserDAO.class
 com\chequeprint\model\LayoutField.class
 com\chequeprint\service\BankService.class

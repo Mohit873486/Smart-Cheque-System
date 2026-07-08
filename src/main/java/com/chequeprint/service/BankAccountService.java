@@ -27,7 +27,7 @@ import java.util.List;
  */
 public class BankAccountService {
 
-    private static final String API_URL = ApiConfig.BASE_URL + "/api/bank/account";
+    private static final String API_URL = ApiConfig.BASE_URL + "/api/accounts";
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 

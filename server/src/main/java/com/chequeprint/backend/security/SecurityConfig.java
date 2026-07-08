@@ -29,6 +29,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                 
+                // Allow settings management only for Admins
+                .requestMatchers("/api/settings/**").hasRole("Admin")
+                
                 // 1. ADMIN (or Manager) can approve cheques
                 .requestMatchers(HttpMethod.PATCH, "/api/cheques/*/approve").hasAnyRole("Admin", "Manager")
                 

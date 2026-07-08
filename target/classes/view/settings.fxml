@@ -6,14 +6,14 @@
 <?import javafx.scene.layout.*?>
 
 <ScrollPane fitToWidth="true"
-    style="-fx-background: #f0f2f5; -fx-background-color: #f0f2f5;"
+    style="-fx-background: #f3f4f6; -fx-background-color: #f3f4f6;"
     xmlns:fx="http://javafx.com/fxml/1"
     fx:controller="com.chequeprint.controller.SettingsController">
 
-    <VBox fx:id="rootPane" spacing="24"
-        style="-fx-background-color: #f0f2f5;">
+    <VBox fx:id="rootPane" spacing="20"
+        style="-fx-background-color: #f3f4f6;">
         <padding>
-            <Insets top="28" right="32" bottom="40" left="32" />
+            <Insets top="24" right="32" bottom="36" left="32" />
         </padding>
 
         <!-- Page Header -->
@@ -21,244 +21,234 @@
             <Label text="⚙️" style="-fx-font-size: 24px;" />
             <VBox spacing="2">
                 <Label text="Settings"
-                    style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
-                <Label text="Configure application behaviour, appearance, and preferences."
+                    style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #111827;" />
+                <Label text="Manage user profiles, transaction defaults, and print layout configurations."
                     style="-fx-font-size: 13px; -fx-text-fill: #6b7280;" />
             </VBox>
         </HBox>
 
-        <!-- ─────────── General Settings ─────────── -->
-        <VBox spacing="0"
-            style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
+        <!-- Inline Status Notification Banner (for real-time UX feedback) -->
+        <Label fx:id="lblStatusMessage" visible="false" managed="false"
+               style="-fx-background-color: #ecfdf5; -fx-text-fill: #047857; -fx-padding: 12 16; -fx-background-radius: 8; -fx-border-color: #a7f3d0; -fx-border-radius: 8; -fx-font-size: 13px; -fx-font-weight: 500;"
+               maxWidth="Infinity" />
 
-            <!-- Section header -->
+        <!-- 👤 SECTION 1: USER & APPLICATION SETTINGS -->
+        <VBox spacing="0"
+            style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.04), 8, 0, 0, 2);">
+
             <HBox alignment="CENTER_LEFT" spacing="10"
-                style="-fx-padding: 18 24 14 24;">
-                <Label text="🏢" style="-fx-font-size: 16px;" />
-                <Label text="General"
-                    style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
+                style="-fx-padding: 16 24 14 24;">
+                <Label text="👤" style="-fx-font-size: 16px;" />
+                <Label text="User &amp; Application Settings"
+                    style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #111827;" />
             </HBox>
             <Separator />
 
-            <VBox spacing="20"
-                style="-fx-padding: 20 24 24 24;">
-
+            <VBox spacing="18" style="-fx-padding: 20 24 24 24;">
                 <HBox spacing="16">
                     <VBox spacing="6" HBox.hgrow="ALWAYS">
                         <Label text="APPLICATION NAME"
-                            style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;" />
+                            style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #6b7280;" />
                         <TextField fx:id="tfAppName"
-                            style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;"
+                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 10 12; -fx-font-size: 13px;"
                             promptText="ChequePro" />
                     </VBox>
                     <VBox spacing="6" HBox.hgrow="ALWAYS">
                         <Label text="DEFAULT CURRENCY"
-                            style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;" />
+                            style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #6b7280;" />
                         <ComboBox fx:id="cbCurrency" maxWidth="Infinity"
-                            style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-background-radius: 8; -fx-padding: 4 8; -fx-font-size: 13px;"
-                            promptText="Select currency" />
+                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-background-radius: 6; -fx-padding: 6 10; -fx-font-size: 13px;" />
                     </VBox>
                 </HBox>
 
                 <HBox spacing="16">
                     <VBox spacing="6" HBox.hgrow="ALWAYS">
                         <Label text="DATE FORMAT"
-                            style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;" />
+                            style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #6b7280;" />
                         <ComboBox fx:id="cbDateFormat" maxWidth="Infinity"
-                            style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-background-radius: 8; -fx-padding: 4 8; -fx-font-size: 13px;"
-                            promptText="dd/MM/yyyy" />
+                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-background-radius: 6; -fx-padding: 6 10; -fx-font-size: 13px;" />
                     </VBox>
                     <VBox spacing="6" HBox.hgrow="ALWAYS">
                         <Label text="LANGUAGE"
-                            style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;" />
+                            style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #6b7280;" />
                         <ComboBox fx:id="cbLanguage" maxWidth="Infinity"
-                            style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-background-radius: 8; -fx-padding: 4 8; -fx-font-size: 13px;"
-                            promptText="English (India)" />
+                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-background-radius: 6; -fx-padding: 6 10; -fx-font-size: 13px;" />
                     </VBox>
                 </HBox>
 
-            </VBox>
-        </VBox>
-
-        <!-- ─────────── Signature Settings ─────────── -->
-        <VBox spacing="0"
-            style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
-            <HBox alignment="CENTER_LEFT" spacing="10"
-                style="-fx-padding: 18 24 14 24;">
-                <Label text="✍️" style="-fx-font-size: 16px;" />
-                <Label text="Signature"
-                    style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
-            </HBox>
-            <Separator />
-
-            <VBox spacing="14" style="-fx-padding: 18 24 18 24;">
-                <HBox spacing="12" alignment="CENTER_LEFT">
-                    <ImageView fx:id="ivSignature" fitWidth="200" fitHeight="80" preserveRatio="true" style="-fx-border-color:#e5e7eb; -fx-background-color: #fff;" />
-                    <VBox spacing="8">
-                        <Button fx:id="btnUploadSignature" text="Upload Signature" onAction="#onUploadSignature" style="-fx-background-radius:8; -fx-padding:8 12;" />
-                        <Button fx:id="btnRemoveSignature" text="Remove Signature" onAction="#onRemoveSignature" style="-fx-background-radius:8; -fx-padding:8 12;" />
-                        <CheckBox fx:id="cbAutoSignature" text="Enable Auto Signature" />
+                <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 8 0 0 0;">
+                    <VBox spacing="2" HBox.hgrow="ALWAYS">
+                        <Label text="Application Theme"
+                            style="-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #374151;" />
+                        <Label text="Toggle visual mode for application workspace."
+                            style="-fx-font-size: 12px; -fx-text-fill: #6b7280;" />
                     </VBox>
-                </HBox>
-
-                <HBox spacing="12">
-                    <VBox spacing="6">
-                        <Label text="Width (e.g., 120px)" />
-                        <TextField fx:id="tfSigWidth" />
-                    </VBox>
-                    <VBox spacing="6">
-                        <Label text="Height (e.g., 40px)" />
-                        <TextField fx:id="tfSigHeight" />
-                    </VBox>
-                    <VBox spacing="6">
-                        <Label text="Offset X" />
-                        <TextField fx:id="tfSigX" />
-                    </VBox>
-                    <VBox spacing="6">
-                        <Label text="Offset Y" />
-                        <TextField fx:id="tfSigY" />
-                    </VBox>
+                    <fx:define>
+                        <ToggleGroup fx:id="tgTheme" />
+                    </fx:define>
+                    <HBox spacing="16" alignment="CENTER_LEFT">
+                        <RadioButton fx:id="rbLight" text="Light" toggleGroup="$tgTheme"
+                            style="-fx-font-size: 13px; -fx-text-fill: #374151;" />
+                        <RadioButton fx:id="rbDark" text="Dark" toggleGroup="$tgTheme"
+                            style="-fx-font-size: 13px; -fx-text-fill: #374151;" />
+                    </HBox>
                 </HBox>
             </VBox>
         </VBox>
 
-        <!-- ─────────── Cheque Settings ─────────── -->
+        <!-- 🏦 SECTION 2: BANK SETTINGS -->
         <VBox spacing="0"
-            style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
+            style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.04), 8, 0, 0, 2);">
+
             <HBox alignment="CENTER_LEFT" spacing="10"
-                style="-fx-padding: 18 24 14 24;">
-                <Label text="🧾" style="-fx-font-size: 16px;" />
-                <Label text="Cheque Defaults"
-                    style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
+                style="-fx-padding: 16 24 14 24;">
+                <Label text="🏦" style="-fx-font-size: 16px;" />
+                <Label text="Bank &amp; Transaction Defaults"
+                    style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #111827;" />
             </HBox>
             <Separator />
 
-            <VBox spacing="20"
-                style="-fx-padding: 20 24 24 24;">
-
+            <VBox spacing="18" style="-fx-padding: 20 24 24 24;">
                 <HBox spacing="16">
                     <VBox spacing="6" HBox.hgrow="ALWAYS">
-                        <Label text="CHEQUE PREFIX"
-                            style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;" />
-                        <TextField fx:id="tfChequePrefix"
-                            style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;"
-                            promptText="CHQ-" />
-                    </VBox>
-                    <VBox spacing="6" HBox.hgrow="ALWAYS">
-                        <Label text="DEFAULT BANK"
-                            style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;" />
+                        <Label text="DEFAULT BANK TEMPLATE"
+                            style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #6b7280;" />
                         <ComboBox fx:id="cbDefaultBank" maxWidth="Infinity"
-                            style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-background-radius: 8; -fx-padding: 4 8; -fx-font-size: 13px;"
+                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-background-radius: 6; -fx-padding: 6 10; -fx-font-size: 13px;"
                             promptText="Select default bank" />
-                    </VBox>
-                </HBox>
-
-                <!-- Toggle rows -->
-                <HBox alignment="CENTER_LEFT">
-                    <VBox spacing="2" HBox.hgrow="ALWAYS">
-                        <Label text="Auto-print after saving"
-                            style="-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #374151;" />
-                        <Label text="Automatically open print dialog when a new cheque is saved."
-                            style="-fx-font-size: 12px; -fx-text-fill: #9ca3af;" />
-                    </VBox>
-                    <CheckBox fx:id="cbAutoPrint"
-                        style="-fx-font-size: 13px;" />
-                </HBox>
-
-                <HBox alignment="CENTER_LEFT">
-                    <VBox spacing="2" HBox.hgrow="ALWAYS">
-                        <Label text="Require amount confirmation"
-                            style="-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #374151;" />
-                        <Label text="Show confirmation dialog before saving cheques above ₹50,000."
-                            style="-fx-font-size: 12px; -fx-text-fill: #9ca3af;" />
-                    </VBox>
-                    <CheckBox fx:id="cbAmountConfirm"
-                        style="-fx-font-size: 13px;" />
-                </HBox>
-
-            </VBox>
-        </VBox>
-
-        <!-- ─────────── Invoice Settings ─────────── -->
-        <VBox spacing="0"
-            style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
-            <HBox alignment="CENTER_LEFT" spacing="10"
-                style="-fx-padding: 18 24 14 24;">
-                <Label text="📄" style="-fx-font-size: 16px;" />
-                <Label text="Invoice Defaults"
-                    style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
-            </HBox>
-            <Separator />
-
-            <VBox spacing="20"
-                style="-fx-padding: 20 24 24 24;">
-
-                <HBox spacing="16">
-                    <VBox spacing="6" HBox.hgrow="ALWAYS">
-                        <Label text="INVOICE PREFIX"
-                            style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;" />
-                        <TextField fx:id="tfInvoicePrefix"
-                            style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12; -fx-font-size: 13px;"
-                            promptText="INV-" />
                     </VBox>
                     <VBox spacing="6" HBox.hgrow="ALWAYS">
                         <Label text="DEFAULT PAYMENT TERMS"
-                            style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;" />
+                            style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #6b7280;" />
                         <ComboBox fx:id="cbPaymentTerms" maxWidth="Infinity"
-                            style="-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-background-radius: 8; -fx-padding: 4 8; -fx-font-size: 13px;"
-                            promptText="Net 30" />
+                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-background-radius: 6; -fx-padding: 6 10; -fx-font-size: 13px;" />
                     </VBox>
+                </HBox>
+
+                <HBox alignment="CENTER_LEFT" style="-fx-padding: 8 0 0 0;">
+                    <VBox spacing="2" HBox.hgrow="ALWAYS">
+                        <Label text="Pre-calculate GST by default"
+                            style="-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #374151;" />
+                        <Label text="Automatically pre-fill default GST tax fields on new invoices."
+                            style="-fx-font-size: 12px; -fx-text-fill: #6b7280;" />
+                    </VBox>
+                    <CheckBox fx:id="cbAutoGST" style="-fx-font-size: 13px;" />
+                </HBox>
+            </VBox>
+        </VBox>
+
+        <!-- 🖨️ SECTION 3: PRINT SETTINGS & SIGNATURES -->
+        <VBox spacing="0"
+            style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.04), 8, 0, 0, 2);">
+
+            <HBox alignment="CENTER_LEFT" spacing="10"
+                style="-fx-padding: 16 24 14 24;">
+                <Label text="🖨️" style="-fx-font-size: 16px;" />
+                <Label text="Print Layout &amp; Signature Configuration"
+                    style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #111827;" />
+            </HBox>
+            <Separator />
+
+            <VBox spacing="18" style="-fx-padding: 20 24 24 24;">
+                <HBox spacing="16">
+                    <VBox spacing="6" HBox.hgrow="ALWAYS">
+                        <Label text="CHEQUE PREFIX"
+                            style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #6b7280;" />
+                        <TextField fx:id="tfChequePrefix"
+                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 10 12; -fx-font-size: 13px;"
+                            promptText="CHQ-" />
+                    </VBox>
+                    <VBox spacing="6" HBox.hgrow="ALWAYS">
+                        <Label text="INVOICE PREFIX"
+                            style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #6b7280;" />
+                        <TextField fx:id="tfInvoicePrefix"
+                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 10 12; -fx-font-size: 13px;"
+                            promptText="INV-" />
+                    </VBox>
+                </HBox>
+
+                <HBox alignment="CENTER_LEFT" style="-fx-padding: 4 0 0 0;">
+                    <VBox spacing="2" HBox.hgrow="ALWAYS">
+                        <Label text="Auto-print cheques after saving"
+                            style="-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #374151;" />
+                        <Label text="Directly spawn the system print dialog when clicking save."
+                            style="-fx-font-size: 12px; -fx-text-fill: #6b7280;" />
+                    </VBox>
+                    <CheckBox fx:id="cbAutoPrint" style="-fx-font-size: 13px;" />
                 </HBox>
 
                 <HBox alignment="CENTER_LEFT">
                     <VBox spacing="2" HBox.hgrow="ALWAYS">
-                        <Label text="Add GST by default"
+                        <Label text="Require high amount confirmation"
                             style="-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #374151;" />
-                        <Label text="Pre-fill GST fields when creating new invoices."
-                            style="-fx-font-size: 12px; -fx-text-fill: #9ca3af;" />
+                        <Label text="Ask for verification when saving a cheque larger than ₹50,000."
+                            style="-fx-font-size: 12px; -fx-text-fill: #6b7280;" />
                     </VBox>
-                    <CheckBox fx:id="cbAutoGST"
-                        style="-fx-font-size: 13px;" />
+                    <CheckBox fx:id="cbAmountConfirm" style="-fx-font-size: 13px;" />
                 </HBox>
 
+                <Separator />
+
+                <!-- Signature Upload Sub-Section -->
+                <VBox spacing="14">
+                    <Label text="SIGNATURE PREVIEW"
+                        style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #6b7280;" />
+
+                    <HBox spacing="20" alignment="CENTER_LEFT">
+                        <VBox style="-fx-border-color: #d1d5db; -fx-border-width: 1; -fx-border-radius: 6; -fx-background-color: #f9fafb; -fx-padding: 12;"
+                              alignment="CENTER" prefWidth="240" prefHeight="100">
+                            <ImageView fx:id="ivSignature" fitWidth="220" fitHeight="80" preserveRatio="true" />
+                        </VBox>
+                        
+                        <VBox spacing="10" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
+                            <HBox spacing="10">
+                                <Button fx:id="btnUploadSignature" text="📁 Upload File" onAction="#onUploadSignature"
+                                    style="-fx-background-color: white; -fx-text-fill: #374151; -fx-font-weight: 600; -fx-border-color: #d1d5db; -fx-border-radius: 6; -fx-padding: 8 16; -fx-cursor: hand;" />
+                                <Button fx:id="btnRemoveSignature" text="🗑️ Remove" onAction="#onRemoveSignature"
+                                    style="-fx-background-color: white; -fx-text-fill: #dc2626; -fx-font-weight: 600; -fx-border-color: #fca5a5; -fx-border-radius: 6; -fx-padding: 8 16; -fx-cursor: hand;" />
+                            </HBox>
+                            <CheckBox fx:id="cbAutoSignature" text="Apply auto-signature to printed cheques"
+                                style="-fx-font-size: 12px; -fx-text-fill: #4b5563;" />
+                        </VBox>
+                    </HBox>
+
+                    <!-- Coordinates alignment group -->
+                    <GridPane hgap="12" vgap="10">
+                        <columnConstraints>
+                            <ColumnConstraints percentWidth="25" />
+                            <ColumnConstraints percentWidth="25" />
+                            <ColumnConstraints percentWidth="25" />
+                            <ColumnConstraints percentWidth="25" />
+                        </columnConstraints>
+                        <children>
+                            <VBox spacing="6" GridPane.columnIndex="0">
+                                <Label text="Width (px)" style="-fx-font-size: 11px; -fx-text-fill: #4b5563;" />
+                                <TextField fx:id="tfSigWidth" style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-border-radius: 6; -fx-padding: 8 10;" />
+                            </VBox>
+                            <VBox spacing="6" GridPane.columnIndex="1">
+                                <Label text="Height (px)" style="-fx-font-size: 11px; -fx-text-fill: #4b5563;" />
+                                <TextField fx:id="tfSigHeight" style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-border-radius: 6; -fx-padding: 8 10;" />
+                            </VBox>
+                            <VBox spacing="6" GridPane.columnIndex="2">
+                                <Label text="X Coordinate" style="-fx-font-size: 11px; -fx-text-fill: #4b5563;" />
+                                <TextField fx:id="tfSigX" style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-border-radius: 6; -fx-padding: 8 10;" />
+                            </VBox>
+                            <VBox spacing="6" GridPane.columnIndex="3">
+                                <Label text="Y Coordinate" style="-fx-font-size: 11px; -fx-text-fill: #4b5563;" />
+                                <TextField fx:id="tfSigY" style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-border-radius: 6; -fx-padding: 8 10;" />
+                            </VBox>
+                        </children>
+                    </GridPane>
+                </VBox>
             </VBox>
         </VBox>
 
-        <!-- ─────────── Appearance ─────────── -->
-        <VBox spacing="0"
-            style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
-            <HBox alignment="CENTER_LEFT" spacing="10"
-                style="-fx-padding: 18 24 14 24;">
-                <Label text="🎨" style="-fx-font-size: 16px;" />
-                <Label text="Appearance"
-                    style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1a1a2e;" />
-            </HBox>
-            <Separator />
-
-            <HBox alignment="CENTER_LEFT" spacing="20"
-                style="-fx-padding: 20 24 24 24;">
-                <VBox spacing="2" HBox.hgrow="ALWAYS">
-                    <Label text="Theme"
-                        style="-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #374151;" />
-                    <Label text="Choose between light and dark mode for the application."
-                        style="-fx-font-size: 12px; -fx-text-fill: #9ca3af;" />
-                </VBox>
-                <fx:define>
-                    <ToggleGroup fx:id="tgTheme" />
-                </fx:define>
-                <RadioButton fx:id="rbLight" text="Light" toggleGroup="$tgTheme"
-                    style="-fx-font-size: 13px; -fx-text-fill: #374151;" />
-                <RadioButton fx:id="rbDark" text="Dark" toggleGroup="$tgTheme"
-                    style="-fx-font-size: 13px; -fx-text-fill: #374151;" />
-            </HBox>
-        </VBox>
-
         <!-- ─────────── Save / Reset Row ─────────── -->
-        <HBox alignment="CENTER_RIGHT" spacing="12">
-            <Button fx:id="btnResetSettings" text="Reset to Defaults" onAction="#onResetSettings"
-                style="-fx-background-color: white; -fx-text-fill: #dc2626; -fx-font-weight: 600; -fx-font-size: 13px; -fx-background-radius: 8; -fx-padding: 10 20; -fx-cursor: hand; -fx-border-color: #fca5a5; -fx-border-radius: 8;" />
+        <HBox alignment="CENTER_RIGHT" spacing="12" style="-fx-padding: 8 0 0 0;">
+            <Button fx:id="btnResetSettings" text="Reset Defaults" onAction="#onResetSettings"
+                style="-fx-background-color: white; -fx-text-fill: #dc2626; -fx-font-weight: bold; -fx-font-size: 13px; -fx-background-radius: 6; -fx-padding: 10 20; -fx-cursor: hand; -fx-border-color: #fca5a5; -fx-border-radius: 6;" />
             <Button fx:id="btnSaveSettings" text="Save Settings" onAction="#onSaveSettings"
-                style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: 600; -fx-font-size: 13px; -fx-background-radius: 8; -fx-padding: 10 24; -fx-cursor: hand;" />
+                style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13px; -fx-background-radius: 6; -fx-padding: 10 24; -fx-cursor: hand;" />
         </HBox>
 
     </VBox>

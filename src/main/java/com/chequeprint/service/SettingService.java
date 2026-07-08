@@ -13,6 +13,10 @@ public class SettingService {
 
     private final SettingDAO dao = new SettingDAO();
 
+    public Settings getSettings() throws SQLException {
+        return dao.getSettings();
+    }
+
     public void saveSettings(Settings s) throws SQLException {
         if (s.getAppName() == null || s.getAppName().isBlank()) {
             throw new IllegalArgumentException("Application name is required.");

@@ -1,6 +1,7 @@
 com\chequeprint\backend\entity\Cheque.class
 com\chequeprint\backend\exception\ResourceNotFoundException.class
 com\chequeprint\backend\entity\Cheque$Status.class
+com\chequeprint\backend\repository\SettingsRepository.class
 com\chequeprint\backend\service\BankTemplateService.class
 com\chequeprint\backend\entity\User.class
 com\chequeprint\backend\service\AccountService.class
@@ -16,7 +17,9 @@ com\chequeprint\backend\service\ChequeService.class
 com\chequeprint\backend\controller\BankTemplateApiController.class
 com\chequeprint\backend\repository\UserRepository.class
 com\chequeprint\backend\model\ChangePasswordRequest.class
+com\chequeprint\backend\service\SettingsService.class
 com\chequeprint\backend\dto\LoginResponse$UserDto.class
+com\chequeprint\backend\entity\Settings.class
 com\chequeprint\backend\service\AuthService.class
 com\chequeprint\backend\ChequeBackendApplication.class
 com\chequeprint\backend\entity\AuditLog.class
@@ -24,6 +27,7 @@ com\chequeprint\backend\repository\BankTemplateRepository.class
 com\chequeprint\backend\security\JwtRequestFilter.class
 com\chequeprint\backend\dto\LoginRequest.class
 com\chequeprint\backend\service\UserService.class
+com\chequeprint\backend\controller\SettingsApiController.class
 com\chequeprint\backend\dto\ChequeDTO.class
 com\chequeprint\backend\controller\AccountApiController.class
 com\chequeprint\backend\controller\AuditLogApiController.class

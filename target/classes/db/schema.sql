@@ -189,7 +189,12 @@ CREATE TABLE IF NOT EXISTS settings (
     date_format VARCHAR(50) DEFAULT 'dd-MM-yyyy',
     language VARCHAR(50) DEFAULT 'English',
     cheque_prefix VARCHAR(20) DEFAULT 'CHQ',
+    default_bank VARCHAR(100) DEFAULT NULL,
+    auto_print BOOLEAN DEFAULT FALSE,
+    amount_confirm BOOLEAN DEFAULT TRUE,
     invoice_prefix VARCHAR(20) DEFAULT 'INV',
+    payment_terms VARCHAR(50) DEFAULT 'Net 30',
+    auto_gst BOOLEAN DEFAULT TRUE,
     theme VARCHAR(20) DEFAULT 'light'
 );
 
