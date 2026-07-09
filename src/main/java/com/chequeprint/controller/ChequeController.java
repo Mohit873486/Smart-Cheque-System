@@ -97,16 +97,20 @@ public class ChequeController {
     private VBox rootPane;
 
     // ── State ──
-    private MainController mainController;
+    MainController mainController;
 
-    private final ChequeService chequeService = new ChequeService();
-    private final ChequeWorkflowService workflowService = new ChequeWorkflowService();
-    private final PrintService printService = new PrintService();
-    private final BankService bankService = new BankService();
+    ChequeService chequeService = new ChequeService();
+    ChequeWorkflowService workflowService = new ChequeWorkflowService();
+    PrintService printService = new PrintService();
+    BankService bankService = new BankService();
 
     private final ObservableList<Cheque> data = FXCollections.observableArrayList();
     private FilteredList<Cheque> filtered;
     private Cheque selectedCheque;
+
+    public ObservableList<Cheque> getData() {
+        return data;
+    }
 
     /** Maps displayed bank name → bank_id; populated from DB. */
     private final java.util.Map<String, Integer> bankNameToId = new java.util.LinkedHashMap<>();
@@ -120,6 +124,7 @@ public class ChequeController {
         datePicker.setValue(LocalDate.now());
         applyPermissions();
         loadData();
+        updateButtonStates(null);
         FxUtils.animateIn(rootPane, 0);
     }
 
@@ -189,8 +194,10 @@ public class ChequeController {
 
         chequeTable.getSelectionModel().selectedItemProperty()
                 .addListener((obs, old, sel) -> {
-                    if (sel != null)
+                    if (sel != null) {
                         populateForm(sel);
+                    }
+                    updateButtonStates(sel);
                 });
     }
 
@@ -431,6 +438,28 @@ public class ChequeController {
                         "Cheque created and submitted for approval. Print is available after manager approval.",
                         Alert.AlertType.INFORMATION);
             } else {
+                if (selectedCheque.getStatus() != Cheque.Status.Approved && selectedCheque.getStatus() != Cheque.Status.Printed) {
+                    if (AccessControl.can(actor, Permission.APPROVE_CHEQUE)) {
+                        showAlert("Approval Required",
+                                "This cheque is in " + selectedCheque.getStatus() + " status. You must approve it first using the 'Approve' button before printing.",
+                                Alert.AlertType.WARNING);
+                    } else {
+                        if (selectedCheque.getStatus() == Cheque.Status.Draft) {
+                            showAlert("Approval Required",
+                                    "This cheque is a draft. Save it first, then ask an Admin or Manager to approve it before printing.",
+                                    Alert.AlertType.INFORMATION);
+                        } else if (selectedCheque.getStatus() == Cheque.Status.Pending) {
+                            showAlert("Approval Required",
+                                    "This cheque is pending approval. Ask an Admin or Manager to approve it before printing.",
+                                    Alert.AlertType.INFORMATION);
+                        } else {
+                            showAlert("Cannot Print",
+                                    "This cheque cannot be printed. Current status: " + selectedCheque.getStatus(),
+                                    Alert.AlertType.WARNING);
+                        }
+                    }
+                    return;
+                }
                 selectedCheque.setPayeeName(payee);
                 selectedCheque.setAmount(amount);
                 selectedCheque.setBankId(bankId);
@@ -470,65 +499,33 @@ public class ChequeController {
             return;
         }
 
-        try {
-
-            // === Handle Draft Status ===
-            if (sel.getStatus() == Cheque.Status.Draft) {
-                if (AccessControl.can(actor, Permission.APPROVE_CHEQUE)) {
-                    // Auto-submit Draft to Pending, then ask for approval
-                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-                            "This cheque is a draft. Submit it for approval and proceed to print preview?",
-                            ButtonType.YES, ButtonType.NO);
-                    confirm.setTitle("Submit & Approve for Printing");
-                    confirm.setHeaderText(null);
-                    var choice = confirm.showAndWait();
-                    if (choice.isEmpty() || choice.get() != ButtonType.YES) {
-                        return;
-                    }
-                    // Change status from Draft to Pending first
-                    chequeService.setStatus(sel, Cheque.Status.Pending);
-                    // Now approve it
-                    workflowService.approve(sel.getId(), actor);
-                } else {
+        if (sel.getStatus() != Cheque.Status.Approved && sel.getStatus() != Cheque.Status.Printed) {
+            if (AccessControl.can(actor, Permission.APPROVE_CHEQUE)) {
+                showAlert("Approval Required",
+                        "This cheque is in " + sel.getStatus() + " status. You must approve it first using the 'Approve' button before printing.",
+                        Alert.AlertType.WARNING);
+            } else {
+                if (sel.getStatus() == Cheque.Status.Draft) {
                     showAlert("Approval Required",
                             "This cheque is a draft. Save it first, then ask an Admin or Manager to approve it before printing.",
                             Alert.AlertType.INFORMATION);
-                    return;
-                }
-            }
-            // === Handle Pending Status ===
-            else if (sel.getStatus() == Cheque.Status.Pending) {
-                if (AccessControl.can(actor, Permission.APPROVE_CHEQUE)) {
-                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-                            "This cheque is pending approval. Approve it and continue to print preview?",
-                            ButtonType.YES, ButtonType.NO);
-                    confirm.setTitle("Approve Before Printing");
-                    confirm.setHeaderText(null);
-                    var choice = confirm.showAndWait();
-                    if (choice.isEmpty() || choice.get() != ButtonType.YES) {
-                        return;
-                    }
-                    workflowService.approve(sel.getId(), actor);
-                } else {
+                } else if (sel.getStatus() == Cheque.Status.Pending) {
                     showAlert("Approval Required",
                             "This cheque is pending approval. Ask an Admin or Manager to approve it before printing.",
                             Alert.AlertType.INFORMATION);
-                    return;
+                } else {
+                    showAlert("Cannot Print",
+                            "This cheque cannot be printed. Current status: " + sel.getStatus(),
+                            Alert.AlertType.WARNING);
                 }
             }
-            // === Handle Rejected / Cancelled ===
-            else if (sel.getStatus() == Cheque.Status.Rejected || sel.getStatus() == Cheque.Status.Cancelled) {
-                showAlert("Cannot Print",
-                        "Rejected or cancelled cheques cannot be printed.",
-                        Alert.AlertType.WARNING);
-                return;
-            }
+            return;
+        }
 
-            // === Print (cheque should now be Approved or Printed) ===
+        try {
             workflowService.print(sel.getId(), actor);
-
-            // Reload data to show updated status
             loadData();
+            clearForm();
             if (mainController != null) {
                 Object dc = mainController.getController("dashboard");
                 if (dc instanceof DashboardController) {
@@ -659,6 +656,40 @@ public class ChequeController {
             cmbBank.setValue(cmbBank.getItems().get(0));
         datePicker.setValue(LocalDate.now());
         chequeTable.getSelectionModel().clearSelection();
+        updateButtonStates(null);
+    }
+
+    private void updateButtonStates(Cheque selected) {
+        User actor = SessionManager.getInstance().currentUser().orElse(null);
+        boolean hasApprovePerm = AccessControl.can(actor, Permission.APPROVE_CHEQUE);
+
+        if (selected == null) {
+            if (btnPrint != null) {
+                btnPrint.setDisable(true);
+                btnPrint.setTooltip(null);
+            }
+            if (btnApprove != null) {
+                btnApprove.setDisable(true);
+            }
+            return;
+        }
+
+        boolean isPrintable = selected.getStatus() == Cheque.Status.Approved || selected.getStatus() == Cheque.Status.Printed;
+        if (btnPrint != null) {
+            btnPrint.setDisable(!isPrintable);
+            if (!isPrintable) {
+                String reason = hasApprovePerm 
+                        ? "This cheque is in " + selected.getStatus() + " status. Please approve it first."
+                        : "This cheque is in " + selected.getStatus() + " status and requires manager approval.";
+                btnPrint.setTooltip(new Tooltip(reason));
+            } else {
+                btnPrint.setTooltip(null);
+            }
+        }
+
+        if (btnApprove != null) {
+            btnApprove.setDisable(selected.getStatus() != Cheque.Status.Pending || !hasApprovePerm);
+        }
     }
 
     private void showAlert(String title, String msg, Alert.AlertType type) {

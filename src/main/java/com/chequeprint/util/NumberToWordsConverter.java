@@ -25,8 +25,27 @@ public class NumberToWordsConverter {
      * @return the amount formatted as words.
      */
     public static String convert(double amount) {
-        long rupees = (long) amount;
-        long paise = Math.round((amount - rupees) * 100);
+        return convert(BigDecimal.valueOf(amount));
+    }
+
+    /**
+     * Converts a BigDecimal amount to Indian English words.
+     * @param amount the BigDecimal value representing the amount.
+     * @return the amount formatted as words.
+     */
+    public static String convert(BigDecimal amount) {
+        if (amount == null) {
+            return "";
+        }
+        if (amount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Amount cannot be negative");
+        }
+        BigDecimal scaled = amount.setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal rupeesBD = scaled.setScale(0, java.math.RoundingMode.DOWN);
+        BigDecimal paiseBD = scaled.subtract(rupeesBD).multiply(BigDecimal.valueOf(100)).setScale(0, java.math.RoundingMode.HALF_UP);
+
+        long rupees = rupeesBD.longValueExact();
+        long paise = paiseBD.longValueExact();
 
         StringBuilder sb = new StringBuilder();
         if (rupees == 0) {
@@ -40,18 +59,6 @@ public class NumberToWordsConverter {
         }
         sb.append(" Only");
         return sb.toString();
-    }
-
-    /**
-     * Converts a BigDecimal amount to Indian English words.
-     * @param amount the BigDecimal value representing the amount.
-     * @return the amount formatted as words.
-     */
-    public static String convert(BigDecimal amount) {
-        if (amount == null) {
-            return "";
-        }
-        return convert(amount.doubleValue());
     }
 
     private static String inWords(long n) {

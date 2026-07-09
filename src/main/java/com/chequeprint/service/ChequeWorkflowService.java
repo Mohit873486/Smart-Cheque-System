@@ -10,9 +10,21 @@ import java.sql.SQLException;
 
 public class ChequeWorkflowService {
 
-  private final ChequeService chequeService = new ChequeService();
-  private final PrintService printService = new PrintService();
-  private final AuditService auditService = new AuditService();
+  private final ChequeService chequeService;
+  private final PrintService printService;
+  private final AuditService auditService;
+
+  public ChequeWorkflowService() {
+    this.chequeService = new ChequeService();
+    this.printService = new PrintService();
+    this.auditService = new AuditService();
+  }
+
+  public ChequeWorkflowService(ChequeService chequeService, PrintService printService, AuditService auditService) {
+    this.chequeService = chequeService;
+    this.printService = printService;
+    this.auditService = auditService;
+  }
 
   public Cheque createPending(Cheque cheque, User actor) throws SQLException {
     AccessControl.requirePermission(actor, Permission.CREATE_CHEQUE);

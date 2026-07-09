@@ -97,5 +97,6 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\BankTe
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\GeminiApiClient.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\UserService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\preview\ChequeRenderer.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\BatchPrintException.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\UserRole.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\SmartSuggestionService.java

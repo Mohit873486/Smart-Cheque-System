@@ -12,8 +12,18 @@ import java.util.stream.Collectors;
 
 public class PrintService {
 
-    private final ChequeDAO chequeDAO = new ChequeDAO();
-    private final BankDAO bankDAO = new BankDAO();
+    private final ChequeDAO chequeDAO;
+    private final BankDAO bankDAO;
+
+    public PrintService() {
+        this.chequeDAO = new ChequeDAO();
+        this.bankDAO = new BankDAO();
+    }
+
+    public PrintService(ChequeDAO chequeDAO, BankDAO bankDAO) {
+        this.chequeDAO = chequeDAO;
+        this.bankDAO = bankDAO;
+    }
 
     public boolean printCheque(int chequeId) throws Exception {
         Cheque c = chequeDAO.findById(chequeId);
@@ -40,18 +50,17 @@ public class PrintService {
             throw new IllegalArgumentException("Cheque must not be null.");
         }
         Bank bank = resolveBank(cheque);
-        boolean printed = JasperPrintUtil.previewCheque(cheque, bank);
-        if (printed) {
-            chequeDAO.updateStatus(cheque, Cheque.Status.Printed);
-        }
-        return printed;
+        return JasperPrintUtil.previewCheque(cheque, bank);
     }
 
-    public List<Cheque> printAllPending() throws SQLException {
+    public List<Cheque> printAllPending() throws SQLException, BatchPrintException {
         List<Cheque> pending = chequeDAO.findAll().stream()
                 .filter(c -> c.getStatus() == Cheque.Status.Draft
                         || c.getStatus() == Cheque.Status.Pending)
                 .collect(Collectors.toList());
+
+        java.util.ArrayList<Cheque> successes = new java.util.ArrayList<>();
+        java.util.ArrayList<String> failures = new java.util.ArrayList<>();
 
         for (Cheque c : pending) {
             try {
@@ -59,13 +68,22 @@ public class PrintService {
                 boolean printed = JasperPrintUtil.printCheque(c, bank);
                 if (printed) {
                     chequeDAO.updateStatus(c, Cheque.Status.Printed);
+                    successes.add(c);
+                } else {
+                    failures.add(c.getChequeNo() + ": Print returned false");
                 }
             } catch (Exception e) {
-                System.err.println("Print failed for " + c.getChequeNo()
-                        + ": " + e.getMessage());
+                String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                failures.add(c.getChequeNo() + ": " + errorMsg);
+                System.err.println("Print failed for " + c.getChequeNo() + ": " + errorMsg);
             }
         }
-        return pending;
+
+        if (!failures.isEmpty()) {
+            throw new BatchPrintException("Batch printing completed with failures.", successes, failures);
+        }
+
+        return successes;
     }
 
     public int getPrintQueueSize() throws SQLException {
