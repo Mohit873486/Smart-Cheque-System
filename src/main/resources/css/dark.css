@@ -6,6 +6,8 @@
 .root, 
 .app-root,
 .page-root, 
+.cheque-page,
+.page-scroll,
 ScrollPane, 
 SplitPane, 
 TabPane, 
@@ -15,7 +17,8 @@ StackPane {
 }
 
 /* Ensure scroll pane viewport is pitch black */
-ScrollPane > .viewport {
+ScrollPane > .viewport,
+.page-scroll > .viewport {
     -fx-background-color: #020617 !important;
 }
 
@@ -70,7 +73,9 @@ ScrollPane > .viewport {
 /* ── Card Wrappers & Nested Containers ── */
 ScrollPane VBox, 
 SplitPane VBox,
-.card {
+.card,
+.cheque-list-panel,
+.edit-cheque-card {
     -fx-background-color: #0b1329 !important;
     -fx-background-radius: 12 !important;
     -fx-border-radius: 12 !important;
@@ -103,11 +108,29 @@ ScrollPane > .viewport > VBox {
 }
 
 /* Headers */
-.page-title {
-    -fx-text-fill: #ffffff !important;
+.page-title,
+.header-title,
+.dashboard-title,
+.dashboard-subtitle,
+.panel-title {
+    -fx-text-fill: #f8fafc !important;
 }
 
 .section-title {
+    -fx-text-fill: #f8fafc !important;
+}
+
+.form-label {
+    -fx-text-fill: #94a3b8 !important;
+}
+
+.footer-hint,
+.table-placeholder {
+    -fx-text-fill: #64748b !important;
+}
+
+.form-title-clean {
+    -fx-border-color: transparent transparent #1e293b transparent !important;
     -fx-text-fill: #f8fafc !important;
 }
 
@@ -134,6 +157,47 @@ ScrollPane > .viewport > VBox {
 .btn-primary:hover,
 .button-primary:hover {
     -fx-background-color: #1d4ed8 !important;
+}
+
+.btn-ghost {
+    -fx-background-color: transparent !important;
+    -fx-text-fill: #94a3b8 !important;
+    -fx-border-color: transparent !important;
+}
+
+.btn-ghost:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.08) !important;
+    -fx-text-fill: #ffffff !important;
+}
+
+.btn-print-main {
+    -fx-background-color: #16a34a !important;
+    -fx-text-fill: #ffffff !important;
+    -fx-border-color: transparent !important;
+}
+
+.btn-print-main:hover {
+    -fx-background-color: #15803d !important;
+}
+
+.btn-danger-low {
+    -fx-background-color: rgba(239, 68, 68, 0.15) !important;
+    -fx-text-fill: #f87171 !important;
+    -fx-border-color: #7f1d1d !important;
+}
+
+.btn-danger-low:hover {
+    -fx-background-color: rgba(239, 68, 68, 0.25) !important;
+}
+
+.btn-outline-muted {
+    -fx-background-color: transparent !important;
+    -fx-text-fill: #94a3b8 !important;
+    -fx-border-color: #334155 !important;
+}
+
+.btn-outline-muted:hover {
+    -fx-background-color: #1e293b !important;
 }
 
 /* ── Forms & Input Fields ── */
@@ -172,16 +236,22 @@ ScrollPane > .viewport > VBox {
 }
 
 /* ── ComboBoxes ── */
-.combo-box {
+.combo-box,
+.form-combo,
+.filter-combo {
     -fx-background-color: #020617 !important;
     -fx-border-color: #1e293b !important;
 }
 
-.combo-box .label {
+.combo-box .label,
+.form-combo .label,
+.filter-combo .label {
     -fx-text-fill: #f8fafc !important;
 }
 
-.combo-box > .arrow-button > .arrow {
+.combo-box > .arrow-button > .arrow,
+.form-combo > .arrow-button > .arrow,
+.filter-combo > .arrow-button > .arrow {
     -fx-background-color: #94a3b8 !important;
 }
 
@@ -200,7 +270,8 @@ ScrollPane > .viewport > VBox {
 }
 
 /* ── Date Picker ── */
-.date-picker-popup {
+.date-picker-popup,
+.form-date {
     -fx-background-color: #0b1329 !important;
     -fx-border-color: #1e293b !important;
 }
@@ -252,6 +323,59 @@ ScrollPane > .viewport > VBox {
 
 .table-row-cell:selected .table-cell {
     -fx-text-fill: #ffffff !important;
+}
+
+/* ── Modern Table Dark overrides ── */
+.modern-table {
+    -fx-background-color: #0b1329 !important;
+    -fx-border-color: #1e293b !important;
+}
+
+.modern-table .column-header-background {
+    -fx-background-color: #020617 !important;
+}
+
+.modern-table .column-header,
+.modern-table .filler {
+    -fx-background-color: transparent !important;
+    -fx-border-color: transparent transparent #1e293b transparent !important;
+}
+
+.modern-table .column-header .label {
+    -fx-text-fill: #94a3b8 !important;
+}
+
+.modern-table .table-row-cell {
+    -fx-background-color: #0b1329 !important;
+    -fx-border-color: transparent transparent #1e293b transparent !important;
+}
+
+.modern-table .table-row-cell:odd {
+    -fx-background-color: #070d1a !important;
+    -fx-border-color: transparent transparent #1e293b transparent !important;
+}
+
+.modern-table .table-row-cell:hover {
+    -fx-background-color: #1e293b !important;
+}
+
+.modern-table .table-row-cell:selected,
+.modern-table .table-row-cell:focused:selected,
+.modern-table:focused .table-row-cell:selected {
+    -fx-background-color: #2563eb !important;
+    -fx-border-color: transparent transparent #1e293b #3b82f6 !important;
+}
+
+.modern-table .table-row-cell:selected .table-cell,
+.modern-table .table-row-cell:focused:selected .table-cell,
+.modern-table:focused .table-row-cell:selected .table-cell {
+    -fx-text-fill: #ffffff !important;
+}
+
+.modern-table .table-row-cell:selected .text,
+.modern-table .table-row-cell:focused:selected .text,
+.modern-table:focused .table-row-cell:selected .text {
+    -fx-fill: #ffffff !important;
 }
 
 /* ── Splitters & Separators ── */
@@ -320,6 +444,11 @@ ScrollPane > .viewport > VBox {
 
 .icon-btn:hover {
     -fx-background-color: #1e293b !important;
+}
+
+/* ── Custom Component Extras ── */
+.cheque-filter-bar {
+    -fx-background-color: #0b1329 !important;
 }
 
 /* ── Status Badges in Dark Mode ── */
