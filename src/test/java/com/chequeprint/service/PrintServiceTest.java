@@ -41,17 +41,26 @@ public class PrintServiceTest {
     }
 
     @Test
-    public void testPreviewChequeNeverUpdatesStatus() throws Exception {
+    public void testPreviewChequeStatusLifecycle() throws Exception {
         Cheque cheque = new Cheque(1, "Payee", new java.math.BigDecimal("100.00"), 1, java.time.LocalDate.now());
         cheque.setStatus(Cheque.Status.Pending);
         Bank bank = new Bank(1, "Test Bank", "Template", 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
 
         when(bankDAO.findById(1)).thenReturn(bank);
+
+        // Case 1: Print outcome is true -> status is updated to Printed
         jasperPrintUtilMock.when(() -> JasperPrintUtil.previewCheque(any(), any())).thenReturn(true);
+        boolean resultTrue = printService.previewCheque(cheque);
+        assertTrue(resultTrue);
+        verify(chequeDAO, times(1)).updateStatus(cheque, Cheque.Status.Printed);
 
-        boolean result = printService.previewCheque(cheque);
+        // Reset verify count
+        Mockito.clearInvocations(chequeDAO);
 
-        assertTrue(result);
+        // Case 2: Print outcome is false -> status is NOT updated to Printed
+        jasperPrintUtilMock.when(() -> JasperPrintUtil.previewCheque(any(), any())).thenReturn(false);
+        boolean resultFalse = printService.previewCheque(cheque);
+        assertFalse(resultFalse);
         verify(chequeDAO, never()).updateStatus(any(), any());
     }
 

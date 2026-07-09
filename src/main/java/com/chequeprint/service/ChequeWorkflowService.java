@@ -87,16 +87,36 @@ public class ChequeWorkflowService {
       throw new IllegalStateException("Cheque must be approved before printing. " + statusMsg);
     }
 
-    boolean printed = printService.previewCheque(cheque);
-    if (!printed) {
-      throw new IllegalStateException("Printing was cancelled or failed.");
+    boolean printed = false;
+    String printerName = "Unknown";
+    String errorMessage = null;
+
+    try {
+        com.chequeprint.util.JasperPrintUtil.setLastUsedPrinterName("Default Printer");
+
+        printed = printService.previewCheque(cheque);
+        if (!printed) {
+            errorMessage = "Preview closed or print cancelled.";
+            throw new IllegalStateException("Printing was cancelled or failed.");
+        }
+
+        printerName = com.chequeprint.util.JasperPrintUtil.getLastUsedPrinterName();
+        chequeService.setStatus(cheque, Cheque.Status.Printed);
+
+    } catch (Exception e) {
+        errorMessage = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+        printerName = com.chequeprint.util.JasperPrintUtil.getLastUsedPrinterName();
+        throw e;
+    } finally {
+        String statusText = printed ? "SUCCESS" : "FAILURE";
+        String details = String.format("Print attempt on cheque %s. Printer: %s. Status: %s.%s",
+            cheque.getChequeNo(),
+            printerName,
+            statusText,
+            (errorMessage != null ? " Error: " + errorMessage : "")
+        );
+        auditService.record(actor, "cheques", chequeId, AuditAction.PRINT, details);
     }
-
-    // Update status to Printed after successful preview
-    chequeService.setStatus(cheque, Cheque.Status.Printed);
-
-    auditService.record(actor, "cheques", chequeId, AuditAction.PRINT,
-        "Printed cheque: " + cheque.getChequeNo());
   }
 
   public void deposit(int chequeId, User actor) throws SQLException {

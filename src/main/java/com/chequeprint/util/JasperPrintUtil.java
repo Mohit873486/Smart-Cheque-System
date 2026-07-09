@@ -23,6 +23,16 @@ import net.sf.jasperreports.engine.JRElement;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.print.Printer;
+import javafx.print.PrinterJob;
+import javafx.scene.Node;
+import javafx.scene.image.WritableImage;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.StackPane;
+import java.awt.image.BufferedImage;
+
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -36,16 +46,32 @@ public class JasperPrintUtil {
 
     private static final String DEFAULT_CHEQUE_TEMPLATE = "/reports/cheque_report.jrxml";
     private static final PrintPreviewService PREVIEW_SERVICE = new PrintPreviewService();
+    private static volatile String lastUsedPrinterName = "Default Printer";
+
+    public static String getLastUsedPrinterName() {
+        return lastUsedPrinterName;
+    }
+
+    public static void setLastUsedPrinterName(String printerName) {
+        lastUsedPrinterName = printerName != null ? printerName : "Default Printer";
+    }
 
     public static boolean printCheque(Cheque cheque) throws JRException {
         return printCheque(cheque, null);
     }
 
     public static boolean printCheque(Cheque cheque, Bank bankTemplate) throws JRException {
+        return printCheque(cheque, bankTemplate, javafx.print.Printer.getDefaultPrinter());
+    }
+
+    public static boolean printCheque(Cheque cheque, Bank bankTemplate, javafx.print.Printer printer) throws JRException {
+        setLastUsedPrinterName(printer != null ? printer.getName() : "Default Printer");
         JasperPrint print = generateChequePrintObject(cheque, bankTemplate);
-        JasperPrintManager.printReport(print, false);
-        cheque.setStatus(Cheque.Status.Printed);
-        return true;
+        boolean success = printJasperPrintWithJavaFX(print, printer);
+        if (success) {
+            cheque.setStatus(Cheque.Status.Printed);
+        }
+        return success;
     }
 
     public static boolean previewCheque(Cheque cheque, Bank bankTemplate) throws JRException {
@@ -73,6 +99,11 @@ public class JasperPrintUtil {
     }
 
     public static boolean printInvoice(Invoice invoice) throws JRException {
+        return printInvoice(invoice, javafx.print.Printer.getDefaultPrinter());
+    }
+
+    public static boolean printInvoice(Invoice invoice, javafx.print.Printer printer) throws JRException {
+        setLastUsedPrinterName(printer != null ? printer.getName() : "Default Printer");
         InputStream template = JasperPrintUtil.class
                 .getResourceAsStream("/reports/invoice_report.jrxml");
 
@@ -84,8 +115,60 @@ public class JasperPrintUtil {
         JasperReport jr = JasperCompileManager.compileReport(template);
         Map<String, Object> params = buildInvoiceParams(invoice);
         JasperPrint print = JasperFillManager.fillReport(jr, params, new JREmptyDataSource());
-        JasperPrintManager.printReport(print, false);
-        return true;
+        return printJasperPrintWithJavaFX(print, printer);
+    }
+
+    private static boolean printJasperPrintWithJavaFX(JasperPrint print, javafx.print.Printer printer) throws JRException {
+        try {
+            java.awt.Image pageImage = JasperPrintManager.printPageToImage(print, 0, 2.0f);
+            BufferedImage bufferedImage;
+            if (pageImage instanceof BufferedImage) {
+                bufferedImage = (BufferedImage) pageImage;
+            } else {
+                bufferedImage = new BufferedImage(
+                        pageImage.getWidth(null),
+                        pageImage.getHeight(null),
+                        BufferedImage.TYPE_INT_ARGB);
+                java.awt.Graphics2D g2d = bufferedImage.createGraphics();
+                g2d.drawImage(pageImage, 0, 0, null);
+                g2d.dispose();
+            }
+
+            javafx.scene.image.WritableImage fxImage = SwingFXUtils.toFXImage(bufferedImage, null);
+            javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView(fxImage);
+            imageView.setFitWidth(print.getPageWidth());
+            imageView.setFitHeight(print.getPageHeight());
+            imageView.setPreserveRatio(true);
+
+            javafx.scene.layout.StackPane pane = new javafx.scene.layout.StackPane(imageView);
+
+            if (Platform.isFxApplicationThread()) {
+                return executePrinterJob(pane, printer);
+            } else {
+                java.util.concurrent.FutureTask<Boolean> task = new java.util.concurrent.FutureTask<>(() -> {
+                    return executePrinterJob(pane, printer);
+                });
+                Platform.runLater(task);
+                return task.get();
+            }
+        } catch (Exception e) {
+            throw new JRException("JavaFX print job failed: " + e.getMessage(), e);
+        }
+    }
+
+    private static boolean executePrinterJob(javafx.scene.Node node, javafx.print.Printer printer) {
+        javafx.print.PrinterJob job = javafx.print.PrinterJob.createPrinterJob();
+        if (job == null) {
+            return false;
+        }
+        if (printer != null) {
+            job.setPrinter(printer);
+        }
+        boolean success = job.printPage(node);
+        if (success) {
+            return job.endJob();
+        }
+        return false;
     }
 
     public static String exportChequePdf(Cheque cheque, String outputDir) throws JRException {

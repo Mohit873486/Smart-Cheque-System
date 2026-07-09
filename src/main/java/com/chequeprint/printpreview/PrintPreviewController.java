@@ -131,21 +131,23 @@ public class PrintPreviewController {
             return;
         }
 
+        String attemptedPrinterName = cmbPrinter.getValue() != null ? cmbPrinter.getValue() : "Default Printer";
         try {
-            boolean ok = document.getPrintHandler().print();
+            Printer printer = selectPrinter(attemptedPrinterName);
+            boolean ok = document.getPrintHandler().print(printer);
             if (ok) {
                 printed = true;
                 closeWindow();
             } else {
                 showAlert(
                         "Print",
-                        "Print job failed or was cancelled.",
+                        "Print job failed or was cancelled on printer: " + attemptedPrinterName,
                         Alert.AlertType.INFORMATION);
             }
         } catch (Exception ex) {
             showAlert(
                     "Print Error",
-                    "Failed to print document: " + ex.getMessage(),
+                    "Failed to print document on printer '" + attemptedPrinterName + "': " + ex.getMessage(),
                     Alert.AlertType.ERROR);
         }
     }

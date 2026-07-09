@@ -29,6 +29,25 @@ public class Cheque {
     private LocalDate issueDate;
     private Status status;
 
+    private String lastPrinter;
+    private String lastPrintResult;
+
+    public String getLastPrinter() {
+        return lastPrinter;
+    }
+
+    public void setLastPrinter(String lastPrinter) {
+        this.lastPrinter = lastPrinter;
+    }
+
+    public String getLastPrintResult() {
+        return lastPrintResult;
+    }
+
+    public void setLastPrintResult(String lastPrintResult) {
+        this.lastPrintResult = lastPrintResult;
+    }
+
     public Cheque() {
     }
 

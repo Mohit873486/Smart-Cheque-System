@@ -40,7 +40,11 @@ public class PrintService {
         Bank bank = resolveBank(cheque);
         boolean printed = JasperPrintUtil.printCheque(cheque, bank);
         if (printed) {
-            chequeDAO.updateStatus(cheque, Cheque.Status.Printed);
+            try {
+                chequeDAO.updateStatus(cheque, Cheque.Status.Printed);
+            } catch (Exception dbEx) {
+                throw new Exception("Printed but failed to update status — cheque may show as unprinted, contact support", dbEx);
+            }
         }
         return printed;
     }
@@ -50,7 +54,20 @@ public class PrintService {
             throw new IllegalArgumentException("Cheque must not be null.");
         }
         Bank bank = resolveBank(cheque);
-        return JasperPrintUtil.previewCheque(cheque, bank);
+        boolean printed = false;
+        try {
+            printed = JasperPrintUtil.previewCheque(cheque, bank);
+            if (printed) {
+                try {
+                    chequeDAO.updateStatus(cheque, Cheque.Status.Printed);
+                } catch (Exception dbEx) {
+                    throw new Exception("Printed but failed to update status — cheque may show as unprinted, contact support", dbEx);
+                }
+            }
+        } catch (Exception ex) {
+            throw ex;
+        }
+        return printed;
     }
 
     public List<Cheque> printAllPending() throws SQLException, BatchPrintException {
@@ -67,8 +84,12 @@ public class PrintService {
                 Bank bank = resolveBank(c);
                 boolean printed = JasperPrintUtil.printCheque(c, bank);
                 if (printed) {
-                    chequeDAO.updateStatus(c, Cheque.Status.Printed);
-                    successes.add(c);
+                    try {
+                        chequeDAO.updateStatus(c, Cheque.Status.Printed);
+                        successes.add(c);
+                    } catch (Exception dbEx) {
+                        failures.add(c.getChequeNo() + ": Printed but failed to update status — cheque may show as unprinted, contact support");
+                    }
                 } else {
                     failures.add(c.getChequeNo() + ": Print returned false");
                 }

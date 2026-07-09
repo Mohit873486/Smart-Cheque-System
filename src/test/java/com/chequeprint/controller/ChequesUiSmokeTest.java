@@ -6,6 +6,7 @@ import com.chequeprint.service.BankService;
 import com.chequeprint.service.ChequeService;
 import com.chequeprint.service.ChequeWorkflowService;
 import com.chequeprint.service.PrintService;
+import com.chequeprint.service.AuditService;
 import com.chequeprint.util.SessionManager;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -45,10 +46,12 @@ public class ChequesUiSmokeTest extends ApplicationTest {
             ctrl.workflowService = mock(ChequeWorkflowService.class);
             ctrl.printService = mock(PrintService.class);
             ctrl.bankService = mock(BankService.class);
+            ctrl.auditService = mock(AuditService.class);
 
             try {
                 when(ctrl.chequeService.getAll()).thenReturn(Collections.emptyList());
                 when(ctrl.bankService.getAll()).thenReturn(Collections.emptyList());
+                when(ctrl.auditService.findRecent(anyInt())).thenReturn(Collections.emptyList());
             } catch (Exception e) {
                 // ignore
             }

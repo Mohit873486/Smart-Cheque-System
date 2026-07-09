@@ -72,7 +72,7 @@ public class PrintPreviewService {
                 html,
                 widthMm,
                 heightMm,
-                () -> JasperPrintUtil.printCheque(cheque, bankTemplate),
+                (printer) -> JasperPrintUtil.printCheque(cheque, bankTemplate, printer),
                 () -> JasperPrintUtil.exportChequePdf(cheque, createTempExportDir().toString(), bankTemplate));
 
         return showPreview(doc);
@@ -92,7 +92,7 @@ public class PrintPreviewService {
                 html,
                 210.0,
                 297.0,
-                () -> JasperPrintUtil.printInvoice(invoice),
+                (printer) -> JasperPrintUtil.printInvoice(invoice, printer),
                 () -> JasperPrintUtil.exportInvoicePdf(invoice, createTempExportDir().toString()));
 
         return showPreview(doc);

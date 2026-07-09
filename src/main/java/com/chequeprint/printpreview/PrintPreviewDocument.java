@@ -1,5 +1,7 @@
 package com.chequeprint.printpreview;
 
+import javafx.print.Printer;
+
 public final class PrintPreviewDocument {
     @FunctionalInterface
     public interface PdfSaveHandler {
@@ -8,7 +10,7 @@ public final class PrintPreviewDocument {
 
     @FunctionalInterface
     public interface PrintHandler {
-        boolean print() throws Exception;
+        boolean print(Printer printer) throws Exception;
     }
 
     private final String windowTitle;

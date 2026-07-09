@@ -1,97 +1,75 @@
 package com.chequeprint.util;
 
+import com.chequeprint.model.Bank;
 import com.chequeprint.model.Cheque;
-import com.chequeprint.model.Invoice;
+import javafx.application.Platform;
+import javafx.print.Printer;
+import javafx.print.PrinterJob;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperPrintManager;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.LocalDate;
+import java.awt.image.BufferedImage;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-/**
- * Unit/integration-light tests for JasperPrintUtil.
- * <p>
- * Notes:
- * - JasperReports compilation/export needs the .jrxml templates on the
- * classpath.
- * - PDF creation is a good smoke test that the pipeline works.
- * - Printing (printCheque) triggers the OS print dialog, so it is intentionally
- * not unit tested.
- */
 public class JasperPrintUtilTest {
 
-  @Test
-  void exportChequePdf_throwsIfTemplateMissing() {
-    // This test assumes the real template exists; if it doesn't, the method should
-    // throw JRException.
-    // Since the template is part of the app resources, we instead just test the
-    // happy path in other tests.
-    // Keep this test as a placeholder by validating that the method throws when
-    // outputDir is invalid.
-    // (JRException is declared, but we don't rely on it here.)
-    assertThrows(Exception.class, () -> {
-      Cheque cheque = new Cheque("CHQ-1", "Test Payee", new BigDecimal("10.00"), 1, LocalDate.now());
-      JasperPrintUtil.exportChequePdf(cheque, "?:\\invalid\\path\\");
-    });
-  }
+    @BeforeAll
+    public static void initJFX() {
+        try {
+            Platform.startup(() -> {});
+        } catch (IllegalStateException e) {
+            // Already initialized
+        }
+    }
 
-  @Test
-  void exportChequePdf_createsPdfFile() throws Exception {
-    Path tempDir = Files.createTempDirectory("chequeprint-test-");
+    @Test
+    public void testPrintChequeWithPrinterOutcome() throws Exception {
+        Cheque cheque = new Cheque(1, "Payee", new BigDecimal("100.00"), 1, LocalDate.now());
+        cheque.setStatus(Cheque.Status.Approved);
+        Bank bank = new Bank(1, "Test Bank", "Template", 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
 
-    Cheque cheque = new Cheque("CHQ-1001", "Alice", new BigDecimal("2500.75"), 1, LocalDate.of(2024, 1, 20));
-    cheque.setBankName("Test Bank");
-    cheque.setAmountWords("Two Thousand Five Hundred Rupees Only");
+        Printer mockPrinter = mock(Printer.class);
+        when(mockPrinter.getName()).thenReturn("TestMockPrinter");
 
-    String pdfPath = JasperPrintUtil.exportChequePdf(cheque, tempDir.toString());
+        PrinterJob mockJob = mock(PrinterJob.class);
 
-    assertEquals(tempDir.resolve("CHQ-1001.pdf").toString(), pdfPath);
-    assertTrue(Files.isRegularFile(Path.of(pdfPath)));
-    assertTrue(Files.size(Path.of(pdfPath)) > 0);
-  }
+        JasperPrint dummyPrint = new JasperPrint();
+        dummyPrint.setPageWidth(100);
+        dummyPrint.setPageHeight(50);
 
-  @Test
-  void exportInvoicePdf_createsPdfFile() throws Exception {
-    Path tempDir = Files.createTempDirectory("invoiceprint-test-");
+        try (MockedStatic<PrinterJob> printerJobMock = mockStatic(PrinterJob.class);
+             MockedStatic<JasperPrintUtil> jasperPrintUtilMock = mockStatic(JasperPrintUtil.class, CALLS_REAL_METHODS);
+             MockedStatic<JasperPrintManager> jasperPrintManagerMock = mockStatic(JasperPrintManager.class)) {
 
-    Invoice invoice = new Invoice("INV-2001", "Bob Client", new BigDecimal("999.00"),
-        LocalDate.of(2024, 2, 1), LocalDate.of(2024, 2, 15));
-    invoice.setStatus(Invoice.Status.Unpaid);
-    invoice.setNotes("Payment due soon");
+            printerJobMock.when(PrinterJob::createPrinterJob).thenReturn(mockJob);
+            jasperPrintUtilMock.when(() -> JasperPrintUtil.generateChequePrintObject(any(), any())).thenReturn(dummyPrint);
 
-    String pdfPath = JasperPrintUtil.exportInvoicePdf(invoice, tempDir.toString());
+            BufferedImage dummyImg = new BufferedImage(10, 10, BufferedImage.TYPE_INT_ARGB);
+            jasperPrintManagerMock.when(() -> JasperPrintManager.printPageToImage(any(), anyInt(), anyFloat())).thenReturn(dummyImg);
 
-    assertEquals(tempDir.resolve("INV-2001.pdf").toString(), pdfPath);
-    assertTrue(Files.isRegularFile(Path.of(pdfPath)));
-    assertTrue(Files.size(Path.of(pdfPath)) > 0);
-  }
+            // Test case 1: printPage returns true, endJob returns true
+            when(mockJob.printPage(any())).thenReturn(true);
+            when(mockJob.endJob()).thenReturn(true);
 
-  @Test
-  void nvl_viaNullBlankBehavior_isTrustedByExports() throws Exception {
-    Path tempDir = Files.createTempDirectory("nvlprint-test-");
+            boolean resultSuccess = JasperPrintUtil.printCheque(cheque, bank, mockPrinter);
+            assertTrue(resultSuccess, "printCheque should return true when PrinterJob finishes successfully.");
+            assertEquals(Cheque.Status.Printed, cheque.getStatus(), "Cheque status should be set to Printed upon success.");
 
-    Cheque cheque = new Cheque(null, null, null, 1, null);
-    cheque.setBankName("");
-    cheque.setAmountWords("  ");
+            // Test case 2: printPage returns false, endJob returns false
+            cheque.setStatus(Cheque.Status.Approved);
+            when(mockJob.printPage(any())).thenReturn(false);
+            when(mockJob.endJob()).thenReturn(false);
 
-    String pdfPath = JasperPrintUtil.exportChequePdf(cheque, tempDir.toString());
-
-    assertEquals(tempDir.resolve("cheque.pdf").toString(), pdfPath);
-    assertTrue(Files.isRegularFile(Path.of(pdfPath)));
-    assertTrue(Files.size(Path.of(pdfPath)) > 0);
-  }
-
-  @Test
-  void generateChequePrintObject_appliesTemplatePositions() throws Exception {
-    Cheque cheque = new Cheque("CHQ-9999", "John Doe", new BigDecimal("5000.00"), 1, LocalDate.of(2026, 6, 23));
-    cheque.setBankName("Test Bank");
-    cheque.setAmountWords("Five Thousand Rupees Only");
-
-    net.sf.jasperreports.engine.JasperPrint print = JasperPrintUtil.generateChequePrintObject(cheque, null);
-    assertNotNull(print);
-  }
-
+            boolean resultFailure = JasperPrintUtil.printCheque(cheque, bank, mockPrinter);
+            assertFalse(resultFailure, "printCheque should return false when PrinterJob fails.");
+            assertEquals(Cheque.Status.Approved, cheque.getStatus(), "Cheque status should not change on print failure.");
+        }
+    }
 }

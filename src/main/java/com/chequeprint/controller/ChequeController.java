@@ -9,6 +9,9 @@ import com.chequeprint.service.ChequeService;
 import com.chequeprint.service.ChequeWorkflowService;
 import com.chequeprint.service.Permission;
 import com.chequeprint.service.PrintService;
+import com.chequeprint.service.AuditService;
+import com.chequeprint.model.AuditAction;
+import com.chequeprint.model.AuditLog;
 import com.chequeprint.util.FxUtils;
 import com.chequeprint.util.SessionManager;
 import javafx.application.Platform;
@@ -103,6 +106,7 @@ public class ChequeController {
     ChequeWorkflowService workflowService = new ChequeWorkflowService();
     PrintService printService = new PrintService();
     BankService bankService = new BankService();
+    AuditService auditService = new AuditService();
 
     private final ObservableList<Cheque> data = FXCollections.observableArrayList();
     private FilteredList<Cheque> filtered;
@@ -184,10 +188,27 @@ public class ChequeController {
                 if (empty || item == null) {
                     setText(null);
                     setGraphic(null);
+                    setTooltip(null);
                     return;
                 }
+                Label badge = statusBadge(item);
+                Cheque cheque = getTableRow() != null ? getTableRow().getItem() : null;
+                if (cheque != null && cheque.getLastPrinter() != null) {
+                    Label subtext = new Label(cheque.getLastPrinter() + " (" + cheque.getLastPrintResult() + ")");
+                    subtext.setStyle("-fx-font-size: 9px; -fx-text-fill: #94a3b8;");
+                    VBox vbox = new VBox(2, badge, subtext);
+                    vbox.setAlignment(javafx.geometry.Pos.CENTER);
+                    setGraphic(vbox);
+
+                    Tooltip tooltip = new Tooltip(String.format("Last Printer: %s\nStatus: %s",
+                        cheque.getLastPrinter(), cheque.getLastPrintResult()));
+                    tooltip.setShowDelay(javafx.util.Duration.millis(100));
+                    setTooltip(tooltip);
+                } else {
+                    setGraphic(badge);
+                    setTooltip(null);
+                }
                 setText(null);
-                setGraphic(statusBadge(item));
                 setAlignment(javafx.geometry.Pos.CENTER);
             }
         });
@@ -301,6 +322,30 @@ public class ChequeController {
         new Thread(() -> {
             try {
                 var list = chequeService.getAll();
+                try {
+                    List<AuditLog> auditLogs = auditService.findRecent(200);
+                    java.util.Map<Integer, AuditLog> lastPrintLogs = new java.util.HashMap<>();
+                    for (AuditLog log : auditLogs) {
+                        if ("cheques".equals(log.getTableName()) && AuditAction.PRINT == log.getAction()) {
+                            Integer chequeId = log.getRecordId();
+                            if (chequeId != null && !lastPrintLogs.containsKey(chequeId)) {
+                                lastPrintLogs.put(chequeId, log);
+                            }
+                        }
+                    }
+                    for (Cheque c : list) {
+                        AuditLog log = lastPrintLogs.get(c.getId());
+                        if (log != null) {
+                            String details = log.getDetails();
+                            String printer = parseDetails(details, "Printer: ", ".");
+                            String status = parseDetails(details, "Status: ", ".");
+                            c.setLastPrinter(printer != null ? printer : "Unknown");
+                            c.setLastPrintResult(status != null ? status : "SUCCESS");
+                        }
+                    }
+                } catch (Exception auditEx) {
+                    System.err.println("Failed to enrich cheques with print log: " + auditEx.getMessage());
+                }
                 Platform.runLater(() -> data.setAll(list));
             } catch (Exception e) {
                 String message = e.getMessage();
@@ -311,6 +356,18 @@ public class ChequeController {
                 Platform.runLater(() -> showAlert("Server Connection Error", alertMessage, Alert.AlertType.ERROR));
             }
         }, "load-cheques").start();
+    }
+
+    private String parseDetails(String details, String prefix, String suffix) {
+        if (details == null) return null;
+        int start = details.indexOf(prefix);
+        if (start == -1) return null;
+        start += prefix.length();
+        int end = details.indexOf(suffix, start);
+        if (end == -1) {
+            return details.substring(start).trim();
+        }
+        return details.substring(start, end).trim();
     }
 
     public void reload() {
