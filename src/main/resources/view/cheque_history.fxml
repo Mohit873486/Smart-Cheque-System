@@ -66,7 +66,7 @@
 
             <!-- Action / Summary Footer -->
             <HBox spacing="16" alignment="CENTER_LEFT" styleClass="table-action-footer">
-                <Button fx:id="btnPrint" text="Print Selected" styleClass="btn-primary" onAction="#onPrint" />
+                <Button fx:id="btnPrint" text="Print" styleClass="btn-primary" onAction="#onPrint" />
                 <Region HBox.hgrow="ALWAYS" />
                 <HBox spacing="20" alignment="CENTER_RIGHT">
                     <HBox spacing="8" alignment="CENTER_LEFT">

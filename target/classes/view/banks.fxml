@@ -4,11 +4,10 @@
 <?import javafx.scene.layout.*?>
 
 <ScrollPane fitToWidth="true"
-    style="-fx-background:#f0f2f5; -fx-background-color:#f0f2f5;"
     xmlns:fx="http://javafx.com/fxml/1"
     fx:controller="com.chequeprint.controller.BankController">
 
-    <VBox spacing="20" style="-fx-padding:24; -fx-background-color:#f1f5f9;" maxWidth="Infinity" maxHeight="Infinity">
+    <VBox spacing="20" style="-fx-padding:24;" maxWidth="Infinity" maxHeight="Infinity">
 
         <HBox alignment="CENTER_LEFT" spacing="10">
             <VBox spacing="4" HBox.hgrow="ALWAYS">

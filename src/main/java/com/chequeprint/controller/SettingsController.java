@@ -133,6 +133,19 @@ public class SettingsController {
         System.out.println("[SettingsController] Initializing...");
 
         try {
+            // Limit application name to 15 characters
+            if (tfAppName != null) {
+                tfAppName.textProperty().addListener((observable, oldValue, newValue) -> {
+                    if (newValue != null && newValue.length() > 15) {
+                        if (oldValue != null && oldValue.length() <= 15) {
+                            tfAppName.setText(oldValue);
+                        } else {
+                            tfAppName.setText(newValue.substring(0, 15));
+                        }
+                    }
+                });
+            }
+
             // Initialize ComboBox options
             initializeCurrencies();
             initializeDateFormats();
@@ -416,6 +429,11 @@ public class SettingsController {
                 if (btnSaveSettings.getScene() != null) {
                     com.chequeprint.util.ThemeManager.applyTheme(btnSaveSettings.getScene(), theme);
                 }
+
+                // Update sidebar logo dynamically
+                if (mainController != null) {
+                    mainController.updateSidebarLogo(appName);
+                }
             });
 
             task.setOnFailed(event -> {
@@ -436,6 +454,15 @@ public class SettingsController {
             e.printStackTrace();
         }
     }
+
+    @FXML
+    private void onThemeChanged() {
+        String theme = (rbDark != null && rbDark.isSelected()) ? "dark" : "light";
+        if (btnSaveSettings.getScene() != null) {
+            com.chequeprint.util.ThemeManager.applyTheme(btnSaveSettings.getScene(), theme);
+        }
+    }
+
     // ========================================
     // HANDLER: RESET TO DEFAULTS
     // ========================================

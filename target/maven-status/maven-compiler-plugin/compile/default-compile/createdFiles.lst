@@ -62,6 +62,7 @@ com\chequeprint\controller\UserManagementController.class
 com\chequeprint\controller\BankController.class
 com\chequeprint\controller\InvoiceController.class
 com\chequeprint\controller\BankController$Delta.class
+com\chequeprint\controller\LoginController$2.class
 com\chequeprint\controller\SupportController.class
 com\chequeprint\controller\SettingsController$2.class
 com\chequeprint\model\Invoice.class

@@ -126,6 +126,7 @@ public class InvoiceController {
                     case "Cancelled" -> setStyle("-fx-text-fill:#475569;");
                     default -> setStyle("");
                 }
+                setAlignment(javafx.geometry.Pos.CENTER);
             }
         });
 

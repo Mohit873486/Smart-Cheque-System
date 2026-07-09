@@ -6,12 +6,10 @@
 <?import javafx.scene.layout.*?>
 
 <ScrollPane fitToWidth="true"
-    style="-fx-background: #f3f4f6; -fx-background-color: #f3f4f6;"
     xmlns:fx="http://javafx.com/fxml/1"
     fx:controller="com.chequeprint.controller.SettingsController">
 
-    <VBox fx:id="rootPane" spacing="20"
-        style="-fx-background-color: #f3f4f6;">
+    <VBox fx:id="rootPane" spacing="20">
         <padding>
             <Insets top="24" right="32" bottom="36" left="32" />
         </padding>
@@ -87,9 +85,9 @@
                         <ToggleGroup fx:id="tgTheme" />
                     </fx:define>
                     <HBox spacing="16" alignment="CENTER_LEFT">
-                        <RadioButton fx:id="rbLight" text="Light" toggleGroup="$tgTheme"
+                        <RadioButton fx:id="rbLight" text="Light" toggleGroup="$tgTheme" onAction="#onThemeChanged"
                             style="-fx-font-size: 13px; -fx-text-fill: #374151;" />
-                        <RadioButton fx:id="rbDark" text="Dark" toggleGroup="$tgTheme"
+                        <RadioButton fx:id="rbDark" text="Dark" toggleGroup="$tgTheme" onAction="#onThemeChanged"
                             style="-fx-font-size: 13px; -fx-text-fill: #374151;" />
                     </HBox>
                 </HBox>

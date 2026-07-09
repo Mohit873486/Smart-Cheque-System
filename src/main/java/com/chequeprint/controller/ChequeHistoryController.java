@@ -110,6 +110,7 @@ public class ChequeHistoryController {
                 }
                 setText(null);
                 setGraphic(statusBadge(item));
+                setAlignment(javafx.geometry.Pos.CENTER);
             }
         });
     }

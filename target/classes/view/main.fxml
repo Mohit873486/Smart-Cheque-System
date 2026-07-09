@@ -44,7 +44,7 @@
                 <HBox spacing="10" alignment="CENTER_LEFT">
                     <Label text="💼" styleClass="sidebar-logo-icon" mouseTransparent="true" />
                     <VBox spacing="0" mouseTransparent="true">
-                        <Label text="ChequePro" styleClass="sidebar-logo-text" />
+                        <Label fx:id="sidebarLogoText" text="ChequePro" styleClass="sidebar-logo-text" />
                         <Label text="Finance Manager" styleClass="sidebar-logo-sub" />
                     </VBox>
                 </HBox>

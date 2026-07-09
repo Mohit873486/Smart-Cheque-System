@@ -88,6 +88,7 @@ public class ModernDashboardController {
                     default -> "-fx-text-fill: -fx-text-base-color;";
                 };
                 setStyle(color + " -fx-font-weight: bold;");
+                setAlignment(javafx.geometry.Pos.CENTER);
             }
         });
 

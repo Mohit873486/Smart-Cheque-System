@@ -6,12 +6,10 @@
 <?import javafx.scene.shape.*?>
 
 <ScrollPane fitToWidth="true"
-       style="-fx-background: #f0f2f5; -fx-background-color: #f0f2f5;"
        xmlns:fx="http://javafx.com/fxml/1"
        fx:controller="com.chequeprint.controller.ProfileController">
 
-       <VBox fx:id="rootPane" spacing="24"
-              style="-fx-background-color: #f0f2f5;">
+       <VBox fx:id="rootPane" spacing="24">
               <padding>
                      <Insets top="28" right="32" bottom="40" left="32" />
               </padding>

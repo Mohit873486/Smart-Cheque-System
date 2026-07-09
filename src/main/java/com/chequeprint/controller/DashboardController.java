@@ -224,6 +224,7 @@ public class DashboardController {
                         super.updateItem(item, empty);
                         setText(null);
                         setGraphic(empty || item == null ? null : statusBadge(item));
+                        setAlignment(javafx.geometry.Pos.CENTER);
                     }
                 });
             }

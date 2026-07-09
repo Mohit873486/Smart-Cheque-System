@@ -141,6 +141,7 @@ public class MainApp extends Application {
             Scene scene = new Scene(root, 1000, 680);
             scene.getStylesheets().add(
                 getClass().getResource("/css/style.css").toExternalForm());
+            com.chequeprint.util.ThemeManager.applySavedTheme(scene);
 
             stage.setScene(scene);
             stage.setTitle("ChequePro — Sign In");

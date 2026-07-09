@@ -32,6 +32,9 @@ public class MainController {
   private VBox sidebar;
 
   @FXML
+  private Label sidebarLogoText;
+
+  @FXML
   private StackPane contentPane;
 
   @FXML
@@ -237,6 +240,9 @@ public class MainController {
             com.chequeprint.model.Settings settings = service.getSettings();
             if (settings != null) {
                 Platform.runLater(() -> {
+                    if (sidebarLogoText != null && settings.getAppName() != null && !settings.getAppName().isBlank()) {
+                        sidebarLogoText.setText(settings.getAppName());
+                    }
                     if (contentPane != null && contentPane.getScene() != null) {
                         com.chequeprint.util.ThemeManager.applyTheme(contentPane.getScene(), settings.getTheme());
                     }
@@ -248,6 +254,12 @@ public class MainController {
     });
     themeLoaderThread.setDaemon(true);
     themeLoaderThread.start();
+  }
+
+  public void updateSidebarLogo(String appName) {
+    if (sidebarLogoText != null) {
+      sidebarLogoText.setText(appName != null && !appName.isBlank() ? appName : "ChequePro");
+    }
   }
 
   private void startSessionTimeoutCheck() {
@@ -307,6 +319,7 @@ public class MainController {
         if (stylesheet != null) {
           scene.getStylesheets().add(stylesheet.toExternalForm());
         }
+        com.chequeprint.util.ThemeManager.applySavedTheme(scene);
         stage.setScene(scene);
         stage.setTitle("Smart Cheque Management System - Sign In");
         stage.centerOnScreen();
@@ -381,6 +394,7 @@ public class MainController {
       if (stylesheet != null) {
         scene.getStylesheets().add(stylesheet.toExternalForm());
       }
+      com.chequeprint.util.ThemeManager.applySavedTheme(scene);
       stage.setScene(scene);
       stage.setTitle("Smart Cheque Management System - Sign In");
       stage.centerOnScreen();

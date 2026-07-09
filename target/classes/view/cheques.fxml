@@ -59,9 +59,9 @@
                 </TableView>
 
                 <HBox spacing="10" alignment="CENTER_LEFT" styleClass="table-action-footer">
-                    <Button fx:id="btnApprove" text="Approve Selected" styleClass="btn-secondary" onAction="#onApprove" />
-                    <Button fx:id="btnPrint" text="Print Selected" styleClass="btn-primary" onAction="#onPrint" />
-                    <MenuButton fx:id="btnLifecycle" text="Lifecycle Actions" styleClass="btn-secondary">
+                    <Button fx:id="btnApprove" text="Approve" styleClass="btn-secondary" onAction="#onApprove" />
+                    <Button fx:id="btnPrint" text="Print" styleClass="btn-primary" onAction="#onPrint" />
+                    <MenuButton fx:id="btnLifecycle" text="Actions" styleClass="btn-secondary">
                         <items>
                             <MenuItem text="Mark as Deposited" onAction="#onDeposit" />
                             <MenuItem text="Mark as Cleared" onAction="#onClearCheque" />

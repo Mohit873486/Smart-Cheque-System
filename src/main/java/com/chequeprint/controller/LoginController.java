@@ -137,7 +137,28 @@ public class LoginController {
       AuthenticationResult result = task.getValue();
       if (result.success()) {
         persistRememberMe(identity);
-        loadMainApp(result.user());
+        
+        // Asynchronously synchronize theme preference from backend database to local storage
+        Task<String> themeSyncTask = new Task<>() {
+            @Override
+            protected String call() throws Exception {
+                com.chequeprint.service.SettingService settingService = new com.chequeprint.service.SettingService();
+                com.chequeprint.model.Settings settings = settingService.getSettings();
+                return settings != null && settings.getTheme() != null ? settings.getTheme() : "light";
+            }
+        };
+        themeSyncTask.setOnSucceeded(evt -> {
+            String theme = themeSyncTask.getValue();
+            com.chequeprint.util.ThemeManager.saveTheme(theme);
+            loadMainApp(result.user());
+        });
+        themeSyncTask.setOnFailed(evt -> {
+            // Fallback to local saved preference in case the server is offline or fails
+            loadMainApp(result.user());
+        });
+        Thread t = new Thread(themeSyncTask, "theme-sync-login");
+        t.setDaemon(true);
+        t.start();
       } else {
         updateAttemptsLabel();
         showError(result.message());
@@ -299,6 +320,7 @@ public class LoginController {
       Stage stage = (Stage) btnLogin.getScene().getWindow();
       Scene scene = new Scene(root, 1280, 800);
       scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+      com.chequeprint.util.ThemeManager.applySavedTheme(scene);
 
       stage.setScene(scene);
       stage.setTitle("Smart Cheque Management System");

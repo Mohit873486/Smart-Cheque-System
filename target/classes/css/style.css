@@ -10,6 +10,11 @@
     -fx-text-fill: #1e293b;
 }
 
+ScrollPane {
+    -fx-background-color: #f1f5f9;
+    -fx-background: #f1f5f9;
+}
+
 .app-root {
     -fx-background-color: #f1f5f9;
     /* FIX: ensure the root HBox itself fills the full scene */

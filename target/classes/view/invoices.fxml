@@ -66,7 +66,7 @@
                 </TableView>
 
                 <HBox spacing="10" alignment="CENTER_LEFT" styleClass="table-action-footer">
-                    <Button text="Print Selected" styleClass="btn-primary" onAction="#onPrint" />
+                    <Button text="Print" styleClass="btn-primary" onAction="#onPrint" />
                     <Button text="Delete" styleClass="btn-danger-low" onAction="#onDelete" />
                     <Region HBox.hgrow="ALWAYS" />
                     <Label text="Click a row to edit invoice details" styleClass="footer-hint" />
