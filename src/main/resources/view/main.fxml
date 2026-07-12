@@ -67,11 +67,6 @@
                     <Label text="Cheques" styleClass="nav-label" mouseTransparent="true" />
                 </HBox>
 
-                <HBox fx:id="navChequeHistory" styleClass="nav-item" spacing="12"
-                    alignment="CENTER_LEFT" onMouseClicked="#onChequeHistory" pickOnBounds="true">
-                    <Label text="📜" styleClass="nav-icon" mouseTransparent="true" />
-                    <Label text="Cheque History" styleClass="nav-label" mouseTransparent="true" />
-                </HBox>
 
                 <HBox fx:id="navInvoices" styleClass="nav-item" spacing="12"
                     alignment="CENTER_LEFT" onMouseClicked="#onInvoices" pickOnBounds="true">

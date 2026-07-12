@@ -61,21 +61,11 @@ public class ChequeController {
     @FXML
     private TableColumn<Cheque, String> colStatus;
 
-    // ── Form ──
-    @FXML
-    private TextField fldPayee;
-    @FXML
-    private TextField fldAmount;
-    @FXML
-    private ComboBox<String> cmbBank;
-    @FXML
-    private DatePicker datePicker;
-    @FXML
-    private Label lblFormTitle;
-    @FXML
-    private VBox formPanel;
+    // ── Form/Actions ──
     @FXML
     private Button btnNewCheque;
+    @FXML
+    private Button btnEdit;
     @FXML
     private Button btnApprove;
     @FXML
@@ -84,16 +74,16 @@ public class ChequeController {
     private MenuButton btnLifecycle;
     @FXML
     private Button btnDelete;
-    @FXML
-    private Button btnSaveAndPrint;
-    @FXML
-    private Button btnSave;
 
     // ── Filters ──
     @FXML
     private TextField searchField;
     @FXML
     private ComboBox<String> filterStatus;
+    @FXML
+    private ComboBox<String> filterBank;
+    @FXML
+    private DatePicker filterDate;
 
     // ── Root ──
     @FXML
@@ -124,8 +114,6 @@ public class ChequeController {
     public void initialize() {
         setupTable();
         setupFilters();
-        loadBanksIntoCombo();
-        datePicker.setValue(LocalDate.now());
         applyPermissions();
         loadData();
         updateButtonStates(null);
@@ -139,20 +127,13 @@ public class ChequeController {
         boolean canApprove = AccessControl.can(actor, Permission.APPROVE_CHEQUE);
         boolean canPrint = AccessControl.can(actor, Permission.PRINT_CHEQUE);
         boolean canDelete = AccessControl.can(actor, Permission.DELETE_CHEQUE);
-        boolean canEdit = canCreate || canUpdate;
 
         setVisibleManaged(btnNewCheque, canCreate);
-        setVisibleManaged(btnSave, canEdit);
-        setVisibleManaged(btnSaveAndPrint, canPrint);
+        setVisibleManaged(btnEdit, canUpdate);
         setVisibleManaged(btnApprove, canApprove);
         setVisibleManaged(btnPrint, canPrint);
         setVisibleManaged(btnLifecycle, canUpdate || canApprove);
         setVisibleManaged(btnDelete, canDelete);
-
-        fldPayee.setEditable(canEdit);
-        fldAmount.setEditable(canEdit);
-        cmbBank.setDisable(!canEdit);
-        datePicker.setDisable(!canEdit);
     }
 
     private void setVisibleManaged(javafx.scene.Node node, boolean visible) {
@@ -215,11 +196,23 @@ public class ChequeController {
 
         chequeTable.getSelectionModel().selectedItemProperty()
                 .addListener((obs, old, sel) -> {
-                    if (sel != null) {
-                        populateForm(sel);
-                    }
                     updateButtonStates(sel);
                 });
+
+        // Double-click row to edit
+        chequeTable.setRowFactory(tv -> {
+            TableRow<Cheque> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && (!row.isEmpty())) {
+                    Cheque rowData = row.getItem();
+                    User actor = SessionManager.getInstance().currentUser().orElse(null);
+                    if (AccessControl.can(actor, Permission.UPDATE_CHEQUE)) {
+                        openChequeDialog(rowData);
+                    }
+                }
+            });
+            return row;
+        });
     }
 
     // ── Filters ─────────────────────────────────────────────────────
@@ -240,20 +233,73 @@ public class ChequeController {
 
     private void setupFilters() {
         filterStatus.setItems(FXCollections.observableArrayList(
-                "All", "Draft", "Pending", "Approved", "Rejected", "Printed", "Cancelled"));
-        filterStatus.setValue("All");
+                "Status", "Draft", "Pending", "Approved", "Rejected", "Printed", "Cancelled"));
+        filterStatus.setValue("Status");
+
+        // Load bank list dynamically for filtering ComboBox
+        new Thread(() -> {
+            try {
+                List<Bank> banks = bankService.getAll();
+                Platform.runLater(() -> {
+                    ObservableList<String> bankNames = FXCollections.observableArrayList("Bank Name");
+                    for (Bank b : banks) {
+                        if (b.getBankName() != null && !b.getBankName().isBlank()) {
+                            bankNames.add(b.getBankName());
+                        }
+                    }
+                    if (bankNames.size() == 1) {
+                        bankNames.addAll("SBI", "HDFC", "ICICI", "Axis Bank");
+                    }
+                    filterBank.setItems(bankNames);
+                    filterBank.setValue("Bank Name");
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    filterBank.setItems(FXCollections.observableArrayList("Bank Name", "SBI", "HDFC", "ICICI", "Axis Bank"));
+                    filterBank.setValue("Bank Name");
+                });
+            }
+        }, "load-banks-filter").start();
 
         filtered = new FilteredList<>(data, p -> true);
         chequeTable.setItems(filtered);
 
+        updateComboPlaceholderStyle(filterStatus, "Status");
+        updateComboPlaceholderStyle(filterBank, "Bank Name");
+
         searchField.textProperty().addListener((obs, o, v) -> applyFilter());
-        filterStatus.valueProperty().addListener((obs, o, v) -> applyFilter());
+        filterStatus.valueProperty().addListener((obs, o, v) -> {
+            updateComboPlaceholderStyle(filterStatus, "Status");
+            applyFilter();
+        });
+        if (filterBank != null) {
+            filterBank.valueProperty().addListener((obs, o, v) -> {
+                updateComboPlaceholderStyle(filterBank, "Bank Name");
+                applyFilter();
+            });
+        }
+        if (filterDate != null) {
+            filterDate.valueProperty().addListener((obs, o, v) -> applyFilter());
+        }
+    }
+
+    private void updateComboPlaceholderStyle(ComboBox<String> combo, String placeholder) {
+        if (combo == null) return;
+        if (placeholder.equals(combo.getValue())) {
+            if (!combo.getStyleClass().contains("combo-placeholder")) {
+                combo.getStyleClass().add("combo-placeholder");
+            }
+        } else {
+            combo.getStyleClass().remove("combo-placeholder");
+        }
     }
 
     private void applyFilter() {
         String search = searchField.getText() == null ? ""
                 : searchField.getText().toLowerCase().trim();
         String status = filterStatus.getValue();
+        String bank = filterBank != null ? filterBank.getValue() : "Bank Name";
+        LocalDate date = filterDate != null ? filterDate.getValue() : null;
 
         if (!search.isEmpty()) {
             new Thread(() -> {
@@ -262,7 +308,10 @@ public class ChequeController {
                     Platform.runLater(() -> {
                         ObservableList<Cheque> filteredResults = FXCollections.observableArrayList();
                         for (Cheque c : results) {
-                            if ("All".equals(status) || (c.getStatus() != null && c.getStatus().name().equals(status))) {
+                            boolean matchStatus = "Status".equals(status) || (c.getStatus() != null && c.getStatus().name().equals(status));
+                            boolean matchBank = "Bank Name".equals(bank) || (c.getBankName() != null && c.getBankName().equalsIgnoreCase(bank));
+                            boolean matchDate = date == null || (c.getIssueDate() != null && c.getIssueDate().equals(date));
+                            if (matchStatus && matchBank && matchDate) {
                                 filteredResults.add(c);
                             }
                         }
@@ -274,11 +323,31 @@ public class ChequeController {
             }, "api-search-cheques").start();
         } else {
             filtered.setPredicate(c -> {
-                boolean matchStatus = "All".equals(status)
+                boolean matchStatus = "Status".equals(status)
                         || (c.getStatus() != null && c.getStatus().name().equals(status));
-                return matchStatus;
+                boolean matchBank = "Bank Name".equals(bank)
+                        || (c.getBankName() != null && c.getBankName().equalsIgnoreCase(bank));
+                boolean matchDate = date == null
+                        || (c.getIssueDate() != null && c.getIssueDate().equals(date));
+                return matchStatus && matchBank && matchDate;
             });
             chequeTable.setItems(filtered);
+        }
+    }
+
+    @FXML
+    private void onResetFilters() {
+        if (searchField != null) searchField.clear();
+        if (filterStatus != null) {
+            filterStatus.setValue("Status");
+            updateComboPlaceholderStyle(filterStatus, "Status");
+        }
+        if (filterBank != null) {
+            filterBank.setValue("Bank Name");
+            updateComboPlaceholderStyle(filterBank, "Bank Name");
+        }
+        if (filterDate != null) {
+            filterDate.setValue(null);
         }
     }
 
@@ -289,33 +358,7 @@ public class ChequeController {
     }
 
     // ── Load banks from DB into ComboBox ─────────────────────────────
-    private void loadBanksIntoCombo() {
-        new Thread(() -> {
-            try {
-                List<Bank> banks = bankService.getAll();
-                Platform.runLater(() -> {
-                    bankNameToId.clear();
-                    ObservableList<String> names = FXCollections.observableArrayList();
-                    for (Bank b : banks) {
-                        names.add(b.getBankName());
-                        bankNameToId.put(b.getBankName(), b.getId());
-                    }
-                    if (names.isEmpty()) {
-                        // Graceful fallback when DB is empty
-                        names.addAll("SBI", "HDFC", "ICICI", "Axis Bank");
-                    }
-                    cmbBank.setItems(names);
-                    cmbBank.setValue(names.get(0));
-                });
-            } catch (Exception e) {
-                Platform.runLater(() -> {
-                    cmbBank.setItems(FXCollections.observableArrayList(
-                            "SBI", "HDFC", "ICICI", "Axis Bank"));
-                    cmbBank.setValue("SBI");
-                });
-            }
-        }, "load-banks-combo").start();
-    }
+
 
     // ── Load cheque data ─────────────────────────────────────────────
     private void loadData() {
@@ -374,170 +417,83 @@ public class ChequeController {
         loadData();
     }
 
-    // ── Save / Update ────────────────────────────────────────────────
+    // ── Dialog / Popup Management ────────────────────────────────────
     @FXML
-    private void onSave() {
-        User actor = SessionManager.getInstance().currentUser().orElse(null);
-        if (!AccessControl.can(actor, selectedCheque == null ? Permission.CREATE_CHEQUE : Permission.UPDATE_CHEQUE)) {
-            showAlert("Permission Denied", "You do not have permission to save cheques.", Alert.AlertType.ERROR);
-            return;
-        }
-        try {
-            String payee = fldPayee.getText().trim();
-            String amtStr = fldAmount.getText().trim();
-
-            if (payee.isEmpty() || amtStr.isEmpty() || datePicker.getValue() == null) {
-                if (payee.isEmpty()) FxUtils.shake(fldPayee);
-                if (amtStr.isEmpty()) FxUtils.shake(fldAmount);
-                if (datePicker.getValue() == null) FxUtils.shake(datePicker);
-                showAlert("Validation", "Payee name, amount, and issue date are required.",
-                        Alert.AlertType.WARNING);
-                return;
-            }
-
-            BigDecimal amount;
-            try {
-                amount = new BigDecimal(amtStr);
-            } catch (NumberFormatException nfe) {
-                FxUtils.shake(fldAmount);
-                showAlert("Validation", "Enter a valid numeric amount (e.g. 5000.00).",
-                        Alert.AlertType.WARNING);
-                return;
-            }
-
-            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-                FxUtils.shake(fldAmount);
-                showAlert("Validation", "Amount must be greater than zero.",
-                        Alert.AlertType.WARNING);
-                return;
-            }
-
-            // Resolve bankId — prefer map lookup, fallback to combo index+1
-            String selectedBankName = cmbBank.getValue();
-            int bankId = bankNameToId.getOrDefault(selectedBankName,
-                    Math.max(1, cmbBank.getSelectionModel().getSelectedIndex() + 1));
-
-            if (selectedCheque == null) {
-                Cheque c = new Cheque(null, payee, amount, bankId, datePicker.getValue());
-                workflowService.createPending(c, actor);
-                showAlert("Success", "Cheque created and submitted for approval.", Alert.AlertType.INFORMATION);
-            } else {
-                selectedCheque.setPayeeName(payee);
-                selectedCheque.setAmount(amount);
-                selectedCheque.setBankId(bankId);
-                selectedCheque.setIssueDate(datePicker.getValue());
-                if (!chequeService.update(selectedCheque)) {
-                    throw new SQLException("Could not update cheque.");
-                }
-                showAlert("Success", "Cheque updated.", Alert.AlertType.INFORMATION);
-            }
-            clearForm();
-            loadData();
-            // Notify dashboard (if loaded) to reload its metrics and recent tables
-            if (mainController != null) {
-                Object dc = mainController.getController("dashboard");
-                if (dc instanceof DashboardController)
-                    ((DashboardController) dc).reload();
-            }
-
-        } catch (Exception e) {
-            showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
-        }
+    private void onNewCheque() {
+        openChequeDialog(null);
     }
 
-    // ── Save and Direct Print ────────────────────────────────────────
     @FXML
-    private void onSaveAndPrint() {
-        User actor = SessionManager.getInstance().currentUser().orElse(null);
-        if (!AccessControl.can(actor, Permission.PRINT_CHEQUE)) {
-            showAlert("Permission Denied", "You do not have permission to print cheques.", Alert.AlertType.ERROR);
+    private void onEdit() {
+        Cheque sel = chequeTable.getSelectionModel().getSelectedItem();
+        if (sel == null) {
+            showAlert("No Selection", "Please select a cheque to edit.", Alert.AlertType.WARNING);
             return;
         }
+        openChequeDialog(sel);
+    }
+
+    private void openChequeDialog(Cheque cheque) {
         try {
-            String payee = fldPayee.getText().trim();
-            String amtStr = fldAmount.getText().trim();
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/cheque_dialog.fxml"));
+            javafx.scene.Parent root = loader.load();
 
-            if (payee.isEmpty() || amtStr.isEmpty() || datePicker.getValue() == null) {
-                if (payee.isEmpty()) FxUtils.shake(fldPayee);
-                if (amtStr.isEmpty()) FxUtils.shake(fldAmount);
-                if (datePicker.getValue() == null) FxUtils.shake(datePicker);
-                showAlert("Validation", "Payee name, amount, and issue date are required.",
-                        Alert.AlertType.WARNING);
-                return;
-            }
+            ChequeDialogController controller = loader.getController();
+            controller.initData(cheque);
 
-            BigDecimal amount;
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.initStyle(javafx.stage.StageStyle.TRANSPARENT);
+            stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            stage.initOwner(rootPane.getScene().getWindow());
+            stage.setTitle(cheque == null ? "New Cheque" : "Edit Cheque");
+            
+            javafx.scene.Scene scene = new javafx.scene.Scene(root);
+            scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
+            scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+            com.chequeprint.util.ThemeManager.applySavedTheme(scene);
+
+            // Allow dragging the undecorated stage
+            final double[] xOffset = new double[1];
+            final double[] yOffset = new double[1];
+            root.setOnMousePressed(event -> {
+                xOffset[0] = event.getSceneX();
+                yOffset[0] = event.getSceneY();
+            });
+            root.setOnMouseDragged(event -> {
+                stage.setX(event.getScreenX() - xOffset[0]);
+                stage.setY(event.getScreenY() - yOffset[0]);
+            });
+            
+            stage.setScene(scene);
+
+            javafx.scene.Parent ownerRoot = rootPane.getScene().getRoot();
+            javafx.scene.effect.Effect oldEffect = ownerRoot.getEffect();
+            
+            javafx.scene.effect.BoxBlur blur = new javafx.scene.effect.BoxBlur(6, 6, 3);
+            javafx.scene.effect.ColorAdjust dim = new javafx.scene.effect.ColorAdjust();
+            dim.setBrightness(-0.35);
+            dim.setInput(blur);
+            
+            ownerRoot.setEffect(dim);
+            
             try {
-                amount = new BigDecimal(amtStr);
-            } catch (NumberFormatException nfe) {
-                FxUtils.shake(fldAmount);
-                showAlert("Validation", "Enter a valid numeric amount (e.g. 5000.00).",
-                        Alert.AlertType.WARNING);
-                return;
+                stage.showAndWait();
+            } finally {
+                ownerRoot.setEffect(oldEffect);
             }
 
-            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-                FxUtils.shake(fldAmount);
-                showAlert("Validation", "Amount must be greater than zero.",
-                        Alert.AlertType.WARNING);
-                return;
-            }
-
-            // Resolve bankId — prefer map lookup, fallback to combo index+1
-            String selectedBankName = cmbBank.getValue();
-            int bankId = bankNameToId.getOrDefault(selectedBankName,
-                    Math.max(1, cmbBank.getSelectionModel().getSelectedIndex() + 1));
-
-            if (selectedCheque == null) {
-                Cheque newCheque = new Cheque(null, payee, amount, bankId, datePicker.getValue());
-                workflowService.createPending(newCheque, actor);
-                showAlert("Success",
-                        "Cheque created and submitted for approval. Print is available after manager approval.",
-                        Alert.AlertType.INFORMATION);
-            } else {
-                if (selectedCheque.getStatus() != Cheque.Status.Approved && selectedCheque.getStatus() != Cheque.Status.Printed) {
-                    if (AccessControl.can(actor, Permission.APPROVE_CHEQUE)) {
-                        showAlert("Approval Required",
-                                "This cheque is in " + selectedCheque.getStatus() + " status. You must approve it first using the 'Approve' button before printing.",
-                                Alert.AlertType.WARNING);
-                    } else {
-                        if (selectedCheque.getStatus() == Cheque.Status.Draft) {
-                            showAlert("Approval Required",
-                                    "This cheque is a draft. Save it first, then ask an Admin or Manager to approve it before printing.",
-                                    Alert.AlertType.INFORMATION);
-                        } else if (selectedCheque.getStatus() == Cheque.Status.Pending) {
-                            showAlert("Approval Required",
-                                    "This cheque is pending approval. Ask an Admin or Manager to approve it before printing.",
-                                    Alert.AlertType.INFORMATION);
-                        } else {
-                            showAlert("Cannot Print",
-                                    "This cheque cannot be printed. Current status: " + selectedCheque.getStatus(),
-                                    Alert.AlertType.WARNING);
-                        }
+            if (controller.isSaved()) {
+                loadData();
+                if (mainController != null) {
+                    Object dc = mainController.getController("dashboard");
+                    if (dc instanceof DashboardController) {
+                        ((DashboardController) dc).reload();
                     }
-                    return;
-                }
-                selectedCheque.setPayeeName(payee);
-                selectedCheque.setAmount(amount);
-                selectedCheque.setBankId(bankId);
-                selectedCheque.setIssueDate(datePicker.getValue());
-                chequeService.update(selectedCheque);
-                workflowService.print(selectedCheque.getId(), actor);
-                showAlert("Success", "Cheque printed successfully.",
-                        Alert.AlertType.INFORMATION);
-            }
-
-            loadData();
-            clearForm();
-            if (mainController != null) {
-                Object dc = mainController.getController("dashboard");
-                if (dc instanceof DashboardController) {
-                    ((DashboardController) dc).reload();
                 }
             }
-
         } catch (Exception e) {
-            showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
+            showAlert("Error", "Could not open cheque window: " + e.getMessage(), Alert.AlertType.ERROR);
+            e.printStackTrace();
         }
     }
 
@@ -693,25 +649,8 @@ public class ChequeController {
     }
 
     // ── Form helpers ─────────────────────────────────────────────────
-    private void populateForm(Cheque c) {
-        selectedCheque = c;
-        lblFormTitle.setText("Edit Cheque");
-        fldPayee.setText(c.getPayeeName());
-        fldAmount.setText(c.getAmount() != null ? c.getAmount().toPlainString() : "");
-        datePicker.setValue(c.getIssueDate() != null ? c.getIssueDate() : LocalDate.now());
-        if (c.getBankName() != null && cmbBank.getItems().contains(c.getBankName()))
-            cmbBank.setValue(c.getBankName());
-        FxUtils.animateIn(formPanel, 0);
-    }
-
     private void clearForm() {
         selectedCheque = null;
-        lblFormTitle.setText("New Cheque");
-        fldPayee.clear();
-        fldAmount.clear();
-        if (!cmbBank.getItems().isEmpty())
-            cmbBank.setValue(cmbBank.getItems().get(0));
-        datePicker.setValue(LocalDate.now());
         chequeTable.getSelectionModel().clearSelection();
         updateButtonStates(null);
     }
@@ -727,6 +666,9 @@ public class ChequeController {
             }
             if (btnApprove != null) {
                 btnApprove.setDisable(true);
+            }
+            if (btnEdit != null) {
+                btnEdit.setDisable(true);
             }
             return;
         }
@@ -746,6 +688,10 @@ public class ChequeController {
 
         if (btnApprove != null) {
             btnApprove.setDisable(selected.getStatus() != Cheque.Status.Pending || !hasApprovePerm);
+        }
+
+        if (btnEdit != null) {
+            btnEdit.setDisable(false);
         }
     }
 

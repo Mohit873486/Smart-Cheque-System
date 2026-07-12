@@ -89,7 +89,7 @@ public class ChequeOcrService {
     }
 
     private Optional<String> extractChequeNumber(String text) {
-        // common patterns: CHQ-1234, Cheque No: 1234, Cheque #: 1234
+        // common patterns: CHQ-1234, Cheque No: 1234, Cheque: 1234
         Pattern p = Pattern.compile("(CHQ[-\\s]?\\d{2,}|Cheque\\s*(No|#|Number)[:\\s]*([A-Za-z0-9-]+))", Pattern.CASE_INSENSITIVE);
         Matcher m = p.matcher(text);
         if (m.find()) {

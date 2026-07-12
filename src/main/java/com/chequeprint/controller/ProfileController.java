@@ -537,7 +537,22 @@ public class ProfileController {
             stage.initOwner(rootPane.getScene().getWindow());
             stage.setTitle("Edit Profile");
             stage.setScene(new javafx.scene.Scene(root));
-            stage.showAndWait();
+
+            javafx.scene.Parent ownerRoot = rootPane.getScene().getRoot();
+            javafx.scene.effect.Effect oldEffect = ownerRoot.getEffect();
+            
+            javafx.scene.effect.BoxBlur blur = new javafx.scene.effect.BoxBlur(6, 6, 3);
+            javafx.scene.effect.ColorAdjust dim = new javafx.scene.effect.ColorAdjust();
+            dim.setBrightness(-0.35);
+            dim.setInput(blur);
+            
+            ownerRoot.setEffect(dim);
+            
+            try {
+                stage.showAndWait();
+            } finally {
+                ownerRoot.setEffect(oldEffect);
+            }
 
             if (controller.isSaved()) {
                 loadProfile();

@@ -46,19 +46,7 @@ public class InvoiceController {
     @FXML
     private TableColumn<Invoice, String> colStatus;
 
-    // ── Form fields ──────────────────────────────────────────────────
-    @FXML
-    private TextField fldClient;
-    @FXML
-    private TextField fldAmount;
-    @FXML
-    private DatePicker dateIssue;
-    @FXML
-    private DatePicker dateDue;
-    @FXML
-    private TextArea fldNotes;
-    @FXML
-    private Label lblFormTitle;
+    // Form fields moved to InvoiceDialogController
     @FXML
     private TextField searchField;
     @FXML
@@ -78,8 +66,6 @@ public class InvoiceController {
         setupTable();
         loadData();
         setupSearchFilter();
-        dateIssue.setValue(LocalDate.now());
-        dateDue.setValue(LocalDate.now().plusDays(30));
         FxUtils.animateIn(rootPane, 0);
     }
 
@@ -115,28 +101,35 @@ public class InvoiceController {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(null);
-                    setStyle("");
+                    setGraphic(null);
                     return;
                 }
-                setText(item);
+                Label badge = new Label(item);
+                badge.getStyleClass().add("status-badge");
                 switch (item) {
-                    case "Paid" -> setStyle("-fx-text-fill:#065f46;-fx-font-weight:bold;");
-                    case "Unpaid" -> setStyle("-fx-text-fill:#991b1b;-fx-font-weight:bold;");
-                    case "Partial" -> setStyle("-fx-text-fill:#1e40af;-fx-font-weight:bold;");
-                    case "Cancelled" -> setStyle("-fx-text-fill:#475569;");
-                    default -> setStyle("");
+                    case "Paid" -> badge.getStyleClass().add("status-printed");
+                    case "Unpaid" -> badge.getStyleClass().add("status-cancelled");
+                    case "Partial" -> badge.getStyleClass().add("status-pending");
+                    default -> badge.getStyleClass().add("status-neutral");
                 }
+                setGraphic(badge);
+                setText(null);
                 setAlignment(javafx.geometry.Pos.CENTER);
             }
         });
 
         invoiceTable.setItems(data);
 
-        invoiceTable.getSelectionModel().selectedItemProperty()
-                .addListener((obs, old, sel) -> {
-                    if (sel != null)
-                        populateForm(sel);
-                });
+        invoiceTable.setRowFactory(tv -> {
+            javafx.scene.control.TableRow<Invoice> row = new javafx.scene.control.TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && (!row.isEmpty())) {
+                    Invoice rowData = row.getItem();
+                    openInvoiceDialog(rowData);
+                }
+            });
+            return row;
+        });
     }
 
     // ── Load data ────────────────────────────────────────────────────
@@ -192,155 +185,97 @@ public class InvoiceController {
         }
     }
 
-    // ── Save / Update ────────────────────────────────────────────────
     @FXML
-    private void onSave() {
-        String client = fldClient.getText().trim();
-        String amtStr = fldAmount.getText().trim();
+    private void onNewInvoice() {
+        openInvoiceDialog(null);
+    }
 
-        if (client.isEmpty() || amtStr.isEmpty()) {
-            FxUtils.shake(fldClient);
-            showAlert("Validation", "Client name and amount are required.",
-                    Alert.AlertType.WARNING);
+    @FXML
+    private void onEditInvoice() {
+        Invoice sel = invoiceTable.getSelectionModel().getSelectedItem();
+        if (sel == null) {
+            showAlert("No Selection", "Please select an invoice to edit.", Alert.AlertType.WARNING);
             return;
         }
+        openInvoiceDialog(sel);
+    }
 
-        BigDecimal amt;
+    private void openInvoiceDialog(Invoice invoice) {
         try {
-            amt = new BigDecimal(amtStr);
-        } catch (NumberFormatException e) {
-            FxUtils.shake(fldAmount);
-            showAlert("Validation", "Enter a valid numeric amount (e.g. 5000.00).",
-                    Alert.AlertType.WARNING);
-            return;
-        }
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/invoice_dialog.fxml"));
+            javafx.scene.Parent root = loader.load();
 
-        if (amt.compareTo(BigDecimal.ZERO) <= 0) {
-            FxUtils.shake(fldAmount);
-            showAlert("Validation", "Amount must be greater than zero.",
-                    Alert.AlertType.WARNING);
-            return;
-        }
+            InvoiceDialogController controller = loader.getController();
+            controller.initData(invoice);
 
-        try {
-            if (selectedInvoice == null) {
-                Invoice inv = new Invoice(null, client, amt,
-                        dateIssue.getValue(), dateDue.getValue());
-                inv.setNotes(fldNotes.getText());
-                service.save(inv);
-                showAlert("Success", "Invoice saved successfully.",
-                        Alert.AlertType.INFORMATION);
-            } else {
-                selectedInvoice.setClientName(client);
-                selectedInvoice.setAmount(amt);
-                selectedInvoice.setIssueDate(dateIssue.getValue());
-                selectedInvoice.setDueDate(dateDue.getValue());
-                selectedInvoice.setNotes(fldNotes.getText());
-                service.update(selectedInvoice);
-                showAlert("Success", "Invoice updated.", Alert.AlertType.INFORMATION);
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.initStyle(javafx.stage.StageStyle.TRANSPARENT);
+            stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            stage.initOwner(rootPane.getScene().getWindow());
+            stage.setTitle(invoice == null ? "New Invoice" : "Edit Invoice");
+
+            javafx.scene.Scene scene = new javafx.scene.Scene(root);
+            scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
+            scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+            com.chequeprint.util.ThemeManager.applySavedTheme(scene);
+
+            // Drag support
+            final double[] xOffset = new double[1];
+            final double[] yOffset = new double[1];
+            root.setOnMousePressed(event -> {
+                xOffset[0] = event.getSceneX();
+                yOffset[0] = event.getSceneY();
+            });
+            root.setOnMouseDragged(event -> {
+                stage.setX(event.getScreenX() - xOffset[0]);
+                stage.setY(event.getScreenY() - yOffset[0]);
+            });
+
+            stage.setScene(scene);
+
+            // Background blur/dim
+            javafx.scene.Parent ownerRoot = rootPane.getScene().getRoot();
+            javafx.scene.effect.Effect oldEffect = ownerRoot.getEffect();
+
+            javafx.scene.effect.BoxBlur blur = new javafx.scene.effect.BoxBlur(6, 6, 3);
+            javafx.scene.effect.ColorAdjust dim = new javafx.scene.effect.ColorAdjust();
+            dim.setBrightness(-0.35);
+            dim.setInput(blur);
+
+            ownerRoot.setEffect(dim);
+
+            try {
+                stage.showAndWait();
+            } finally {
+                ownerRoot.setEffect(oldEffect);
             }
-            clearForm();
-            loadData();
-            // Notify dashboard (if loaded) to reload its metrics and recent tables
-            if (mainController != null) {
-                Object dc = mainController.getController("dashboard");
-                if (dc instanceof DashboardController)
-                    ((DashboardController) dc).reload();
+
+            if (controller.isSaved()) {
+                loadData();
+                if (mainController != null) {
+                    Object dc = mainController.getController("dashboard");
+                    if (dc instanceof DashboardController) {
+                        ((DashboardController) dc).reload();
+                    }
+                }
             }
         } catch (Exception e) {
-            showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
+            showAlert("Error", "Could not open invoice window: " + e.getMessage(), Alert.AlertType.ERROR);
+            e.printStackTrace();
         }
     }
 
-    // ── Save and Direct Print ────────────────────────────────────────
-    @FXML
-    private void onSaveAndPrint() {
-        String client = fldClient.getText().trim();
-        String amtStr = fldAmount.getText().trim();
-
-        if (client.isEmpty() || amtStr.isEmpty()) {
-            FxUtils.shake(fldClient);
-            showAlert("Validation", "Client name and amount are required.",
-                    Alert.AlertType.WARNING);
-            return;
-        }
-
-        BigDecimal amt;
-        try {
-            amt = new BigDecimal(amtStr);
-        } catch (NumberFormatException e) {
-            FxUtils.shake(fldAmount);
-            showAlert("Validation", "Enter a valid numeric amount (e.g. 5000.00).",
-                    Alert.AlertType.WARNING);
-            return;
-        }
-
-        if (amt.compareTo(BigDecimal.ZERO) <= 0) {
-            FxUtils.shake(fldAmount);
-            showAlert("Validation", "Amount must be greater than zero.",
-                    Alert.AlertType.WARNING);
-            return;
-        }
-
-        try {
-            Invoice invoiceToPrint;
-            if (selectedInvoice == null) {
-                Invoice inv = new Invoice(null, client, amt,
-                        dateIssue.getValue(), dateDue.getValue());
-                inv.setNotes(fldNotes.getText());
-                service.save(inv);
-                invoiceToPrint = resolveLatestSavedInvoice(inv);
-            } else {
-                selectedInvoice.setClientName(client);
-                selectedInvoice.setAmount(amt);
-                selectedInvoice.setIssueDate(dateIssue.getValue());
-                selectedInvoice.setDueDate(dateDue.getValue());
-                selectedInvoice.setNotes(fldNotes.getText());
-                service.update(selectedInvoice);
-                invoiceToPrint = selectedInvoice;
-            }
-
-            loadData();
-
-            boolean printed = openPrintPreview(invoiceToPrint);
-            if (!printed) {
-                showAlert("Print Canceled", "Invoice printing was canceled.",
-                        Alert.AlertType.INFORMATION);
-                return;
-            }
-
-            showAlert("Success", "Invoice printed successfully.",
-                    Alert.AlertType.INFORMATION);
-
-            clearForm();
-            if (mainController != null) {
-                Object dc = mainController.getController("dashboard");
-                if (dc instanceof DashboardController)
-                    ((DashboardController) dc).reload();
-            }
-        } catch (Exception e) {
-            showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
-        }
-    }
-
-    // ── ───────────────────────────────────────────────────
     @FXML
     private void onExportPdf() {
         Invoice sel = invoiceTable.getSelectionModel().getSelectedItem();
         if (sel == null) {
-            showAlert("No Selection", "Please select an invoice to export.",
-                    Alert.AlertType.WARNING);
+            showAlert("No Selection", "Please select an invoice to export.", Alert.AlertType.WARNING);
             return;
         }
         try {
-            String desktopPath = System.getProperty("user.home")
-                    + java.io.File.separator + "Desktop";
-
+            String desktopPath = System.getProperty("user.home") + java.io.File.separator + "Desktop";
             String savedPath = JasperPrintUtil.exportInvoicePdf(sel, desktopPath);
-
-            showAlert("PDF Exported",
-                    "Invoice saved to:\n" + savedPath,
-                    Alert.AlertType.INFORMATION);
+            showAlert("PDF Exported", "Invoice saved to:\n" + savedPath, Alert.AlertType.INFORMATION);
         } catch (Exception e) {
             showAlert("Export Error", e.getMessage(), Alert.AlertType.ERROR);
         }
@@ -350,15 +285,13 @@ public class InvoiceController {
     private void onPrint() {
         Invoice sel = invoiceTable.getSelectionModel().getSelectedItem();
         if (sel == null) {
-            showAlert("No Selection", "Please select an invoice to print.",
-                    Alert.AlertType.WARNING);
+            showAlert("No Selection", "Please select an invoice to print.", Alert.AlertType.WARNING);
             return;
         }
         try {
-            boolean printed = openPrintPreview(sel);
+            boolean printed = JasperPrintUtil.previewInvoice(sel);
             if (!printed) {
-                showAlert("Print Canceled", "Invoice printing was canceled.",
-                        Alert.AlertType.INFORMATION);
+                showAlert("Print Canceled", "Invoice printing was canceled.", Alert.AlertType.INFORMATION);
                 return;
             }
             loadData();
@@ -368,36 +301,17 @@ public class InvoiceController {
                     ((DashboardController) dc).reload();
                 }
             }
-            showAlert("Print Successful",
-                    "Invoice printed successfully.",
-                    Alert.AlertType.INFORMATION);
+            showAlert("Print Successful", "Invoice printed successfully.", Alert.AlertType.INFORMATION);
         } catch (Exception e) {
             showAlert("Print Error", e.getMessage(), Alert.AlertType.ERROR);
         }
     }
 
-    private boolean openPrintPreview(Invoice invoice) throws Exception {
-        return JasperPrintUtil.previewInvoice(invoice);
-    }
-
-    private Invoice resolveLatestSavedInvoice(Invoice created) throws Exception {
-        if (created == null || created.getInvoiceNo() == null || created.getInvoiceNo().isBlank()) {
-            return created;
-        }
-
-        return service.getAll().stream()
-                .filter(i -> created.getInvoiceNo().equals(i.getInvoiceNo()))
-                .max(Comparator.comparingInt(Invoice::getId))
-                .orElse(created);
-    }
-
-    // ── Delete ───────────────────────────────────────────────────────
     @FXML
     private void onDelete() {
         Invoice sel = invoiceTable.getSelectionModel().getSelectedItem();
         if (sel == null) {
-            showAlert("No Selection", "Please select an invoice to delete.",
-                    Alert.AlertType.WARNING);
+            showAlert("No Selection", "Please select an invoice to delete.", Alert.AlertType.WARNING);
             return;
         }
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
@@ -409,14 +323,13 @@ public class InvoiceController {
             if (btn == ButtonType.YES) {
                 try {
                     service.delete(sel.getId());
-                    clearForm();
+                    invoiceTable.getSelectionModel().clearSelection();
                     loadData();
                     if (mainController != null) {
                         Object dc = mainController.getController("dashboard");
                         if (dc instanceof DashboardController)
                             ((DashboardController) dc).reload();
                     }
-
                 } catch (Exception e) {
                     showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
                 }
@@ -424,33 +337,6 @@ public class InvoiceController {
         });
     }
 
-    @FXML
-    private void onClear() {
-        clearForm();
-    }
-
-    // ── Form helpers ─────────────────────────────────────────────────
-    private void populateForm(Invoice inv) {
-        selectedInvoice = inv;
-        lblFormTitle.setText("Edit Invoice");
-        fldClient.setText(inv.getClientName() != null ? inv.getClientName() : "");
-        fldAmount.setText(inv.getAmount() != null ? inv.getAmount().toPlainString() : "");
-        dateIssue.setValue(inv.getIssueDate() != null ? inv.getIssueDate() : LocalDate.now());
-        dateDue.setValue(inv.getDueDate() != null ? inv.getDueDate() : LocalDate.now().plusDays(30));
-        fldNotes.setText(inv.getNotes() != null ? inv.getNotes() : "");
-        FxUtils.animateIn(rootPane, 0);
-    }
-
-    private void clearForm() {
-        selectedInvoice = null;
-        lblFormTitle.setText("New Invoice");
-        fldClient.clear();
-        fldAmount.clear();
-        fldNotes.clear();
-        dateIssue.setValue(LocalDate.now());
-        dateDue.setValue(LocalDate.now().plusDays(30));
-        invoiceTable.getSelectionModel().clearSelection();
-    }
 
     private void showAlert(String title, String msg, Alert.AlertType type) {
         Alert a = new Alert(type, msg, ButtonType.OK);

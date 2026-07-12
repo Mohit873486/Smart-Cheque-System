@@ -30,7 +30,7 @@
                 <HBox spacing="8" alignment="CENTER_LEFT" styleClass="search-shell"
                     prefWidth="220" HBox.hgrow="ALWAYS" maxWidth="Infinity">
                     <Label text="⌕" styleClass="search-icon" />
-                    <TextField fx:id="searchField" promptText="Search payee name, cheque #..."
+                    <TextField fx:id="searchField" promptText="Search payee name, Cheque..."
                         styleClass="search-input-field" HBox.hgrow="ALWAYS"
                         maxWidth="Infinity" />
                 </HBox>
@@ -55,12 +55,12 @@
                         styleClass="table-placeholder" />
                 </placeholder>
                 <columns>
-                    <TableColumn fx:id="colChequeNo" text="Cheque #" minWidth="110" />
-                    <TableColumn fx:id="colPayee" text="Payee" minWidth="180" />
-                    <TableColumn fx:id="colAmount" text="Amount" minWidth="130" />
-                    <TableColumn fx:id="colBank" text="Bank Name" minWidth="140" />
-                    <TableColumn fx:id="colDate" text="Issue Date" minWidth="120" />
-                    <TableColumn fx:id="colStatus" text="Status" minWidth="110" />
+                    <TableColumn fx:id="colChequeNo" text="Cheque" prefWidth="110" minWidth="80" />
+                    <TableColumn fx:id="colPayee" text="Payee" prefWidth="160" minWidth="100" />
+                    <TableColumn fx:id="colAmount" text="Amount" prefWidth="110" minWidth="80" />
+                    <TableColumn fx:id="colBank" text="Bank Name" prefWidth="130" minWidth="100" />
+                    <TableColumn fx:id="colDate" text="Issue Date" prefWidth="100" minWidth="85" />
+                    <TableColumn fx:id="colStatus" text="Status" prefWidth="90" minWidth="80" styleClass="align-center" />
                 </columns>
             </TableView>
 

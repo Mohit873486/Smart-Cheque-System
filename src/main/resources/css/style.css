@@ -698,10 +698,12 @@ ScrollPane {
     -fx-border-radius: 10px;
     -fx-background-radius: 10px;
     -fx-border-width: 1px;
-    -fx-padding: 10 14 10 14;
+    -fx-padding: 0 14 0 14;
     -fx-font-size: 13px;
     -fx-text-fill: #1e293b;
     -fx-prompt-text-fill: #94a3b8;
+    -fx-pref-height: 40px;
+    -fx-max-height: 40px;
 }
 
 .form-input:focused {
@@ -715,8 +717,10 @@ ScrollPane {
     -fx-border-radius: 10px;
     -fx-background-radius: 10px;
     -fx-border-width: 1px;
-    -fx-padding: 4 8 4 8;
+    -fx-padding: 0 10 0 10;
     -fx-font-size: 13px;
+    -fx-pref-height: 40px;
+    -fx-max-height: 40px;
 }
 
 .form-combo:focused {
@@ -729,13 +733,16 @@ ScrollPane {
     -fx-border-radius: 10px;
     -fx-background-radius: 10px;
     -fx-border-width: 1px;
+    -fx-pref-height: 40px;
+    -fx-max-height: 40px;
 }
 
 .form-date .text-field {
     -fx-background-color: transparent;
-    -fx-padding: 9 12 9 12;
+    -fx-padding: 0 12 0 12;
     -fx-font-size: 13px;
     -fx-text-fill: #1e293b;
+    -fx-pref-height: 38px;
 }
 
 .filter-input {
@@ -760,7 +767,9 @@ ScrollPane {
     -fx-border-radius: 10px;
     -fx-border-width: 1px;
 }
-
+.filter-combo.combo-placeholder > .list-cell {
+    -fx-text-fill: #94a3b8 !important;
+}
 /* ══════════════════════════════════════════
    PROFILE
 ══════════════════════════════════════════ */
@@ -815,9 +824,77 @@ ScrollPane {
 }
 
 .setting-name {
-    -fx-font-size: 14px;
+    -fx-font-size: 13.5px;
     -fx-font-weight: bold;
     -fx-text-fill: #1e293b;
+}
+
+/* ══════════════════════════════════════════
+   COMBO BOX POPUP
+   ══════════════════════════════════════════ */
+.combo-box {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-border-width: 1px;
+    -fx-padding: 0 0 0 0;
+    -fx-min-height: 40px;
+    -fx-max-height: 40px;
+    -fx-cursor: hand;
+}
+
+.combo-box:focused {
+    -fx-border-color: #1a56db;
+    -fx-effect: none;
+}
+
+.combo-box .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #1e293b;
+    -fx-padding: 8 12 8 12;
+    -fx-font-size: 13px;
+}
+
+.combo-box > .arrow-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0 12 0 12;
+    -fx-border-color: transparent transparent transparent #e2e8f0;
+    -fx-border-width: 0 0 0 1px;
+}
+
+.combo-box > .arrow-button > .arrow {
+    -fx-background-color: #64748b;
+    -fx-shape: "M0 1.5 L1.5 0 L5 3.5 L8.5 0 L10 1.5 L5 6.5 Z";
+    -fx-min-width: 9px;
+    -fx-max-width: 9px;
+    -fx-min-height: 6px;
+    -fx-max-height: 6px;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.08), 12, 0, 0, 4);
+    -fx-padding: 4px;
+}
+
+.combo-box-popup .list-cell {
+    -fx-background-radius: 6px;
+    -fx-padding: 8 12 8 12;
+    -fx-text-fill: #1e293b;
+}
+
+.combo-box-popup .list-cell:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-text-fill: #0f172a;
+}
+
+.combo-box-popup .list-cell:selected {
+    -fx-background-color: #1a56db;
+    -fx-text-fill: #ffffff;
 }
 
 .setting-desc {
@@ -898,25 +975,7 @@ ScrollPane {
     -fx-background-color: #1a56db;
 }
 
-/* ══════════════════════════════════════════
-   COMBO BOX POPUP
-══════════════════════════════════════════ */
-.combo-box-popup .list-view {
-    -fx-background-color: #ffffff;
-    -fx-border-color: #e2e8f0;
-    -fx-border-radius: 12px;
-    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.12), 16, 0, 0, 4);
-}
 
-.combo-box-popup .list-cell:hover {
-    -fx-background-color: #eff6ff;
-    -fx-text-fill: #1a56db;
-}
-
-.combo-box-popup .list-cell:selected {
-    -fx-background-color: #dbeafe;
-    -fx-text-fill: #1e40af;
-}
 
 /* ══════════════════════════════════════════
    DIALOGS / ALERTS
@@ -1441,6 +1500,23 @@ ScrollPane {
     -fx-border-width: 1px;
 }
 
+.modern-table .scroll-bar:horizontal {
+    -fx-opacity: 0;
+    -fx-max-height: 0;
+    -fx-min-height: 0;
+    -fx-pref-height: 0;
+}
+
+.modern-table .scroll-bar:vertical {
+    -fx-background-color: #ffffff;
+    -fx-border-color: transparent transparent transparent #eef0f3;
+    -fx-border-width: 0 0 0 1px;
+}
+
+.modern-table .scroll-bar:vertical .track {
+    -fx-background-color: transparent;
+}
+
 .modern-table .column-header-background {
     -fx-background-color: #f8fafc;
     -fx-background-radius: 10 10 0 0;
@@ -1451,12 +1527,28 @@ ScrollPane {
     -fx-background-color: transparent;
     -fx-size: 42px;
     -fx-border-color: transparent transparent #e5e7eb transparent;
+    -fx-border-width: 0 0 1 0;
 }
 
 .modern-table .column-header .label {
     -fx-text-fill: #64748b;
     -fx-font-size: 11.5px;
     -fx-font-weight: 800;
+    -fx-padding: 0 12 0 12;
+    -fx-alignment: center-left;
+}
+
+.modern-table .column-header.align-center .label {
+    -fx-alignment: center;
+}
+
+.modern-table .table-cell.align-center {
+    -fx-alignment: center;
+}
+
+.modern-table .table-cell {
+    -fx-border-color: transparent;
+    -fx-padding: 0 12 0 12;
 }
 
 .modern-table .table-row-cell {
@@ -1517,6 +1609,16 @@ ScrollPane {
     -fx-text-fill: #991b1b;
 }
 
+.status-approved {
+    -fx-background-color: #dbeafe;
+    -fx-text-fill: #1e40af;
+}
+
+.status-rejected {
+    -fx-background-color: #fee2e2;
+    -fx-text-fill: #991b1b;
+}
+
 .status-neutral {
     -fx-background-color: #eef2ff;
     -fx-text-fill: #3730a3;
@@ -1534,7 +1636,8 @@ ScrollPane {
     -fx-border-radius: 10px;
     -fx-background-radius: 10px;
     -fx-padding: 0 12 0 12;
-    -fx-min-height: 42px;
+    -fx-pref-height: 40px;
+    -fx-max-height: 40px;
 }
 
 .search-icon {
@@ -1546,16 +1649,17 @@ ScrollPane {
 .money-input {
     -fx-background-color: transparent;
     -fx-border-width: 0;
-    -fx-padding: 10 0 10 0;
+    -fx-padding: 0;
     -fx-text-fill: #111827;
     -fx-prompt-text-fill: #9ca3af;
+    -fx-pref-height: 38px;
 }
 
 .money-prefix {
     -fx-text-fill: #166534;
     -fx-font-size: 15px;
     -fx-font-weight: 800;
-    -fx-padding: 0 9 0 0;
+    -fx-padding: 0 8 0 0;
 }
 
 .table-action-footer {
@@ -1622,4 +1726,57 @@ ScrollPane {
 
 .btn-outline-muted:hover {
     -fx-background-color: #f8fafc;
+}
+
+/* ══════════════════════════════════════════
+   CUSTOM DIALOG REVAMP
+   ══════════════════════════════════════════ */
+.dialog-root {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 16px;
+    -fx-border-color: #cbd5e1;
+    -fx-border-radius: 16px;
+    -fx-border-width: 1px;
+    -fx-effect: dropshadow(three-pass-box, rgba(15, 23, 42, 0.18), 24, 0.1, 0, 8);
+}
+
+.dialog-header-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #0f172a;
+}
+
+.dialog-header-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: #64748b;
+}
+
+.dialog-close-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #64748b;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-min-width: 28px;
+    -fx-min-height: 28px;
+    -fx-max-width: 28px;
+    -fx-max-height: 28px;
+    -fx-background-radius: 50%;
+    -fx-cursor: hand;
+    -fx-alignment: center;
+    -fx-padding: 0;
+}
+
+.dialog-close-btn:hover {
+    -fx-background-color: #fee2e2;
+    -fx-text-fill: #b91c1c;
+}
+
+.dialog-separator *.line {
+    -fx-border-color: #e2e8f0;
+    -fx-border-width: 1px 0 0 0;
+}
+
+.money-input-shell.focused {
+    -fx-border-color: #1a56db;
+    -fx-effect: dropshadow(three-pass-box, rgba(26, 86, 219, 0.15), 6, 0, 0, 0);
 }

@@ -52,8 +52,6 @@ public class MainController {
   @FXML
   private HBox navCheques;
   @FXML
-  private HBox navChequeHistory;
-  @FXML
   private HBox navInvoices;
   @FXML
   private HBox navBanks;
@@ -89,7 +87,6 @@ public class MainController {
     {
       put("dashboard", "/view/dashboard.fxml");
       put("cheques", "/view/cheques.fxml");
-      put("history", "/view/cheque_history.fxml");
       put("invoices", "/view/invoices.fxml");
       put("banks", "/view/banks.fxml");
       put("ai", "/view/ai-assistant.fxml");
@@ -107,7 +104,6 @@ public class MainController {
     {
       put("dashboard", "Dashboard");
       put("cheques", "Cheque Management");
-      put("history", "Cheque History");
       put("invoices", "Invoice Management");
       put("banks", "Bank Templates");
       put("ai", "AI Assistant");
@@ -150,11 +146,6 @@ public class MainController {
     setActiveNav(navCheques);
   }
 
-  @FXML
-  private void onChequeHistory() {
-    navigate("history");
-    setActiveNav(navChequeHistory);
-  }
 
   @FXML
   private void onInvoices() {
@@ -422,7 +413,6 @@ public class MainController {
   private void applyRolePermissions() {
     setNavAllowed(navDashboard, "dashboard");
     setNavAllowed(navCheques, "cheques");
-    setNavAllowed(navChequeHistory, "history");
     setNavAllowed(navInvoices, "invoices");
     setNavAllowed(navBanks, "banks");
     setNavAllowed(navAiAssistant, "ai");
@@ -444,7 +434,6 @@ public class MainController {
   private HBox navItemFor(String page) {
     return switch (page) {
       case "cheques" -> navCheques;
-      case "history" -> navChequeHistory;
       case "invoices" -> navInvoices;
       case "banks" -> navBanks;
       case "ai" -> navAiAssistant;

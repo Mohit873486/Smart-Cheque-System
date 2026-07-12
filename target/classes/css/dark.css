@@ -3,22 +3,22 @@
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Global Page Roots & Backgrounds ── */
-.root, 
+.root,
 .app-root,
-.page-root, 
+.page-root,
 .cheque-page,
 .page-scroll,
-ScrollPane, 
-SplitPane, 
-TabPane, 
+ScrollPane,
+SplitPane,
+TabPane,
 StackPane {
     -fx-background: #020617 !important;
     -fx-background-color: #020617 !important;
 }
 
 /* Ensure scroll pane viewport is pitch black */
-ScrollPane > .viewport,
-.page-scroll > .viewport {
+ScrollPane>.viewport,
+.page-scroll>.viewport {
     -fx-background-color: #020617 !important;
 }
 
@@ -71,7 +71,7 @@ ScrollPane > .viewport,
 }
 
 /* ── Card Wrappers & Nested Containers ── */
-ScrollPane VBox, 
+ScrollPane VBox,
 SplitPane VBox,
 .card,
 .cheque-list-panel,
@@ -85,9 +85,9 @@ SplitPane VBox,
 }
 
 /* Keep structural outer containers transparent so the page background shows */
-.page-root, 
-ScrollPane > VBox, 
-ScrollPane > .viewport > VBox {
+.page-root,
+ScrollPane>VBox,
+ScrollPane>.viewport>VBox {
     -fx-background-color: transparent !important;
     -fx-border-color: transparent !important;
     -fx-effect: none !important;
@@ -135,19 +135,19 @@ ScrollPane > .viewport > VBox {
 }
 
 /* ── Buttons ── */
-.btn-secondary, 
+.btn-secondary,
 .button-secondary {
     -fx-background-color: #0b1329 !important;
     -fx-text-fill: #f8fafc !important;
     -fx-border-color: #1e293b !important;
 }
 
-.btn-secondary:hover, 
+.btn-secondary:hover,
 .button-secondary:hover {
     -fx-background-color: #1e293b !important;
 }
 
-.btn-primary, 
+.btn-primary,
 .button-primary {
     -fx-background-color: #2563eb !important;
     -fx-text-fill: #ffffff !important;
@@ -216,22 +216,26 @@ ScrollPane > .viewport > VBox {
 .check-box {
     -fx-text-fill: #f8fafc !important;
 }
-.check-box > .box {
+
+.check-box>.box {
     -fx-background-color: #020617 !important;
     -fx-border-color: #1e293b !important;
 }
-.check-box:selected > .box > .mark {
+
+.check-box:selected>.box>.mark {
     -fx-background-color: #3b82f6 !important;
 }
 
 .radio-button {
     -fx-text-fill: #f8fafc !important;
 }
-.radio-button > .radio {
+
+.radio-button>.radio {
     -fx-background-color: #020617 !important;
     -fx-border-color: #1e293b !important;
 }
-.radio-button:selected > .radio > .dot {
+
+.radio-button:selected>.radio>.dot {
     -fx-background-color: #3b82f6 !important;
 }
 
@@ -241,6 +245,22 @@ ScrollPane > .viewport > VBox {
 .filter-combo {
     -fx-background-color: #020617 !important;
     -fx-border-color: #1e293b !important;
+    -fx-border-radius: 8px !important;
+    -fx-background-radius: 8px !important;
+}
+
+.combo-box:focused,
+.form-combo:focused,
+.filter-combo:focused {
+    -fx-border-color: #2563eb !important;
+}
+
+.combo-box .list-cell {
+    -fx-text-fill: #f8fafc !important;
+}
+
+.filter-combo.combo-placeholder > .list-cell {
+    -fx-text-fill: #64748b !important;
 }
 
 .combo-box .label,
@@ -249,24 +269,41 @@ ScrollPane > .viewport > VBox {
     -fx-text-fill: #f8fafc !important;
 }
 
-.combo-box > .arrow-button > .arrow,
-.form-combo > .arrow-button > .arrow,
-.filter-combo > .arrow-button > .arrow {
-    -fx-background-color: #94a3b8 !important;
+.combo-box > .arrow-button {
+    -fx-background-color: transparent !important;
+    -fx-border-color: transparent transparent transparent #1e293b !important;
+    -fx-border-width: 0 0 0 1px !important;
 }
 
-.combo-box-popup > .list-view {
+.combo-box>.arrow-button>.arrow,
+.form-combo>.arrow-button>.arrow,
+.filter-combo>.arrow-button>.arrow {
+    -fx-background-color: #94a3b8 !important;
+    -fx-shape: "M0 1.5 L1.5 0 L5 3.5 L8.5 0 L10 1.5 L5 6.5 Z" !important;
+}
+
+.combo-box-popup>.list-view {
     -fx-background-color: #0b1329 !important;
     -fx-border-color: #1e293b !important;
+    -fx-border-radius: 8px !important;
+    -fx-background-radius: 8px !important;
+    -fx-padding: 4px !important;
 }
 
-.combo-box-popup > .list-view > .list-cell {
+.combo-box-popup>.list-view>.list-cell {
+    -fx-background-color: transparent !important;
+    -fx-background-radius: 6px !important;
     -fx-text-fill: #f8fafc !important;
-    -fx-background-color: #0b1329 !important;
 }
 
-.combo-box-popup > .list-view > .list-cell:hover {
+.combo-box-popup>.list-view>.list-cell:hover {
     -fx-background-color: #1e293b !important;
+    -fx-text-fill: #ffffff !important;
+}
+
+.combo-box-popup>.list-view>.list-cell:selected {
+    -fx-background-color: #2563eb !important;
+    -fx-text-fill: #ffffff !important;
 }
 
 /* ── Date Picker ── */
@@ -275,16 +312,20 @@ ScrollPane > .viewport > VBox {
     -fx-background-color: #0b1329 !important;
     -fx-border-color: #1e293b !important;
 }
-.date-picker-popup > .month-year-pane {
+
+.date-picker-popup>.month-year-pane {
     -fx-background-color: #020617 !important;
 }
-.date-picker-popup > .calendar-grid {
+
+.date-picker-popup>.calendar-grid {
     -fx-background-color: #0b1329 !important;
 }
+
 .date-picker-popup .calendar-cell {
     -fx-background-color: #0b1329 !important;
     -fx-text-fill: #f8fafc !important;
 }
+
 .date-picker-popup .calendar-cell:hover {
     -fx-background-color: #1e293b !important;
 }
@@ -331,6 +372,23 @@ ScrollPane > .viewport > VBox {
     -fx-border-color: #1e293b !important;
 }
 
+.modern-table .scroll-bar:horizontal {
+    -fx-opacity: 0;
+    -fx-max-height: 0;
+    -fx-min-height: 0;
+    -fx-pref-height: 0;
+}
+
+.modern-table .scroll-bar:vertical {
+    -fx-background-color: #0b1329 !important;
+    -fx-border-color: transparent transparent transparent #1e293b !important;
+    -fx-border-width: 0 0 0 1px !important;
+}
+
+.modern-table .scroll-bar:vertical .track {
+    -fx-background-color: transparent !important;
+}
+
 .modern-table .column-header-background {
     -fx-background-color: #020617 !important;
 }
@@ -339,10 +397,26 @@ ScrollPane > .viewport > VBox {
 .modern-table .filler {
     -fx-background-color: transparent !important;
     -fx-border-color: transparent transparent #1e293b transparent !important;
+    -fx-border-width: 0 0 1 0 !important;
 }
 
 .modern-table .column-header .label {
     -fx-text-fill: #94a3b8 !important;
+    -fx-padding: 0 12 0 12 !important;
+    -fx-alignment: center-left !important;
+}
+
+.modern-table .column-header.align-center .label {
+    -fx-alignment: center !important;
+}
+
+.modern-table .table-cell.align-center {
+    -fx-alignment: center !important;
+}
+
+.modern-table .table-cell {
+    -fx-border-color: transparent !important;
+    -fx-padding: 0 12 0 12 !important;
 }
 
 .modern-table .table-row-cell {
@@ -393,11 +467,11 @@ ScrollPane > .viewport > VBox {
     -fx-background-color: #0b1329 !important;
 }
 
-.dialog-pane > .content.label {
+.dialog-pane>.content.label {
     -fx-text-fill: #f8fafc !important;
 }
 
-.dialog-pane > .button-bar > .container {
+.dialog-pane>.button-bar>.container {
     -fx-background-color: #0b1329 !important;
 }
 
@@ -426,7 +500,8 @@ ScrollPane > .viewport > VBox {
 }
 
 .money-prefix {
-    -fx-text-fill: #10b981 !important; /* Brighter green for dark mode */
+    -fx-text-fill: #10b981 !important;
+    /* Brighter green for dark mode */
 }
 
 /* ── Table Footer & Action Footer ── */
@@ -489,4 +564,74 @@ ScrollPane > .viewport > VBox {
 .status-neutral {
     -fx-background-color: rgba(99, 102, 241, 0.18) !important;
     -fx-text-fill: #818cf8 !important;
+}
+
+/* ══════════════════════════════════════════
+   CUSTOM DIALOG REVAMP (DARK OVERRIDES)
+   ══════════════════════════════════════════ */
+.dialog-root {
+    -fx-background-color: #0b1329 !important;
+    -fx-border-color: #1e293b !important;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.5), 24, 0.1, 0, 8) !important;
+}
+
+.dialog-header-title {
+    -fx-text-fill: #ffffff !important;
+}
+
+.dialog-header-subtitle {
+    -fx-text-fill: #94a3b8 !important;
+}
+
+.dialog-close-btn {
+    -fx-text-fill: #94a3b8 !important;
+    -fx-background-color: transparent !important;
+}
+
+.dialog-close-btn:hover {
+    -fx-background-color: #7f1d1d !important;
+    -fx-text-fill: #fecaca !important;
+}
+
+.dialog-separator *.line {
+    -fx-border-color: #1e293b !important;
+}
+
+.money-input-shell.focused {
+    -fx-border-color: #3b82f6 !important;
+}
+
+.btn-outline-muted {
+    -fx-background-color: transparent !important;
+    -fx-text-fill: #94a3b8 !important;
+    -fx-border-color: #334155 !important;
+}
+
+.btn-outline-muted:hover {
+    -fx-background-color: #1e293b !important;
+    -fx-text-fill: #f8fafc !important;
+}
+
+.btn-print-main {
+    -fx-background-color: #059669 !important;
+    -fx-text-fill: #ffffff !important;
+}
+
+.btn-print-main:hover {
+    -fx-background-color: #047857 !important;
+}
+
+.btn-print-main:pressed {
+    -fx-background-color: #065f46 !important;
+}
+
+.btn-danger-low {
+    -fx-background-color: transparent !important;
+    -fx-text-fill: #f87171 !important;
+    -fx-border-color: #7f1d1d !important;
+}
+
+.btn-danger-low:hover {
+    -fx-background-color: #7f1d1d !important;
+    -fx-text-fill: #fecaca !important;
 }

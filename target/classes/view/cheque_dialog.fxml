@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<StackPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.chequeprint.controller.ChequeDialogController"
+           style="-fx-background-color: transparent;"
+           prefWidth="630" prefHeight="410">
+    <padding>
+        <Insets top="15" right="15" bottom="15" left="15" />
+    </padding>
+
+    <VBox spacing="20" styleClass="dialog-root" VBox.vgrow="ALWAYS">
+        <padding>
+            <Insets top="24" right="24" bottom="24" left="24" />
+        </padding>
+
+        <!-- Top Header -->
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label fx:id="lblFormTitle" text="New Cheque" styleClass="dialog-header-title" />
+                <Label text="Fill in the details below to save or print a cheque" styleClass="dialog-header-subtitle" />
+            </VBox>
+            <Button text="✕" styleClass="dialog-close-btn" onAction="#onCancel" focusTraversable="false" />
+        </HBox>
+
+        <Separator styleClass="dialog-separator" />
+
+        <!-- Form 2-Column Grid -->
+        <GridPane hgap="20" vgap="16" VBox.vgrow="ALWAYS">
+            <columnConstraints>
+                <ColumnConstraints percentWidth="50" />
+                <ColumnConstraints percentWidth="50" />
+            </columnConstraints>
+            <rowConstraints>
+                <RowConstraints vgrow="NEVER" />
+                <RowConstraints vgrow="NEVER" />
+            </rowConstraints>
+
+            <!-- Row 0, Col 0: Payee Name -->
+            <VBox spacing="6" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                <Label text="Payee Name" styleClass="form-label" />
+                <TextField fx:id="fldPayee" promptText="Enter payee name" styleClass="form-input" maxWidth="Infinity" />
+            </VBox>
+
+            <!-- Row 0, Col 1: Bank -->
+            <VBox spacing="6" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                <Label text="Bank" styleClass="form-label" />
+                <ComboBox fx:id="cmbBank" styleClass="form-combo" maxWidth="Infinity" />
+            </VBox>
+
+            <!-- Row 1, Col 0: Amount -->
+            <VBox spacing="6" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                <Label text="Amount" styleClass="form-label" />
+                <HBox fx:id="moneyInputShell" alignment="CENTER_LEFT" spacing="0" styleClass="money-input-shell">
+                    <Label text="₹" styleClass="money-prefix" />
+                    <TextField fx:id="fldAmount" promptText="0.00" styleClass="money-input" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
+                </HBox>
+            </VBox>
+
+            <!-- Row 1, Col 1: Issue Date -->
+            <VBox spacing="6" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                <Label text="Issue Date" styleClass="form-label" />
+                <DatePicker fx:id="datePicker" styleClass="form-date" maxWidth="Infinity" />
+            </VBox>
+        </GridPane>
+
+        <!-- Bottom Actions Footer -->
+        <HBox spacing="12" alignment="CENTER_LEFT">
+            <Button fx:id="btnCancel" text="Clear" styleClass="btn-danger-low" onAction="#onClear" />
+            <Region HBox.hgrow="ALWAYS" />
+            <HBox spacing="10">
+                <Button fx:id="btnSave" text="Save" styleClass="btn-primary" onAction="#onSave" />
+                <Button fx:id="btnSaveAndPrint" text="Print" styleClass="btn-print-main" onAction="#onSaveAndPrint" />
+            </HBox>
+        </HBox>
+    </VBox>
+</StackPane>

@@ -52,6 +52,7 @@ com\chequeprint\controller\MainController$1.class
 com\chequeprint\preview\FieldPosition.class
 com\chequeprint\controller\DashboardController$2.class
 com\chequeprint\service\AiSqlDatabaseService.class
+com\chequeprint\controller\InvoiceDialogController.class
 com\chequeprint\preview\ChequePrintPreviewApp$AmountToWords.class
 com\chequeprint\model\Invoice$Status.class
 module-info.class
@@ -94,6 +95,7 @@ com\chequeprint\preview\ChequePrintPreviewApp$1.class
 com\chequeprint\util\AccessDeniedException.class
 com\chequeprint\preview\ChequeField.class
 com\chequeprint\dao\BankDAO.class
+com\chequeprint\controller\ChequeDialogController.class
 com\chequeprint\service\ChequeAiActionExecutor.class
 com\chequeprint\dao\ChequeDAO.class
 com\chequeprint\service\BankAccountService.class
