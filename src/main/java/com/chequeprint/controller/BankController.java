@@ -21,12 +21,11 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
+import javafx.util.StringConverter;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -40,7 +39,7 @@ public class BankController {
     private static final double PREVIEW_PPI = 90.0;
 
     @FXML
-    private TextField fldBankName;
+    private ComboBox<Bank> fldBankName;
     @FXML
     private TextField fldBankCode;
     @FXML
@@ -53,17 +52,10 @@ public class BankController {
     private TextField fldCustomHeight;
     @FXML
     private Button btnSave;
-
     @FXML
-    private TableView<Bank> bankTable;
+    private Button btnDelete;
     @FXML
-    private TableColumn<Bank, String> colBankName;
-    @FXML
-    private TableColumn<Bank, String> colBankCode;
-    @FXML
-    private TableColumn<Bank, String> colChequeSize;
-    @FXML
-    private TableColumn<Bank, String> colMicr;
+    private Button btnClear;
 
     @FXML
     private Label lblFormTitle;
@@ -93,9 +85,10 @@ public class BankController {
     private Bank selectedBank;
     private BankTemplateLayout currentLayout;
 
+    private boolean isUpdatingForm = false;
+
     @FXML
     public void initialize() {
-        setupTable();
         setupForm();
         setupPreview();
         setupAdjustmentPanel();
@@ -104,22 +97,40 @@ public class BankController {
         FxUtils.animateIn(previewViewport, 0);
     }
 
-    private void setupTable() {
-        colBankName.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getBankName()));
-        colBankCode.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getBankCode()));
-        colChequeSize.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(
-                ChequeSizeCodec.display(c.getValue().getChequeSize())));
-        colMicr.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().isMicr() ? "Yes" : "No"));
+    private void setupForm() {
+        btnDelete.setDisable(true);
+        fldBankName.setItems(data);
+        fldBankName.setConverter(new StringConverter<Bank>() {
+            @Override
+            public String toString(Bank bank) {
+                return bank == null ? "" : bank.getBankName();
+            }
 
-        bankTable.setItems(data);
-        bankTable.getSelectionModel().selectedItemProperty().addListener((obs, old, sel) -> {
-            if (sel != null) {
-                populateForm(sel);
+            @Override
+            public Bank fromString(String string) {
+                if (string == null || string.trim().isEmpty()) {
+                    return null;
+                }
+                for (Bank b : data) {
+                    if (string.equalsIgnoreCase(b.getBankName())) {
+                        return b;
+                    }
+                }
+                Bank b = new Bank();
+                b.setBankName(string.trim());
+                return b;
             }
         });
-    }
 
-    private void setupForm() {
+        fldBankName.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (isUpdatingForm) {
+                return;
+            }
+            if (newVal != null && newVal.getId() > 0) {
+                populateForm(newVal);
+            }
+        });
+
         cmbChequeSize.setItems(FXCollections.observableArrayList(ChequeSizePreset.values()));
         cmbChequeSize.setValue(ChequeSizePreset.STANDARD);
         chkMicr.setSelected(true);
@@ -317,11 +328,11 @@ public class BankController {
 
     private void setLoading(boolean loading) {
         Platform.runLater(() -> {
-            if (bankTable.getScene() != null && bankTable.getScene().getRoot() != null) {
-                bankTable.getScene().getRoot().setCursor(loading ? Cursor.WAIT : Cursor.DEFAULT);
+            if (fldBankCode.getScene() != null && fldBankCode.getScene().getRoot() != null) {
+                fldBankCode.getScene().getRoot().setCursor(loading ? Cursor.WAIT : Cursor.DEFAULT);
             }
             btnSave.setDisable(loading);
-            bankTable.setDisable(loading);
+            btnDelete.setDisable(loading || selectedBank == null);
         });
     }
 
@@ -341,7 +352,15 @@ public class BankController {
 
     @FXML
     private void onSave() {
-        String name = fldBankName.getText().trim();
+        String name = "";
+        if (fldBankName.getValue() != null) {
+            name = fldBankName.getValue().getBankName();
+        }
+        if (name == null || name.trim().isEmpty()) {
+            name = fldBankName.getEditor().getText().trim();
+        } else {
+            name = name.trim();
+        }
         String code = fldBankCode.getText().trim().toUpperCase();
         if (name.isEmpty() || code.isEmpty()) {
             showAlert("Validation", "Bank name and bank code are required.", Alert.AlertType.WARNING);
@@ -388,7 +407,7 @@ public class BankController {
 
     @FXML
     private void onDelete() {
-        Bank sel = bankTable.getSelectionModel().getSelectedItem();
+        Bank sel = selectedBank;
         if (sel == null) {
             showAlert("Select", "Please select a bank template to delete.", Alert.AlertType.WARNING);
             return;
@@ -450,8 +469,16 @@ public class BankController {
         selectedBank = bank;
         lblFormTitle.setText("Edit Bank Template");
         btnSave.setText("Update Template");
+        btnDelete.setDisable(false);
+        btnClear.setText("+ Add Bank");
 
-        fldBankName.setText(bank.getBankName());
+        isUpdatingForm = true;
+        try {
+            fldBankName.setValue(bank);
+        } finally {
+            isUpdatingForm = false;
+        }
+
         fldBankCode.setText(bank.getBankCode());
         chkMicr.setSelected(bank.isMicr());
 
@@ -475,7 +502,6 @@ public class BankController {
         BankTemplateLayout savedLayout = layoutByBankCode.get(code);
         currentLayout = savedLayout != null ? savedLayout.copy() : ChequeSizeCodec.decodeLayout(bank.getChequeSize());
         currentLayout.ensureAllFields();
-
         layoutPreviewPane();
         refreshPreview();
     }
@@ -484,7 +510,16 @@ public class BankController {
         selectedBank = null;
         lblFormTitle.setText("Add New Bank Template");
         btnSave.setText("Save Template");
-        fldBankName.clear();
+        btnDelete.setDisable(true);
+        btnClear.setText("Clear");
+        
+        isUpdatingForm = true;
+        try {
+            fldBankName.setValue(null);
+            fldBankName.getEditor().clear();
+        } finally {
+            isUpdatingForm = false;
+        }
         fldBankCode.clear();
         chkMicr.setSelected(true);
         cmbChequeSize.setValue(ChequeSizePreset.STANDARD);
@@ -494,7 +529,6 @@ public class BankController {
         currentLayout = new BankTemplateLayout(ChequeSizePreset.STANDARD.getWidthInches(), ChequeSizePreset.STANDARD.getHeightInches());
         layoutPreviewPane();
         refreshPreview();
-        bankTable.getSelectionModel().clearSelection();
     }
 
     private void refreshLayoutForSizeChange() {
@@ -538,7 +572,16 @@ public class BankController {
 
     private Bank buildDraftBank() {
         Bank bank = new Bank();
-        bank.setBankName(fldBankName.getText().trim());
+        String name = "";
+        if (fldBankName.getValue() != null) {
+            name = fldBankName.getValue().getBankName();
+        }
+        if (name == null || name.trim().isEmpty()) {
+            name = fldBankName.getEditor().getText().trim();
+        } else {
+            name = name.trim();
+        }
+        bank.setBankName(name);
         bank.setBankCode(fldBankCode.getText().trim().toUpperCase());
         bank.setMicr(chkMicr.isSelected());
         return bank;

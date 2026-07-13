@@ -9,7 +9,7 @@ public class ChequeDTO {
     private String payeeName;
     private BigDecimal amount;
     private String amountWords;
-    private int bankId;
+    private Integer bankId;
     private int accountId;
     private LocalDate issueDate;
     private String status;
@@ -17,7 +17,7 @@ public class ChequeDTO {
 
     public ChequeDTO() {}
 
-    public ChequeDTO(int id, String chequeNo, String payeeName, BigDecimal amount, String amountWords, int bankId, int accountId, LocalDate issueDate, String status, String bankName) {
+    public ChequeDTO(int id, String chequeNo, String payeeName, BigDecimal amount, String amountWords, Integer bankId, int accountId, LocalDate issueDate, String status, String bankName) {
         this.id = id;
         this.chequeNo = chequeNo;
         this.payeeName = payeeName;
@@ -45,8 +45,8 @@ public class ChequeDTO {
     public String getAmountWords() { return amountWords; }
     public void setAmountWords(String amountWords) { this.amountWords = amountWords; }
 
-    public int getBankId() { return bankId; }
-    public void setBankId(int bankId) { this.bankId = bankId; }
+    public Integer getBankId() { return bankId; }
+    public void setBankId(Integer bankId) { this.bankId = bankId; }
 
     public int getAccountId() { return accountId; }
     public void setAccountId(int accountId) { this.accountId = accountId; }

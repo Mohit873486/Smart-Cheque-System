@@ -29,12 +29,34 @@ public class EditProfileDialogController {
     private final UserService userService = new UserService();
     private boolean saved = false;
 
+    @FXML
+    public void initialize() {
+        if (tfPhone != null) {
+            tfPhone.setTextFormatter(new javafx.scene.control.TextFormatter<String>(change -> {
+                String newText = change.getControlNewText();
+                if (newText.matches("[0-9]*") && newText.length() <= 10) {
+                    return change;
+                }
+                return null;
+            }));
+        }
+    }
+
+    private String cleanPhoneNumber(String raw) {
+        if (raw == null) return "";
+        String clean = raw.replaceAll("[^0-9]", "");
+        if (clean.length() > 10) {
+            clean = clean.substring(clean.length() - 10);
+        }
+        return clean;
+    }
+
     public void initData(User user) {
         this.user = user;
         if (user != null) {
             tfName.setText(user.getName() != null ? user.getName() : "");
             tfEmail.setText(user.getEmail() != null ? user.getEmail() : "");
-            tfPhone.setText(user.getPhone() != null ? user.getPhone() : "");
+            tfPhone.setText(cleanPhoneNumber(user.getPhone()));
         }
     }
 

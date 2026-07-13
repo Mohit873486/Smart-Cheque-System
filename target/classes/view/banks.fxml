@@ -16,118 +16,93 @@
             </VBox>
         </HBox>
 
-        <SplitPane dividerPositions="0.42" VBox.vgrow="ALWAYS" style="-fx-background-color:transparent;">
+        <VBox spacing="16" VBox.vgrow="ALWAYS">
+                
+            <VBox spacing="12" styleClass="card">
+                <Label fx:id="lblFormTitle" text="Add New Bank Template" styleClass="form-title" />
 
-            <VBox spacing="14" styleClass="card" maxHeight="Infinity">
-                <Label text="All Bank Templates" styleClass="section-title" />
+                <GridPane hgap="10" vgap="10">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="36" />
+                        <ColumnConstraints percentWidth="64" />
+                    </columnConstraints>
 
-                <TableView fx:id="bankTable" styleClass="data-table" VBox.vgrow="ALWAYS" maxHeight="Infinity">
-                    <columnResizePolicy>
-                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                    </columnResizePolicy>
-                    <columns>
-                        <TableColumn fx:id="colBankName" text="BANK" minWidth="140" />
-                        <TableColumn fx:id="colBankCode" text="CODE" minWidth="90" />
-                        <TableColumn fx:id="colChequeSize" text="SIZE" minWidth="150" />
-                        <TableColumn fx:id="colMicr" text="MICR" minWidth="70" />
-                    </columns>
-                </TableView>
+                    <Label text="Bank Name" styleClass="form-label" GridPane.rowIndex="0" GridPane.columnIndex="0" />
+                    <ComboBox fx:id="fldBankName" editable="true" promptText="Select or enter bank name" styleClass="form-combo" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1" />
 
-                <HBox spacing="8">
-                    <Button text="Delete Selected" styleClass="btn-danger" onAction="#onDelete" />
-                    <Button text="Clear" styleClass="btn-secondary" onAction="#onClear" />
-                    <Region HBox.hgrow="ALWAYS" />
-                    <Label text="Select row to edit" style="-fx-text-fill:#94a3b8; -fx-font-size:12;" />
+                    <Label text="Bank Code" styleClass="form-label" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+                    <TextField fx:id="fldBankCode" promptText="AXIS" styleClass="form-input" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+
+                    <Label text="Cheque Size" styleClass="form-label" GridPane.rowIndex="2" GridPane.columnIndex="0" />
+                    <ComboBox fx:id="cmbChequeSize" styleClass="form-combo" maxWidth="Infinity" GridPane.rowIndex="2" GridPane.columnIndex="1" />
+
+                    <Label text="Custom Width (in)" styleClass="form-label" GridPane.rowIndex="3" GridPane.columnIndex="0" />
+                    <TextField fx:id="fldCustomWidth" promptText="8.5" styleClass="form-input" GridPane.rowIndex="3" GridPane.columnIndex="1" />
+
+                    <Label text="Custom Height (in)" styleClass="form-label" GridPane.rowIndex="4" GridPane.columnIndex="0" />
+                    <TextField fx:id="fldCustomHeight" promptText="3.66" styleClass="form-input" GridPane.rowIndex="4" GridPane.columnIndex="1" />
+
+                    <Label text="MICR Enabled" styleClass="form-label" GridPane.rowIndex="5" GridPane.columnIndex="0" />
+                    <CheckBox fx:id="chkMicr" selected="true" GridPane.rowIndex="5" GridPane.columnIndex="1" />
+                </GridPane>
+
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <Button fx:id="btnSave" text="Save Template" styleClass="btn-primary" onAction="#onSave" />
+                    <Button fx:id="btnDelete" text="Delete" styleClass="btn-danger" onAction="#onDelete" />
+                    <Button fx:id="btnClear" text="Clear" styleClass="btn-secondary" onAction="#onClear" />
+                    <Button text="Export PDF" styleClass="btn-secondary" onAction="#onExportPdf" />
                 </HBox>
             </VBox>
 
-            <VBox spacing="16" maxHeight="Infinity">
+            <VBox spacing="12" styleClass="card">
+                <Label text="Cheque Field Adjustment (mm)" styleClass="section-title" />
+                <Label text="Select a field, enter exact cheque measurements, then Apply. Save Template stores this bank layout."
+                    style="-fx-text-fill:#64748b; -fx-font-size:12;" wrapText="true" />
 
-                <VBox spacing="12" styleClass="card">
-                    <Label fx:id="lblFormTitle" text="Add New Bank Template" styleClass="form-title" />
+                <GridPane hgap="10" vgap="10">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="40" />
+                        <ColumnConstraints percentWidth="60" />
+                    </columnConstraints>
 
-                    <GridPane hgap="10" vgap="10">
-                        <columnConstraints>
-                            <ColumnConstraints percentWidth="36" />
-                            <ColumnConstraints percentWidth="64" />
-                        </columnConstraints>
+                    <Label text="Field" styleClass="form-label" GridPane.rowIndex="0" GridPane.columnIndex="0" />
+                    <ComboBox fx:id="cmbAdjustField" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1" />
 
-                        <Label text="Bank Name" styleClass="form-label" GridPane.rowIndex="0" GridPane.columnIndex="0" />
-                        <TextField fx:id="fldBankName" promptText="Axis Bank" styleClass="form-input" GridPane.rowIndex="0" GridPane.columnIndex="1" />
+                    <Label text="Left from edge" styleClass="form-label" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+                    <TextField fx:id="fldAdjustLeft" promptText="mm" GridPane.rowIndex="1" GridPane.columnIndex="1" />
 
-                        <Label text="Bank Code" styleClass="form-label" GridPane.rowIndex="1" GridPane.columnIndex="0" />
-                        <TextField fx:id="fldBankCode" promptText="AXIS" styleClass="form-input" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+                    <Label text="Top from edge" styleClass="form-label" GridPane.rowIndex="2" GridPane.columnIndex="0" />
+                    <TextField fx:id="fldAdjustTop" promptText="mm" GridPane.rowIndex="2" GridPane.columnIndex="1" />
 
-                        <Label text="Cheque Size" styleClass="form-label" GridPane.rowIndex="2" GridPane.columnIndex="0" />
-                        <ComboBox fx:id="cmbChequeSize" styleClass="form-combo" maxWidth="Infinity" GridPane.rowIndex="2" GridPane.columnIndex="1" />
+                    <Label text="Width area" styleClass="form-label" GridPane.rowIndex="3" GridPane.columnIndex="0" />
+                    <TextField fx:id="fldAdjustWidth" promptText="mm" GridPane.rowIndex="3" GridPane.columnIndex="1" />
 
-                        <Label text="Custom Width (in)" styleClass="form-label" GridPane.rowIndex="3" GridPane.columnIndex="0" />
-                        <TextField fx:id="fldCustomWidth" promptText="8.5" styleClass="form-input" GridPane.rowIndex="3" GridPane.columnIndex="1" />
+                    <Label text="Height area" styleClass="form-label" GridPane.rowIndex="4" GridPane.columnIndex="0" />
+                    <TextField fx:id="fldAdjustHeight" promptText="mm" GridPane.rowIndex="4" GridPane.columnIndex="1" />
+                </GridPane>
 
-                        <Label text="Custom Height (in)" styleClass="form-label" GridPane.rowIndex="4" GridPane.columnIndex="0" />
-                        <TextField fx:id="fldCustomHeight" promptText="3.66" styleClass="form-input" GridPane.rowIndex="4" GridPane.columnIndex="1" />
-
-                        <Label text="MICR Enabled" styleClass="form-label" GridPane.rowIndex="5" GridPane.columnIndex="0" />
-                        <CheckBox fx:id="chkMicr" selected="true" GridPane.rowIndex="5" GridPane.columnIndex="1" />
-                    </GridPane>
-
-                    <HBox spacing="8">
-                        <Button fx:id="btnSave" text="Save Template" styleClass="btn-primary" onAction="#onSave" />
-                        <Button text="Export PDF" styleClass="btn-secondary" onAction="#onExportPdf" />
-                    </HBox>
-                </VBox>
-
-                <VBox spacing="12" styleClass="card">
-                    <Label text="Cheque Field Adjustment (mm)" styleClass="section-title" />
-                    <Label text="Select a field, enter exact cheque measurements, then Apply. Save Template stores this bank layout."
-                        style="-fx-text-fill:#64748b; -fx-font-size:12;" wrapText="true" />
-
-                    <GridPane hgap="10" vgap="10">
-                        <columnConstraints>
-                            <ColumnConstraints percentWidth="40" />
-                            <ColumnConstraints percentWidth="60" />
-                        </columnConstraints>
-
-                        <Label text="Field" styleClass="form-label" GridPane.rowIndex="0" GridPane.columnIndex="0" />
-                        <ComboBox fx:id="cmbAdjustField" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1" />
-
-                        <Label text="Left from edge" styleClass="form-label" GridPane.rowIndex="1" GridPane.columnIndex="0" />
-                        <TextField fx:id="fldAdjustLeft" promptText="mm" GridPane.rowIndex="1" GridPane.columnIndex="1" />
-
-                        <Label text="Top from edge" styleClass="form-label" GridPane.rowIndex="2" GridPane.columnIndex="0" />
-                        <TextField fx:id="fldAdjustTop" promptText="mm" GridPane.rowIndex="2" GridPane.columnIndex="1" />
-
-                        <Label text="Width area" styleClass="form-label" GridPane.rowIndex="3" GridPane.columnIndex="0" />
-                        <TextField fx:id="fldAdjustWidth" promptText="mm" GridPane.rowIndex="3" GridPane.columnIndex="1" />
-
-                        <Label text="Height area" styleClass="form-label" GridPane.rowIndex="4" GridPane.columnIndex="0" />
-                        <TextField fx:id="fldAdjustHeight" promptText="mm" GridPane.rowIndex="4" GridPane.columnIndex="1" />
-                    </GridPane>
-
-                    <HBox spacing="8">
-                        <Button text="Apply" styleClass="btn-primary" onAction="#onApplyFieldAdjustment" />
-                        <Button text="Reset Default Layout" styleClass="btn-secondary" onAction="#onResetDefaultLayout" />
-                    </HBox>
-                </VBox>
-
-                <VBox spacing="10" styleClass="card" VBox.vgrow="ALWAYS" maxHeight="Infinity">
-                    <HBox spacing="10" alignment="CENTER_LEFT">
-                        <Label text="Cheque Layout Preview (drag fields)" styleClass="section-title" />
-                        <Region HBox.hgrow="ALWAYS" />
-                        <Label fx:id="lblPreviewSize" text="Preview Size" style="-fx-text-fill:#64748b; -fx-font-size:12;" />
-                    </HBox>
-
-                    <AnchorPane fx:id="previewViewport" minHeight="260" prefHeight="340" VBox.vgrow="ALWAYS"
-                        style="-fx-background-color:linear-gradient(to bottom,#edf2f7,#e2e8f0); -fx-border-color:#cbd5e1; -fx-border-radius:8; -fx-background-radius:8;">
-                        <Pane fx:id="chequePreviewPane" prefWidth="720" prefHeight="300" />
-                    </AnchorPane>
-
-                    <Label text="Drag fields to adjust alignment. Each bank template is saved independently."
-                        style="-fx-text-fill:#64748b; -fx-font-size:12;" wrapText="true" />
-                </VBox>
-
+                <HBox spacing="8">
+                    <Button text="Apply" styleClass="btn-primary" onAction="#onApplyFieldAdjustment" />
+                    <Button text="Reset Default Layout" styleClass="btn-secondary" onAction="#onResetDefaultLayout" />
+                </HBox>
             </VBox>
 
-        </SplitPane>
+            <VBox spacing="10" styleClass="card" VBox.vgrow="ALWAYS" maxHeight="Infinity">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Cheque Layout Preview (drag fields)" styleClass="section-title" />
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Label fx:id="lblPreviewSize" text="Preview Size" style="-fx-text-fill:#64748b; -fx-font-size:12;" />
+                </HBox>
+
+                <AnchorPane fx:id="previewViewport" minHeight="260" prefHeight="340" VBox.vgrow="ALWAYS"
+                    style="-fx-background-color:linear-gradient(to bottom,#edf2f7,#e2e8f0); -fx-border-color:#cbd5e1; -fx-border-radius:8; -fx-background-radius:8;">
+                    <Pane fx:id="chequePreviewPane" prefWidth="720" prefHeight="300" />
+                </AnchorPane>
+
+                <Label text="Drag fields to adjust alignment. Each bank template is saved independently."
+                    style="-fx-text-fill:#64748b; -fx-font-size:12;" wrapText="true" />
+            </VBox>
+
+        </VBox>
     </VBox>
 </ScrollPane>

@@ -24,7 +24,7 @@ public class Cheque {
     private String payeeName;
     private BigDecimal amount;
     private String amountWords;
-    private int bankId;
+    private Integer bankId;
     private String bankName; // joined field for display
     private LocalDate issueDate;
     private Status status;
@@ -52,7 +52,7 @@ public class Cheque {
     }
 
     public Cheque(String chequeNo, String payeeName, BigDecimal amount,
-            int bankId, LocalDate issueDate) {
+            Integer bankId, LocalDate issueDate) {
         this.chequeNo = chequeNo;
         this.payeeName = payeeName;
         this.amount = amount;
@@ -102,11 +102,11 @@ public class Cheque {
         this.amountWords = w;
     }
 
-    public int getBankId() {
+    public Integer getBankId() {
         return bankId;
     }
 
-    public void setBankId(int bankId) {
+    public void setBankId(Integer bankId) {
         this.bankId = bankId;
     }
 

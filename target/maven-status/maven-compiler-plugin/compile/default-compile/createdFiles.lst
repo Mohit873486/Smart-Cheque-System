@@ -88,6 +88,7 @@ com\chequeprint\model\Settings.class
 com\chequeprint\controller\ChequeHistoryController.class
 com\chequeprint\controller\SignupController.class
 com\chequeprint\service\AuditService$1.class
+com\chequeprint\controller\BankController$2.class
 com\chequeprint\controller\ModernDashboardController$2.class
 com\chequeprint\service\GeminiApiClient.class
 com\chequeprint\controller\ChequeHistoryController$1.class

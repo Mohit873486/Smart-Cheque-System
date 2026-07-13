@@ -96,6 +96,16 @@ public class ProfileController {
         setupActivityTable();
         setupRecentChequesTable();
         loadProfile();
+
+        if (tfPhone != null) {
+            tfPhone.setTextFormatter(new TextFormatter<String>(change -> {
+                String newText = change.getControlNewText();
+                if (newText.matches("[0-9]*") && newText.length() <= 10) {
+                    return change;
+                }
+                return null;
+            }));
+        }
     }
 
     // =========================
@@ -159,7 +169,7 @@ public class ProfileController {
                         // =========================
                         set(fldName, user.getName());
                         set(fldEmail, user.getEmail());
-                        set(fldPhone, user.getPhone());
+                        set(fldPhone, cleanPhoneNumber(user.getPhone()));
                         set(fldCompany, user.getCompany());
                         set(fldAddress, user.getAddress());
 
@@ -171,7 +181,7 @@ public class ProfileController {
                         set(tfLastName, nameParts[1]);
 
                         set(tfEmail, user.getEmail());
-                        set(tfPhone, user.getPhone());
+                        set(tfPhone, cleanPhoneNumber(user.getPhone()));
                         set(tfCompany, user.getCompany());
                         set(tfGST, user.getGstNumber());
                         set(tfRole, user.getRole());
@@ -422,6 +432,15 @@ public class ProfileController {
             lblAvatarInitials.setText(initials);
         if (lblProfileName != null)
             lblProfileName.setText(user.getName());
+    }
+
+    private String cleanPhoneNumber(String raw) {
+        if (raw == null) return "";
+        String clean = raw.replaceAll("[^0-9]", "");
+        if (clean.length() > 10) {
+            clean = clean.substring(clean.length() - 10);
+        }
+        return clean;
     }
 
     private void set(TextField tf, String value) {

@@ -17,6 +17,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import com.chequeprint.util.SessionManager;
+import com.chequeprint.service.UserService;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -72,6 +73,9 @@ public class MainController {
 
   @FXML
   private javafx.scene.control.Label lblUserAvatar;
+
+  @FXML
+  private javafx.scene.control.Label lblHeaderAvatar;
 
   @FXML
   private javafx.scene.control.Label lblUserName;
@@ -330,6 +334,9 @@ public class MainController {
       lblUserName.setText("-");
       lblUserRole.setText("");
       lblUserAvatar.setText("-");
+      if (lblHeaderAvatar != null) {
+        lblHeaderAvatar.setText("-");
+      }
       btnLogout.setVisible(false);
       btnLogout.setManaged(false);
       return;
@@ -341,6 +348,9 @@ public class MainController {
     lblUserRole.setText(currentUser.getRole() != null ? currentUser.getRole() : "");
     String avatar = display != null && display.length() > 0 ? display.substring(0, 1).toUpperCase() : "U";
     lblUserAvatar.setText(avatar);
+    if (lblHeaderAvatar != null) {
+      lblHeaderAvatar.setText(UserService.getInitials(display));
+    }
     btnLogout.setVisible(true);
     btnLogout.setManaged(true);
   }

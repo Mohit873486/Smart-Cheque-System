@@ -55,7 +55,7 @@
                         <Label text="DEFAULT CURRENCY"
                             style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #6b7280;" />
                         <ComboBox fx:id="cbCurrency" maxWidth="Infinity"
-                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-background-radius: 6; -fx-padding: 6 10; -fx-font-size: 13px;" />
+                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-background-radius: 6; -fx-padding: 0 10; -fx-font-size: 13px;" />
                     </VBox>
                 </HBox>
 
@@ -64,13 +64,13 @@
                         <Label text="DATE FORMAT"
                             style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #6b7280;" />
                         <ComboBox fx:id="cbDateFormat" maxWidth="Infinity"
-                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-background-radius: 6; -fx-padding: 6 10; -fx-font-size: 13px;" />
+                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-background-radius: 6; -fx-padding: 0 10; -fx-font-size: 13px;" />
                     </VBox>
                     <VBox spacing="6" HBox.hgrow="ALWAYS">
                         <Label text="LANGUAGE"
                             style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #6b7280;" />
                         <ComboBox fx:id="cbLanguage" maxWidth="Infinity"
-                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-background-radius: 6; -fx-padding: 6 10; -fx-font-size: 13px;" />
+                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-background-radius: 6; -fx-padding: 0 10; -fx-font-size: 13px;" />
                     </VBox>
                 </HBox>
 
@@ -112,14 +112,14 @@
                         <Label text="DEFAULT BANK TEMPLATE"
                             style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #6b7280;" />
                         <ComboBox fx:id="cbDefaultBank" maxWidth="Infinity"
-                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-background-radius: 6; -fx-padding: 6 10; -fx-font-size: 13px;"
+                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-background-radius: 6; -fx-padding: 0 10; -fx-font-size: 13px;"
                             promptText="Select default bank" />
                     </VBox>
                     <VBox spacing="6" HBox.hgrow="ALWAYS">
                         <Label text="DEFAULT PAYMENT TERMS"
                             style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #6b7280;" />
                         <ComboBox fx:id="cbPaymentTerms" maxWidth="Infinity"
-                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-background-radius: 6; -fx-padding: 6 10; -fx-font-size: 13px;" />
+                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-background-radius: 6; -fx-padding: 0 10; -fx-font-size: 13px;" />
                     </VBox>
                 </HBox>
 

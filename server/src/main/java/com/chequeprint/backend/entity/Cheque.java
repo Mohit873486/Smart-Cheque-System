@@ -24,8 +24,8 @@ public class Cheque {
     @Column(name = "amount_words", length = 250)
     private String amountWords;
 
-    @Column(name = "bank_id", nullable = false)
-    private int bankId;
+    @Column(name = "bank_id", nullable = true)
+    private Integer bankId;
 
     @Column(name = "account_id", nullable = false)
     private int accountId;
@@ -47,7 +47,7 @@ public class Cheque {
 
     public Cheque() {}
 
-    public Cheque(String chequeNo, String payeeName, BigDecimal amount, String amountWords, int bankId, LocalDate issueDate, Status status) {
+    public Cheque(String chequeNo, String payeeName, BigDecimal amount, String amountWords, Integer bankId, LocalDate issueDate, Status status) {
         this.chequeNo = chequeNo;
         this.payeeName = payeeName;
         this.amount = amount;
@@ -57,7 +57,7 @@ public class Cheque {
         this.status = status;
     }
 
-    public Cheque(String chequeNo, String payeeName, BigDecimal amount, String amountWords, int bankId, int accountId, LocalDate issueDate, Status status) {
+    public Cheque(String chequeNo, String payeeName, BigDecimal amount, String amountWords, Integer bankId, int accountId, LocalDate issueDate, Status status) {
         this.chequeNo = chequeNo;
         this.payeeName = payeeName;
         this.amount = amount;
@@ -83,8 +83,8 @@ public class Cheque {
     public String getAmountWords() { return amountWords; }
     public void setAmountWords(String amountWords) { this.amountWords = amountWords; }
 
-    public int getBankId() { return bankId; }
-    public void setBankId(int bankId) { this.bankId = bankId; }
+    public Integer getBankId() { return bankId; }
+    public void setBankId(Integer bankId) { this.bankId = bankId; }
 
     public int getAccountId() { return accountId; }
     public void setAccountId(int accountId) { this.accountId = accountId; }
