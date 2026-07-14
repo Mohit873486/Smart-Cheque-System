@@ -23,7 +23,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.Pane;
 import javafx.util.StringConverter;
 
@@ -45,24 +45,34 @@ public class BankController {
     @FXML
     private ComboBox<ChequeSizePreset> cmbChequeSize;
     @FXML
+    private ComboBox<String> cmbChequeSizeUnit;
+    @FXML
+    private Label lblCustomWidth;
+    @FXML
+    private Label lblCustomHeight;
+    @FXML
     private CheckBox chkMicr;
     @FXML
     private TextField fldCustomWidth;
     @FXML
     private TextField fldCustomHeight;
+
+    private String currentUnit = "Inches (in)";
     @FXML
     private Button btnSave;
     @FXML
     private Button btnDelete;
     @FXML
     private Button btnClear;
+    @FXML
+    private Button btnNewBank;
 
     @FXML
     private Label lblFormTitle;
     @FXML
     private Label lblPreviewSize;
     @FXML
-    private AnchorPane previewViewport;
+    private StackPane previewViewport;
     @FXML
     private Pane chequePreviewPane;
     @FXML
@@ -138,16 +148,68 @@ public class BankController {
         fldCustomWidth.setDisable(true);
         fldCustomHeight.setDisable(true);
 
+        if (cmbChequeSizeUnit != null) {
+            cmbChequeSizeUnit.setItems(FXCollections.observableArrayList(
+                "Inches (in)", "Millimeters (mm)", "Centimeters (cm)", "Pixels (300 DPI)", "Pixels (72 DPI)"
+            ));
+            cmbChequeSizeUnit.setValue("Inches (in)");
+            cmbChequeSizeUnit.setDisable(true);
+
+            cmbChequeSizeUnit.valueProperty().addListener((obs, oldUnit, newUnit) -> {
+                if (newUnit == null || newUnit.equals(oldUnit)) {
+                    return;
+                }
+                String unitSuffix = switch (newUnit) {
+                    case "Millimeters (mm)" -> "(mm)";
+                    case "Centimeters (cm)" -> "(cm)";
+                    case "Pixels (300 DPI)", "Pixels (72 DPI)" -> "(px)";
+                    default -> "(in)";
+                };
+                if (lblCustomWidth != null) lblCustomWidth.setText("Custom Width " + unitSuffix);
+                if (lblCustomHeight != null) lblCustomHeight.setText("Custom Height " + unitSuffix);
+
+                try {
+                    String wText = fldCustomWidth.getText().trim();
+                    String hText = fldCustomHeight.getText().trim();
+                    if (!wText.isEmpty() && !hText.isEmpty()) {
+                        double prevW = Double.parseDouble(wText);
+                        double prevH = Double.parseDouble(hText);
+                        double inchesW = convertToInches(prevW, oldUnit);
+                        double inchesH = convertToInches(prevH, oldUnit);
+                        double newW = convertFromInches(inchesW, newUnit);
+                        double newH = convertFromInches(inchesH, newUnit);
+                        fldCustomWidth.setText(String.format("%.2f", newW));
+                        fldCustomHeight.setText(String.format("%.2f", newH));
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+                currentUnit = newUnit;
+                refreshLayoutForSizeChange();
+            });
+        }
+
         cmbChequeSize.valueProperty().addListener((obs, old, preset) -> {
             boolean custom = preset == ChequeSizePreset.CUSTOM;
             fldCustomWidth.setDisable(!custom);
             fldCustomHeight.setDisable(!custom);
+            if (cmbChequeSizeUnit != null) {
+                cmbChequeSizeUnit.setDisable(!custom);
+                if (!custom) {
+                    cmbChequeSizeUnit.setValue("Inches (in)");
+                    currentUnit = "Inches (in)";
+                    if (lblCustomWidth != null) lblCustomWidth.setText("Custom Width (in)");
+                    if (lblCustomHeight != null) lblCustomHeight.setText("Custom Height (in)");
+                }
+            }
             if (!custom) {
                 fldCustomWidth.clear();
                 fldCustomHeight.clear();
             }
             refreshLayoutForSizeChange();
         });
+
+        fldCustomWidth.textProperty().addListener((obs, o, n) -> refreshLayoutForSizeChange());
+        fldCustomHeight.textProperty().addListener((obs, o, n) -> refreshLayoutForSizeChange());
 
         chkMicr.selectedProperty().addListener((obs, o, n) -> refreshPreview());
     }
@@ -204,17 +266,22 @@ public class BankController {
             return;
         }
 
+        double paneW = chequePreviewPane.getPrefWidth();
+        double paneH = chequePreviewPane.getPrefHeight();
+        if (paneW <= 0) paneW = 720;
+        if (paneH <= 0) paneH = 300;
+
         double nx = node.getLayoutX() + (event.getX() - delta.x);
         double ny = node.getLayoutY() + (event.getY() - delta.y);
 
-        nx = clamp(nx, 0, Math.max(0, chequePreviewPane.getWidth() - node.getWidth()));
-        ny = clamp(ny, 0, Math.max(0, chequePreviewPane.getHeight() - node.getHeight()));
+        nx = clamp(nx, 0, Math.max(0, paneW - node.getPrefWidth()));
+        ny = clamp(ny, 0, Math.max(0, paneH - node.getPrefHeight()));
 
         node.setLayoutX(nx);
         node.setLayoutY(ny);
 
-        double xr = chequePreviewPane.getWidth() <= 0 ? 0 : nx / chequePreviewPane.getWidth();
-        double yr = chequePreviewPane.getHeight() <= 0 ? 0 : ny / chequePreviewPane.getHeight();
+        double xr = paneW <= 0 ? 0 : nx / paneW;
+        double yr = paneH <= 0 ? 0 : ny / paneH;
         currentLayout.setFieldPosition(field, xr, yr);
         if (field == cmbAdjustField.getValue()) {
             loadAdjustmentFields(field);
@@ -238,13 +305,11 @@ public class BankController {
         scale = Math.max(0.25, scale);
 
         chequePreviewPane.setPrefSize(widthPx, heightPx);
+        chequePreviewPane.setMinSize(widthPx, heightPx);
+        chequePreviewPane.setMaxSize(widthPx, heightPx);
         chequePreviewPane.setScaleX(scale);
         chequePreviewPane.setScaleY(scale);
-
-        double px = (vw - widthPx * scale) / 2.0;
-        double py = (vh - heightPx * scale) / 2.0;
-        AnchorPane.setLeftAnchor(chequePreviewPane, px);
-        AnchorPane.setTopAnchor(chequePreviewPane, py);
+        chequePreviewPane.getTransforms().clear();
 
         refreshPreview();
     }
@@ -255,19 +320,24 @@ public class BankController {
         }
         currentLayout.ensureAllFields();
 
+        double paneW = chequePreviewPane.getPrefWidth();
+        double paneH = chequePreviewPane.getPrefHeight();
+        if (paneW <= 0) paneW = 720;
+        if (paneH <= 0) paneH = 300;
+
         for (Map.Entry<LayoutField, Label> entry : fieldNodes.entrySet()) {
             LayoutField field = entry.getKey();
             Label node = entry.getValue();
             FieldPosition pos = currentLayout.get(field);
-            double x = pos.getXRatio() * chequePreviewPane.getWidth();
-            double y = pos.getYRatio() * chequePreviewPane.getHeight();
+            double x = pos.getXRatio() * paneW;
+            double y = pos.getYRatio() * paneH;
             double w = fieldWidthPx(field, pos);
             double h = fieldHeightPx(field, pos);
             node.setPrefSize(w, h);
             node.setMinSize(w, h);
             node.setMaxSize(w, h);
-            x = clamp(x, 0, Math.max(0, chequePreviewPane.getWidth() - node.getWidth()));
-            y = clamp(y, 0, Math.max(0, chequePreviewPane.getHeight() - node.getHeight()));
+            x = clamp(x, 0, Math.max(0, paneW - w));
+            y = clamp(y, 0, Math.max(0, paneH - h));
             node.setLayoutX(x);
             node.setLayoutY(y);
             node.setVisible(field != LayoutField.MICR || chkMicr.isSelected());
@@ -470,7 +540,14 @@ public class BankController {
         lblFormTitle.setText("Edit Bank Template");
         btnSave.setText("Update Template");
         btnDelete.setDisable(false);
-        btnClear.setText("+ Add Bank");
+        if (btnNewBank != null) {
+            btnNewBank.setVisible(true);
+            btnNewBank.setManaged(true);
+        }
+        if (btnClear != null) {
+            btnClear.setVisible(true);
+            btnClear.setManaged(true);
+        }
 
         isUpdatingForm = true;
         try {
@@ -487,11 +564,25 @@ public class BankController {
 
         if (preset == ChequeSizePreset.CUSTOM) {
             BankTemplateLayout sizeLayout = ChequeSizeCodec.decodeLayout(bank.getChequeSize());
+            if (cmbChequeSizeUnit != null) {
+                cmbChequeSizeUnit.setDisable(false);
+                cmbChequeSizeUnit.setValue("Inches (in)");
+                currentUnit = "Inches (in)";
+            }
+            if (lblCustomWidth != null) lblCustomWidth.setText("Custom Width (in)");
+            if (lblCustomHeight != null) lblCustomHeight.setText("Custom Height (in)");
             fldCustomWidth.setText(String.format("%.2f", sizeLayout.getWidthInches()));
             fldCustomHeight.setText(String.format("%.2f", sizeLayout.getHeightInches()));
             fldCustomWidth.setDisable(false);
             fldCustomHeight.setDisable(false);
         } else {
+            if (cmbChequeSizeUnit != null) {
+                cmbChequeSizeUnit.setDisable(true);
+                cmbChequeSizeUnit.setValue("Inches (in)");
+                currentUnit = "Inches (in)";
+            }
+            if (lblCustomWidth != null) lblCustomWidth.setText("Custom Width (in)");
+            if (lblCustomHeight != null) lblCustomHeight.setText("Custom Height (in)");
             fldCustomWidth.clear();
             fldCustomHeight.clear();
             fldCustomWidth.setDisable(true);
@@ -511,7 +602,20 @@ public class BankController {
         lblFormTitle.setText("Add New Bank Template");
         btnSave.setText("Save Template");
         btnDelete.setDisable(true);
-        btnClear.setText("Clear");
+        if (btnNewBank != null) {
+            btnNewBank.setVisible(false);
+            btnNewBank.setManaged(false);
+        }
+        if (btnClear != null) {
+            btnClear.setText("Clear");
+            btnClear.setVisible(true);
+            btnClear.setManaged(true);
+            // Ensure style class is btn-secondary
+            btnClear.getStyleClass().remove("btn-primary");
+            if (!btnClear.getStyleClass().contains("btn-secondary")) {
+                btnClear.getStyleClass().add("btn-secondary");
+            }
+        }
         
         isUpdatingForm = true;
         try {
@@ -532,7 +636,7 @@ public class BankController {
     }
 
     private void refreshLayoutForSizeChange() {
-        BankTemplateLayout sizeLayout = buildLayoutFromFormSize();
+        BankTemplateLayout sizeLayout = buildLayoutFromFormSizeSilently();
         if (sizeLayout == null) {
             return;
         }
@@ -547,6 +651,30 @@ public class BankController {
         refreshPreview();
     }
 
+    private BankTemplateLayout buildLayoutFromFormSizeSilently() {
+        ChequeSizePreset preset = cmbChequeSize.getValue();
+        if (preset == null) {
+            preset = ChequeSizePreset.STANDARD;
+        }
+
+        if (preset != ChequeSizePreset.CUSTOM) {
+            return new BankTemplateLayout(preset.getWidthInches(), preset.getHeightInches());
+        }
+
+        try {
+            double rawW = Double.parseDouble(fldCustomWidth.getText().trim());
+            double rawH = Double.parseDouble(fldCustomHeight.getText().trim());
+            if (rawW <= 0 || rawH <= 0) {
+                return null;
+            }
+            double w = convertToInches(rawW, cmbChequeSizeUnit.getValue());
+            double h = convertToInches(rawH, cmbChequeSizeUnit.getValue());
+            return new BankTemplateLayout(w, h);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
     private BankTemplateLayout buildLayoutFromFormSize() {
         ChequeSizePreset preset = cmbChequeSize.getValue();
         if (preset == null) {
@@ -558,16 +686,40 @@ public class BankController {
         }
 
         try {
-            double w = Double.parseDouble(fldCustomWidth.getText().trim());
-            double h = Double.parseDouble(fldCustomHeight.getText().trim());
-            if (w <= 0 || h <= 0) {
+            double rawW = Double.parseDouble(fldCustomWidth.getText().trim());
+            double rawH = Double.parseDouble(fldCustomHeight.getText().trim());
+            if (rawW <= 0 || rawH <= 0) {
                 throw new NumberFormatException("Size must be positive.");
             }
+            double w = convertToInches(rawW, cmbChequeSizeUnit.getValue());
+            double h = convertToInches(rawH, cmbChequeSizeUnit.getValue());
             return new BankTemplateLayout(w, h);
         } catch (NumberFormatException ex) {
-            showAlert("Validation", "Enter valid custom width and height (inches).", Alert.AlertType.WARNING);
+            showAlert("Validation", "Enter valid custom width and height.", Alert.AlertType.WARNING);
             return null;
         }
+    }
+
+    private double convertFromInches(double inches, String toUnit) {
+        if (toUnit == null) return inches;
+        return switch (toUnit) {
+            case "Millimeters (mm)" -> inches * 25.4;
+            case "Centimeters (cm)" -> inches * 2.54;
+            case "Pixels (300 DPI)" -> inches * 300.0;
+            case "Pixels (72 DPI)" -> inches * 72.0;
+            default -> inches; // Inches (in)
+        };
+    }
+
+    private double convertToInches(double value, String fromUnit) {
+        if (fromUnit == null) return value;
+        return switch (fromUnit) {
+            case "Millimeters (mm)" -> value / 25.4;
+            case "Centimeters (cm)" -> value / 2.54;
+            case "Pixels (300 DPI)" -> value / 300.0;
+            case "Pixels (72 DPI)" -> value / 72.0;
+            default -> value; // Inches (in)
+        };
     }
 
     private Bank buildDraftBank() {
@@ -603,11 +755,15 @@ public class BankController {
     }
 
     private double fieldWidthPx(LayoutField field, FieldPosition pos) {
-        return Math.max(24.0, effectiveWidthRatio(field, pos) * chequePreviewPane.getWidth());
+        double w = chequePreviewPane.getPrefWidth();
+        if (w <= 0) w = 720;
+        return Math.max(24.0, effectiveWidthRatio(field, pos) * w);
     }
 
     private double fieldHeightPx(LayoutField field, FieldPosition pos) {
-        return Math.max(18.0, effectiveHeightRatio(field, pos) * chequePreviewPane.getHeight());
+        double h = chequePreviewPane.getPrefHeight();
+        if (h <= 0) h = 300;
+        return Math.max(18.0, effectiveHeightRatio(field, pos) * h);
     }
 
     private double effectiveWidthRatio(LayoutField field, FieldPosition pos) {

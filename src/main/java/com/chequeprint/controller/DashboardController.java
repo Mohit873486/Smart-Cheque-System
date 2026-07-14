@@ -29,6 +29,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.Pane;
 import javafx.util.Duration;
 
 import java.math.BigDecimal;
@@ -68,6 +70,9 @@ public class DashboardController {
 
     @FXML private LineChart<Number, Number> chequeChart;
     @FXML private PieChart statusChart;
+    @FXML private Pane statusChartOverlay;
+    @FXML private Label lblDonutTotal;
+    @FXML private FlowPane legendContainer;
 
     @FXML private TableView<Cheque> tblRecentCheques;
     @FXML private TableColumn<Cheque, String> colChequeNo;
@@ -263,7 +268,7 @@ public class DashboardController {
         }
         if (statusChart != null) {
             statusChart.setLabelsVisible(false);
-            statusChart.setLegendVisible(true);
+            statusChart.setLegendVisible(false);
         }
     }
 
@@ -415,16 +420,157 @@ public class DashboardController {
         addPieSlice(data, "Printed", counts.get(Cheque.Status.Printed));
         addPieSlice(data, "Cancelled", counts.get(Cheque.Status.Cancelled));
 
+        // Calculate total count represented on the chart
+        long totalCheques = (long) data.stream().mapToDouble(PieChart.Data::getPieValue).sum();
+        if (lblDonutTotal != null) {
+            lblDonutTotal.setText(String.valueOf(totalCheques));
+        }
+
         if (data.isEmpty()) {
-            data.add(new PieChart.Data("No Data", 1));
+            data.add(new PieChart.Data("No Data", 0));
         }
         statusChart.setData(FXCollections.observableArrayList(data));
+
+        // Clear overlay labels
+        if (statusChartOverlay != null) {
+            statusChartOverlay.getChildren().clear();
+        }
+
+        // Update custom legend
+        if (legendContainer != null) {
+            legendContainer.getChildren().clear();
+        }
+
+        double startAngle = statusChart.getStartAngle();
+        boolean clockwise = statusChart.isClockwise();
+        double centerX = statusChartOverlay != null ? statusChartOverlay.getWidth() / 2.0 : 110.0;
+        double centerY = statusChartOverlay != null ? statusChartOverlay.getHeight() / 2.0 : 110.0;
+        if (centerX == 0) centerX = 110.0;
+        if (centerY == 0) centerY = 110.0;
+
+        for (PieChart.Data d : statusChart.getData()) {
+            String status = d.getName();
+            String color = getColorForStatus(status);
+
+            // Set slice color dynamically and add listener for future updates
+            javafx.scene.Node sliceNode = d.getNode();
+            if (sliceNode != null) {
+                sliceNode.setStyle("-fx-pie-color: " + color + "; -fx-border-color: #ffffff; -fx-border-width: 2.5px;");
+            }
+            d.nodeProperty().addListener((obs, oldNode, newNode) -> {
+                if (newNode != null) {
+                    newNode.setStyle("-fx-pie-color: " + color + "; -fx-border-color: #ffffff; -fx-border-width: 2.5px;");
+                }
+            });
+
+            // Create custom legend item and draw overlay label if value > 0 and status is not "No Data"
+            if (d.getPieValue() > 0 && !"No Data".equals(status)) {
+                double pct = totalCheques > 0 ? (d.getPieValue() / (double) totalCheques) * 100.0 : 0.0;
+                double arcLength = totalCheques > 0 ? (d.getPieValue() / (double) totalCheques) * 360.0 : 0.0;
+
+                double centerAngle;
+                if (clockwise) {
+                    centerAngle = startAngle - (arcLength / 2.0);
+                    startAngle -= arcLength;
+                } else {
+                    centerAngle = startAngle + (arcLength / 2.0);
+                    startAngle += arcLength;
+                }
+
+                // Draw overlay bubble percentage label
+                if (statusChartOverlay != null) {
+                    double labelRadius = 76.0; // visual center of slices
+                    double rad = Math.toRadians(centerAngle);
+                    double x = centerX + labelRadius * Math.cos(rad);
+                    double y = centerY - labelRadius * Math.sin(rad);
+
+                    String pctStr = pct % 1 == 0 ? String.format(Locale.ROOT, "%.0f%%", pct) : String.format(Locale.ROOT, "%.1f%%", pct);
+                    Label label = new Label(pctStr);
+                    label.setStyle("-fx-text-fill: #ffffff; " +
+                                   "-fx-font-weight: bold; " +
+                                   "-fx-font-size: 11.5px; " +
+                                   "-fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.85), 3, 0, 0, 0);");
+
+                    final double fx = x;
+                    final double fy = y;
+                    label.layoutBoundsProperty().addListener((obs2, oldBounds, newBounds) -> {
+                        label.setTranslateX(fx - newBounds.getWidth() / 2.0);
+                        label.setTranslateY(fy - newBounds.getHeight() / 2.0);
+                    });
+                    label.setTranslateX(fx - 18);
+                    label.setTranslateY(fy - 8);
+
+                    statusChartOverlay.getChildren().add(label);
+                }
+
+                if (legendContainer != null) {
+                    legendContainer.getChildren().add(createLegendItem(status, (long) d.getPieValue(), pct, color));
+                }
+            }
+        }
     }
 
     private void addPieSlice(List<PieChart.Data> data, String label, Long value) {
         if (value != null && value > 0) {
             data.add(new PieChart.Data(label, value));
         }
+    }
+
+    private String getColorForStatus(String status) {
+        return switch (status) {
+            case "Approved" -> "#6366f1";   // Indigo
+            case "Pending" -> "#d97706";    // Amber/Orange
+            case "Printed" -> "#10b981";    // Emerald Green
+            case "Cancelled" -> "#1e293b";  // Navy
+            case "Draft" -> "#94a3b8";      // Slate Gray
+            default -> "#64748b";
+        };
+    }
+
+    private String getEmojiForStatus(String status) {
+        return switch (status) {
+            case "Approved" -> "✔";
+            case "Pending" -> "⏳";
+            case "Printed" -> "🖨";
+            case "Cancelled" -> "✖";
+            case "Draft" -> "✎";
+            default -> "●";
+        };
+    }
+
+    private javafx.scene.Node createLegendItem(String status, long count, double percentage, String color) {
+        javafx.scene.layout.HBox item = new javafx.scene.layout.HBox(10);
+        item.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        item.getStyleClass().add("status-legend-item");
+        item.setPrefWidth(125);
+
+        // Icon Badge (Circle)
+        javafx.scene.layout.StackPane badge = new javafx.scene.layout.StackPane();
+        badge.setPrefSize(34, 34);
+        badge.setMinSize(34, 34);
+        badge.setMaxSize(34, 34);
+        badge.getStyleClass().add("status-legend-badge");
+        badge.setStyle("-fx-background-color: " + color + ";");
+
+        Label iconLabel = new Label(getEmojiForStatus(status));
+        iconLabel.getStyleClass().add("status-legend-icon");
+        badge.getChildren().add(iconLabel);
+
+        // VBox for labels
+        javafx.scene.layout.VBox labels = new javafx.scene.layout.VBox(1);
+        labels.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        Label statusLabel = new Label(status);
+        statusLabel.getStyleClass().add("status-legend-name");
+
+        String pctStr = percentage % 1 == 0 ? String.format(Locale.ROOT, "%.0f%%", percentage) : String.format(Locale.ROOT, "%.1f%%", percentage);
+        Label pctLabel = new Label(pctStr);
+        pctLabel.getStyleClass().add("status-legend-pct");
+
+        labels.getChildren().addAll(statusLabel, pctLabel);
+        item.getChildren().addAll(badge, labels);
+
+        return item;
     }
 
     private int countCheques(Cheque.Status status) {

@@ -263,6 +263,17 @@ ScrollPane {
 /* ══════════════════════════════════════════
    CARDS
 ══════════════════════════════════════════ */
+ScrollPane .donut-center,
+.status-card .donut-center,
+.donut-center {
+    -fx-background-color: #ffffff !important; /* Override target VBox settings */
+    -fx-background-radius: 999px !important; /* Force circular shape */
+    -fx-border-radius: 999px !important;
+    -fx-border-color: transparent !important;
+    -fx-border-width: 0 !important;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.05), 10, 0, 0, 2);
+}
+
 .card {
     -fx-background-color: #ffffff;
     -fx-background-radius: 16px;
@@ -771,9 +782,11 @@ ScrollPane {
     -fx-border-radius: 10px;
     -fx-border-width: 1px;
 }
-.filter-combo.combo-placeholder > .list-cell {
+
+.filter-combo.combo-placeholder>.list-cell {
     -fx-text-fill: #94a3b8 !important;
 }
+
 /* ══════════════════════════════════════════
    PROFILE
 ══════════════════════════════════════════ */
@@ -866,14 +879,14 @@ ScrollPane {
     -fx-font-size: 13px;
 }
 
-.combo-box > .arrow-button {
+.combo-box>.arrow-button {
     -fx-background-color: transparent;
     -fx-padding: 0 12 0 12;
     -fx-border-color: transparent transparent transparent #e2e8f0;
     -fx-border-width: 0 0 0 1px;
 }
 
-.combo-box > .arrow-button > .arrow {
+.combo-box>.arrow-button>.arrow {
     -fx-background-color: #64748b;
     -fx-shape: "M0 1.5 L1.5 0 L5 3.5 L8.5 0 L10 1.5 L5 6.5 Z";
     -fx-min-width: 9px;
@@ -1789,4 +1802,61 @@ ScrollPane {
 .money-input-shell.focused {
     -fx-border-color: #1a56db;
     -fx-effect: dropshadow(three-pass-box, rgba(26, 86, 219, 0.15), 6, 0, 0, 0);
+}
+
+/* ── Doughnut Chart and Legend ── */
+.status-pie-chart {
+    -fx-padding: 0px;
+}
+
+.status-pie-chart .chart-content {
+    -fx-padding: 0px;
+}
+
+.donut-center {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 50%;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.05), 10, 0, 0, 2);
+}
+
+.donut-total-val {
+    -fx-text-fill: #1e293b;
+    -fx-font-size: 26px;
+    -fx-font-weight: 800;
+}
+
+.donut-total-lbl {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.status-legend-flow {
+    -fx-padding: 10 0 0 0;
+}
+
+.status-legend-item {
+    -fx-padding: 4 6 4 6;
+}
+
+.status-legend-badge {
+    -fx-background-radius: 50%;
+}
+
+.status-legend-icon {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.status-legend-name {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+}
+
+.status-legend-pct {
+    -fx-text-fill: #1e293b;
+    -fx-font-size: 15px;
+    -fx-font-weight: 700;
 }

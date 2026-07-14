@@ -15,6 +15,9 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.Pane?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml/1"
     fx:controller="com.chequeprint.controller.DashboardController"
@@ -126,12 +129,20 @@
                         </VBox>
 
                         <VBox spacing="18" prefWidth="320">
-                            <VBox spacing="16" styleClass="card status-card">
+                            <VBox spacing="18" styleClass="card status-card" alignment="TOP_CENTER" minHeight="430" prefWidth="320">
                                 <HBox alignment="CENTER_LEFT">
                                     <Label text="Status Overview" styleClass="section-title" />
                                     <Region HBox.hgrow="ALWAYS" />
                                 </HBox>
-                                <PieChart fx:id="statusChart" legendSide="RIGHT" labelsVisible="false" prefHeight="260" />
+                                <StackPane alignment="CENTER" prefHeight="220" prefWidth="220">
+                                    <PieChart fx:id="statusChart" labelsVisible="false" legendVisible="false" prefHeight="220" prefWidth="220" styleClass="status-pie-chart" />
+                                    <Pane fx:id="statusChartOverlay" mouseTransparent="true" prefHeight="220" prefWidth="220" />
+                                    <VBox alignment="CENTER" mouseTransparent="true" spacing="2" styleClass="donut-center" maxWidth="105" maxHeight="105" minWidth="105" minHeight="105">
+                                        <Label fx:id="lblDonutTotal" text="0" styleClass="donut-total-val" />
+                                        <Label text="Total Cheques" styleClass="donut-total-lbl" />
+                                    </VBox>
+                                </StackPane>
+                                <FlowPane fx:id="legendContainer" hgap="16" vgap="12" alignment="CENTER" styleClass="status-legend-flow" prefWidth="280" />
                             </VBox>
                             <VBox spacing="16" styleClass="card dashboard-card">
                                 <HBox alignment="CENTER_LEFT">

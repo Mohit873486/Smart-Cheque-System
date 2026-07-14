@@ -23,8 +23,11 @@ public class ThemeManager {
         
         saveTheme(theme);
         
+        System.out.println("[ThemeManager] Applying theme: " + theme);
+        System.out.println("[ThemeManager] Stylesheets before: " + new java.util.ArrayList<>(scene.getStylesheets()));
+        
         // Remove existing theme overrides
-        scene.getStylesheets().removeIf(s -> s.contains("dark.css"));
+        scene.getStylesheets().removeIf(s -> s.contains("dark.css") || s.contains("dark"));
         
         // Add dark theme override if active
         if ("dark".equalsIgnoreCase(theme)) {
@@ -35,6 +38,8 @@ public class ThemeManager {
                 System.err.println("[ThemeManager] dark.css resource not found!");
             }
         }
+        
+        System.out.println("[ThemeManager] Stylesheets after: " + new java.util.ArrayList<>(scene.getStylesheets()));
     }
 
     /** Load and apply the saved theme on scene load */

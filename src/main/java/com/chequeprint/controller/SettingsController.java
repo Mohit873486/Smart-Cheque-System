@@ -458,8 +458,42 @@ public class SettingsController {
     @FXML
     private void onThemeChanged() {
         String theme = (rbDark != null && rbDark.isSelected()) ? "dark" : "light";
-        if (btnSaveSettings.getScene() != null) {
+        if (btnSaveSettings != null && btnSaveSettings.getScene() != null) {
             com.chequeprint.util.ThemeManager.applyTheme(btnSaveSettings.getScene(), theme);
+        }
+
+        // Auto-save the theme preference to the REST database asynchronously
+        try {
+            String appName = tfAppName != null ? tfAppName.getText().trim() : "ChequePro";
+            String currency = cbCurrency != null ? cbCurrency.getValue() : "₹ Indian Rupee (INR)";
+            String dateFormat = cbDateFormat != null ? cbDateFormat.getValue() : "dd/MM/yyyy";
+            String language = cbLanguage != null ? cbLanguage.getValue() : "English (India)";
+            String chequePrefix = tfChequePrefix != null ? tfChequePrefix.getText().trim() : "CHQ-";
+            String defaultBank = cbDefaultBank != null ? cbDefaultBank.getValue() : null;
+            boolean autoPrint = cbAutoPrint != null && cbAutoPrint.isSelected();
+            boolean amountConfirm = cbAmountConfirm == null || cbAmountConfirm.isSelected();
+            String invoicePrefix = tfInvoicePrefix != null ? tfInvoicePrefix.getText().trim() : "INV-";
+            String paymentTerms = cbPaymentTerms != null ? cbPaymentTerms.getValue() : "Net 30";
+            boolean autoGST = cbAutoGST == null || cbAutoGST.isSelected();
+
+            Settings s = new Settings(
+                    appName, currency, dateFormat,
+                    language, chequePrefix, defaultBank,
+                    autoPrint, amountConfirm, invoicePrefix,
+                    paymentTerms, autoGST, theme);
+
+            Thread saveThread = new Thread(() -> {
+                try {
+                    settingService.saveSettings(s);
+                    System.out.println("[Settings] Theme preference direct-saved successfully: " + theme);
+                } catch (Exception ex) {
+                    System.err.println("[Settings] Failed to auto-save theme settings: " + ex.getMessage());
+                }
+            });
+            saveThread.setDaemon(true);
+            saveThread.start();
+        } catch (Exception ex) {
+            System.err.println("[Settings] Error preparing auto-save settings object: " + ex.getMessage());
         }
     }
 

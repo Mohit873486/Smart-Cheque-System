@@ -259,7 +259,7 @@ ScrollPane>.viewport>VBox {
     -fx-text-fill: #f8fafc !important;
 }
 
-.filter-combo.combo-placeholder > .list-cell {
+.filter-combo.combo-placeholder>.list-cell {
     -fx-text-fill: #64748b !important;
 }
 
@@ -269,7 +269,7 @@ ScrollPane>.viewport>VBox {
     -fx-text-fill: #f8fafc !important;
 }
 
-.combo-box > .arrow-button {
+.combo-box>.arrow-button {
     -fx-background-color: transparent !important;
     -fx-border-color: transparent transparent transparent #1e293b !important;
     -fx-border-width: 0 0 0 1px !important;
@@ -647,4 +647,32 @@ ScrollPane>.viewport>VBox {
     -fx-border-width: 1.5px !important;
     -fx-border-radius: 50% !important;
     -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.25), 6, 0, 0, 2) !important;
+}
+
+/* ── Doughnut Chart and Legend (Dark Mode) ── */
+ScrollPane .donut-center,
+.status-card .donut-center,
+.donut-center {
+    -fx-background-color: #0b1329 !important;
+    -fx-background-radius: 999px !important;
+    -fx-border-radius: 999px !important;
+    -fx-border-color: transparent !important;
+    -fx-border-width: 0 !important;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.3), 10, 0, 0, 2) !important;
+}
+
+.donut-total-val {
+    -fx-text-fill: #ffffff !important;
+}
+
+.donut-total-lbl {
+    -fx-text-fill: #94a3b8 !important;
+}
+
+.status-legend-name {
+    -fx-text-fill: #cbd5e1 !important; /* brighter slate for high contrast */
+}
+
+.status-legend-pct {
+    -fx-text-fill: #f8fafc !important;
 }
