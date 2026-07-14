@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/banks")
+@RequestMapping({"/api/banks", "/api/bank/template"})
 public class BankTemplateApiController {
 
     private final BankTemplateService service;

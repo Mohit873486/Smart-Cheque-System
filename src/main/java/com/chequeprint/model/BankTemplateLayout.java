@@ -12,7 +12,7 @@ public class BankTemplateLayout implements Serializable {
     private final EnumMap<LayoutField, FieldPosition> fieldPositions = new EnumMap<>(LayoutField.class);
 
     public BankTemplateLayout() {
-        this(8.5, 3.66);
+        this(8.0, 3.66);
     }
 
     public BankTemplateLayout(double widthInches, double heightInches) {

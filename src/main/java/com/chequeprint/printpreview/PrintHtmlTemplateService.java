@@ -43,33 +43,33 @@ public class PrintHtmlTemplateService {
         template = template.replace("{{AMOUNT_NUMBER}}", escapeText(formatAmount(cheque.getAmount())));
         template = template.replace("{{MICR_TEXT}}", escapeText(buildMicr(bank, cheque)));
 
-        template = template.replace("{{BANK_LEFT}}", ratioToPercent(layout.get(LayoutField.BANK_LOGO).getXRatio()));
-        template = template.replace("{{BANK_TOP}}", ratioToPercent(layout.get(LayoutField.BANK_LOGO).getYRatio()));
+        template = template.replace("{{BANK_LEFT}}", ratioToMm(layout.get(LayoutField.BANK_LOGO).getXRatio(), widthMm));
+        template = template.replace("{{BANK_TOP}}", ratioToMm(layout.get(LayoutField.BANK_LOGO).getYRatio(), heightMm));
         template = template.replace("{{BANK_WIDTH}}", ratioToMm(layout.get(LayoutField.BANK_LOGO).getWidthRatio(), widthMm, 0.18));
         template = template.replace("{{BANK_HEIGHT}}", ratioToMm(layout.get(LayoutField.BANK_LOGO).getHeightRatio(), heightMm, 0.10));
 
-        template = template.replace("{{DATE_LEFT}}", ratioToPercent(layout.get(LayoutField.DATE).getXRatio()));
-        template = template.replace("{{DATE_TOP}}", ratioToPercent(layout.get(LayoutField.DATE).getYRatio()));
+        template = template.replace("{{DATE_LEFT}}", ratioToMm(layout.get(LayoutField.DATE).getXRatio(), widthMm));
+        template = template.replace("{{DATE_TOP}}", ratioToMm(layout.get(LayoutField.DATE).getYRatio(), heightMm));
         template = template.replace("{{DATE_WIDTH}}", ratioToMm(layout.get(LayoutField.DATE).getWidthRatio(), widthMm, 0.19));
         template = template.replace("{{DATE_HEIGHT}}", ratioToMm(layout.get(LayoutField.DATE).getHeightRatio(), heightMm, 0.10));
 
-        template = template.replace("{{PAYEE_LEFT}}", ratioToPercent(layout.get(LayoutField.PAYEE).getXRatio()));
-        template = template.replace("{{PAYEE_TOP}}", ratioToPercent(layout.get(LayoutField.PAYEE).getYRatio()));
+        template = template.replace("{{PAYEE_LEFT}}", ratioToMm(layout.get(LayoutField.PAYEE).getXRatio(), widthMm));
+        template = template.replace("{{PAYEE_TOP}}", ratioToMm(layout.get(LayoutField.PAYEE).getYRatio(), heightMm));
         template = template.replace("{{PAYEE_WIDTH}}", ratioToMm(layout.get(LayoutField.PAYEE).getWidthRatio(), widthMm, 0.66));
         template = template.replace("{{PAYEE_HEIGHT}}", ratioToMm(layout.get(LayoutField.PAYEE).getHeightRatio(), heightMm, 0.09));
 
-        template = template.replace("{{WORDS_LEFT}}", ratioToPercent(layout.get(LayoutField.AMOUNT_WORDS).getXRatio()));
-        template = template.replace("{{WORDS_TOP}}", ratioToPercent(layout.get(LayoutField.AMOUNT_WORDS).getYRatio()));
+        template = template.replace("{{WORDS_LEFT}}", ratioToMm(layout.get(LayoutField.AMOUNT_WORDS).getXRatio(), widthMm));
+        template = template.replace("{{WORDS_TOP}}", ratioToMm(layout.get(LayoutField.AMOUNT_WORDS).getYRatio(), heightMm));
         template = template.replace("{{WORDS_WIDTH}}", ratioToMm(layout.get(LayoutField.AMOUNT_WORDS).getWidthRatio(), widthMm, 0.62));
         template = template.replace("{{WORDS_HEIGHT}}", ratioToMm(layout.get(LayoutField.AMOUNT_WORDS).getHeightRatio(), heightMm, 0.09));
 
-        template = template.replace("{{NUMBER_LEFT}}", ratioToPercent(layout.get(LayoutField.AMOUNT_NUMBER).getXRatio()));
-        template = template.replace("{{NUMBER_TOP}}", ratioToPercent(layout.get(LayoutField.AMOUNT_NUMBER).getYRatio()));
+        template = template.replace("{{NUMBER_LEFT}}", ratioToMm(layout.get(LayoutField.AMOUNT_NUMBER).getXRatio(), widthMm));
+        template = template.replace("{{NUMBER_TOP}}", ratioToMm(layout.get(LayoutField.AMOUNT_NUMBER).getYRatio(), heightMm));
         template = template.replace("{{NUMBER_WIDTH}}", ratioToMm(layout.get(LayoutField.AMOUNT_NUMBER).getWidthRatio(), widthMm, 0.16));
         template = template.replace("{{NUMBER_HEIGHT}}", ratioToMm(layout.get(LayoutField.AMOUNT_NUMBER).getHeightRatio(), heightMm, 0.11));
 
-        template = template.replace("{{SIGN_LEFT}}", ratioToPercent(layout.get(LayoutField.SIGNATURE).getXRatio()));
-        template = template.replace("{{SIGN_TOP}}", ratioToPercent(layout.get(LayoutField.SIGNATURE).getYRatio()));
+        template = template.replace("{{SIGN_LEFT}}", ratioToMm(layout.get(LayoutField.SIGNATURE).getXRatio(), widthMm));
+        template = template.replace("{{SIGN_TOP}}", ratioToMm(layout.get(LayoutField.SIGNATURE).getYRatio(), heightMm));
         template = template.replace("{{SIGN_FIELD_WIDTH}}", ratioToMm(layout.get(LayoutField.SIGNATURE).getWidthRatio(), widthMm, 0.22));
         template = template.replace("{{SIGN_FIELD_HEIGHT}}", ratioToMm(layout.get(LayoutField.SIGNATURE).getHeightRatio(), heightMm, 0.16));
 
@@ -92,8 +92,8 @@ public class PrintHtmlTemplateService {
         template = template.replace("{{SIGN_OFFSET_X}}", sigOffsetX);
         template = template.replace("{{SIGN_OFFSET_Y}}", sigOffsetY);
 
-        template = template.replace("{{MICR_LEFT}}", ratioToPercent(layout.get(LayoutField.MICR).getXRatio()));
-        template = template.replace("{{MICR_TOP}}", ratioToPercent(layout.get(LayoutField.MICR).getYRatio()));
+        template = template.replace("{{MICR_LEFT}}", ratioToMm(layout.get(LayoutField.MICR).getXRatio(), widthMm));
+        template = template.replace("{{MICR_TOP}}", ratioToMm(layout.get(LayoutField.MICR).getYRatio(), heightMm));
         template = template.replace("{{MICR_WIDTH}}", ratioToMm(layout.get(LayoutField.MICR).getWidthRatio(), widthMm, 0.50));
         template = template.replace("{{MICR_HEIGHT}}", ratioToMm(layout.get(LayoutField.MICR).getHeightRatio(), heightMm, 0.08));
 
@@ -125,6 +125,10 @@ public class PrintHtmlTemplateService {
 
     private String ratioToPercent(double ratio) {
         return String.format(Locale.ROOT, "%.2f%%", ratio * 100.0);
+    }
+
+    private String ratioToMm(double ratio, double totalMm) {
+        return String.format(Locale.ROOT, "%.2fmm", ratio * totalMm);
     }
 
     private String ratioToMm(double ratio, double totalMm, double fallbackRatio) {

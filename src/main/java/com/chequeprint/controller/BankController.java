@@ -26,6 +26,8 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.Pane;
 import javafx.util.StringConverter;
+import javafx.scene.shape.Line;
+import javafx.scene.paint.Color;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -53,6 +55,8 @@ public class BankController {
     @FXML
     private CheckBox chkMicr;
     @FXML
+    private CheckBox chkSnapGrid;
+    @FXML
     private TextField fldCustomWidth;
     @FXML
     private TextField fldCustomHeight;
@@ -71,6 +75,9 @@ public class BankController {
     private Label lblFormTitle;
     @FXML
     private Label lblPreviewSize;
+    @FXML
+    private Label lblZoom;
+    private double zoomLevel = 1.0;
     @FXML
     private StackPane previewViewport;
     @FXML
@@ -91,6 +98,8 @@ public class BankController {
 
     private final Map<String, BankTemplateLayout> layoutByBankCode = new HashMap<>();
     private final Map<LayoutField, Label> fieldNodes = new EnumMap<>(LayoutField.class);
+    private Line guideLineV;
+    private Line guideLineH;
 
     private Bank selectedBank;
     private BankTemplateLayout currentLayout;
@@ -212,6 +221,10 @@ public class BankController {
         fldCustomHeight.textProperty().addListener((obs, o, n) -> refreshLayoutForSizeChange());
 
         chkMicr.selectedProperty().addListener((obs, o, n) -> refreshPreview());
+        if (chkSnapGrid != null) {
+            chkSnapGrid.setSelected(true);
+            chkSnapGrid.selectedProperty().addListener((obs, o, n) -> updateGridOverlay());
+        }
     }
 
     private void setupPreview() {
@@ -224,14 +237,32 @@ public class BankController {
         createFieldNode(LayoutField.SIGNATURE, "SIGN", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;");
         createFieldNode(LayoutField.MICR, "MICR", "-fx-background-color:#f1f5f9; -fx-border-color:#334155;");
 
+        guideLineV = new Line();
+        guideLineV.setStroke(Color.web("#ef4444", 0.8));
+        guideLineV.getStrokeDashArray().addAll(4.0, 4.0);
+        guideLineV.setVisible(false);
+        guideLineV.setManaged(false);
+
+        guideLineH = new Line();
+        guideLineH.setStroke(Color.web("#ef4444", 0.8));
+        guideLineH.getStrokeDashArray().addAll(4.0, 4.0);
+        guideLineH.setVisible(false);
+        guideLineH.setManaged(false);
+
+        chequePreviewPane.getChildren().addAll(guideLineV, guideLineH);
+
         previewViewport.widthProperty().addListener((obs, old, v) -> layoutPreviewPane());
         previewViewport.heightProperty().addListener((obs, old, v) -> layoutPreviewPane());
+        updateGridOverlay();
     }
 
     private void setupAdjustmentPanel() {
         cmbAdjustField.setItems(FXCollections.observableArrayList(LayoutField.values()));
         cmbAdjustField.setValue(LayoutField.PAYEE);
-        cmbAdjustField.valueProperty().addListener((obs, old, field) -> loadAdjustmentFields(field));
+        cmbAdjustField.valueProperty().addListener((obs, old, field) -> {
+            loadAdjustmentFields(field);
+            updateFieldHighlights();
+        });
     }
 
     private void createFieldNode(LayoutField field, String text, String style) {
@@ -249,6 +280,7 @@ public class BankController {
         node.setOnMousePressed(e -> {
             delta.x = e.getX();
             delta.y = e.getY();
+            cmbAdjustField.setValue(field);
             e.consume();
         });
         node.setOnMouseDragged(e -> {
@@ -256,6 +288,8 @@ public class BankController {
             e.consume();
         });
         node.setOnMouseReleased(e -> {
+            if (guideLineV != null) guideLineV.setVisible(false);
+            if (guideLineH != null) guideLineH.setVisible(false);
             persistCurrentLayoutIfPossible();
             e.consume();
         });
@@ -274,8 +308,43 @@ public class BankController {
         double nx = node.getLayoutX() + (event.getX() - delta.x);
         double ny = node.getLayoutY() + (event.getY() - delta.y);
 
+        if (chkSnapGrid != null && chkSnapGrid.isSelected()) {
+            nx = Math.round(nx / 15.0) * 15.0;
+            ny = Math.round(ny / 15.0) * 15.0;
+        }
+
         nx = clamp(nx, 0, Math.max(0, paneW - node.getPrefWidth()));
         ny = clamp(ny, 0, Math.max(0, paneH - node.getPrefHeight()));
+
+        // Guidelines logic (alignment with horizontal/vertical center)
+        double centerX = nx + node.getPrefWidth() / 2.0;
+        double centerY = ny + node.getPrefHeight() / 2.0;
+
+        if (guideLineV != null) {
+            if (Math.abs(centerX - paneW / 2.0) < 6.0) {
+                nx = paneW / 2.0 - node.getPrefWidth() / 2.0;
+                guideLineV.setStartX(paneW / 2.0);
+                guideLineV.setStartY(0);
+                guideLineV.setEndX(paneW / 2.0);
+                guideLineV.setEndY(paneH);
+                guideLineV.setVisible(true);
+            } else {
+                guideLineV.setVisible(false);
+            }
+        }
+
+        if (guideLineH != null) {
+            if (Math.abs(centerY - paneH / 2.0) < 6.0) {
+                ny = paneH / 2.0 - node.getPrefHeight() / 2.0;
+                guideLineH.setStartX(0);
+                guideLineH.setStartY(paneH / 2.0);
+                guideLineH.setEndX(paneW);
+                guideLineH.setEndY(paneH / 2.0);
+                guideLineH.setVisible(true);
+            } else {
+                guideLineH.setVisible(false);
+            }
+        }
 
         node.setLayoutX(nx);
         node.setLayoutY(ny);
@@ -301,8 +370,9 @@ public class BankController {
             return;
         }
 
-        double scale = Math.min((vw - 24) / widthPx, (vh - 24) / heightPx);
-        scale = Math.max(0.25, scale);
+        double baseScale = Math.min((vw - 24) / widthPx, (vh - 24) / heightPx);
+        baseScale = Math.max(0.25, baseScale);
+        double scale = baseScale * zoomLevel;
 
         chequePreviewPane.setPrefSize(widthPx, heightPx);
         chequePreviewPane.setMinSize(widthPx, heightPx);
@@ -310,6 +380,10 @@ public class BankController {
         chequePreviewPane.setScaleX(scale);
         chequePreviewPane.setScaleY(scale);
         chequePreviewPane.getTransforms().clear();
+
+        if (lblZoom != null) {
+            lblZoom.setText(Math.round(zoomLevel * 100) + "%");
+        }
 
         refreshPreview();
     }
@@ -345,6 +419,23 @@ public class BankController {
 
         lblPreviewSize.setText(String.format("Preview Size: %.2f x %.2f inches", currentLayout.getWidthInches(), currentLayout.getHeightInches()));
         loadAdjustmentFields(cmbAdjustField.getValue());
+        updateFieldHighlights();
+    }
+
+    @FXML
+    private void onZoomIn() {
+        if (zoomLevel < 2.5) {
+            zoomLevel += 0.1;
+            layoutPreviewPane();
+        }
+    }
+
+    @FXML
+    private void onZoomOut() {
+        if (zoomLevel > 0.4) {
+            zoomLevel -= 0.1;
+            layoutPreviewPane();
+        }
     }
 
     @FXML
@@ -837,6 +928,58 @@ public class BankController {
 
     private static double clamp(double value, double min, double max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    private void updateGridOverlay() {
+        if (chkSnapGrid == null) {
+            return;
+        }
+        boolean showGrid = chkSnapGrid.isSelected();
+
+        String watermarkStyles =
+            "-fx-background-color: #f2f7fc, " +
+            "linear-gradient(to bottom, #1e3a8a 0px, #1e3a8a 6px, transparent 6px, transparent 100%), " +
+            "linear-gradient(to top, #1e3a8a 0px, #1e3a8a 6px, transparent 6px, transparent 100%), " +
+            "repeating-linear-gradient(45deg, rgba(37,99,235,0.02) 0px, rgba(37,99,235,0.02) 2px, transparent 2px, transparent 16px), " +
+            "repeating-linear-gradient(-45deg, rgba(37,99,235,0.02) 0px, rgba(37,99,235,0.02) 2px, transparent 2px, transparent 16px)";
+
+        if (showGrid) {
+            chequePreviewPane.setStyle(
+                watermarkStyles + ", " +
+                "linear-gradient(from 0px 0px to 15px 0px, repeat, rgba(148,163,184,0.12) 0px, rgba(148,163,184,0.12) 1px, transparent 1px, transparent 15px), " +
+                "linear-gradient(from 0px 0px to 0px 15px, repeat, rgba(148,163,184,0.12) 0px, rgba(148,163,184,0.12) 1px, transparent 1px, transparent 15px); " +
+                "-fx-border-color: #94a3b8; -fx-border-width: 1; -fx-background-radius: 10; -fx-border-radius: 10;"
+            );
+        } else {
+            chequePreviewPane.setStyle(
+                watermarkStyles + "; " +
+                "-fx-border-color: #94a3b8; -fx-border-width: 1; -fx-background-radius: 10; -fx-border-radius: 10;"
+            );
+        }
+    }
+
+    private void updateFieldHighlights() {
+        LayoutField selected = cmbAdjustField.getValue();
+        for (Map.Entry<LayoutField, Label> entry : fieldNodes.entrySet()) {
+            LayoutField field = entry.getKey();
+            Label node = entry.getValue();
+
+            String baseStyle = switch (field) {
+                case BANK_LOGO -> "-fx-background-color:rgba(239,246,255,0.85); -fx-border-color:#3b82f6;";
+                case DATE -> "-fx-background-color:rgba(248,250,252,0.85); -fx-border-color:#64748b;";
+                case PAYEE -> "-fx-background-color:rgba(248,250,252,0.85); -fx-border-color:#64748b;";
+                case AMOUNT_NUMBER -> "-fx-background-color:rgba(254,252,232,0.85); -fx-border-color:#ca8a04;";
+                case AMOUNT_WORDS -> "-fx-background-color:rgba(248,250,252,0.85); -fx-border-color:#64748b;";
+                case SIGNATURE -> "-fx-background-color:rgba(248,250,252,0.85); -fx-border-color:#64748b;";
+                case MICR -> "-fx-background-color:rgba(241,255,249,0.85); -fx-border-color:#10b981;";
+            };
+
+            if (field == selected) {
+                node.setStyle(baseStyle + " -fx-font-size:11px; -fx-font-weight:700; -fx-border-color:#2563eb; -fx-border-style:dashed; -fx-border-width:2px; -fx-effect: dropshadow(three-pass-box, rgba(37,99,235,0.35), 6, 0, 0, 0);");
+            } else {
+                node.setStyle(baseStyle + " -fx-font-size:11px; -fx-font-weight:600; -fx-border-width:1px;");
+            }
+        }
     }
 
     private void showAlert(String title, String message, Alert.AlertType type) {

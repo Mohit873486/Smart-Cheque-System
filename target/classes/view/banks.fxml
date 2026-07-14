@@ -51,6 +51,9 @@
 
                     <Label text="MICR Enabled" styleClass="form-label" GridPane.rowIndex="6" GridPane.columnIndex="0" />
                     <CheckBox fx:id="chkMicr" selected="true" GridPane.rowIndex="6" GridPane.columnIndex="1" />
+
+                    <Label text="Snap to Grid" styleClass="form-label" GridPane.rowIndex="7" GridPane.columnIndex="0" />
+                    <CheckBox fx:id="chkSnapGrid" selected="true" GridPane.rowIndex="7" GridPane.columnIndex="1" />
                 </GridPane>
 
                 <HBox spacing="8" alignment="CENTER_LEFT">
@@ -98,6 +101,11 @@
                 <HBox spacing="10" alignment="CENTER_LEFT">
                     <Label text="Cheque Layout Preview (drag fields)" styleClass="section-title" />
                     <Region HBox.hgrow="ALWAYS" />
+                    <HBox spacing="6" alignment="CENTER">
+                        <Button text="-" styleClass="btn-secondary" style="-fx-padding: 1 6 1 6; -fx-font-size: 11; -fx-font-weight: bold;" onAction="#onZoomOut" />
+                        <Label fx:id="lblZoom" text="100%" style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #475569;" />
+                        <Button text="+" styleClass="btn-primary" style="-fx-padding: 1 6 1 6; -fx-font-size: 11; -fx-font-weight: bold;" onAction="#onZoomIn" />
+                    </HBox>
                     <Label fx:id="lblPreviewSize" text="Preview Size" style="-fx-text-fill:#64748b; -fx-font-size:12;" />
                 </HBox>
 

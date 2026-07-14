@@ -379,6 +379,9 @@ body {
         if (value.indexOf('%') > -1) {
           return (parseFloat(value) || 0) * axisSize / 100;
         }
+        if (value.indexOf('mm') > -1) {
+          return (parseFloat(value) || 0) * 96 / 25.4;
+        }
         return parseFloat(value) || 0;
       }
 
