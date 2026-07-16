@@ -45,6 +45,7 @@ public class ChequeSnapshotRenderer {
         BankTemplateLayout fromSize = ChequeSizeCodec.decodeLayout(bankTemplate != null ? bankTemplate.getChequeSize() : null);
         if (bankTemplate == null || bankTemplate.getBankCode() == null || bankTemplate.getBankCode().isBlank()) {
             fromSize.ensureAllFields();
+            sanitizeLayout(fromSize);
             return fromSize;
         }
 
@@ -53,6 +54,7 @@ public class ChequeSnapshotRenderer {
         BankTemplateLayout stored = all.get(code);
         if (stored == null) {
             fromSize.ensureAllFields();
+            sanitizeLayout(fromSize);
             return fromSize;
         }
 
@@ -60,7 +62,45 @@ public class ChequeSnapshotRenderer {
         merged.setWidthInches(fromSize.getWidthInches());
         merged.setHeightInches(fromSize.getHeightInches());
         merged.ensureAllFields();
+        sanitizeLayout(merged);
         return merged;
+    }
+
+    public static void sanitizeLayout(BankTemplateLayout layout) {
+        // Self-healing rules to guarantee a gorgeous, hyper-realistic cheque alignment
+        // 1. Payee: must start around 0.16 and be wide enough (0.78)
+        FieldPosition payee = layout.get(LayoutField.PAYEE);
+        if (payee.getXRatio() > 0.25 || payee.getXRatio() < 0.10) payee.setXRatio(0.16);
+        if (payee.getWidthRatio() < 0.40) payee.setWidthRatio(0.78);
+        if (payee.getYRatio() < 0.20 || payee.getYRatio() > 0.40) payee.setYRatio(0.28);
+
+        // 2. Amount Number: must be on the right side
+        FieldPosition amtNum = layout.get(LayoutField.AMOUNT_NUMBER);
+        if (amtNum.getXRatio() < 0.70 || amtNum.getXRatio() > 0.85) amtNum.setXRatio(0.76);
+        if (amtNum.getWidthRatio() < 0.10) amtNum.setWidthRatio(0.18);
+        if (amtNum.getYRatio() < 0.35 || amtNum.getYRatio() > 0.55) amtNum.setYRatio(0.42);
+
+        // 3. Amount Words (Rupees): must not overlap the Amount Number box
+        FieldPosition amtWords = layout.get(LayoutField.AMOUNT_WORDS);
+        if (amtWords.getXRatio() > 0.25 || amtWords.getXRatio() < 0.10) amtWords.setXRatio(0.16);
+        if (amtWords.getYRatio() < 0.35 || amtWords.getYRatio() > 0.55) amtWords.setYRatio(0.40);
+        // Ensure no overlap with AMOUNT_NUMBER which starts at amtNum.getXRatio()
+        double maxWordsWidth = amtNum.getXRatio() - amtWords.getXRatio() - 0.04;
+        if (amtWords.getWidthRatio() > maxWordsWidth || amtWords.getWidthRatio() < 0.30) {
+            amtWords.setWidthRatio(maxWordsWidth);
+        }
+
+        // 4. Date: must be top-right
+        FieldPosition date = layout.get(LayoutField.DATE);
+        if (date.getXRatio() < 0.70 || date.getXRatio() > 0.85) date.setXRatio(0.78);
+        if (date.getWidthRatio() < 0.12) date.setWidthRatio(0.18);
+        if (date.getYRatio() < 0.05 || date.getYRatio() > 0.20) date.setYRatio(0.08);
+
+        // 5. Signature: must be bottom-right
+        FieldPosition sig = layout.get(LayoutField.SIGNATURE);
+        if (sig.getXRatio() < 0.65 || sig.getXRatio() > 0.85) sig.setXRatio(0.72);
+        if (sig.getWidthRatio() < 0.12) sig.setWidthRatio(0.22);
+        if (sig.getYRatio() < 0.55 || sig.getYRatio() > 0.75) sig.setYRatio(0.65);
     }
 
     public static WritableImage renderCheque(Cheque cheque, Bank bank, BankTemplateLayout layout, double scale) {
@@ -89,11 +129,77 @@ public class ChequeSnapshotRenderer {
         double widthPx = layout.getWidthInches() * 150.0; // base width for rendering
         double heightPx = layout.getHeightInches() * 150.0; // base height for rendering
 
+        String bankCode = (bank != null && bank.getBankCode() != null) ? bank.getBankCode().toUpperCase().trim() : "";
+
         Pane pane = new Pane();
         pane.setPrefSize(widthPx, heightPx);
         pane.setMinSize(widthPx, heightPx);
         pane.setMaxSize(widthPx, heightPx);
-        pane.setStyle("-fx-background-color: #ffffff; -fx-border-color: #000000; -fx-border-width: 1px;");
+
+        // 1. Background gradient and styling
+        String bgGradientStyle = switch (bankCode) {
+            case "SBI" -> "-fx-background-color: linear-gradient(to bottom, #dbeafe, #bae6fd); -fx-border-color: #94a3b8; -fx-border-width: 1px;";
+            case "HDFC" -> "-fx-background-color: linear-gradient(to bottom, #e0f2fe, #f0f9ff); -fx-border-color: #003366; -fx-border-width: 1px;";
+            case "ICICI" -> "-fx-background-color: linear-gradient(to bottom, #ffedd5, #fed7aa); -fx-border-color: #ea580c; -fx-border-width: 1px;";
+            case "AXIS" -> "-fx-background-color: linear-gradient(to bottom, #fce7f3, #fbcfe8); -fx-border-color: #db2777; -fx-border-width: 1px;";
+            case "BOB", "BARODA" -> "-fx-background-color: linear-gradient(to bottom, #ffedd5, #eff6ff); -fx-border-color: #f05a28; -fx-border-width: 1px;";
+            default -> "-fx-background-color: linear-gradient(to bottom, #eff6ff, #dbeafe); -fx-border-color: #2563eb; -fx-border-width: 1px;";
+        };
+        pane.setStyle(bgGradientStyle);
+
+        // 2. Subtle horizontal security lines texture
+        for (double ly = 15; ly < heightPx - 50; ly += 6) {
+            javafx.scene.shape.Line secLine = new javafx.scene.shape.Line(10, ly, widthPx - 10, ly);
+            secLine.setStroke(Color.web("#ffffff", 0.45));
+            secLine.setStrokeWidth(0.5);
+            pane.getChildren().add(secLine);
+        }
+
+        // 3. A/C Payee Crossing (diagonal stamp in top-left)
+        javafx.scene.Group crossing = new javafx.scene.Group();
+        javafx.scene.shape.Line crossLine1 = new javafx.scene.shape.Line(10, 50, 70, 10);
+        crossLine1.setStroke(Color.web("#475569", 0.7));
+        crossLine1.setStrokeWidth(1.0);
+        javafx.scene.shape.Line crossLine2 = new javafx.scene.shape.Line(25, 50, 85, 10);
+        crossLine2.setStroke(Color.web("#475569", 0.7));
+        crossLine2.setStrokeWidth(1.0);
+        
+        Label crossTxt = new Label("A/C PAYEE");
+        crossTxt.setFont(Font.font("Arial", FontWeight.BOLD, 7));
+        crossTxt.setTextFill(Color.web("#475569", 0.9));
+        crossTxt.setLayoutX(28);
+        crossTxt.setLayoutY(24);
+        crossTxt.setRotate(-33.7);
+        
+        crossing.getChildren().addAll(crossLine1, crossLine2, crossTxt);
+        pane.getChildren().add(crossing);
+
+        // 4. Branch details (top right)
+        String ifsc = switch (bankCode) {
+            case "SBI" -> "SBIN0001234";
+            case "HDFC" -> "HDFC0000123";
+            case "ICICI" -> "ICIC0000456";
+            case "AXIS" -> "UTIB0000789";
+            case "BOB", "BARODA" -> "BARB0000321";
+            default -> "BANK0000999";
+        };
+        Label branchLbl = new Label("BRANCH: " + ifsc);
+        branchLbl.setFont(Font.font("Arial", FontWeight.NORMAL, 9));
+        branchLbl.setTextFill(Color.web("#475569"));
+        branchLbl.setLayoutX(widthPx - 180);
+        branchLbl.setLayoutY(20);
+        
+        javafx.scene.shape.Line branchLine = new javafx.scene.shape.Line(widthPx - 180, 32, widthPx - 30, 32);
+        branchLine.setStroke(Color.web("#94a3b8"));
+        branchLine.setStrokeWidth(0.8);
+        pane.getChildren().addAll(branchLbl, branchLine);
+
+        // 5. MICR bottom band background
+        javafx.scene.shape.Rectangle micrBand = new javafx.scene.shape.Rectangle(0, heightPx - 40, widthPx, 40);
+        micrBand.setFill(Color.web("#f8fafc"));
+        micrBand.setStroke(Color.web("#cbd5e1"));
+        micrBand.setStrokeWidth(0.5);
+        pane.getChildren().add(micrBand);
 
         // Add visual fields matching layout field ratios
         for (LayoutField field : LayoutField.values()) {
@@ -113,97 +219,207 @@ public class ChequeSnapshotRenderer {
 
             switch (field) {
                 case DATE -> {
-                    Label dateLbl = new Label(cheque.getIssueDate() != null ? cheque.getIssueDate().toString() : "");
-                    dateLbl.setFont(Font.font("Courier New", FontWeight.BOLD, 12));
-                    dateLbl.setTextFill(Color.BLACK);
-                    dateLbl.setAlignment(Pos.CENTER);
-                    dateLbl.setStyle("-fx-border-color: #cccccc; -fx-border-width: 0 0 1px 0;");
-                    dateLbl.setLayoutX(x);
-                    dateLbl.setLayoutY(y);
-                    dateLbl.setPrefSize(w, h);
-                    pane.getChildren().add(dateLbl);
+                    // Draw static DATE text label
+                    Label staticDate = new Label("DATE");
+                    staticDate.setFont(Font.font("Arial", FontWeight.BOLD, 9));
+                    staticDate.setTextFill(Color.web("#475569"));
+                    staticDate.setLayoutX(x - 35);
+                    staticDate.setLayoutY(y + (h - 12) / 2);
+                    pane.getChildren().add(staticDate);
+
+                    // Draw 8 boxes (perfect squares centered vertically)
+                    double boxSize = w / 8.0;
+                    double by = y + (h - boxSize) / 2.0;
+                    String dateStr = "";
+                    if (cheque.getIssueDate() != null) {
+                        java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ofPattern("ddMMyyyy");
+                        dateStr = cheque.getIssueDate().format(dtf);
+                    }
+
+                    for (int i = 0; i < 8; i++) {
+                        double bx = x + i * boxSize;
+                        javafx.scene.shape.Rectangle r = new javafx.scene.shape.Rectangle(bx, by, boxSize - 1, boxSize - 1);
+                        r.setFill(Color.TRANSPARENT);
+                        r.setStroke(Color.web("#475569"));
+                        r.setStrokeWidth(1.0);
+                        pane.getChildren().add(r);
+
+                        if (i < dateStr.length()) {
+                            char digit = dateStr.charAt(i);
+                            Label dbl = new Label(String.valueOf(digit));
+                            dbl.setFont(Font.font("Courier New", FontWeight.BOLD, 12));
+                            dbl.setTextFill(Color.BLACK);
+                            dbl.setAlignment(Pos.CENTER);
+                            dbl.setLayoutX(bx);
+                            dbl.setLayoutY(by);
+                            dbl.setPrefSize(boxSize - 1, boxSize - 1);
+                            pane.getChildren().add(dbl);
+                        }
+                    }
                 }
                 case PAYEE -> {
-                    Label payeeLbl = new Label("Pay: " + (cheque.getPayeeName() != null ? cheque.getPayeeName() : ""));
-                    payeeLbl.setFont(Font.font("Arial", FontWeight.BOLD, 13));
+                    // Draw static PAY text
+                    Label staticPay = new Label("PAY");
+                    staticPay.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+                    staticPay.setTextFill(Color.web("#334155"));
+                    staticPay.setLayoutX(x - 30);
+                    staticPay.setLayoutY(y + (h - 15) / 2);
+                    pane.getChildren().add(staticPay);
+
+                    // Draw underline
+                    javafx.scene.shape.Line payLine = new javafx.scene.shape.Line(x, y + h - 2, x + w, y + h - 2);
+                    payLine.setStroke(Color.web("#475569"));
+                    payLine.setStrokeWidth(1.0);
+                    pane.getChildren().add(payLine);
+
+                    // Dynamic payee label sitting perfectly on the underline
+                    Label payeeLbl = new Label(cheque.getPayeeName() != null ? cheque.getPayeeName() : "");
+                    payeeLbl.setFont(Font.font("Arial", FontWeight.BOLD, 12));
                     payeeLbl.setTextFill(Color.BLACK);
-                    payeeLbl.setAlignment(Pos.CENTER_LEFT);
-                    payeeLbl.setStyle("-fx-border-color: #cccccc; -fx-border-width: 0 0 1px 0; -fx-padding: 0 0 0 5;");
+                    payeeLbl.setAlignment(Pos.BOTTOM_LEFT);
+                    payeeLbl.setStyle("-fx-padding: 0 0 2 5;");
                     payeeLbl.setLayoutX(x);
-                    payeeLbl.setLayoutY(y);
-                    payeeLbl.setPrefSize(w, h);
+                    payeeLbl.setLayoutY(y - 2);
+                    payeeLbl.setPrefSize(w, h - 2);
                     pane.getChildren().add(payeeLbl);
                 }
                 case AMOUNT_NUMBER -> {
-                    Label amountLbl = new Label("₹ " + (cheque.getAmount() != null ? cheque.getAmount().toPlainString() : ""));
+                    // Draw static ₹ symbol
+                    Label staticSymbol = new Label("₹");
+                    staticSymbol.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+                    staticSymbol.setTextFill(Color.web("#1e293b"));
+                    staticSymbol.setLayoutX(x - 22);
+                    staticSymbol.setLayoutY(y + (h - 24) / 2);
+                    pane.getChildren().add(staticSymbol);
+
+                    // Draw amount box double-border (like the image)
+                    javafx.scene.shape.Rectangle outerBox = new javafx.scene.shape.Rectangle(x, y, w, h);
+                    outerBox.setFill(Color.web("#fefce8", 0.4));
+                    outerBox.setStroke(Color.web("#1e293b"));
+                    outerBox.setStrokeWidth(1.5);
+
+                    javafx.scene.shape.Rectangle innerBox = new javafx.scene.shape.Rectangle(x + 2, y + 2, w - 4, h - 4);
+                    innerBox.setFill(Color.TRANSPARENT);
+                    innerBox.setStroke(Color.web("#1e293b"));
+                    innerBox.setStrokeWidth(0.5);
+
+                    pane.getChildren().addAll(outerBox, innerBox);
+
+                    // Dynamic amount label
+                    Label amountLbl = new Label(cheque.getAmount() != null ? cheque.getAmount().toPlainString() + "/-" : "");
                     amountLbl.setFont(Font.font("Arial", FontWeight.BOLD, 14));
                     amountLbl.setTextFill(Color.BLACK);
                     amountLbl.setAlignment(Pos.CENTER);
-                    amountLbl.setStyle("-fx-border-color: #000000; -fx-border-width: 1px; -fx-background-color: #fefce8;");
-                    amountLbl.setLayoutX(x);
-                    amountLbl.setLayoutY(y);
-                    amountLbl.setPrefSize(w, h);
+                    amountLbl.setLayoutX(x + 3);
+                    amountLbl.setLayoutY(y + 3);
+                    amountLbl.setPrefSize(w - 6, h - 6);
                     pane.getChildren().add(amountLbl);
                 }
                 case AMOUNT_WORDS -> {
-                    Label wordsLbl = new Label("Rupees: " + (cheque.getAmountWords() != null ? cheque.getAmountWords() : ""));
-                    wordsLbl.setFont(Font.font("Arial", FontWeight.NORMAL, 11));
+                    // Draw static RUPEES text
+                    Label staticRupees = new Label("RUPEES");
+                    staticRupees.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+                    staticRupees.setTextFill(Color.web("#334155"));
+                    staticRupees.setLayoutX(x - 55);
+                    staticRupees.setLayoutY(y + 2);
+                    pane.getChildren().add(staticRupees);
+
+                    // Draw two lines
+                    javafx.scene.shape.Line line1 = new javafx.scene.shape.Line(x, y + h/2 + 2, x + w, y + h/2 + 2);
+                    line1.setStroke(Color.web("#475569"));
+                    line1.setStrokeWidth(0.8);
+
+                    javafx.scene.shape.Line line2 = new javafx.scene.shape.Line(x - 55, y + h - 2, x + w, y + h - 2);
+                    line2.setStroke(Color.web("#475569"));
+                    line2.setStrokeWidth(0.8);
+
+                    pane.getChildren().addAll(line1, line2);
+
+                    // Dynamic words label
+                    Label wordsLbl = new Label(cheque.getAmountWords() != null ? cheque.getAmountWords() + " Only" : "");
+                    wordsLbl.setFont(Font.font("Arial", FontWeight.NORMAL, 10));
                     wordsLbl.setTextFill(Color.BLACK);
                     wordsLbl.setAlignment(Pos.CENTER_LEFT);
                     wordsLbl.setWrapText(true);
-                    wordsLbl.setStyle("-fx-border-color: #cccccc; -fx-border-width: 0 0 1px 0; -fx-padding: 0 0 0 5;");
                     wordsLbl.setLayoutX(x);
-                    wordsLbl.setLayoutY(y);
+                    wordsLbl.setLayoutY(y - 2);
                     wordsLbl.setPrefSize(w, h);
                     pane.getChildren().add(wordsLbl);
                 }
                 case SIGNATURE -> {
-                    Pane sigPane = new Pane();
-                    sigPane.setLayoutX(x);
-                    sigPane.setLayoutY(y);
-                    sigPane.setPrefSize(w, h);
+                    // Draw static signatory labels
+                    Label staticFor = new Label("For " + (bank != null ? bank.getBankName().toUpperCase() : "BANK"));
+                    staticFor.setFont(Font.font("Arial", FontWeight.BOLD, 8));
+                    staticFor.setTextFill(Color.web("#475569"));
+                    staticFor.setLayoutX(x);
+                    staticFor.setLayoutY(y);
+                    staticFor.setPrefWidth(w);
+                    staticFor.setAlignment(Pos.CENTER);
 
+                    Label staticAuth = new Label(":AUTHORIZED SIGNATORY");
+                    staticAuth.setFont(Font.font("Arial", FontWeight.BOLD, 8));
+                    staticAuth.setTextFill(Color.web("#475569"));
+                    staticAuth.setLayoutX(x);
+                    staticAuth.setLayoutY(y + h - 12);
+                    staticAuth.setPrefWidth(w);
+                    staticAuth.setAlignment(Pos.CENTER);
+
+                    pane.getChildren().addAll(staticFor, staticAuth);
+
+                    // Draw signature if uploaded, fallback to elegant cursive text representing the signature
+                    boolean sigDrawn = false;
                     try {
                         if (SignatureService.hasSignature()) {
                             ImageView sigImage = new ImageView(new Image(SignatureService.getSignaturePath().toUri().toString()));
                             sigImage.setFitWidth(w);
-                            sigImage.setFitHeight(h - 15);
+                            sigImage.setFitHeight(h - 22);
                             sigImage.setPreserveRatio(true);
-                            sigPane.getChildren().add(sigImage);
+                            sigImage.setLayoutX(x);
+                            sigImage.setLayoutY(y + 10);
+                            pane.getChildren().add(sigImage);
+                            sigDrawn = true;
                         }
                     } catch (Exception ignored) {}
 
-                    Label authLbl = new Label("Authorised Signature");
-                    authLbl.setFont(Font.font("Arial", FontWeight.BOLD, 9));
-                    authLbl.setTextFill(Color.BLACK);
-                    authLbl.setAlignment(Pos.CENTER);
-                    authLbl.setPrefWidth(w);
-                    authLbl.setLayoutY(h - 12);
-                    sigPane.getChildren().add(authLbl);
-
-                    pane.getChildren().add(sigPane);
+                    if (!sigDrawn) {
+                        Label curSig = new Label("Authorized Sign");
+                        curSig.setFont(Font.font("Segoe Script", FontWeight.BOLD, 14));
+                        curSig.setTextFill(Color.web("#1e3a8a", 0.85));
+                        curSig.setLayoutX(x);
+                        curSig.setLayoutY(y + 8);
+                        curSig.setPrefWidth(w);
+                        curSig.setAlignment(Pos.CENTER);
+                        pane.getChildren().add(curSig);
+                    }
                 }
                 case BANK_LOGO -> {
+                    // Header box container for bank name and logo
+                    javafx.scene.layout.HBox headerBox = new javafx.scene.layout.HBox(10);
+                    headerBox.setAlignment(Pos.CENTER_LEFT);
+                    headerBox.setLayoutX(x);
+                    headerBox.setLayoutY(y);
+                    headerBox.setPrefSize(w, h);
+
+                    javafx.scene.Node logoNode = createBankLogo(bankCode);
+                    
                     Label bankLbl = new Label(bank != null ? bank.getBankName().toUpperCase() : "BANK");
                     bankLbl.setFont(Font.font("Arial", FontWeight.BOLD, 15));
-                    bankLbl.setTextFill(Color.web("#1a56db"));
-                    bankLbl.setAlignment(Pos.CENTER_LEFT);
-                    bankLbl.setLayoutX(x);
-                    bankLbl.setLayoutY(y);
-                    bankLbl.setPrefSize(w, h);
-                    pane.getChildren().add(bankLbl);
+                    bankLbl.setTextFill(Color.web(getBankThemeColor(bankCode)));
+
+                    headerBox.getChildren().addAll(logoNode, bankLbl);
+                    pane.getChildren().add(headerBox);
                 }
                 case MICR -> {
-                    if (bank != null && bank.isMicr()) {
-                        Label micrLbl = new Label("⑆ 000000 ⑆ 0000000000 ⑆");
-                        micrLbl.setFont(Font.font("Courier New", FontWeight.BOLD, 13));
-                        micrLbl.setTextFill(Color.BLACK);
-                        micrLbl.setAlignment(Pos.CENTER);
-                        micrLbl.setLayoutX(x);
-                        micrLbl.setLayoutY(y);
-                        micrLbl.setPrefSize(w, h);
-                        pane.getChildren().add(micrLbl);
-                    }
+                    // Draw micr numbers inside the bottom white band
+                    String micrNo = cheque.getChequeNo() != null ? cheque.getChequeNo() : "000000";
+                    Label micrLbl = new Label("⑆ " + micrNo + " ⑆ 000000000 ⑆ 000000 ⑆ 00");
+                    micrLbl.setFont(Font.font("Courier New", FontWeight.BOLD, 14));
+                    micrLbl.setTextFill(Color.web("#0f172a"));
+                    micrLbl.setAlignment(Pos.CENTER);
+                    micrLbl.setLayoutX(x);
+                    micrLbl.setLayoutY(heightPx - 28);
+                    micrLbl.setPrefSize(w, 20);
+                    pane.getChildren().add(micrLbl);
                 }
             }
         }
@@ -213,10 +429,10 @@ public class ChequeSnapshotRenderer {
             String qrPath = QrCodeGenerator.generateQrCode(cheque);
             if (qrPath != null) {
                 ImageView qrView = new ImageView(new Image(new File(qrPath).toURI().toString()));
-                qrView.setFitWidth(40);
-                qrView.setFitHeight(40);
-                qrView.setLayoutX(10);
-                qrView.setLayoutY(heightPx - 50);
+                qrView.setFitWidth(35);
+                qrView.setFitHeight(35);
+                qrView.setLayoutX(15);
+                qrView.setLayoutY(heightPx - 80);
                 pane.getChildren().add(qrView);
             }
         } catch (Exception ignored) {}
@@ -231,6 +447,70 @@ public class ChequeSnapshotRenderer {
         params.setFill(Color.WHITE);
 
         return pane.snapshot(params, null);
+    }
+
+    private static javafx.scene.Node createBankLogo(String bankCode) {
+        javafx.scene.Group logoGroup = new javafx.scene.Group();
+        switch (bankCode) {
+            case "SBI" -> {
+                javafx.scene.shape.Circle outer = new javafx.scene.shape.Circle(12, Color.web("#008ecb"));
+                javafx.scene.shape.Circle inner = new javafx.scene.shape.Circle(3.5, Color.WHITE);
+                javafx.scene.shape.Rectangle line = new javafx.scene.shape.Rectangle(-1.5, 2, 3, 10);
+                line.setFill(Color.WHITE);
+                logoGroup.getChildren().addAll(outer, inner, line);
+            }
+            case "BOB", "BARODA" -> {
+                javafx.scene.shape.Arc arc1 = new javafx.scene.shape.Arc(0, 0, 12, 12, -30, 240);
+                arc1.setType(javafx.scene.shape.ArcType.ROUND);
+                arc1.setFill(Color.web("#f05a28"));
+                javafx.scene.shape.Arc arc2 = new javafx.scene.shape.Arc(3, 0, 8, 8, -30, 240);
+                arc2.setType(javafx.scene.shape.ArcType.ROUND);
+                arc2.setFill(Color.WHITE);
+                logoGroup.getChildren().addAll(arc1, arc2);
+            }
+            case "HDFC" -> {
+                javafx.scene.shape.Rectangle box = new javafx.scene.shape.Rectangle(-12, -12, 24, 24);
+                box.setFill(Color.web("#003366"));
+                box.setArcWidth(4);
+                box.setArcHeight(4);
+                javafx.scene.shape.Circle center = new javafx.scene.shape.Circle(4, Color.WHITE);
+                logoGroup.getChildren().addAll(box, center);
+            }
+            case "ICICI" -> {
+                javafx.scene.shape.Circle outer = new javafx.scene.shape.Circle(12, Color.web("#bc2c3d"));
+                javafx.scene.text.Text txt = new javafx.scene.text.Text(-3, 5, "i");
+                txt.setFont(Font.font("Georgia", FontWeight.BOLD, 18));
+                txt.setFill(Color.web("#ffb81c"));
+                logoGroup.getChildren().addAll(outer, txt);
+            }
+            default -> {
+                javafx.scene.shape.Polygon roof = new javafx.scene.shape.Polygon(
+                    0, -10, -12, -3, 12, -3
+                );
+                roof.setFill(Color.web("#1e3a8a"));
+                javafx.scene.shape.Rectangle base = new javafx.scene.shape.Rectangle(-12, 7, 24, 3);
+                base.setFill(Color.web("#1e3a8a"));
+                javafx.scene.shape.Rectangle col1 = new javafx.scene.shape.Rectangle(-9, -3, 3, 10);
+                col1.setFill(Color.web("#1e3a8a"));
+                javafx.scene.shape.Rectangle col2 = new javafx.scene.shape.Rectangle(-1.5, -3, 3, 10);
+                col2.setFill(Color.web("#1e3a8a"));
+                javafx.scene.shape.Rectangle col3 = new javafx.scene.shape.Rectangle(6, -3, 3, 10);
+                col3.setFill(Color.web("#1e3a8a"));
+                logoGroup.getChildren().addAll(roof, base, col1, col2, col3);
+            }
+        }
+        return logoGroup;
+    }
+
+    private static String getBankThemeColor(String bankCode) {
+        return switch (bankCode) {
+            case "SBI" -> "#008ecb";
+            case "HDFC" -> "#003366";
+            case "ICICI" -> "#bc2c3d";
+            case "AXIS" -> "#7b113a";
+            case "BOB", "BARODA" -> "#f05a28";
+            default -> "#1e3a8a";
+        };
     }
 
     public static boolean printSnapshot(WritableImage image, Printer printer, String jobName, BankTemplateLayout layout) {

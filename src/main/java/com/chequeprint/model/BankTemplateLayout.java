@@ -86,13 +86,13 @@ public class BankTemplateLayout implements Serializable {
 
     private static FieldPosition defaultPosition(LayoutField field) {
         return switch (field) {
-            case BANK_LOGO -> new FieldPosition(0.06, 0.10, 0.18, 0.10);
-            case DATE -> new FieldPosition(0.78, 0.10, 0.19, 0.10);
-            case PAYEE -> new FieldPosition(0.18, 0.30, 0.66, 0.09);
-            case AMOUNT_NUMBER -> new FieldPosition(0.76, 0.43, 0.16, 0.11);
-            case AMOUNT_WORDS -> new FieldPosition(0.18, 0.43, 0.62, 0.09);
-            case SIGNATURE -> new FieldPosition(0.73, 0.63, 0.22, 0.16);
-            case MICR -> new FieldPosition(0.50, 0.86, 0.50, 0.08);
+            case BANK_LOGO -> new FieldPosition(0.06, 0.08, 0.30, 0.10);
+            case DATE -> new FieldPosition(0.78, 0.08, 0.18, 0.08);
+            case PAYEE -> new FieldPosition(0.16, 0.28, 0.78, 0.08);
+            case AMOUNT_NUMBER -> new FieldPosition(0.76, 0.42, 0.18, 0.10);
+            case AMOUNT_WORDS -> new FieldPosition(0.16, 0.40, 0.54, 0.16);
+            case SIGNATURE -> new FieldPosition(0.72, 0.65, 0.22, 0.16);
+            case MICR -> new FieldPosition(0.50, 0.88, 0.50, 0.08);
         };
     }
 
