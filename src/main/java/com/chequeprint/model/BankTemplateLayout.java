@@ -73,7 +73,23 @@ public class BankTemplateLayout implements Serializable {
 
     public void ensureAllFields() {
         for (LayoutField field : LayoutField.values()) {
-            fieldPositions.putIfAbsent(field, defaultPosition(field));
+            FieldPosition pos = fieldPositions.get(field);
+            if (pos == null) {
+                fieldPositions.put(field, defaultPosition(field));
+            } else {
+                double xr = pos.getXRatio();
+                double yr = pos.getYRatio();
+                double wr = pos.getWidthRatio();
+                double hr = pos.getHeightRatio();
+                boolean changed = false;
+                if (xr < 0.0 || xr > 1.0) { xr = defaultPosition(field).getXRatio(); changed = true; }
+                if (yr < 0.0 || yr > 1.0) { yr = defaultPosition(field).getYRatio(); changed = true; }
+                if (wr <= 0.0 || wr > 1.0) { wr = defaultPosition(field).getWidthRatio(); changed = true; }
+                if (hr <= 0.0 || hr > 1.0) { hr = defaultPosition(field).getHeightRatio(); changed = true; }
+                if (changed) {
+                    fieldPositions.put(field, new FieldPosition(xr, yr, wr, hr));
+                }
+            }
         }
     }
 

@@ -45,7 +45,6 @@ public class ChequeSnapshotRenderer {
         BankTemplateLayout fromSize = ChequeSizeCodec.decodeLayout(bankTemplate != null ? bankTemplate.getChequeSize() : null);
         if (bankTemplate == null || bankTemplate.getBankCode() == null || bankTemplate.getBankCode().isBlank()) {
             fromSize.ensureAllFields();
-            sanitizeLayout(fromSize);
             return fromSize;
         }
 
@@ -54,7 +53,6 @@ public class ChequeSnapshotRenderer {
         BankTemplateLayout stored = all.get(code);
         if (stored == null) {
             fromSize.ensureAllFields();
-            sanitizeLayout(fromSize);
             return fromSize;
         }
 
@@ -62,45 +60,7 @@ public class ChequeSnapshotRenderer {
         merged.setWidthInches(fromSize.getWidthInches());
         merged.setHeightInches(fromSize.getHeightInches());
         merged.ensureAllFields();
-        sanitizeLayout(merged);
         return merged;
-    }
-
-    public static void sanitizeLayout(BankTemplateLayout layout) {
-        // Self-healing rules to guarantee a gorgeous, hyper-realistic cheque alignment
-        // 1. Payee: must start around 0.16 and be wide enough (0.78)
-        FieldPosition payee = layout.get(LayoutField.PAYEE);
-        if (payee.getXRatio() > 0.25 || payee.getXRatio() < 0.10) payee.setXRatio(0.16);
-        if (payee.getWidthRatio() < 0.40) payee.setWidthRatio(0.78);
-        if (payee.getYRatio() < 0.20 || payee.getYRatio() > 0.40) payee.setYRatio(0.28);
-
-        // 2. Amount Number: must be on the right side
-        FieldPosition amtNum = layout.get(LayoutField.AMOUNT_NUMBER);
-        if (amtNum.getXRatio() < 0.70 || amtNum.getXRatio() > 0.85) amtNum.setXRatio(0.76);
-        if (amtNum.getWidthRatio() < 0.10) amtNum.setWidthRatio(0.18);
-        if (amtNum.getYRatio() < 0.35 || amtNum.getYRatio() > 0.55) amtNum.setYRatio(0.42);
-
-        // 3. Amount Words (Rupees): must not overlap the Amount Number box
-        FieldPosition amtWords = layout.get(LayoutField.AMOUNT_WORDS);
-        if (amtWords.getXRatio() > 0.25 || amtWords.getXRatio() < 0.10) amtWords.setXRatio(0.16);
-        if (amtWords.getYRatio() < 0.35 || amtWords.getYRatio() > 0.55) amtWords.setYRatio(0.40);
-        // Ensure no overlap with AMOUNT_NUMBER which starts at amtNum.getXRatio()
-        double maxWordsWidth = amtNum.getXRatio() - amtWords.getXRatio() - 0.04;
-        if (amtWords.getWidthRatio() > maxWordsWidth || amtWords.getWidthRatio() < 0.30) {
-            amtWords.setWidthRatio(maxWordsWidth);
-        }
-
-        // 4. Date: must be top-right
-        FieldPosition date = layout.get(LayoutField.DATE);
-        if (date.getXRatio() < 0.70 || date.getXRatio() > 0.85) date.setXRatio(0.78);
-        if (date.getWidthRatio() < 0.12) date.setWidthRatio(0.18);
-        if (date.getYRatio() < 0.05 || date.getYRatio() > 0.20) date.setYRatio(0.08);
-
-        // 5. Signature: must be bottom-right
-        FieldPosition sig = layout.get(LayoutField.SIGNATURE);
-        if (sig.getXRatio() < 0.65 || sig.getXRatio() > 0.85) sig.setXRatio(0.72);
-        if (sig.getWidthRatio() < 0.12) sig.setWidthRatio(0.22);
-        if (sig.getYRatio() < 0.55 || sig.getYRatio() > 0.75) sig.setYRatio(0.65);
     }
 
     public static WritableImage renderCheque(Cheque cheque, Bank bank, BankTemplateLayout layout, double scale) {
@@ -258,16 +218,18 @@ public class ChequeSnapshotRenderer {
                     }
                 }
                 case PAYEE -> {
-                    // Draw static PAY text
+                    // Draw static PAY text exactly sitting on the line baseline
                     Label staticPay = new Label("PAY");
                     staticPay.setFont(Font.font("Arial", FontWeight.BOLD, 10));
                     staticPay.setTextFill(Color.web("#334155"));
                     staticPay.setLayoutX(x - 30);
-                    staticPay.setLayoutY(y + (h - 15) / 2);
+                    staticPay.setLayoutY(y + h - 16);
+                    staticPay.setPrefHeight(14);
+                    staticPay.setAlignment(Pos.BOTTOM_LEFT);
                     pane.getChildren().add(staticPay);
 
-                    // Draw underline
-                    javafx.scene.shape.Line payLine = new javafx.scene.shape.Line(x, y + h - 2, x + w, y + h - 2);
+                    // Draw payee line exactly sitting on the baseline
+                    javafx.scene.shape.Line payLine = new javafx.scene.shape.Line(x, y + h, x + w, y + h);
                     payLine.setStroke(Color.web("#475569"));
                     payLine.setStrokeWidth(1.0);
                     pane.getChildren().add(payLine);
@@ -277,10 +239,10 @@ public class ChequeSnapshotRenderer {
                     payeeLbl.setFont(Font.font("Arial", FontWeight.BOLD, 12));
                     payeeLbl.setTextFill(Color.BLACK);
                     payeeLbl.setAlignment(Pos.BOTTOM_LEFT);
-                    payeeLbl.setStyle("-fx-padding: 0 0 2 5;");
+                    payeeLbl.setStyle("-fx-padding: 0 0 1 5;");
                     payeeLbl.setLayoutX(x);
-                    payeeLbl.setLayoutY(y - 2);
-                    payeeLbl.setPrefSize(w, h - 2);
+                    payeeLbl.setLayoutY(y + h - 16);
+                    payeeLbl.setPrefSize(w, 14);
                     pane.getChildren().add(payeeLbl);
                 }
                 case AMOUNT_NUMBER -> {
@@ -305,9 +267,9 @@ public class ChequeSnapshotRenderer {
 
                     pane.getChildren().addAll(outerBox, innerBox);
 
-                    // Dynamic amount label
+                    // Dynamic amount label in monospace style
                     Label amountLbl = new Label(cheque.getAmount() != null ? cheque.getAmount().toPlainString() + "/-" : "");
-                    amountLbl.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+                    amountLbl.setFont(Font.font("Consolas", FontWeight.BOLD, 15));
                     amountLbl.setTextFill(Color.BLACK);
                     amountLbl.setAlignment(Pos.CENTER);
                     amountLbl.setLayoutX(x + 3);
@@ -316,35 +278,51 @@ public class ChequeSnapshotRenderer {
                     pane.getChildren().add(amountLbl);
                 }
                 case AMOUNT_WORDS -> {
-                    // Draw static RUPEES text
+                    // Draw static RUPEES text sitting on line 1 baseline
                     Label staticRupees = new Label("RUPEES");
                     staticRupees.setFont(Font.font("Arial", FontWeight.BOLD, 10));
                     staticRupees.setTextFill(Color.web("#334155"));
                     staticRupees.setLayoutX(x - 55);
-                    staticRupees.setLayoutY(y + 2);
+                    staticRupees.setLayoutY(y + h/2 - 16);
+                    staticRupees.setPrefHeight(14);
+                    staticRupees.setAlignment(Pos.BOTTOM_LEFT);
                     pane.getChildren().add(staticRupees);
 
-                    // Draw two lines
-                    javafx.scene.shape.Line line1 = new javafx.scene.shape.Line(x, y + h/2 + 2, x + w, y + h/2 + 2);
+                    // Draw line 1
+                    javafx.scene.shape.Line line1 = new javafx.scene.shape.Line(x, y + h/2, x + w, y + h/2);
                     line1.setStroke(Color.web("#475569"));
                     line1.setStrokeWidth(0.8);
 
-                    javafx.scene.shape.Line line2 = new javafx.scene.shape.Line(x - 55, y + h - 2, x + w, y + h - 2);
+                    // Draw line 2 (starts under RUPEES)
+                    javafx.scene.shape.Line line2 = new javafx.scene.shape.Line(x - 55, y + h, x + w, y + h);
                     line2.setStroke(Color.web("#475569"));
                     line2.setStrokeWidth(0.8);
 
                     pane.getChildren().addAll(line1, line2);
 
-                    // Dynamic words label
-                    Label wordsLbl = new Label(cheque.getAmountWords() != null ? cheque.getAmountWords() + " Only" : "");
-                    wordsLbl.setFont(Font.font("Arial", FontWeight.NORMAL, 10));
-                    wordsLbl.setTextFill(Color.BLACK);
-                    wordsLbl.setAlignment(Pos.CENTER_LEFT);
-                    wordsLbl.setWrapText(true);
-                    wordsLbl.setLayoutX(x);
-                    wordsLbl.setLayoutY(y - 2);
-                    wordsLbl.setPrefSize(w, h);
-                    pane.getChildren().add(wordsLbl);
+                    // Dynamic words split across the two baselines
+                    String fullWords = cheque.getAmountWords() != null ? cheque.getAmountWords() + " Only" : "";
+                    String[] splitWords = splitAmountWords(fullWords, 42);
+
+                    Label wordsLbl1 = new Label(splitWords[0]);
+                    wordsLbl1.setFont(Font.font("Arial", FontWeight.BOLD, 11));
+                    wordsLbl1.setTextFill(Color.BLACK);
+                    wordsLbl1.setAlignment(Pos.BOTTOM_LEFT);
+                    wordsLbl1.setStyle("-fx-padding: 0 0 1 5;");
+                    wordsLbl1.setLayoutX(x);
+                    wordsLbl1.setLayoutY(y + h/2 - 16);
+                    wordsLbl1.setPrefSize(w, 14);
+                    pane.getChildren().add(wordsLbl1);
+
+                    Label wordsLbl2 = new Label(splitWords[1]);
+                    wordsLbl2.setFont(Font.font("Arial", FontWeight.BOLD, 11));
+                    wordsLbl2.setTextFill(Color.BLACK);
+                    wordsLbl2.setAlignment(Pos.BOTTOM_LEFT);
+                    wordsLbl2.setStyle("-fx-padding: 0 0 1 5;");
+                    wordsLbl2.setLayoutX(x - 55);
+                    wordsLbl2.setLayoutY(y + h - 16);
+                    wordsLbl2.setPrefSize(w + 55, 14);
+                    pane.getChildren().add(wordsLbl2);
                 }
                 case SIGNATURE -> {
                     // Draw static signatory labels
@@ -564,6 +542,23 @@ public class ChequeSnapshotRenderer {
         fos.close();
 
         return tempFile.toAbsolutePath().toString();
+    }
+
+    private static String[] splitAmountWords(String fullWords, int maxCharsLine1) {
+        if (fullWords == null || fullWords.isBlank()) {
+            return new String[]{"", ""};
+        }
+        fullWords = fullWords.trim();
+        if (fullWords.length() <= maxCharsLine1) {
+            return new String[]{fullWords, ""};
+        }
+        int splitIdx = fullWords.lastIndexOf(' ', maxCharsLine1);
+        if (splitIdx == -1) {
+            splitIdx = maxCharsLine1;
+        }
+        String w1 = fullWords.substring(0, splitIdx).trim();
+        String w2 = fullWords.substring(splitIdx).trim();
+        return new String[]{w1, w2};
     }
 
     private static double getDefaultWidthRatio(LayoutField field) {

@@ -684,7 +684,6 @@ public class BankController {
         BankTemplateLayout savedLayout = layoutByBankCode.get(code);
         currentLayout = savedLayout != null ? savedLayout.copy() : ChequeSizeCodec.decodeLayout(bank.getChequeSize());
         currentLayout.ensureAllFields();
-        com.chequeprint.util.ChequeSnapshotRenderer.sanitizeLayout(currentLayout);
         layoutPreviewPane();
         refreshPreview();
     }
