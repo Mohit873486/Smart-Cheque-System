@@ -63,12 +63,12 @@
                             <Label fx:id="lblPendingCheques" text="12" styleClass="stat-value" />
                             <Label text="Awaiting approval or printing" styleClass="stat-sub" />
                         </VBox>
-                        <VBox fx:id="cardApproved" styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <VBox fx:id="cardPrinted" styleClass="stat-card" HBox.hgrow="ALWAYS">
                             <HBox spacing="10" alignment="CENTER_LEFT">
                                 <Label text="✅" styleClass="stat-icon stat-icon-green" />
                                 <Label text="Approved" styleClass="stat-label" />
                             </HBox>
-                            <Label fx:id="lblApprovedCheques" text="26" styleClass="stat-value" />
+                            <Label fx:id="lblPrintedCheques" text="26" styleClass="stat-value" />
                             <Label text="Ready for printing" styleClass="stat-sub" />
                         </VBox>
                         <VBox fx:id="cardAmount" styleClass="stat-card" HBox.hgrow="ALWAYS">
@@ -137,7 +137,7 @@
                                 <StackPane alignment="CENTER" prefHeight="220" prefWidth="220">
                                     <PieChart fx:id="statusChart" labelsVisible="false" legendVisible="false" prefHeight="220" prefWidth="220" styleClass="status-pie-chart" />
                                     <Pane fx:id="statusChartOverlay" mouseTransparent="true" prefHeight="220" prefWidth="220" />
-                                    <VBox alignment="CENTER" mouseTransparent="true" spacing="2" styleClass="donut-center" maxWidth="105" maxHeight="105" minWidth="105" minHeight="105">
+                                    <VBox alignment="CENTER" mouseTransparent="true" spacing="2" styleClass="donut-center" maxWidth="105" maxHeight="105" minWidth="105" minHeight="105" translateY="8">
                                         <Label fx:id="lblDonutTotal" text="0" styleClass="donut-total-val" />
                                         <Label text="Total Cheques" styleClass="donut-total-lbl" />
                                     </VBox>
