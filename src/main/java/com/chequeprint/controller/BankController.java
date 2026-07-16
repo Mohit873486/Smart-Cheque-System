@@ -25,6 +25,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 import javafx.scene.shape.Line;
 import javafx.scene.paint.Color;
@@ -93,11 +95,39 @@ public class BankController {
     @FXML
     private TextField fldAdjustHeight;
 
+    // Canva specific fields
+    @FXML
+    private CheckBox chkShowGrid;
+    @FXML
+    private CheckBox chkShowRulers;
+    @FXML
+    private Label lblActiveLayerName;
+    @FXML
+    private GridPane inspectorGrid;
+    @FXML
+    private VBox alignmentPanel;
+    @FXML
+    private Label lblCoordinatesHUD;
+    @FXML
+    private Button layerDate;
+    @FXML
+    private Button layerPayee;
+    @FXML
+    private Button layerAmountNumber;
+    @FXML
+    private Button layerAmountWords;
+    @FXML
+    private Button layerSignature;
+    @FXML
+    private Button layerBankLogo;
+    @FXML
+    private Button layerMicr;
+
     private final BankService bankService = new BankService();
     private final ObservableList<Bank> data = FXCollections.observableArrayList();
 
     private final Map<String, BankTemplateLayout> layoutByBankCode = new HashMap<>();
-    private final Map<LayoutField, Label> fieldNodes = new EnumMap<>(LayoutField.class);
+    private final Map<LayoutField, StackPane> fieldNodes = new EnumMap<>(LayoutField.class);
     private Line guideLineV;
     private Line guideLineH;
 
@@ -113,6 +143,7 @@ public class BankController {
         setupAdjustmentPanel();
         loadLayouts();
         loadData();
+        clearForm(); // Ensures default layout coordinates are applied at startup
         FxUtils.animateIn(previewViewport, 0);
     }
 
@@ -229,13 +260,13 @@ public class BankController {
 
     private void setupPreview() {
         chequePreviewPane.setStyle("-fx-background-color:white; -fx-border-color:#94a3b8; -fx-border-width:1; -fx-background-radius:10; -fx-border-radius:10;");
-        createFieldNode(LayoutField.BANK_LOGO, "BANK", "-fx-background-color:#eff6ff; -fx-border-color:#3b82f6;");
+        createFieldNode(LayoutField.BANK_LOGO, "BANK LOGO", "-fx-background-color:#eff6ff; -fx-border-color:#3b82f6;");
         createFieldNode(LayoutField.DATE, "DATE", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;");
         createFieldNode(LayoutField.PAYEE, "PAYEE", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;");
-        createFieldNode(LayoutField.AMOUNT_NUMBER, "AMOUNT", "-fx-background-color:#fefce8; -fx-border-color:#ca8a04;");
-        createFieldNode(LayoutField.AMOUNT_WORDS, "WORDS", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;");
-        createFieldNode(LayoutField.SIGNATURE, "SIGN", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;");
-        createFieldNode(LayoutField.MICR, "MICR", "-fx-background-color:#f1f5f9; -fx-border-color:#334155;");
+        createFieldNode(LayoutField.AMOUNT_NUMBER, "AMOUNT NUMBER", "-fx-background-color:#fefce8; -fx-border-color:#ca8a04;");
+        createFieldNode(LayoutField.AMOUNT_WORDS, "AMOUNT WORDS", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;");
+        createFieldNode(LayoutField.SIGNATURE, "SIGNATURE AREA", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;");
+        createFieldNode(LayoutField.MICR, "MICR LINE", "-fx-background-color:#f1f5f9; -fx-border-color:#334155;");
 
         guideLineV = new Line();
         guideLineV.setStroke(Color.web("#ef4444", 0.8));
@@ -266,36 +297,135 @@ public class BankController {
     }
 
     private void createFieldNode(LayoutField field, String text, String style) {
+        StackPane node = new StackPane();
+        node.setPadding(new Insets(2, 5, 2, 5));
+        node.setCursor(Cursor.MOVE);
+        
         Label label = new Label(text);
-        label.setPadding(new Insets(2, 5, 2, 5));
-        label.setStyle(style + " -fx-font-size:11px; -fx-font-weight:600;");
-        label.setCursor(Cursor.MOVE);
-        enableDrag(field, label);
-        fieldNodes.put(field, label);
-        chequePreviewPane.getChildren().add(label);
+        label.setStyle("-fx-font-size:11px; -fx-font-weight:600; -fx-text-fill: #1e293b;");
+        node.getChildren().add(label);
+        
+        javafx.scene.shape.Circle resizeHandle = new javafx.scene.shape.Circle(4.5, Color.web("#2563eb"));
+        resizeHandle.setStroke(Color.WHITE);
+        resizeHandle.setStrokeWidth(1.5);
+        resizeHandle.setCursor(Cursor.SE_RESIZE);
+        resizeHandle.setManaged(false);
+        resizeHandle.setVisible(false);
+        
+        node.getChildren().add(resizeHandle);
+        
+        node.widthProperty().addListener((obs, o, w) -> resizeHandle.setLayoutX(w.doubleValue() - 4.5));
+        node.heightProperty().addListener((obs, o, h) -> resizeHandle.setLayoutY(h.doubleValue() - 4.5));
+        
+        enableDragAndResize(field, node, resizeHandle);
+        fieldNodes.put(field, node);
+        chequePreviewPane.getChildren().add(node);
     }
-
-    private void enableDrag(LayoutField field, Label node) {
-        final Delta delta = new Delta();
+    
+    private void enableDragAndResize(LayoutField field, StackPane node, javafx.scene.shape.Circle resizeHandle) {
+        final Delta dragDelta = new Delta();
+        
         node.setOnMousePressed(e -> {
-            delta.x = e.getX();
-            delta.y = e.getY();
+            if (e.getTarget() == resizeHandle) {
+                return;
+            }
+            dragDelta.x = e.getX();
+            dragDelta.y = e.getY();
             cmbAdjustField.setValue(field);
             e.consume();
         });
+        
         node.setOnMouseDragged(e -> {
-            moveFieldNode(field, node, e, delta);
+            if (e.getTarget() == resizeHandle) {
+                return;
+            }
+            moveFieldNode(field, node, e, dragDelta);
             e.consume();
         });
+        
         node.setOnMouseReleased(e -> {
             if (guideLineV != null) guideLineV.setVisible(false);
             if (guideLineH != null) guideLineH.setVisible(false);
             persistCurrentLayoutIfPossible();
             e.consume();
         });
+        
+        final Delta resizeDelta = new Delta();
+        resizeHandle.setOnMousePressed(e -> {
+            resizeDelta.x = e.getScreenX();
+            resizeDelta.y = e.getScreenY();
+            dragDelta.x = node.getPrefWidth();
+            dragDelta.y = node.getPrefHeight();
+            cmbAdjustField.setValue(field);
+            e.consume();
+        });
+        
+        resizeHandle.setOnMouseDragged(e -> {
+            double dx = e.getScreenX() - resizeDelta.x;
+            double dy = e.getScreenY() - resizeDelta.y;
+            
+            double newW = dragDelta.x + dx;
+            double newH = dragDelta.y + dy;
+            
+            if (chkSnapGrid != null && chkSnapGrid.isSelected()) {
+                newW = Math.round(newW / 15.0) * 15.0;
+                newH = Math.round(newH / 15.0) * 15.0;
+            }
+            
+            newW = Math.max(30.0, newW);
+            newH = Math.max(15.0, newH);
+            
+            double paneW = chequePreviewPane.getPrefWidth();
+            double paneH = chequePreviewPane.getPrefHeight();
+            if (paneW <= 0) paneW = 720;
+            if (paneH <= 0) paneH = 300;
+            
+            double maxW = paneW - node.getLayoutX();
+            double maxH = paneH - node.getLayoutY();
+            newW = Math.min(newW, maxW);
+            newH = Math.min(newH, maxH);
+            
+            node.setPrefSize(newW, newH);
+            node.setMinSize(newW, newH);
+            node.setMaxSize(newW, newH);
+            
+            FieldPosition pos = currentLayout.get(field);
+            currentLayout.setFieldLayout(field, 
+                pos.getXRatio(), pos.getYRatio(), 
+                newW / paneW, newH / paneH
+            );
+            
+            loadAdjustmentFields(field);
+            updateHUD(field, node);
+            e.consume();
+        });
+        
+        resizeHandle.setOnMouseReleased(e -> {
+            persistCurrentLayoutIfPossible();
+            e.consume();
+        });
     }
 
-    private void moveFieldNode(LayoutField field, Label node, MouseEvent event, Delta delta) {
+    private void updateHUD(LayoutField field, StackPane node) {
+        if (lblCoordinatesHUD != null && currentLayout != null) {
+            double widthMm = currentLayout.getWidthInches() * 25.4;
+            double heightMm = currentLayout.getHeightInches() * 25.4;
+            double paneW = chequePreviewPane.getPrefWidth();
+            double paneH = chequePreviewPane.getPrefHeight();
+            if (paneW <= 0) paneW = 720;
+            if (paneH <= 0) paneH = 300;
+
+            lblCoordinatesHUD.setText(String.format("Active Field: %s | X: %.1f mm, Y: %.1f mm | W: %.1f mm, H: %.1f mm",
+                field.name(),
+                (node.getLayoutX() / paneW) * widthMm,
+                (node.getLayoutY() / paneH) * heightMm,
+                (node.getPrefWidth() / paneW) * widthMm,
+                (node.getPrefHeight() / paneH) * heightMm
+            ));
+        }
+    }
+
+    private void moveFieldNode(LayoutField field, StackPane node, MouseEvent event, Delta delta) {
         if (currentLayout == null) {
             return;
         }
@@ -355,6 +485,7 @@ public class BankController {
         if (field == cmbAdjustField.getValue()) {
             loadAdjustmentFields(field);
         }
+        updateHUD(field, node);
     }
 
     private void layoutPreviewPane() {
@@ -399,9 +530,9 @@ public class BankController {
         if (paneW <= 0) paneW = 720;
         if (paneH <= 0) paneH = 300;
 
-        for (Map.Entry<LayoutField, Label> entry : fieldNodes.entrySet()) {
+        for (Map.Entry<LayoutField, StackPane> entry : fieldNodes.entrySet()) {
             LayoutField field = entry.getKey();
-            Label node = entry.getValue();
+            StackPane node = entry.getValue();
             FieldPosition pos = currentLayout.get(field);
             double x = pos.getXRatio() * paneW;
             double y = pos.getYRatio() * paneH;
@@ -420,6 +551,14 @@ public class BankController {
         lblPreviewSize.setText(String.format("Preview Size: %.2f x %.2f inches", currentLayout.getWidthInches(), currentLayout.getHeightInches()));
         loadAdjustmentFields(cmbAdjustField.getValue());
         updateFieldHighlights();
+
+        LayoutField selected = cmbAdjustField.getValue();
+        if (selected != null) {
+            StackPane node = fieldNodes.get(selected);
+            if (node != null) {
+                updateHUD(selected, node);
+            }
+        }
     }
 
     @FXML
@@ -931,38 +1070,75 @@ public class BankController {
     }
 
     private void updateGridOverlay() {
-        if (chkSnapGrid == null) {
+        if (chequePreviewPane == null) {
             return;
         }
-        boolean showGrid = chkSnapGrid.isSelected();
 
-        String watermarkStyles =
-            "-fx-background-color: #f2f7fc, " +
-            "linear-gradient(to bottom, #1e3a8a 0px, #1e3a8a 6px, transparent 6px, transparent 100%), " +
-            "linear-gradient(to top, #1e3a8a 0px, #1e3a8a 6px, transparent 6px, transparent 100%), " +
-            "repeating-linear-gradient(45deg, rgba(37,99,235,0.02) 0px, rgba(37,99,235,0.02) 2px, transparent 2px, transparent 16px), " +
-            "repeating-linear-gradient(-45deg, rgba(37,99,235,0.02) 0px, rgba(37,99,235,0.02) 2px, transparent 2px, transparent 16px)";
+        boolean showGrid = chkShowGrid != null && chkShowGrid.isSelected();
+        boolean showRulers = chkShowRulers != null && chkShowRulers.isSelected();
+
+        StringBuilder style = new StringBuilder();
+        style.append("-fx-border-color: #475569; -fx-border-width: 1px; -fx-background-radius: 6px; -fx-border-radius: 6px; ");
 
         if (showGrid) {
-            chequePreviewPane.setStyle(
-                watermarkStyles + ", " +
-                "linear-gradient(from 0px 0px to 15px 0px, repeat, rgba(148,163,184,0.12) 0px, rgba(148,163,184,0.12) 1px, transparent 1px, transparent 15px), " +
-                "linear-gradient(from 0px 0px to 0px 15px, repeat, rgba(148,163,184,0.12) 0px, rgba(148,163,184,0.12) 1px, transparent 1px, transparent 15px); " +
-                "-fx-border-color: #94a3b8; -fx-border-width: 1; -fx-background-radius: 10; -fx-border-radius: 10;"
-            );
+            style.append("-fx-background-color: #ffffff, ");
+            style.append("linear-gradient(from 0px 0px to 15px 0px, repeat, rgba(148,163,184,0.12) 0px, rgba(148,163,184,0.12) 1px, transparent 1px, transparent 15px), ");
+            style.append("linear-gradient(from 0px 0px to 0px 15px, repeat, rgba(148,163,184,0.12) 0px, rgba(148,163,184,0.12) 1px, transparent 1px, transparent 15px); ");
         } else {
-            chequePreviewPane.setStyle(
-                watermarkStyles + "; " +
-                "-fx-border-color: #94a3b8; -fx-border-width: 1; -fx-background-radius: 10; -fx-border-radius: 10;"
-            );
+            style.append("-fx-background-color: #ffffff; ");
         }
+
+        if (showRulers) {
+            style.append("-fx-effect: dropshadow(three-pass-box, rgba(37,99,235,0.15), 10, 0, 0, 0); ");
+        }
+
+        chequePreviewPane.setStyle(style.toString());
+    }
+
+    @FXML
+    private void onToggleGrid() {
+        updateGridOverlay();
+    }
+
+    @FXML
+    private void onToggleRulers() {
+        updateGridOverlay();
     }
 
     private void updateFieldHighlights() {
         LayoutField selected = cmbAdjustField.getValue();
-        for (Map.Entry<LayoutField, Label> entry : fieldNodes.entrySet()) {
+
+        if (layerDate != null) {
+            setLayerButtonSelected(layerDate, selected == LayoutField.DATE);
+            setLayerButtonSelected(layerPayee, selected == LayoutField.PAYEE);
+            setLayerButtonSelected(layerAmountNumber, selected == LayoutField.AMOUNT_NUMBER);
+            setLayerButtonSelected(layerAmountWords, selected == LayoutField.AMOUNT_WORDS);
+            setLayerButtonSelected(layerSignature, selected == LayoutField.SIGNATURE);
+            setLayerButtonSelected(layerBankLogo, selected == LayoutField.BANK_LOGO);
+            setLayerButtonSelected(layerMicr, selected == LayoutField.MICR);
+        }
+
+        if (lblActiveLayerName != null) {
+            lblActiveLayerName.setText(selected == null ? "None" : selected.name());
+        }
+        if (inspectorGrid != null) {
+            inspectorGrid.setDisable(selected == null);
+        }
+        if (alignmentPanel != null) {
+            alignmentPanel.setDisable(selected == null);
+        }
+
+        for (Map.Entry<LayoutField, StackPane> entry : fieldNodes.entrySet()) {
             LayoutField field = entry.getKey();
-            Label node = entry.getValue();
+            StackPane node = entry.getValue();
+
+            javafx.scene.shape.Circle resizeHandle = null;
+            for (javafx.scene.Node child : node.getChildren()) {
+                if (child instanceof javafx.scene.shape.Circle) {
+                    resizeHandle = (javafx.scene.shape.Circle) child;
+                    break;
+                }
+            }
 
             String baseStyle = switch (field) {
                 case BANK_LOGO -> "-fx-background-color:rgba(239,246,255,0.85); -fx-border-color:#3b82f6;";
@@ -975,9 +1151,178 @@ public class BankController {
             };
 
             if (field == selected) {
-                node.setStyle(baseStyle + " -fx-font-size:11px; -fx-font-weight:700; -fx-border-color:#2563eb; -fx-border-style:dashed; -fx-border-width:2px; -fx-effect: dropshadow(three-pass-box, rgba(37,99,235,0.35), 6, 0, 0, 0);");
+                node.setStyle(baseStyle + " -fx-border-color:#2563eb; -fx-border-style:dashed; -fx-border-width:2px; -fx-background-radius:4; -fx-border-radius:4; -fx-effect: dropshadow(three-pass-box, rgba(37,99,235,0.35), 6, 0, 0, 0);");
+                if (resizeHandle != null) resizeHandle.setVisible(true);
             } else {
-                node.setStyle(baseStyle + " -fx-font-size:11px; -fx-font-weight:600; -fx-border-width:1px;");
+                node.setStyle(baseStyle + " -fx-border-width:1px; -fx-background-radius:4; -fx-border-radius:4;");
+                if (resizeHandle != null) resizeHandle.setVisible(false);
+            }
+        }
+    }
+
+    private void setLayerButtonSelected(Button button, boolean isSelected) {
+        if (button == null) return;
+        button.getStyleClass().removeAll("btn-primary", "btn-secondary");
+        if (isSelected) {
+            button.getStyleClass().add("btn-primary");
+            button.setStyle("-fx-alignment: center-left; -fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold;");
+        } else {
+            button.getStyleClass().add("btn-secondary");
+            button.setStyle("-fx-alignment: center-left; -fx-background-color: #f1f5f9; -fx-text-fill: #334155; -fx-font-weight: normal;");
+        }
+    }
+
+    @FXML
+    private void onSelectLayerDate() { cmbAdjustField.setValue(LayoutField.DATE); }
+    @FXML
+    private void onSelectLayerPayee() { cmbAdjustField.setValue(LayoutField.PAYEE); }
+    @FXML
+    private void onSelectLayerAmountNumber() { cmbAdjustField.setValue(LayoutField.AMOUNT_NUMBER); }
+    @FXML
+    private void onSelectLayerAmountWords() { cmbAdjustField.setValue(LayoutField.AMOUNT_WORDS); }
+    @FXML
+    private void onSelectLayerSignature() { cmbAdjustField.setValue(LayoutField.SIGNATURE); }
+    @FXML
+    private void onSelectLayerBankLogo() { cmbAdjustField.setValue(LayoutField.BANK_LOGO); }
+    @FXML
+    private void onSelectLayerMicr() { cmbAdjustField.setValue(LayoutField.MICR); }
+
+    @FXML
+    private void onAlignLeft() { alignSelected(0.0, -1); }
+    @FXML
+    private void onAlignRight() { alignSelected(1.0, -1); }
+    @FXML
+    private void onCenterHorizontal() { alignSelected(0.5, -1); }
+    @FXML
+    private void onAlignTop() { alignSelected(-1, 0.0); }
+    @FXML
+    private void onAlignBottom() { alignSelected(-1, 1.0); }
+    @FXML
+    private void onCenterVertical() { alignSelected(-1, 0.5); }
+
+    private void alignSelected(double targetX, double targetY) {
+        if (currentLayout == null) return;
+        LayoutField field = cmbAdjustField.getValue();
+        if (field == null) return;
+
+        StackPane node = fieldNodes.get(field);
+        if (node == null) return;
+
+        double paneW = chequePreviewPane.getPrefWidth();
+        double paneH = chequePreviewPane.getPrefHeight();
+        if (paneW <= 0) paneW = 720;
+        if (paneH <= 0) paneH = 300;
+
+        double currentX = node.getLayoutX();
+        double currentY = node.getLayoutY();
+        double currentW = node.getPrefWidth();
+        double currentH = node.getPrefHeight();
+
+        if (targetX >= 0) {
+            if (targetX == 0.0) {
+                currentX = 0;
+            } else if (targetX == 1.0) {
+                currentX = paneW - currentW;
+            } else if (targetX == 0.5) {
+                currentX = (paneW - currentW) / 2.0;
+            }
+            node.setLayoutX(currentX);
+            currentLayout.setFieldPosition(field, currentX / paneW, currentY / paneH);
+        }
+
+        if (targetY >= 0) {
+            if (targetY == 0.0) {
+                currentY = 0;
+            } else if (targetY == 1.0) {
+                currentY = paneH - currentH;
+            } else if (targetY == 0.5) {
+                currentY = (paneH - currentH) / 2.0;
+            }
+            node.setLayoutY(currentY);
+            currentLayout.setFieldPosition(field, currentX / paneW, currentY / paneH);
+        }
+
+        refreshPreview();
+        persistCurrentLayoutIfPossible();
+    }
+
+    @FXML
+    private void onPresetSmall() { setPresetSize(40.0, 8.0); }
+    @FXML
+    private void onPresetMedium() { setPresetSize(80.0, 10.0); }
+    @FXML
+    private void onPresetLarge() { setPresetSize(120.0, 12.0); }
+    @FXML
+    private void onPresetFullWidth() {
+        if (currentLayout == null) return;
+        double chequeWmm = currentLayout.getWidthInches() * 25.4;
+        setPresetSize(chequeWmm * 0.9, 10.0);
+    }
+
+    private void setPresetSize(double widthMm, double heightMm) {
+        if (currentLayout == null) return;
+        LayoutField field = cmbAdjustField.getValue();
+        if (field == null) return;
+
+        double widthInches = currentLayout.getWidthInches();
+        double heightInches = currentLayout.getHeightInches();
+        double widthRatio = widthMm / (widthInches * 25.4);
+        double heightRatio = heightMm / (heightInches * 25.4);
+
+        FieldPosition pos = currentLayout.get(field);
+        currentLayout.setFieldLayout(field, pos.getXRatio(), pos.getYRatio(), widthRatio, heightRatio);
+
+        refreshPreview();
+        persistCurrentLayoutIfPossible();
+    }
+
+    @FXML
+    private void onExportJson() {
+        if (currentLayout == null) {
+            showAlert("Export Error", "No layout loaded to export.", Alert.AlertType.WARNING);
+            return;
+        }
+        javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+        fileChooser.setTitle("Export Cheque Layout JSON");
+        fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("JSON Files", "*.json"));
+        fileChooser.setInitialFileName((selectedBank != null ? selectedBank.getBankCode() : "layout") + "_template.json");
+        File file = fileChooser.showSaveDialog(chequePreviewPane.getScene().getWindow());
+        if (file != null) {
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                mapper.enable(com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT);
+                mapper.writeValue(file, currentLayout);
+                showAlert("Export Success", "Layout exported successfully to: " + file.getName(), Alert.AlertType.INFORMATION);
+            } catch (Exception e) {
+                showAlert("Export Error", "Failed to export layout: " + e.getMessage(), Alert.AlertType.ERROR);
+            }
+        }
+    }
+
+    @FXML
+    private void onImportJson() {
+        if (currentLayout == null) {
+            showAlert("Import Error", "Please select a bank template first before importing a layout.", Alert.AlertType.WARNING);
+            return;
+        }
+        javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+        fileChooser.setTitle("Import Cheque Layout JSON");
+        fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("JSON Files", "*.json"));
+        File file = fileChooser.showOpenDialog(chequePreviewPane.getScene().getWindow());
+        if (file != null) {
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                BankTemplateLayout imported = mapper.readValue(file, BankTemplateLayout.class);
+                if (imported != null) {
+                    currentLayout = imported;
+                    currentLayout.ensureAllFields();
+                    layoutPreviewPane();
+                    refreshPreview();
+                    persistCurrentLayoutIfPossible();
+                    showAlert("Import Success", "Layout imported successfully from: " + file.getName(), Alert.AlertType.INFORMATION);
+                }
+            } catch (Exception e) {
+                showAlert("Import Error", "Failed to import layout: " + e.getMessage(), Alert.AlertType.ERROR);
             }
         }
     }
