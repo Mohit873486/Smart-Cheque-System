@@ -22,6 +22,14 @@ import net.sf.jasperreports.engine.JRBand;
 import net.sf.jasperreports.engine.JRElement;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.chequeprint.model.BankTemplateLayout;
+import com.chequeprint.util.ChequeSnapshotRenderer;
+import java.io.FileOutputStream;
+import java.io.ByteArrayOutputStream;
+import javax.imageio.ImageIO;
+import com.lowagie.text.Document;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfWriter;
 
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
@@ -66,12 +74,17 @@ public class JasperPrintUtil {
 
     public static boolean printCheque(Cheque cheque, Bank bankTemplate, javafx.print.Printer printer) throws JRException {
         setLastUsedPrinterName(printer != null ? printer.getName() : "Default Printer");
-        JasperPrint print = generateChequePrintObject(cheque, bankTemplate);
-        boolean success = printJasperPrintWithJavaFX(print, printer);
-        if (success) {
-            cheque.setStatus(Cheque.Status.Printed);
+        try {
+            BankTemplateLayout layout = ChequeSnapshotRenderer.resolveLayout(bankTemplate);
+            WritableImage snapshot = ChequeSnapshotRenderer.renderCheque(cheque, bankTemplate, layout, 3.0);
+            boolean success = ChequeSnapshotRenderer.printSnapshot(snapshot, printer, "Cheque-" + nvl(cheque.getChequeNo(), "Draft"), layout);
+            if (success) {
+                cheque.setStatus(Cheque.Status.Printed);
+            }
+            return success;
+        } catch (Exception e) {
+            throw new JRException("Print failed: " + e.getMessage(), e);
         }
-        return success;
     }
 
     public static boolean previewCheque(Cheque cheque, Bank bankTemplate) throws JRException {
@@ -176,26 +189,40 @@ public class JasperPrintUtil {
     }
 
     public static String exportChequePdf(Cheque cheque, String outputDir, Bank bankTemplate) throws JRException {
-        JasperPrint print = generateChequePrintObject(cheque, bankTemplate);
+        try {
+            BankTemplateLayout layout = ChequeSnapshotRenderer.resolveLayout(bankTemplate);
+            WritableImage snapshot = ChequeSnapshotRenderer.renderCheque(cheque, bankTemplate, layout, 3.0);
 
-        File dir = new File(outputDir);
-        if (!dir.exists()) {
-            dir.mkdirs();
+            File dir = new File(outputDir);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            String pdfPath = outputDir + File.separator + nvl(cheque.getChequeNo(), "cheque") + ".pdf";
+
+            double widthPoints = layout.getWidthInches() * 72.0;
+            double heightPoints = layout.getHeightInches() * 72.0;
+
+            Document document = new Document(new Rectangle((float) widthPoints, (float) heightPoints), 0, 0, 0, 0);
+            FileOutputStream fos = new FileOutputStream(pdfPath);
+            PdfWriter.getInstance(document, fos);
+            document.open();
+
+            BufferedImage bufImg = SwingFXUtils.fromFXImage(snapshot, null);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(bufImg, "png", baos);
+
+            com.lowagie.text.Image pdfImg = com.lowagie.text.Image.getInstance(baos.toByteArray());
+            pdfImg.scaleAbsolute((float) widthPoints, (float) heightPoints);
+            document.add(pdfImg);
+
+            document.close();
+            fos.close();
+
+            return pdfPath;
+        } catch (Exception e) {
+            throw new JRException("PDF export failed: " + e.getMessage(), e);
         }
-
-        String pdfPath = outputDir + File.separator + nvl(cheque.getChequeNo(), "cheque") + ".pdf";
-
-        JRPdfExporter exporter = new JRPdfExporter();
-        exporter.setExporterInput(new SimpleExporterInput(print));
-        exporter.setExporterOutput(new SimpleOutputStreamExporterOutput(pdfPath));
-
-        SimplePdfExporterConfiguration config = new SimplePdfExporterConfiguration();
-        config.setMetadataTitle("Cheque - " + nvl(cheque.getChequeNo(), ""));
-        config.setMetadataAuthor("ChequePro v2.0");
-        exporter.setConfiguration(config);
-        exporter.exportReport();
-
-        return pdfPath;
     }
 
     public static String exportInvoicePdf(Invoice invoice, String outputDir) throws JRException {

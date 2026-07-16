@@ -67,7 +67,9 @@ com\chequeprint\controller\LoginController$2.class
 com\chequeprint\controller\SupportController.class
 com\chequeprint\controller\SettingsController$2.class
 com\chequeprint\model\Invoice.class
+com\chequeprint\model\ChequeLayout.class
 com\chequeprint\service\ChequeOcrService.class
+com\chequeprint\util\ChequeSnapshotRenderer.class
 com\chequeprint\model\UserRole.class
 com\chequeprint\service\MultiAgentCoordinatorService.class
 com\chequeprint\controller\AiAssistantController.class
@@ -131,6 +133,7 @@ com\chequeprint\model\AuditLog.class
 com\chequeprint\service\ChequeOcrResult.class
 com\chequeprint\service\OpenAiChequeAssistantService.class
 com\chequeprint\util\JasperPrintUtil.class
+com\chequeprint\util\ChequeSnapshotRenderer$1.class
 com\chequeprint\service\MultiAgentCoordinatorService$1.class
 com\chequeprint\util\ChequeApiClient$2.class
 com\chequeprint\MainApp.class
