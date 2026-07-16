@@ -40,6 +40,8 @@ ScrollPane {
     -fx-max-height: Infinity;
 }
 
+/*not perferct*/
+
 /* ══════════════════════════════════════════
    SIDEBAR
 ══════════════════════════════════════════ */
@@ -266,8 +268,10 @@ ScrollPane {
 ScrollPane .donut-center,
 .status-card .donut-center,
 .donut-center {
-    -fx-background-color: #ffffff !important; /* Override target VBox settings */
-    -fx-background-radius: 999px !important; /* Force circular shape */
+    -fx-background-color: #ffffff !important;
+    /* Override target VBox settings */
+    -fx-background-radius: 999px !important;
+    /* Force circular shape */
     -fx-border-radius: 999px !important;
     -fx-border-color: transparent !important;
     -fx-border-width: 0 !important;
