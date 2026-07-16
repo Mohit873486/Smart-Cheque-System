@@ -11,6 +11,7 @@ import com.chequeprint.service.UserService;
 import com.chequeprint.util.FxUtils;
 import com.chequeprint.util.SessionManager;
 import javafx.animation.Animation;
+import javafx.concurrent.Task;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -50,12 +51,12 @@ public class DashboardController {
     @FXML private Label lblSubtitle;
     @FXML private Label lblTotalCheques;
     @FXML private Label lblPendingCheques;
-    @FXML private Label lblPrintedCheques;
+    @FXML private Label lblApprovedCheques;
     @FXML private Label lblClearedCount;
 
     @FXML private VBox cardTotal;
     @FXML private VBox cardPending;
-    @FXML private VBox cardPrinted;
+    @FXML private VBox cardApproved;
     @FXML private VBox cardAmount;
 
     @FXML private Button btnNewCheque;
@@ -97,6 +98,11 @@ public class DashboardController {
     private Timeline autoRefreshTimeline;
     private List<Cheque> loadedCheques = Collections.emptyList();
     private List<Invoice> loadedInvoices = Collections.emptyList();
+ 
+    private final javafx.collections.ObservableList<PieChart.Data> statusChartData = FXCollections.observableArrayList();
+    private List<PieChart.Data> lastChartData = Collections.emptyList();
+    private long lastTotalCheques = 0;
+    private Task<DashboardData> activeReloadTask;
 
     @FXML
     public void initialize() {
@@ -116,11 +122,30 @@ public class DashboardController {
         applyPermissions();
     }
 
-    public void reload() {
-        Thread worker = new Thread(() -> {
-            DashboardData data = loadDashboardData();
-            Platform.runLater(() -> applyDashboardData(data));
-        }, "dashboard-reload");
+    public synchronized void reload() {
+        if (activeReloadTask != null && activeReloadTask.isRunning()) {
+            activeReloadTask.cancel();
+        }
+ 
+        activeReloadTask = new Task<>() {
+            @Override
+            protected DashboardData call() throws Exception {
+                return loadDashboardData();
+            }
+        };
+ 
+        activeReloadTask.setOnSucceeded(evt -> {
+            applyDashboardData(activeReloadTask.getValue());
+        });
+ 
+        activeReloadTask.setOnFailed(evt -> {
+            Throwable ex = activeReloadTask.getException();
+            if (ex != null) {
+                System.err.println("Dashboard reload failed: " + ex.getMessage());
+            }
+        });
+ 
+        Thread worker = new Thread(activeReloadTask, "dashboard-reload");
         worker.setDaemon(true);
         worker.start();
     }
@@ -269,6 +294,19 @@ public class DashboardController {
         if (statusChart != null) {
             statusChart.setLabelsVisible(false);
             statusChart.setLegendVisible(false);
+            statusChart.setData(statusChartData);
+        }
+        if (statusChartOverlay != null) {
+            statusChartOverlay.widthProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal.doubleValue() > 0 && !lastChartData.isEmpty()) {
+                    Platform.runLater(() -> drawPercentageLabels(lastChartData, lastTotalCheques));
+                }
+            });
+            statusChartOverlay.heightProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal.doubleValue() > 0 && !lastChartData.isEmpty()) {
+                    Platform.runLater(() -> drawPercentageLabels(lastChartData, lastTotalCheques));
+                }
+            });
         }
     }
 
@@ -287,7 +325,7 @@ public class DashboardController {
         }
         setPlainCount(lblTotalCheques, 0);
         setPlainCount(lblPendingCheques, 0);
-        setPlainCount(lblPrintedCheques, 0);
+        setPlainCount(lblApprovedCheques, 0);
         setPlainCount(lblClearedCount, 0);
         updateChequeChart(Collections.emptyList());
         updateStatusChart(Collections.emptyList());
@@ -298,7 +336,7 @@ public class DashboardController {
         FxUtils.animateIn(lblSubtitle, 60);
         addHover(cardTotal);
         addHover(cardPending);
-        addHover(cardPrinted);
+        addHover(cardApproved);
         addHover(cardAmount);
     }
 
@@ -349,12 +387,12 @@ public class DashboardController {
 
         int total = loadedCheques.size();
         int pending = countCheques(Cheque.Status.Pending);
-        int printed = countCheques(Cheque.Status.Printed);
+        int approved = countCheques(Cheque.Status.Approved);
         int printedThisWeek = countPrintedThisWeek();
-
+ 
         setCount(lblTotalCheques, total);
         setCount(lblPendingCheques, pending);
-        setCount(lblPrintedCheques, printed);
+        setCount(lblApprovedCheques, approved);
         setCount(lblClearedCount, printedThisWeek);
 
         applyChequeFilter(txtChequeSearch == null ? "" : txtChequeSearch.getText());
@@ -366,7 +404,7 @@ public class DashboardController {
 
         animateCard(cardTotal, 80);
         animateCard(cardPending, 160);
-        animateCard(cardPrinted, 240);
+        animateCard(cardApproved, 240);
         animateCard(cardAmount, 320);
     }
 
@@ -408,50 +446,44 @@ public class DashboardController {
         if (statusChart == null) {
             return;
         }
-
+ 
         Map<Cheque.Status, Long> counts = cheques.stream()
                 .filter(c -> c.getStatus() != null)
                 .collect(Collectors.groupingBy(Cheque::getStatus, Collectors.counting()));
-
+ 
         List<PieChart.Data> data = new ArrayList<>();
         addPieSlice(data, "Draft", counts.get(Cheque.Status.Draft));
         addPieSlice(data, "Pending", counts.get(Cheque.Status.Pending));
         addPieSlice(data, "Approved", counts.get(Cheque.Status.Approved));
         addPieSlice(data, "Printed", counts.get(Cheque.Status.Printed));
         addPieSlice(data, "Cancelled", counts.get(Cheque.Status.Cancelled));
-
+        addPieSlice(data, "Deposited", counts.get(Cheque.Status.Deposited));
+        addPieSlice(data, "Cleared", counts.get(Cheque.Status.Cleared));
+        addPieSlice(data, "Bounced", counts.get(Cheque.Status.Bounced));
+        addPieSlice(data, "Rejected", counts.get(Cheque.Status.Rejected));
+ 
         // Calculate total count represented on the chart
         long totalCheques = (long) data.stream().mapToDouble(PieChart.Data::getPieValue).sum();
         if (lblDonutTotal != null) {
             lblDonutTotal.setText(String.valueOf(totalCheques));
         }
-
+ 
         if (data.isEmpty()) {
             data.add(new PieChart.Data("No Data", 0));
         }
-        statusChart.setData(FXCollections.observableArrayList(data));
-
-        // Clear overlay labels
-        if (statusChartOverlay != null) {
-            statusChartOverlay.getChildren().clear();
-        }
-
-        // Update custom legend
-        if (legendContainer != null) {
-            legendContainer.getChildren().clear();
-        }
-
-        double startAngle = statusChart.getStartAngle();
-        boolean clockwise = statusChart.isClockwise();
-        double centerX = statusChartOverlay != null ? statusChartOverlay.getWidth() / 2.0 : 110.0;
-        double centerY = statusChartOverlay != null ? statusChartOverlay.getHeight() / 2.0 : 110.0;
-        if (centerX == 0) centerX = 110.0;
-        if (centerY == 0) centerY = 110.0;
-
-        for (PieChart.Data d : statusChart.getData()) {
+ 
+        this.lastChartData = new ArrayList<>(data);
+        this.lastTotalCheques = totalCheques;
+ 
+        // Cleanly update statusChartData to reuse the bound list
+        statusChartData.clear();
+        statusChartData.addAll(data);
+ 
+        // Apply slice colors
+        for (PieChart.Data d : statusChartData) {
             String status = d.getName();
             String color = getColorForStatus(status);
-
+ 
             // Set slice color dynamically and add listener for future updates
             javafx.scene.Node sliceNode = d.getNode();
             if (sliceNode != null) {
@@ -462,12 +494,37 @@ public class DashboardController {
                     newNode.setStyle("-fx-pie-color: " + color + "; -fx-border-color: #ffffff; -fx-border-width: 2.5px;");
                 }
             });
-
-            // Create custom legend item and draw overlay label if value > 0 and status is not "No Data"
+        }
+ 
+        // Defer drawing percentage bubbles until the chart layout has run
+        Platform.runLater(() -> drawPercentageLabels(lastChartData, lastTotalCheques));
+    }
+ 
+    private void drawPercentageLabels(List<PieChart.Data> data, long totalCheques) {
+        if (statusChartOverlay == null || statusChart == null) {
+            return;
+        }
+ 
+        statusChartOverlay.getChildren().clear();
+        if (legendContainer != null) {
+            legendContainer.getChildren().clear();
+        }
+ 
+        double startAngle = statusChart.getStartAngle();
+        boolean clockwise = statusChart.isClockwise();
+        double centerX = statusChartOverlay.getWidth() / 2.0;
+        double centerY = statusChartOverlay.getHeight() / 2.0;
+        if (centerX <= 0) centerX = 110.0;
+        if (centerY <= 0) centerY = 110.0;
+ 
+        for (PieChart.Data d : data) {
+            String status = d.getName();
+            String color = getColorForStatus(status);
+ 
             if (d.getPieValue() > 0 && !"No Data".equals(status)) {
                 double pct = totalCheques > 0 ? (d.getPieValue() / (double) totalCheques) * 100.0 : 0.0;
                 double arcLength = totalCheques > 0 ? (d.getPieValue() / (double) totalCheques) * 360.0 : 0.0;
-
+ 
                 double centerAngle;
                 if (clockwise) {
                     centerAngle = startAngle - (arcLength / 2.0);
@@ -476,33 +533,31 @@ public class DashboardController {
                     centerAngle = startAngle + (arcLength / 2.0);
                     startAngle += arcLength;
                 }
-
+ 
                 // Draw overlay bubble percentage label
-                if (statusChartOverlay != null) {
-                    double labelRadius = 76.0; // visual center of slices
-                    double rad = Math.toRadians(centerAngle);
-                    double x = centerX + labelRadius * Math.cos(rad);
-                    double y = centerY - labelRadius * Math.sin(rad);
-
-                    String pctStr = pct % 1 == 0 ? String.format(Locale.ROOT, "%.0f%%", pct) : String.format(Locale.ROOT, "%.1f%%", pct);
-                    Label label = new Label(pctStr);
-                    label.setStyle("-fx-text-fill: #ffffff; " +
-                                   "-fx-font-weight: bold; " +
-                                   "-fx-font-size: 11.5px; " +
-                                   "-fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.85), 3, 0, 0, 0);");
-
-                    final double fx = x;
-                    final double fy = y;
-                    label.layoutBoundsProperty().addListener((obs2, oldBounds, newBounds) -> {
-                        label.setTranslateX(fx - newBounds.getWidth() / 2.0);
-                        label.setTranslateY(fy - newBounds.getHeight() / 2.0);
-                    });
-                    label.setTranslateX(fx - 18);
-                    label.setTranslateY(fy - 8);
-
-                    statusChartOverlay.getChildren().add(label);
-                }
-
+                double labelRadius = 76.0; // visual center of slices
+                double rad = Math.toRadians(centerAngle);
+                double x = centerX + labelRadius * Math.cos(rad);
+                double y = centerY - labelRadius * Math.sin(rad);
+ 
+                String pctStr = pct % 1 == 0 ? String.format(Locale.ROOT, "%.0f%%", pct) : String.format(Locale.ROOT, "%.1f%%", pct);
+                Label label = new Label(pctStr);
+                label.setStyle("-fx-text-fill: #ffffff; " +
+                               "-fx-font-weight: bold; " +
+                               "-fx-font-size: 11.5px; " +
+                               "-fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.85), 3, 0, 0, 0);");
+ 
+                final double fx = x;
+                final double fy = y;
+                label.layoutBoundsProperty().addListener((obs2, oldBounds, newBounds) -> {
+                    label.setTranslateX(fx - newBounds.getWidth() / 2.0);
+                    label.setTranslateY(fy - newBounds.getHeight() / 2.0);
+                });
+                label.setTranslateX(fx - 18);
+                label.setTranslateY(fy - 8);
+ 
+                statusChartOverlay.getChildren().add(label);
+ 
                 if (legendContainer != null) {
                     legendContainer.getChildren().add(createLegendItem(status, (long) d.getPieValue(), pct, color));
                 }
@@ -523,6 +578,10 @@ public class DashboardController {
             case "Printed" -> "#10b981";    // Emerald Green
             case "Cancelled" -> "#1e293b";  // Navy
             case "Draft" -> "#94a3b8";      // Slate Gray
+            case "Deposited" -> "#0ea5e9";  // Sky Blue
+            case "Cleared" -> "#059669";    // Green
+            case "Bounced" -> "#dc2626";    // Red
+            case "Rejected" -> "#ea580c";    // Orange Red / Crimson
             default -> "#64748b";
         };
     }
@@ -534,6 +593,10 @@ public class DashboardController {
             case "Printed" -> "🖨";
             case "Cancelled" -> "✖";
             case "Draft" -> "✎";
+            case "Deposited" -> "📥";
+            case "Cleared" -> "✅";
+            case "Bounced" -> "❌";
+            case "Rejected" -> "🚫";
             default -> "●";
         };
     }

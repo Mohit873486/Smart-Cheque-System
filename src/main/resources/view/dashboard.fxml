@@ -63,12 +63,12 @@
                             <Label fx:id="lblPendingCheques" text="12" styleClass="stat-value" />
                             <Label text="Awaiting approval or printing" styleClass="stat-sub" />
                         </VBox>
-                        <VBox fx:id="cardPrinted" styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <VBox fx:id="cardApproved" styleClass="stat-card" HBox.hgrow="ALWAYS">
                             <HBox spacing="10" alignment="CENTER_LEFT">
                                 <Label text="✅" styleClass="stat-icon stat-icon-green" />
                                 <Label text="Approved" styleClass="stat-label" />
                             </HBox>
-                            <Label fx:id="lblPrintedCheques" text="26" styleClass="stat-value" />
+                            <Label fx:id="lblApprovedCheques" text="26" styleClass="stat-value" />
                             <Label text="Ready for printing" styleClass="stat-sub" />
                         </VBox>
                         <VBox fx:id="cardAmount" styleClass="stat-card" HBox.hgrow="ALWAYS">

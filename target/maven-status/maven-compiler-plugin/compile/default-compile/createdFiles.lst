@@ -104,6 +104,7 @@ com\chequeprint\util\RestApiClient.class
 com\chequeprint\preview\BankTemplateStore.class
 com\chequeprint\controller\AiAssistantController$1.class
 com\chequeprint\model\ChequePrint.class
+com\chequeprint\controller\DashboardController$3.class
 com\chequeprint\preview\ChequeRenderer.class
 com\chequeprint\controller\ModernDashboardController$5.class
 com\chequeprint\util\AmountToWords.class
