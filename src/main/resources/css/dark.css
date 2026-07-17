@@ -676,3 +676,157 @@ ScrollPane .donut-center,
 .status-legend-pct {
     -fx-text-fill: #f8fafc !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   AI CHAT ASSISTANT — Dark Mode Overrides
+   ═══════════════════════════════════════════════════════════════ */
+
+.chat-root {
+    -fx-background-color: #020617 !important;
+}
+
+.chat-header {
+    -fx-background-color: #0f172a !important;
+    -fx-border-color: transparent transparent #1e293b transparent !important;
+}
+
+.chat-title {
+    -fx-text-fill: #f1f5f9 !important;
+}
+
+.chat-status {
+    -fx-text-fill: #4ade80 !important;
+}
+
+.chat-btn-clear {
+    -fx-text-fill: #64748b !important;
+    -fx-border-color: #1e293b !important;
+}
+
+.chat-btn-clear:hover {
+    -fx-background-color: rgba(239, 68, 68, 0.15) !important;
+    -fx-text-fill: #f87171 !important;
+    -fx-border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+.chat-scroll,
+.chat-scroll > .viewport,
+.chat-container {
+    -fx-background-color: #020617 !important;
+    -fx-background: #020617 !important;
+}
+
+.chat-scroll .scroll-bar:vertical .thumb {
+    -fx-background-color: #334155 !important;
+}
+
+.chat-scroll .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: #475569 !important;
+}
+
+.chat-bubble-user {
+    -fx-background-color: linear-gradient(to bottom right, #1d4ed8, #2563eb) !important;
+    -fx-effect: dropshadow(three-pass-box, rgba(37, 99, 235, 0.25), 8, 0, 0, 3) !important;
+}
+
+.chat-bubble-ai {
+    -fx-background-color: #0f172a !important;
+    -fx-border-color: #1e293b !important;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.15), 6, 0, 0, 2) !important;
+}
+
+.chat-text-ai {
+    -fx-fill: #e2e8f0 !important;
+}
+
+.chat-time {
+    -fx-text-fill: #475569 !important;
+}
+
+.chat-chips-bar {
+    -fx-background-color: #020617 !important;
+    -fx-border-color: #1e293b transparent transparent transparent !important;
+}
+
+.chat-chip {
+    -fx-background-color: #0f172a !important;
+    -fx-text-fill: #94a3b8 !important;
+    -fx-border-color: #1e293b !important;
+}
+
+.chat-chip:hover {
+    -fx-background-color: #1e293b !important;
+    -fx-border-color: #3b82f6 !important;
+    -fx-text-fill: #60a5fa !important;
+}
+
+.chat-chip:pressed {
+    -fx-background-color: #1e3a5f !important;
+}
+
+.chat-typing-bar {
+    -fx-background-color: #020617 !important;
+}
+
+.typing-dot {
+    -fx-background-color: #475569 !important;
+}
+
+.chat-typing-label {
+    -fx-text-fill: #475569 !important;
+}
+
+.chat-input-wrapper {
+    -fx-background-color: #0f172a !important;
+    -fx-border-color: #1e293b transparent transparent transparent !important;
+}
+
+.chat-input-bar {
+    -fx-background-color: #0f172a !important;
+}
+
+.chat-input {
+    -fx-background-color: #020617 !important;
+    -fx-text-fill: #e2e8f0 !important;
+    -fx-prompt-text-fill: #475569 !important;
+    -fx-border-color: #1e293b !important;
+}
+
+.chat-input:focused {
+    -fx-background-color: #0f172a !important;
+    -fx-border-color: #3b82f6 !important;
+}
+
+.chat-btn-attach {
+    -fx-text-fill: #64748b !important;
+}
+
+.chat-btn-attach:hover {
+    -fx-background-color: #1e293b !important;
+    -fx-text-fill: #60a5fa !important;
+}
+
+.chat-table-card {
+    -fx-background-color: #0f172a !important;
+    -fx-border-color: #1e293b !important;
+}
+
+.chat-table-header {
+    -fx-background-color: #1e293b !important;
+}
+
+.chat-table-header-cell {
+    -fx-text-fill: #94a3b8 !important;
+}
+
+.chat-table-row-even {
+    -fx-background-color: #0f172a !important;
+}
+
+.chat-table-row-odd {
+    -fx-background-color: #0b1329 !important;
+}
+
+.chat-table-cell {
+    -fx-text-fill: #cbd5e1 !important;
+}

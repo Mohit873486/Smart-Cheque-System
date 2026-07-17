@@ -40,6 +40,8 @@ ScrollPane {
     -fx-max-height: Infinity;
 }
 
+/*not edit page*/
+
 /* ══════════════════════════════════════════
    SIDEBAR
 ══════════════════════════════════════════ */
@@ -266,8 +268,10 @@ ScrollPane {
 ScrollPane .donut-center,
 .status-card .donut-center,
 .donut-center {
-    -fx-background-color: #ffffff !important; /* Override target VBox settings */
-    -fx-background-radius: 999px !important; /* Force circular shape */
+    -fx-background-color: #ffffff !important;
+    /* Override target VBox settings */
+    -fx-background-radius: 999px !important;
+    /* Force circular shape */
     -fx-border-radius: 999px !important;
     -fx-border-color: transparent !important;
     -fx-border-width: 0 !important;
@@ -1859,4 +1863,423 @@ ScrollPane .donut-center,
     -fx-text-fill: #1e293b;
     -fx-font-size: 15px;
     -fx-font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AI CHAT ASSISTANT — Modern ChatGPT-Style UI
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Root Container ── */
+.chat-root {
+    -fx-background-color: #f8fafc;
+}
+
+/* ── Header Bar ── */
+.chat-header {
+    -fx-background-color: #ffffff;
+    -fx-border-color: transparent transparent #e2e8f0 transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.04), 4, 0, 0, 2);
+}
+
+.chat-header-bar {
+    -fx-padding: 14 24 14 24;
+}
+
+.chat-avatar-ai-header {
+    -fx-background-color: linear-gradient(to bottom right, #3b82f6, #6366f1);
+    -fx-background-radius: 12;
+    -fx-min-width: 38;
+    -fx-min-height: 38;
+    -fx-max-width: 38;
+    -fx-max-height: 38;
+    -fx-alignment: center;
+}
+
+.chat-avatar-icon-header {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.chat-title {
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #0f172a;
+}
+
+.chat-status {
+    -fx-font-size: 12px;
+    -fx-text-fill: #22c55e;
+    -fx-font-weight: 600;
+}
+
+.chat-btn-clear {
+    -fx-background-color: transparent;
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 12px;
+    -fx-cursor: hand;
+    -fx-padding: 6 14;
+    -fx-background-radius: 8;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+}
+
+.chat-btn-clear:hover {
+    -fx-background-color: #fee2e2;
+    -fx-text-fill: #ef4444;
+    -fx-border-color: #fca5a5;
+}
+
+/* ── Chat Scroll Area ── */
+.chat-scroll {
+    -fx-background-color: #f8fafc;
+    -fx-background: #f8fafc;
+    -fx-border-color: transparent;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.chat-scroll > .viewport {
+    -fx-background-color: #f8fafc;
+}
+
+.chat-scroll .scroll-bar:vertical {
+    -fx-pref-width: 6px;
+    -fx-background-color: transparent;
+}
+
+.chat-scroll .scroll-bar:vertical .thumb {
+    -fx-background-color: #cbd5e1;
+    -fx-background-radius: 3;
+}
+
+.chat-scroll .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: #94a3b8;
+}
+
+.chat-scroll .scroll-bar:vertical .track {
+    -fx-background-color: transparent;
+}
+
+.chat-scroll .scroll-bar .increment-button,
+.chat-scroll .scroll-bar .decrement-button {
+    -fx-pref-height: 0;
+    -fx-pref-width: 0;
+    -fx-min-height: 0;
+    -fx-min-width: 0;
+}
+
+.chat-container {
+    -fx-background-color: #f8fafc;
+}
+
+/* ── User Bubble ── */
+.chat-bubble-user {
+    -fx-background-color: linear-gradient(to bottom right, #2563eb, #3b82f6);
+    -fx-background-radius: 18 18 4 18;
+    -fx-padding: 12 16;
+    -fx-effect: dropshadow(three-pass-box, rgba(37, 99, 235, 0.18), 8, 0, 0, 3);
+}
+
+.chat-text-user {
+    -fx-fill: #ffffff;
+    -fx-font-size: 13.5px;
+    -fx-line-spacing: 3;
+}
+
+/* ── AI Bubble ── */
+.chat-bubble-ai {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 18 18 18 4;
+    -fx-padding: 12 16;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 18 18 18 4;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.04), 6, 0, 0, 2);
+}
+
+.chat-text-ai {
+    -fx-fill: #1e293b;
+    -fx-font-size: 13.5px;
+    -fx-line-spacing: 3;
+}
+
+/* ── Avatars ── */
+.chat-avatar-user {
+    -fx-background-color: linear-gradient(to bottom right, #6366f1, #8b5cf6);
+    -fx-background-radius: 17;
+    -fx-alignment: center;
+}
+
+.chat-avatar-letter {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.chat-avatar-ai {
+    -fx-background-color: linear-gradient(to bottom right, #3b82f6, #6366f1);
+    -fx-background-radius: 17;
+    -fx-alignment: center;
+}
+
+.chat-avatar-icon {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+/* ── Timestamp ── */
+.chat-time {
+    -fx-font-size: 10.5px;
+    -fx-text-fill: #94a3b8;
+    -fx-padding: 0 4 0 4;
+}
+
+/* ── Quick Action Chips ── */
+.chat-chips-bar {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #e2e8f0 transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.chat-chip {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #475569;
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 600;
+    -fx-padding: 8 18;
+    -fx-background-radius: 20;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 20;
+    -fx-border-width: 1;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.03), 3, 0, 0, 1);
+}
+
+.chat-chip:hover {
+    -fx-background-color: #eff6ff;
+    -fx-border-color: #93c5fd;
+    -fx-text-fill: #2563eb;
+    -fx-effect: dropshadow(three-pass-box, rgba(37, 99, 235, 0.10), 8, 0, 0, 2);
+}
+
+.chat-chip:pressed {
+    -fx-background-color: #dbeafe;
+    -fx-border-color: #60a5fa;
+}
+
+.chat-chip:disabled {
+    -fx-opacity: 0.5;
+}
+
+/* ── Typing Indicator ── */
+.chat-typing-bar {
+    -fx-background-color: #f8fafc;
+}
+
+.chat-typing-dots {
+    -fx-spacing: 4;
+}
+
+.typing-dot {
+    -fx-background-color: #94a3b8;
+    -fx-background-radius: 4;
+    -fx-min-width: 7;
+    -fx-min-height: 7;
+    -fx-max-width: 7;
+    -fx-max-height: 7;
+}
+
+.chat-typing-label {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 12px;
+    -fx-font-style: italic;
+}
+
+/* ── Input Bar ── */
+.chat-input-wrapper {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e2e8f0 transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.06), 8, 0, 0, -3);
+}
+
+.chat-input-bar {
+    -fx-background-color: #ffffff;
+}
+
+.chat-input {
+    -fx-background-color: #f1f5f9;
+    -fx-text-fill: #1e293b;
+    -fx-prompt-text-fill: #94a3b8;
+    -fx-font-size: 14px;
+    -fx-padding: 12 18;
+    -fx-background-radius: 24;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 24;
+    -fx-border-width: 1;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.chat-input:focused {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #93c5fd;
+    -fx-effect: dropshadow(three-pass-box, rgba(59, 130, 246, 0.15), 8, 0, 0, 0);
+}
+
+.chat-btn-send {
+    -fx-background-color: linear-gradient(to bottom right, #2563eb, #3b82f6);
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-min-width: 46;
+    -fx-min-height: 46;
+    -fx-max-width: 46;
+    -fx-max-height: 46;
+    -fx-background-radius: 23;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(37, 99, 235, 0.30), 8, 0, 0, 3);
+}
+
+.chat-btn-send:hover {
+    -fx-background-color: linear-gradient(to bottom right, #1d4ed8, #2563eb);
+    -fx-effect: dropshadow(three-pass-box, rgba(37, 99, 235, 0.45), 12, 0, 0, 4);
+}
+
+.chat-btn-send:pressed {
+    -fx-background-color: #1e40af;
+}
+
+.chat-btn-send:disabled {
+    -fx-opacity: 0.5;
+}
+
+.chat-btn-attach {
+    -fx-background-color: transparent;
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 18px;
+    -fx-min-width: 40;
+    -fx-min-height: 40;
+    -fx-max-width: 40;
+    -fx-max-height: 40;
+    -fx-background-radius: 20;
+    -fx-cursor: hand;
+    -fx-padding: 0;
+}
+
+.chat-btn-attach:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-text-fill: #3b82f6;
+}
+
+/* ── Inline Table (Chat Results) ── */
+.chat-table-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.04), 4, 0, 0, 2);
+}
+
+.chat-table-header {
+    -fx-background-color: #f1f5f9;
+    -fx-background-radius: 12 12 0 0;
+    -fx-padding: 8 12;
+}
+
+.chat-table-header-cell {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #64748b;
+    -fx-padding: 4 8;
+    -fx-text-overrun: ellipsis;
+}
+
+.chat-table-row-even {
+    -fx-background-color: #ffffff;
+    -fx-padding: 6 12;
+}
+
+.chat-table-row-odd {
+    -fx-background-color: #f8fafc;
+    -fx-padding: 6 12;
+}
+
+.chat-table-cell {
+    -fx-font-size: 12px;
+    -fx-text-fill: #334155;
+    -fx-padding: 4 8;
+    -fx-text-overrun: ellipsis;
+}
+
+/* ── Dynamic AI UI ── */
+.chat-bubble-success {
+    -fx-background-color: #dcfce7;
+    -fx-background-radius: 4 20 20 20;
+    -fx-padding: 12 16;
+    -fx-border-color: #bbf7d0;
+    -fx-border-radius: 4 20 20 20;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.05), 4, 0, 0, 1);
+}
+
+.chat-bubble-error {
+    -fx-background-color: #fee2e2;
+    -fx-background-radius: 4 20 20 20;
+    -fx-padding: 12 16;
+    -fx-border-color: #fecaca;
+    -fx-border-radius: 4 20 20 20;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.05), 4, 0, 0, 1);
+}
+
+.cheque-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12;
+    -fx-padding: 16;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.08), 8, 0, 0, 3);
+}
+
+/* ── Split Layout & Result Panel ── */
+.chat-split-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+.chat-split-pane *.split-pane-divider {
+    -fx-background-color: #e2e8f0;
+    -fx-padding: 0 1 0 1;
+}
+
+.result-panel {
+    -fx-background-color: #f8fafc;
+    -fx-padding: 24;
+}
+
+.result-placeholder-text {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #94a3b8;
+}
+
+.result-placeholder-sub {
+    -fx-font-size: 14px;
+    -fx-text-fill: #cbd5e1;
+}
+
+.cheque-card-large {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 16;
+    -fx-padding: 24;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 16;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.1), 12, 0, 0, 4);
 }

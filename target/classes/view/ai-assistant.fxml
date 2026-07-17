@@ -1,72 +1,92 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox spacing="20"
-      maxWidth="Infinity" maxHeight="Infinity"
-      xmlns="http://javafx.com/javafx/17"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.chequeprint.controller.AiAssistantController"
-      style="-fx-padding: 24; -fx-background-color:#f1f5f9;">
+<SplitPane xmlns="http://javafx.com/javafx/17"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.chequeprint.controller.AiAssistantController"
+           fx:id="mainSplit"
+           dividerPositions="0.45"
+           maxWidth="Infinity" maxHeight="Infinity"
+           styleClass="chat-split-pane">
 
-    <HBox alignment="CENTER_LEFT" spacing="12">
-        <VBox spacing="4" HBox.hgrow="ALWAYS">
-            <Label text="AI Assistant" styleClass="page-title" />
-            <Label text="Run cheque actions, reminders, insights, database queries, and OCR"
-                   styleClass="page-subtitle" />
+    <!-- LEFT SIDE: Chat Interface -->
+    <BorderPane fx:id="chatRoot" styleClass="chat-root" minWidth="400">
+
+    <!-- ═══ TOP: Header Bar ═══ -->
+    <top>
+        <VBox styleClass="chat-header" spacing="0">
+            <HBox alignment="CENTER_LEFT" spacing="12" styleClass="chat-header-bar">
+                <StackPane styleClass="chat-avatar-ai-header">
+                    <Label text="✦" styleClass="chat-avatar-icon-header"/>
+                </StackPane>
+                <VBox spacing="2" HBox.hgrow="ALWAYS">
+                    <Label text="AI Assistant" styleClass="chat-title"/>
+                    <Label fx:id="lblStatus" text="Online • Ready to help" styleClass="chat-status"/>
+                </VBox>
+                <Button fx:id="btnThemeToggle" text="🌙" styleClass="chat-btn-clear" onAction="#onThemeToggle"/>
+                <Button fx:id="btnClear" text="Clear Chat" styleClass="chat-btn-clear" onAction="#onClear"/>
+            </HBox>
         </VBox>
-    </HBox>
+    </top>
 
-    <VBox spacing="14" styleClass="card" maxWidth="Infinity">
-        <Label text="Command" styleClass="section-title" />
+    <!-- ═══ CENTER: Chat Messages + Chips ═══ -->
+    <center>
+        <VBox minHeight="0">
+            <ScrollPane fx:id="scrollChat" fitToWidth="true"
+                        hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+                        styleClass="chat-scroll"
+                        VBox.vgrow="ALWAYS" minHeight="0">
+                <VBox fx:id="chatContainer" spacing="4" styleClass="chat-container"
+                      fillWidth="true">
+                    <padding><Insets top="20" right="24" bottom="20" left="24"/></padding>
+                </VBox>
+            </ScrollPane>
 
-        <HBox spacing="10" alignment="CENTER_LEFT">
-            <TextField fx:id="txtCommand"
-                       promptText="Example: Add cheque for Mohit 5000 tomorrow"
-                       styleClass="form-input"
-                       HBox.hgrow="ALWAYS"
-                       maxWidth="Infinity" />
-            <Button fx:id="btnRun"
-                    text="Run"
-                    styleClass="btn-primary"
-                    onAction="#onRun" />
-        </HBox>
+            <!-- Quick Action Chips -->
+            <HBox fx:id="chipsBar" spacing="10" alignment="CENTER" styleClass="chat-chips-bar">
+                <padding><Insets top="10" right="24" bottom="10" left="24"/></padding>
+                <Button fx:id="chipAddCheque" text="➕  Add Cheque" styleClass="chat-chip" onAction="#onChipAddCheque"/>
+                <Button fx:id="chipReminder" text="🔔  Reminder" styleClass="chat-chip" onAction="#onReminder"/>
+                <Button fx:id="chipOcr" text="📷  OCR Scan" styleClass="chat-chip" onAction="#onOcrImage"/>
+                <Button fx:id="chipInsights" text="📊  Insights" styleClass="chat-chip" onAction="#onSuggestions"/>
+            </HBox>
+        </VBox>
+    </center>
 
-        <HBox spacing="10">
-            <Button fx:id="btnReminder"
-                    text="Reminder Check"
-                    styleClass="btn-secondary"
-                    onAction="#onReminder" />
-            <Button fx:id="btnSuggest"
-                    text="Smart Suggestions"
-                    styleClass="btn-secondary"
-                    onAction="#onSuggestions" />
-            <Button fx:id="btnOcr"
-                    text="OCR Image"
-                    styleClass="btn-secondary"
-                    onAction="#onOcrImage" />
-            <Region HBox.hgrow="ALWAYS" />
-            <Button text="Clear"
-                    styleClass="btn-danger"
-                    onAction="#onClear" />
-        </HBox>
+    <!-- ═══ BOTTOM: Typing Indicator + Input Bar ═══ -->
+    <bottom>
+        <VBox styleClass="chat-input-wrapper" spacing="0">
+            <!-- Typing Indicator -->
+            <HBox fx:id="typingIndicator" spacing="8" alignment="CENTER_LEFT"
+                  styleClass="chat-typing-bar" visible="false" managed="false">
+                <padding><Insets top="6" right="24" bottom="6" left="28"/></padding>
+                <HBox spacing="4" alignment="CENTER" styleClass="chat-typing-dots">
+                    <StackPane styleClass="typing-dot" fx:id="dot1"/>
+                    <StackPane styleClass="typing-dot" fx:id="dot2"/>
+                    <StackPane styleClass="typing-dot" fx:id="dot3"/>
+                </HBox>
+                <Label text="AI is thinking..." styleClass="chat-typing-label"/>
+            </HBox>
+
+            <!-- Input Bar -->
+            <HBox spacing="12" alignment="CENTER" styleClass="chat-input-bar">
+                <padding><Insets top="14" right="24" bottom="14" left="24"/></padding>
+                <Button fx:id="btnAttach" text="📎" styleClass="chat-btn-attach" onAction="#onOcrImage"/>
+                <TextField fx:id="txtCommand" promptText="Type a message..."
+                           styleClass="chat-input" HBox.hgrow="ALWAYS"/>
+                <Button fx:id="btnSend" text="➤" styleClass="chat-btn-send" onAction="#onRun"/>
+            </HBox>
+        </VBox>
+    </bottom>
+    </BorderPane>
+
+    <!-- RIGHT SIDE: Dynamic Result Panel -->
+    <VBox fx:id="resultPanel" styleClass="result-panel" alignment="CENTER" spacing="20">
+        <!-- Default Placeholder -->
+        <Label text="Dynamic Results Area" styleClass="result-placeholder-text"/>
+        <Label text="Tables, cards, and charts will appear here." styleClass="result-placeholder-sub"/>
     </VBox>
 
-    <VBox spacing="14" styleClass="card" VBox.vgrow="ALWAYS" maxHeight="Infinity">
-        <Label text="Output" styleClass="section-title" />
-        <TextArea fx:id="txtOutput"
-                  editable="false"
-                  wrapText="true"
-                  prefHeight="180"
-                  maxHeight="Infinity"
-                  style="-fx-font-family:'Consolas'; -fx-font-size:13px;" />
-    </VBox>
-
-    <VBox spacing="14" styleClass="card" VBox.vgrow="ALWAYS" maxHeight="Infinity">
-        <Label text="Results" styleClass="section-title" />
-        <TableView fx:id="tblResults"
-                   VBox.vgrow="ALWAYS"
-                   prefHeight="200"
-                   maxHeight="Infinity" />
-    </VBox>
-</VBox>
+</SplitPane>

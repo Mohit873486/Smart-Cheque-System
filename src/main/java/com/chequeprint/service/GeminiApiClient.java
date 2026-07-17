@@ -61,6 +61,11 @@ public class GeminiApiClient {
         validateMaxOutputTokens(maxOutputTokens);
 
         String apiKey = getApiKey();
+        if ("MOCK_KEY".equals(apiKey)) {
+            Thread.sleep(1500);
+            return "This is a simulated AI response.\n(To enable real AI, set the GEMINI_API_KEY environment variable and restart the application.)\n\nYou said: " + text;
+        }
+
         String requestBody = buildPayload(text, maxOutputTokens);
         String url = buildUrl(model, apiKey);
 
@@ -83,6 +88,11 @@ public class GeminiApiClient {
         validateMaxOutputTokens(maxOutputTokens);
 
         String apiKey = getApiKey();
+        if ("MOCK_KEY".equals(apiKey)) {
+            Thread.sleep(2000);
+            return "This is a simulated AI response for the scanned image.\n(To enable real OCR, set the GEMINI_API_KEY environment variable.)\n\nImage analyzed successfully.";
+        }
+
         String imageBase64 = Base64.getEncoder().encodeToString(Files.readAllBytes(imagePath));
         String requestBody = buildImagePayload(text, imageBase64, mimeType, maxOutputTokens);
         String url = buildUrl(model, apiKey);
@@ -219,7 +229,7 @@ public class GeminiApiClient {
     private String getApiKey() {
         String apiKey = System.getenv(GEMINI_API_KEY_ENV);
         if (apiKey == null || apiKey.isBlank()) {
-            throw new IllegalStateException(GEMINI_API_KEY_ENV + " environment variable is not set.");
+            return "MOCK_KEY";
         }
         return apiKey.trim();
     }
