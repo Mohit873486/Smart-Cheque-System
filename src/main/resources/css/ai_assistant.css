@@ -1,0 +1,290 @@
+/* ai_assistant.css — modern dark theme */
+
+.main-root {
+    -fx-background-color: #212121;
+    -fx-font-family: "Segoe UI", "Inter", sans-serif;
+}
+
+/* ═════ SIDEBAR ═════ */
+.sidebar {
+    -fx-background-color: #171717;
+    -fx-padding: 15;
+    -fx-spacing: 10;
+    -fx-border-color: transparent #2a2a2a transparent transparent;
+    -fx-border-width: 0 1 0 0;
+}
+
+.btn-new-chat {
+    -fx-background-color: #212121;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #333333;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 12 15;
+    -fx-font-size: 14px;
+    -fx-cursor: hand;
+    -fx-alignment: center-left;
+}
+.btn-new-chat:hover {
+    -fx-background-color: #2f2f2f;
+}
+
+.sidebar-section-title {
+    -fx-text-fill: #8e8ea0;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 14 0 5 6;
+}
+
+.sidebar-bottom {
+    -fx-padding: 15 0 0 0;
+    -fx-border-color: #2a2a2a transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.sidebar-label {
+    -fx-text-fill: #ececec;
+    -fx-font-size: 13px;
+    -fx-padding: 4 0 4 6;
+}
+
+/* ═════ CENTER CHAT AREA ═════ */
+.chat-area {
+    -fx-background-color: #212121;
+}
+
+.chat-header {
+    -fx-padding: 15 25;
+    -fx-border-color: transparent transparent #2a2a2a transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-background-color: #212121;
+}
+
+.chat-title {
+    -fx-text-fill: #ececec;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.status-indicator {
+    -fx-text-fill: #10a37f;
+    -fx-font-size: 13px;
+}
+
+/* ScrollPane */
+.chat-scroll-pane, .chat-scroll-pane .viewport {
+    -fx-background-color: transparent;
+    -fx-background: #212121;
+    -fx-border-color: transparent;
+}
+.chat-scroll-pane .scroll-bar:vertical {
+    -fx-background-color: transparent;
+    -fx-pref-width: 10;
+}
+.chat-scroll-pane .scroll-bar:vertical .thumb {
+    -fx-background-color: #3a3a3a;
+    -fx-background-radius: 6;
+}
+.chat-container {
+    -fx-background-color: transparent;
+}
+
+/* ═════ CHAT BUBBLES ═════ */
+.chat-bubble-user {
+    -fx-background-color: #2f2f2f;
+    -fx-padding: 12 18;
+    -fx-background-radius: 18 18 4 18;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 6, 0, 0, 2);
+    -fx-spacing: 4;
+}
+
+.chat-bubble-ai {
+    -fx-background-color: #262626;
+    -fx-padding: 12 18;
+    -fx-background-radius: 18 18 18 4;
+    -fx-spacing: 4;
+}
+
+.chat-bubble-success {
+    -fx-background-color: #064e3b;
+    -fx-padding: 12 18;
+    -fx-background-radius: 18 18 18 4;
+}
+.chat-bubble-error {
+    -fx-background-color: #7f1d1d;
+    -fx-padding: 12 18;
+    -fx-background-radius: 18 18 18 4;
+}
+
+.chat-text-user {
+    -fx-text-fill: #ffffff !important;
+    -fx-font-size: 14px;
+}
+.chat-text-ai {
+    -fx-text-fill: #ececec !important;
+    -fx-font-size: 14px;
+}
+.chat-time {
+    -fx-text-fill: #8e8ea0;
+    -fx-font-size: 10px;
+}
+
+/* Avatars */
+.chat-avatar-user, .chat-avatar-ai {
+    -fx-background-radius: 17;
+    -fx-min-width: 34; -fx-min-height: 34;
+    -fx-max-width: 34; -fx-max-height: 34;
+    -fx-alignment: center;
+}
+.chat-avatar-user {
+    -fx-background-color: #10a37f;
+}
+.chat-avatar-ai {
+    -fx-background-color: #ffffff;
+}
+.chat-avatar-letter {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 15px;
+}
+.chat-avatar-icon {
+    -fx-text-fill: black;
+    -fx-font-weight: bold;
+    -fx-font-size: 17px;
+}
+
+/* ═════ INPUT AREA ═════ */
+.input-container-wrapper {
+    -fx-padding: 5 60 20 60;
+    -fx-alignment: center;
+    -fx-spacing: 6;
+}
+
+.input-box {
+    -fx-background-color: #2f2f2f;
+    -fx-background-radius: 24;
+    -fx-border-color: #404040;
+    -fx-border-radius: 24;
+    -fx-padding: 8 15;
+    -fx-max-width: 800px;
+}
+.input-box:hover {
+    -fx-border-color: #555555;
+}
+
+.chat-input-field {
+    -fx-background-color: transparent;
+    -fx-text-fill: #ececec;
+    -fx-font-size: 15px;
+    -fx-prompt-text-fill: #8e8ea0;
+}
+.chat-input-field:focused {
+    -fx-background-color: transparent;
+}
+
+.btn-icon {
+    -fx-background-color: transparent;
+    -fx-text-fill: #8e8ea0;
+    -fx-font-size: 18px;
+    -fx-cursor: hand;
+    -fx-padding: 5;
+}
+.btn-icon:hover {
+    -fx-text-fill: #ececec;
+}
+
+.btn-send {
+    -fx-background-color: #ececec;
+    -fx-text-fill: #212121;
+    -fx-background-radius: 8;
+    -fx-padding: 6 12;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+.btn-send:hover {
+    -fx-background-color: #ffffff;
+}
+.btn-send:disabled {
+    -fx-background-color: #404040;
+    -fx-text-fill: #8e8ea0;
+}
+
+/* Chips */
+.chips-bar {
+    -fx-padding: 0 0 10 0;
+}
+
+.chip-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #ececec;
+    -fx-border-color: #404040;
+    -fx-border-radius: 15;
+    -fx-background-radius: 15;
+    -fx-padding: 6 12;
+    -fx-font-size: 13px;
+    -fx-cursor: hand;
+}
+.chip-btn:hover {
+    -fx-background-color: #2f2f2f;
+    -fx-border-color: #10a37f;
+}
+
+/* Typing Indicator */
+.typing-indicator {
+    -fx-padding: 0 15;
+}
+.typing-text {
+    -fx-text-fill: #8e8ea0;
+    -fx-font-size: 13px;
+}
+.typing-dot {
+    -fx-background-color: #8e8ea0;
+    -fx-min-width: 6;
+    -fx-min-height: 6;
+    -fx-max-width: 6;
+    -fx-max-height: 6;
+    -fx-background-radius: 3;
+}
+
+.disclaimer-text {
+    -fx-text-fill: #6f6f80;
+    -fx-font-size: 11px;
+}
+
+/* ═════ RESULT PANEL (kept for future dynamic content) ═════ */
+.result-panel {
+    -fx-background-color: #171717;
+    -fx-padding: 20;
+    -fx-spacing: 15;
+}
+
+.chat-table-card {
+    -fx-background-color: #2f2f2f;
+    -fx-background-radius: 8;
+    -fx-padding: 10;
+}
+.chat-table-header {
+    -fx-background-color: #404040;
+}
+.chat-table-header-cell, .chat-table-cell {
+    -fx-text-fill: #ececec;
+    -fx-padding: 8;
+    -fx-font-size: 13px;
+}
+.chat-table-row-even {
+    -fx-background-color: #2f2f2f;
+}
+.chat-table-row-odd {
+    -fx-background-color: #383838;
+}
+
+.cheque-card-large {
+    -fx-background-color: #2f2f2f;
+    -fx-background-radius: 8;
+    -fx-padding: 15;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 2);
+}
+.cheque-card-large .label {
+    -fx-text-fill: #ececec !important;
+}
