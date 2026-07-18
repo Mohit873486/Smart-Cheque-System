@@ -89,20 +89,23 @@
     -fx-background-color: transparent;
 }
 
-/* ═════ CHAT BUBBLES ═════ */
+/* ═════ CHAT BUBBLES (ChatGPT Style) ═════ */
 .chat-bubble-user {
-    -fx-background-color: #2f2f2f;
+    -fx-background-color: #2563eb; /* Modern Blue */
     -fx-padding: 12 18;
-    -fx-background-radius: 18 18 4 18;
+    /* Rounded corners except bottom-right */
+    -fx-background-radius: 18 18 4 18; 
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 6, 0, 0, 2);
     -fx-spacing: 4;
 }
 
 .chat-bubble-ai {
-    -fx-background-color: #262626;
+    -fx-background-color: #374151; /* Dark Gray */
     -fx-padding: 12 18;
+    /* Rounded corners except bottom-left */
     -fx-background-radius: 18 18 18 4;
     -fx-spacing: 4;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 6, 0, 0, 2);
 }
 
 .chat-bubble-success {
@@ -118,15 +121,15 @@
 
 .chat-text-user {
     -fx-text-fill: #ffffff !important;
-    -fx-font-size: 14px;
+    -fx-font-size: 14.5px;
 }
 .chat-text-ai {
-    -fx-text-fill: #ececec !important;
-    -fx-font-size: 14px;
+    -fx-text-fill: #f3f4f6 !important;
+    -fx-font-size: 14.5px;
 }
 .chat-time {
-    -fx-text-fill: #8e8ea0;
-    -fx-font-size: 10px;
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 11px;
 }
 
 /* Avatars */

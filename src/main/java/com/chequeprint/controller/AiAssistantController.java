@@ -1,6 +1,9 @@
 package com.chequeprint.controller;
 
-import com.chequeprint.service.GeminiApiClient;
+import com.chequeprint.service.AIService;
+import com.chequeprint.service.CommandDetectionService;
+import com.chequeprint.service.CommandDetectionService.CommandType;
+import com.chequeprint.service.VoiceService;
 import com.chequeprint.util.ChatUiBuilder;
 import com.chequeprint.util.ThemeManager;
 import javafx.animation.KeyFrame;
@@ -16,6 +19,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.util.Duration;
 
 public class AiAssistantController {
@@ -25,6 +29,7 @@ public class AiAssistantController {
     @FXML private ScrollPane scrollChat;
     @FXML private Label lblStatus;
     @FXML private Button btnSend;
+    @FXML private Button btnMic;
     @FXML private Button btnClear;
     @FXML private Button btnThemeToggle;
     @FXML private HBox typingIndicator;
@@ -43,8 +48,10 @@ public class AiAssistantController {
     private Timeline typingAnimation;
     private ChatUiBuilder uiBuilder;
     
-    // We instantiate the AI Client
-    private final GeminiApiClient geminiApiClient = new GeminiApiClient();
+    // We instantiate the Services
+    private final AIService aiService = new AIService();
+    private final CommandDetectionService commandService = new CommandDetectionService();
+    private final VoiceService voiceService = new VoiceService();
 
     @FXML
     public void initialize() {
@@ -87,29 +94,50 @@ public class AiAssistantController {
         // 1. Show user message in UI
         uiBuilder.addUserBubble(userText);
         
-        // 2. Prepare UI for AI response
+        // 2. Prepare UI for processing
         setInputDisabled(true);
         showTypingIndicator(true);
-        lblStatus.setText("AI is thinking...");
+        lblStatus.setText("Processing...");
 
-        // 3. Call AI service on a background thread using Task
+        // 3. Smart Command Detection
+        CommandType detectedCommand = commandService.detectCommand(userText);
+
+        // 4. Execute on a background thread using Task
         Task<String> apiTask = new Task<>() {
             @Override
             protected String call() throws Exception {
-                // Generate text using Gemini (model, text, maxTokens)
-                return geminiApiClient.generateText("gemini-2.5-flash", userText, 512);
+                if (detectedCommand == CommandType.AUTO_FILL_CHEQUE) {
+                    // Extract data from the OCR result prefix
+                    String prefix = "Auto-fill data:";
+                    int idx = userText.toLowerCase().indexOf(prefix.toLowerCase());
+                    String ocrText = idx >= 0 ? userText.substring(idx + prefix.length()).trim() : userText;
+                    return "✅ Auto-filled Cheque Data:\n\n" + aiService.extractChequeData(ocrText);
+                } else if (detectedCommand != CommandType.AI_FALLBACK) {
+                    // Small delay to let the typing indicator show naturally
+                    Thread.sleep(600); 
+                    return commandService.executeCommand(detectedCommand);
+                } else {
+                    // Generate text using external AIService
+                    return aiService.askAI(userText);
+                }
             }
         };
 
         apiTask.setOnSucceeded(e -> {
-            // 4. Show AI response in UI on the JavaFX Application Thread
-            String aiResponse = apiTask.getValue();
+            // 5. Show response in UI on the JavaFX Application Thread
+            String responseText = apiTask.getValue();
             
             Platform.runLater(() -> {
                 showTypingIndicator(false);
                 setInputDisabled(false);
                 lblStatus.setText("Online • Ready to help");
-                uiBuilder.addAiBubble(aiResponse);
+                
+                if (detectedCommand != CommandType.AI_FALLBACK && responseText.startsWith("✅")) {
+                    uiBuilder.addAiSuccessBubble(responseText);
+                } else {
+                    uiBuilder.addAiBubble(responseText);
+                }
+                
                 txtCommand.requestFocus();
             });
         });
@@ -157,7 +185,60 @@ public class AiAssistantController {
     @FXML private void onChipAddCheque() { txtCommand.setText("Add cheque for "); txtCommand.requestFocus(); }
     @FXML private void onReminder() { txtCommand.setText("Reminder check"); onRun(); }
     @FXML private void onSuggestions() { txtCommand.setText("Analyze cheque data"); onRun(); }
-    @FXML private void onOcrImage() { uiBuilder.addAiBubble("OCR is disabled in this simplified version."); }
+    @FXML private void onOcrImage() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select Cheque Image");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
+        );
+        java.io.File selectedFile = fileChooser.showOpenDialog(txtCommand.getScene().getWindow());
+        if (selectedFile != null) {
+            uiBuilder.addUserBubble("Uploaded image: " + selectedFile.getName());
+            setInputDisabled(true);
+            showTypingIndicator(true);
+            lblStatus.setText("Scanning image...");
+
+            Task<String> ocrTask = new Task<>() {
+                @Override
+                protected String call() throws Exception {
+                    com.chequeprint.service.GeminiApiClient geminiClient = new com.chequeprint.service.GeminiApiClient();
+                    String mimeType = selectedFile.getName().toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg";
+                    return geminiClient.generateTextFromImage("gemini-1.5-flash", 
+                        "Analyze this cheque image and extract all visible text. Return the raw text.", 
+                        selectedFile.toPath(), 
+                        mimeType, 
+                        512);
+                }
+            };
+
+            ocrTask.setOnSucceeded(e -> {
+                String ocrResult = ocrTask.getValue();
+                Platform.runLater(() -> {
+                    showTypingIndicator(false);
+                    setInputDisabled(false);
+                    lblStatus.setText("Online • Ready to help");
+                    uiBuilder.addAiBubble("OCR Result:\n" + ocrResult);
+                    
+                    // Optional: Setup for auto-fill in next step
+                    txtCommand.setText("Auto-fill data: " + ocrResult);
+                });
+            });
+
+            ocrTask.setOnFailed(e -> {
+                Throwable ex = ocrTask.getException();
+                Platform.runLater(() -> {
+                    showTypingIndicator(false);
+                    setInputDisabled(false);
+                    lblStatus.setText("Online • Ready to help");
+                    uiBuilder.addAiErrorBubble("OCR failed: " + ex.getMessage());
+                });
+            });
+
+            Thread t = new Thread(ocrTask, "ocr-task");
+            t.setDaemon(true);
+            t.start();
+        }
+    }
 
     // ═══════════════════════════════════════════════════
     //  HELPERS
@@ -206,6 +287,64 @@ public class AiAssistantController {
             if (chipOcr != null) chipOcr.setDisable(disabled);
             if (chipInsights != null) chipInsights.setDisable(disabled);
             if (btnAttach != null) btnAttach.setDisable(disabled);
+            if (btnMic != null) btnMic.setDisable(disabled);
         });
+    }
+
+    @FXML
+    private void onMicToggle() {
+        if (!voiceService.isRecording()) {
+            voiceService.startRecording();
+            btnMic.setText("🛑");
+            btnMic.setStyle("-fx-text-fill: red;");
+            lblStatus.setText("Recording... (Click stop when done)");
+            
+            // Disable other inputs but keep mic enabled
+            if (btnSend != null) btnSend.setDisable(true);
+            if (txtCommand != null) txtCommand.setDisable(true);
+        } else {
+            btnMic.setText("🎤");
+            btnMic.setStyle("");
+            lblStatus.setText("Transcribing audio...");
+            setInputDisabled(true);
+            showTypingIndicator(true);
+
+            Task<String> transcribeTask = new Task<>() {
+                @Override
+                protected String call() throws Exception {
+                    return voiceService.stopRecordingAndTranscribe();
+                }
+            };
+
+            transcribeTask.setOnSucceeded(e -> {
+                String transcribedText = transcribeTask.getValue();
+                Platform.runLater(() -> {
+                    showTypingIndicator(false);
+                    setInputDisabled(false);
+                    lblStatus.setText("Online • Ready to help");
+                    txtCommand.setText(transcribedText);
+                    txtCommand.requestFocus();
+                });
+            });
+
+            transcribeTask.setOnFailed(e -> {
+                Throwable ex = transcribeTask.getException();
+                Platform.runLater(() -> {
+                    showTypingIndicator(false);
+                    setInputDisabled(false);
+                    lblStatus.setText("Online • Ready to help");
+                    uiBuilder.addAiErrorBubble("Transcription failed: " + ex.getMessage());
+                });
+            });
+
+            Thread t = new Thread(transcribeTask, "transcription-task");
+            t.setDaemon(true);
+            t.start();
+        }
+    }
+    private MainController mainController;
+
+    public void setMainController(MainController mainController) {
+        this.mainController = mainController;
     }
 }

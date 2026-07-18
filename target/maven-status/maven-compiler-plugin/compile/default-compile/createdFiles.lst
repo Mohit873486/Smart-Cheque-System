@@ -1,6 +1,7 @@
 com\chequeprint\printpreview\PrintHtmlTemplateService.class
 com\chequeprint\model\AuditAction.class
 com\chequeprint\service\OpenAiSqlQueryService.class
+com\chequeprint\service\CommandDetectionService.class
 com\chequeprint\controller\DashboardController$1.class
 com\chequeprint\model\BankAccount.class
 com\chequeprint\controller\ModernDashboardController$4.class
@@ -42,6 +43,7 @@ com\chequeprint\controller\SettingsController$3.class
 com\chequeprint\util\QrCodeGenerator.class
 com\chequeprint\model\FieldPosition.class
 com\chequeprint\service\AuditService$1.class
+com\chequeprint\service\VoiceService.class
 com\chequeprint\controller\ModernDashboardController$2.class
 com\chequeprint\service\GeminiApiClient.class
 com\chequeprint\preview\ChequePrintPreviewApp$1.class
@@ -66,6 +68,7 @@ com\chequeprint\controller\LoginController.class
 com\chequeprint\service\ChequeApiResponse.class
 com\chequeprint\service\ChequeAiCommand$Data.class
 com\chequeprint\model\AuditLog.class
+com\chequeprint\service\CommandDetectionService$1.class
 com\chequeprint\service\OpenAiChequeAssistantService.class
 com\chequeprint\service\MultiAgentCoordinatorService$1.class
 com\chequeprint\util\ChequeApiClient$2.class
@@ -75,6 +78,8 @@ com\chequeprint\util\SessionManager.class
 com\chequeprint\service\OcrException.class
 com\chequeprint\util\SignatureOverlayHelper$Delta.class
 com\chequeprint\model\Cheque.class
+com\chequeprint\service\AIService.class
+com\chequeprint\service\CommandDetectionService$CommandType.class
 com\chequeprint\dao\AuditLogDAO.class
 com\chequeprint\service\OpenAiChequeAssistantService$ChequeCommand.class
 com\chequeprint\util\DateUtil.class
@@ -107,7 +112,6 @@ com\chequeprint\service\ChequeAiActionExecutor$AiActionResult.class
 com\chequeprint\util\ChequeSizeCodec.class
 com\chequeprint\service\AuthService.class
 com\chequeprint\service\Permission.class
-com\chequeprint\controller\AiAssistantController$4.class
 com\chequeprint\service\AuditService$2.class
 com\chequeprint\controller\LoginController$1.class
 com\chequeprint\printpreview\PrintPreviewService.class

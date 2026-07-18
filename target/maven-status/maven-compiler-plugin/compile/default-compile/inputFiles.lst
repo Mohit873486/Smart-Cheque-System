@@ -33,7 +33,9 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\ChequeA
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\SettingsController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\AiSqlDatabaseService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\dao\SettingDAO.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\VoiceService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\ApiClient.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\AIService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\preview\ChequeLayout.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\ChequeAiActionExecutor.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\dao\AuditLogDAO.java
@@ -77,6 +79,7 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\OcrE
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\ChequeDialogController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\FxUtils.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\preview\ChequeField.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\CommandDetectionService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\dao\UserDAO.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\QrCodeGenerator.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\dao\BankDAO.java

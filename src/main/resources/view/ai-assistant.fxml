@@ -121,6 +121,7 @@
                             <Button fx:id="btnAttach" text="📎" styleClass="btn-icon" onAction="#onOcrImage"/>
                             <TextField fx:id="txtCommand" promptText="Type a message..."
                                        styleClass="chat-input-field" HBox.hgrow="ALWAYS"/>
+                            <Button fx:id="btnMic" text="🎤" styleClass="btn-icon" onAction="#onMicToggle"/>
                             <Button fx:id="btnSend" text="➤" styleClass="btn-send" onAction="#onRun"/>
                         </HBox>
                         <Label text="AI can make mistakes. Please verify important information."
