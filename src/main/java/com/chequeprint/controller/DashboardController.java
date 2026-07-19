@@ -223,7 +223,7 @@ public class DashboardController {
             setCell(colChequeDate, c -> new SimpleStringProperty(formatDate(c.getValue().getIssueDate())));
             setCell(colStatus, c -> new SimpleStringProperty(formatStatus(c.getValue().getStatus())));
             if (colStatus != null) {
-                colStatus.setCellFactory(col -> new TableCell<>() {
+                colStatus.setCellFactory(col -> new TableCell<Cheque, String>() {
                     @Override
                     protected void updateItem(String item, boolean empty) {
                         super.updateItem(item, empty);
@@ -360,6 +360,7 @@ public class DashboardController {
         applyChequeFilter(txtChequeSearch == null ? "" : txtChequeSearch.getText());
         if (tblRecentInvoices != null) {
             tblRecentInvoices.getItems().setAll(firstItems(loadedInvoices, 8));
+            tblRecentInvoices.refresh();
         }
         updateChequeChart(loadedCheques);
         updateStatusChart(loadedCheques);
@@ -383,6 +384,7 @@ public class DashboardController {
                 .limit(8)
                 .toList();
         tblRecentCheques.getItems().setAll(filtered);
+        tblRecentCheques.refresh();
     }
 
     private void updateChequeChart(List<Cheque> cheques) {

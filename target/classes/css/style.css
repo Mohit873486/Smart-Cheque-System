@@ -2283,3 +2283,158 @@ ScrollPane .donut-center,
     -fx-border-width: 1;
     -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.1), 12, 0, 0, 4);
 }
+
+/* ============================================================
+   BANK ACCOUNTS PAGE — styling additions
+   Append these rules to your existing stylesheet (keeps all
+   prior .tab-pane / .table-view / .btn-* rules unchanged).
+   ============================================================ */
+
+/* --- Surface card (shared by both panels) --- */
+.surface-card {
+    -fx-background-color: white;
+    -fx-background-radius: 14;
+    -fx-padding: 24;
+    -fx-effect: dropshadow(three-pass-box, rgba(15,23,42,0.06), 16, 0, 0, 6);
+}
+
+.card-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1e293b;
+}
+.card-subtitle {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 13px;
+}
+
+/* --- Table frame --- */
+.table-frame {
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-background-color: white;
+}
+.clean-table {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+.clean-table .column-header-background {
+    -fx-background-color: #f8fafc;
+    -fx-background-radius: 10 10 0 0;
+    -fx-border-color: transparent transparent #e2e8f0 transparent;
+}
+.clean-table .table-row-cell {
+    -fx-cell-size: 46px;
+    -fx-border-color: transparent transparent #f1f5f9 transparent;
+}
+.clean-table .table-row-cell:hover {
+    -fx-background-color: #f8fafc;
+}
+.clean-table .table-row-cell:selected {
+    -fx-background-color: #eff6ff;
+}
+
+/* --- Empty state overlay --- */
+.overlay-empty {
+    -fx-background-color: white;
+    -fx-background-radius: 10;
+}
+.empty-icon {
+    -fx-fill: #cbd5e1;
+}
+.empty-title {
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #475569;
+    -fx-padding: 12 0 0 0;
+}
+.empty-subtitle {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 13px;
+}
+
+/* --- Loading overlay + spinner --- */
+.overlay-loading {
+    -fx-background-color: rgba(255,255,255,0.85);
+    -fx-background-radius: 10;
+}
+.spinner-ring {
+    -fx-background-color: #eff6ff;
+    -fx-background-radius: 50%;
+    -fx-padding: 10;
+}
+.spinner-indicator .percentage {
+    -fx-fill: transparent;
+}
+.spinner-indicator {
+    -fx-progress-color: #3b82f6;
+}
+.loading-label {
+    -fx-text-fill: #3b82f6;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+
+/* --- Cheque preview panel --- */
+.preview-frame {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 16;
+}
+
+.cheque-mock {
+    -fx-background-color: white;
+    -fx-background-radius: 8;
+    -fx-border-color: #cbd5e1;
+    -fx-border-radius: 8;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.10), 12, 0, 0, 4);
+    -fx-pref-width: 300;
+    -fx-pref-height: 170;
+}
+.cheque-mock-header {
+    -fx-background-color: #eff6ff;
+    -fx-background-radius: 8 8 0 0;
+    -fx-padding: 8 12;
+    -fx-border-color: transparent transparent #dbeafe transparent;
+}
+.cheque-bank-name {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-text-fill: #1e3a8a;
+}
+.cheque-bank-code {
+    -fx-font-size: 11px;
+    -fx-text-fill: #60a5fa;
+    -fx-font-weight: bold;
+}
+.cheque-field-label {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 11px;
+    -fx-min-width: 55px;
+}
+.cheque-field-value {
+    -fx-text-fill: #1e293b;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+.cheque-micr {
+    -fx-font-family: "Courier New", monospace;
+    -fx-text-fill: #334155;
+    -fx-font-size: 13px;
+    -fx-padding: 6 0 0 0;
+}
+
+/* --- Buttons: danger variant for consistency --- */
+.btn-danger {
+    -fx-background-color: #ef4444;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-padding: 8 16;
+}
+.btn-danger:hover {
+    -fx-background-color: #dc2626;
+}

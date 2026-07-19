@@ -1,7 +1,7 @@
 package com.chequeprint.model;
 
 public class Bank {
-    private int id;
+    private Integer id;
     private String bankName;
     private String bankCode;
     private String chequeSize;
@@ -17,8 +17,8 @@ public class Bank {
         this.micr       = micr;
     }
 
-    public int getId()                          { return id; }
-    public void setId(int id)                   { this.id = id; }
+    public Integer getId()                          { return id; }
+    public void setId(Integer id)                   { this.id = id; }
     public String getBankName()                 { return bankName; }
     public void setBankName(String n)           { this.bankName = n; }
     public String getBankCode()                 { return bankCode; }

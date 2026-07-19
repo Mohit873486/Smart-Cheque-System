@@ -389,7 +389,12 @@ public class ChequeController {
                 } catch (Exception auditEx) {
                     System.err.println("Failed to enrich cheques with print log: " + auditEx.getMessage());
                 }
-                Platform.runLater(() -> data.setAll(list));
+                Platform.runLater(() -> {
+                    data.setAll(list);
+                    if (chequeTable != null) {
+                        chequeTable.refresh();
+                    }
+                });
             } catch (Exception e) {
                 String message = e.getMessage();
                 if (message != null && message.contains("Failed to fetch cheques from REST API")) {
@@ -627,18 +632,22 @@ public class ChequeController {
         confirm.setHeaderText(null);
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.YES) {
-                try {
-                    chequeService.delete(sel.getId());
-                    clearForm();
-                    loadData();
-                    if (mainController != null) {
-                        Object dc = mainController.getController("dashboard");
-                        if (dc instanceof DashboardController)
-                            ((DashboardController) dc).reload();
+                new Thread(() -> {
+                    try {
+                        chequeService.delete(sel.getId());
+                        Platform.runLater(() -> {
+                            clearForm();
+                            loadData();
+                            if (mainController != null) {
+                                Object dc = mainController.getController("dashboard");
+                                if (dc instanceof DashboardController)
+                                    ((DashboardController) dc).reload();
+                            }
+                        });
+                    } catch (Exception e) {
+                        Platform.runLater(() -> showAlert("Error", e.getMessage(), Alert.AlertType.ERROR));
                     }
-                } catch (Exception e) {
-                    showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
-                }
+                }, "delete-cheque").start();
             }
         });
     }

@@ -38,7 +38,26 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.chequeprint.service.ApiService;
+import com.chequeprint.model.BankAccount;
+import javafx.scene.control.TableView;
+
 public class BankController {
+
+    private final ApiService apiService = new ApiService();
+    @FXML private TableView<BankAccount> accountTable;
+    @FXML private Button btnAddAccount;
+    @FXML private VBox emptyState;
+    @FXML private VBox loadingSpinner;
+    @FXML private VBox previewEmptyState;
+    @FXML private VBox chequePreviewCard;
+    @FXML private Label previewBankName;
+    @FXML private Label previewBankCode;
+    @FXML private Label previewHolderName;
+    @FXML private Label previewAccountNumber;
+    @FXML private Label previewMicr;
+    @FXML private VBox previewLoading;
+    @FXML private Button btnEditTemplate;
 
     private static final double PREVIEW_PPI = 90.0;
 
@@ -125,6 +144,7 @@ public class BankController {
 
     private final BankService bankService = new BankService();
     private final ObservableList<Bank> data = FXCollections.observableArrayList();
+    private final ObservableList<BankAccount> accountData = FXCollections.observableArrayList();
 
     private final Map<String, BankTemplateLayout> layoutByBankCode = new HashMap<>();
     private final Map<LayoutField, StackPane> fieldNodes = new EnumMap<>(LayoutField.class);
@@ -137,18 +157,62 @@ public class BankController {
     private boolean isUpdatingForm = false;
 
     @FXML
+    private void onAddAccount() {
+        // TODO: Implement adding an account flow or switch tabs
+    }
+
+    @FXML
+    private void onEditTemplate() {
+        // Switch to the template designer tab
+        if (fldBankName != null && fldBankName.getScene() != null) {
+            javafx.scene.control.TabPane tabPane = (javafx.scene.control.TabPane) fldBankName.getScene().getRoot();
+            if (tabPane != null && tabPane.getTabs().size() > 1) {
+                tabPane.getSelectionModel().select(1);
+            }
+        }
+    }
+
+    @FXML
     public void initialize() {
         setupForm();
         setupPreview();
         setupAdjustmentPanel();
+        setupAccountTableListener();
         loadLayouts();
         loadData();
+        loadBankAccounts();
         clearForm(); // Ensures default layout coordinates are applied at startup
         FxUtils.animateIn(previewViewport, 0);
     }
 
+    private void setupAccountTableListener() {
+        if (accountTable != null) {
+            accountTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal == null) {
+                    if (previewEmptyState != null) previewEmptyState.setVisible(true);
+                    if (chequePreviewCard != null) chequePreviewCard.setVisible(false);
+                    if (btnEditTemplate != null) btnEditTemplate.setDisable(true);
+                } else {
+                    if (previewEmptyState != null) previewEmptyState.setVisible(false);
+                    if (chequePreviewCard != null) chequePreviewCard.setVisible(true);
+                    if (btnEditTemplate != null) btnEditTemplate.setDisable(false);
+
+                    if (previewBankName != null) previewBankName.setText(newVal.getBankName());
+                    if (previewBankCode != null) previewBankCode.setText(newVal.getIfscCode() != null ? newVal.getIfscCode() : "");
+                    if (previewHolderName != null) previewHolderName.setText(newVal.getAccountHolderName());
+                    if (previewAccountNumber != null) previewAccountNumber.setText(newVal.getAccountNumber());
+                    
+                    // Default micr for preview if applicable
+                    if (previewMicr != null) {
+                        previewMicr.setText("⑈" + newVal.getAccountNumber() + "⑈ 000000000 ⑈00⑈");
+                    }
+                }
+            });
+        }
+    }
+
     private void setupForm() {
-        btnDelete.setDisable(true);
+        if (btnDelete != null) btnDelete.setDisable(true);
         fldBankName.setItems(data);
         fldBankName.setConverter(new StringConverter<Bank>() {
             @Override
@@ -176,7 +240,7 @@ public class BankController {
             if (isUpdatingForm) {
                 return;
             }
-            if (newVal != null && newVal.getId() > 0) {
+            if (newVal != null && newVal.getId() != null && newVal.getId() > 0) {
                 populateForm(newVal);
             }
         });
@@ -636,12 +700,56 @@ public class BankController {
         });
     }
 
+    private void loadBankAccounts() {
+        if (loadingSpinner != null) {
+            loadingSpinner.setVisible(true);
+            loadingSpinner.setManaged(true);
+        }
+        if (emptyState != null) {
+            emptyState.setVisible(false);
+            emptyState.setManaged(false);
+        }
+
+        new Thread(() -> {
+            try {
+                java.util.List<BankAccount> accounts = apiService.getBankAccounts();
+                Platform.runLater(() -> {
+                    accountData.setAll(accounts);
+                    if (accountTable != null) {
+                        accountTable.setItems(accountData);
+                        accountTable.refresh();
+                    }
+                    if (loadingSpinner != null) {
+                        loadingSpinner.setVisible(false);
+                        loadingSpinner.setManaged(false);
+                    }
+                    if (emptyState != null) {
+                        boolean isEmpty = accounts.isEmpty();
+                        emptyState.setVisible(isEmpty);
+                        emptyState.setManaged(isEmpty);
+                    }
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    if (loadingSpinner != null) {
+                        loadingSpinner.setVisible(false);
+                        loadingSpinner.setManaged(false);
+                    }
+                    showAlert("API Error", "Failed to load bank accounts: " + e.getMessage(), Alert.AlertType.ERROR);
+                });
+            }
+        }).start();
+    }
+
     private void loadData() {
         setLoading(true);
         new Thread(() -> {
             try {
                 List<Bank> list = bankService.getAll();
-                Platform.runLater(() -> data.setAll(list));
+                Platform.runLater(() -> {
+                    data.setAll(list);
+                    fldBankName.setItems(data);
+                });
             } catch (Exception e) {
                 Platform.runLater(() -> showAlert("Load Error", e.getMessage(), Alert.AlertType.ERROR));
             } finally {
@@ -692,9 +800,25 @@ public class BankController {
         new Thread(() -> {
             try {
                 bankService.save(finalBank, layoutToSave, layoutByBankCode);
+
+                // POST bank account data to API
+                try {
+                    BankAccount account = new BankAccount();
+                    account.setBankName(finalBank.getBankName());
+                    account.setAccountNumber(finalBank.getBankCode());
+                    account.setAccountHolderName(finalBank.getBankName());
+                    account.setIfscCode(finalBank.getBankCode());
+                    account.setBranchName("");
+                    account.setBalance(java.math.BigDecimal.ZERO);
+                    apiService.saveBankAccount(account);
+                } catch (Exception apiEx) {
+                    System.err.println("API save failed (non-fatal): " + apiEx.getMessage());
+                }
+
                 Platform.runLater(() -> {
                     clearForm();
                     loadData();
+                    loadBankAccounts();
                     showAlert("Success", "Bank template saved successfully.", Alert.AlertType.INFORMATION);
                 });
             } catch (Exception e) {
@@ -724,8 +848,10 @@ public class BankController {
                     try {
                         bankService.delete(sel, layoutByBankCode);
                         Platform.runLater(() -> {
+                            selectedBank = null;
                             clearForm();
                             loadData();
+                            loadBankAccounts();
                         });
                     } catch (Exception e) {
                         Platform.runLater(() -> showAlert("Delete Error", e.getMessage(), Alert.AlertType.ERROR));

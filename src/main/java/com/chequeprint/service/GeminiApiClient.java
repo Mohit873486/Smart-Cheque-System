@@ -3,14 +3,15 @@ package com.chequeprint.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -24,25 +25,21 @@ public class GeminiApiClient {
     private static final Logger LOGGER = Logger.getLogger(GeminiApiClient.class.getName());
     private static final String GEMINI_API_KEY_ENV = "GEMINI_API_KEY";
     private static final String API_ENDPOINT_FORMAT = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent";
-    private static final String DEFAULT_MODEL = "gemini-2.5-flash";
+    private static final String DEFAULT_MODEL = "gemini-pro";
     private static final int MAX_RETRIES = 3;
-    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(5);
-    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(12);
+    private static final int CONNECT_TIMEOUT_MS = 10000;
+    private static final int REQUEST_TIMEOUT_MS = 30000;
     private static final int MAX_PROMPT_LENGTH = 4096;
-    private static final int DEFAULT_MAX_OUTPUT_TOKENS = 128;
+    private static final int DEFAULT_MAX_OUTPUT_TOKENS = 256;
 
-    private final HttpClient httpClient;
     private final ObjectMapper mapper;
     private final Random random;
 
     public GeminiApiClient() {
-        this(HttpClient.newBuilder()
-                .connectTimeout(CONNECT_TIMEOUT)
-                .build(), new ObjectMapper(), new Random());
+        this(new ObjectMapper(), new Random());
     }
 
-    GeminiApiClient(HttpClient httpClient, ObjectMapper mapper, Random random) {
-        this.httpClient = httpClient;
+    GeminiApiClient(ObjectMapper mapper, Random random) {
         this.mapper = mapper;
         this.random = random;
     }
@@ -69,15 +66,7 @@ public class GeminiApiClient {
         String requestBody = buildPayload(text, maxOutputTokens);
         String url = buildUrl(model, apiKey);
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .timeout(REQUEST_TIMEOUT)
-                .header("Content-Type", "application/json")
-                .header("x-goog-api-key", apiKey)
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                .build();
-
-        return executeWithRetry(request);
+        return executeWithRetry(url, requestBody, apiKey);
     }
 
     public String generateTextFromImage(String model, String text, Path imagePath, String mimeType, int maxOutputTokens)
@@ -97,32 +86,17 @@ public class GeminiApiClient {
         String requestBody = buildImagePayload(text, imageBase64, mimeType, maxOutputTokens);
         String url = buildUrl(model, apiKey);
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .timeout(REQUEST_TIMEOUT)
-                .header("Content-Type", "application/json")
-                .header("x-goog-api-key", apiKey)
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                .build();
-
-        return executeWithRetry(request);
+        return executeWithRetry(url, requestBody, apiKey);
     }
 
-    private String executeWithRetry(HttpRequest request) throws Exception {
+    private String executeWithRetry(String urlStr, String requestBody, String apiKey) throws Exception {
         int attempt = 0;
         while (true) {
             attempt++;
             final int currentAttempt = attempt;
             try {
-                LOGGER.fine(() -> "Gemini request attempt " + currentAttempt + " to " + request.uri());
-                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-                logResponse(response, attempt);
-
-                if (response.statusCode() / 100 != 2) {
-                    handleHttpError(response, attempt);
-                }
-
-                return parseResponse(response.body());
+                LOGGER.fine(() -> "Gemini request attempt " + currentAttempt + " to " + urlStr);
+                return executeRequest(urlStr, requestBody, apiKey, attempt);
             } catch (IOException | InterruptedException ex) {
                 if (ex instanceof InterruptedException) {
                     Thread.currentThread().interrupt();
@@ -138,11 +112,57 @@ public class GeminiApiClient {
         }
     }
 
-    private void handleHttpError(HttpResponse<String> response, int attempt) throws Exception {
-        String body = response.body();
-        int status = response.statusCode();
-        LOGGER.log(Level.WARNING, "Gemini returned HTTP {0} on attempt {1}: {2}", new Object[]{status, attempt, body});
+    private String executeRequest(String urlStr, String requestBody, String apiKey, int attempt) throws Exception {
+        HttpURLConnection connection = null;
+        try {
+            URL url = new URL(urlStr);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
+            connection.setReadTimeout(REQUEST_TIMEOUT_MS);
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("x-goog-api-key", apiKey);
+            connection.setDoOutput(true);
 
+            try (OutputStream os = connection.getOutputStream()) {
+                byte[] input = requestBody.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            int statusCode = connection.getResponseCode();
+            LOGGER.fine(() -> "Gemini HTTP " + statusCode + " on attempt " + attempt);
+
+            if (statusCode / 100 != 2) {
+                String errorBody = readStream(connection.getErrorStream());
+                handleHttpError(statusCode, errorBody, attempt);
+            }
+
+            String responseBody = readStream(connection.getInputStream());
+            LOGGER.finer(() -> "Gemini response body: " + responseBody);
+
+            return parseResponse(responseBody);
+
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    private String readStream(InputStream is) throws IOException {
+        if (is == null) return "";
+        StringBuilder result = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                result.append(line).append("\n");
+            }
+        }
+        return result.toString();
+    }
+
+    private void handleHttpError(int status, String body, int attempt) throws Exception {
+        LOGGER.log(Level.WARNING, "Gemini returned HTTP {0} on attempt {1}: {2}", new Object[]{status, attempt, body});
         if (attempt >= MAX_RETRIES || status < 500) {
             throw new IllegalStateException("Gemini request failed: HTTP " + status + " - " + body);
         }
@@ -172,11 +192,6 @@ public class GeminiApiClient {
             throw new IllegalStateException("Gemini response text is empty.");
         }
         return text.trim();
-    }
-
-    private void logResponse(HttpResponse<String> response, int attempt) {
-        LOGGER.fine(() -> "Gemini HTTP " + response.statusCode() + " on attempt " + attempt);
-        LOGGER.finer(() -> "Gemini response body: " + response.body());
     }
 
     private boolean isRetryableException(Exception ex) {
@@ -259,8 +274,8 @@ public class GeminiApiClient {
     }
 
     private void validateMaxOutputTokens(int tokens) {
-        if (tokens <= 0 || tokens > 512) {
-            throw new IllegalArgumentException("maxOutputTokens must be between 1 and 512.");
+        if (tokens <= 0 || tokens > 2048) {
+            throw new IllegalArgumentException("maxOutputTokens must be between 1 and 2048.");
         }
     }
 }

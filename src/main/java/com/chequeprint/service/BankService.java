@@ -42,7 +42,7 @@ public class BankService {
         validate(bank);
         String code = bank.getBankCode().trim().toUpperCase();
 
-        if (bank.getId() == 0) {
+        if (bank.getId() == null || bank.getId() == 0) {
             String json = objectMapper.writeValueAsString(bank);
             String response = ApiClient.post(API_URL, json);
             Bank created = objectMapper.readValue(response, Bank.class);

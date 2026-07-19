@@ -11,6 +11,7 @@ com\chequeprint\util\ApiClient.class
 com\chequeprint\controller\ChequeController.class
 com\chequeprint\controller\SettingsController.class
 com\chequeprint\service\ChatHistoryService$1.class
+com\chequeprint\service\ApiService.class
 com\chequeprint\service\OpenAiChequeOcrService$OcrSaveResult.class
 com\chequeprint\util\BankTemplateLayoutStore.class
 com\chequeprint\util\SignatureService.class
@@ -128,6 +129,7 @@ com\chequeprint\controller\UserManagementController.class
 com\chequeprint\controller\BankController.class
 com\chequeprint\controller\SupportController.class
 com\chequeprint\model\Invoice.class
+com\chequeprint\service\ApiService$1.class
 com\chequeprint\controller\AiAssistantController.class
 com\chequeprint\preview\BankTemplate.class
 com\chequeprint\preview\ChequeData.class

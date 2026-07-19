@@ -243,6 +243,9 @@ public class ChequeHistoryController {
                 List<Cheque> list = chequeService.getAll();
                 Platform.runLater(() -> {
                     data.setAll(list);
+                    if (chequeTable != null) {
+                        chequeTable.refresh();
+                    }
                     recalculateSummary();
                 });
             } catch (Exception e) {
