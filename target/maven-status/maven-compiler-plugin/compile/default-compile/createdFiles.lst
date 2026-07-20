@@ -41,6 +41,7 @@ com\chequeprint\service\MultiAgentCoordinatorService.class
 com\chequeprint\service\ChequeService.class
 com\chequeprint\util\ThemeManager.class
 com\chequeprint\controller\SettingsController$3.class
+com\chequeprint\service\BankApiService$1.class
 com\chequeprint\util\QrCodeGenerator.class
 com\chequeprint\model\FieldPosition.class
 com\chequeprint\service\AuditService$1.class
@@ -87,6 +88,7 @@ com\chequeprint\util\DateUtil.class
 com\chequeprint\controller\MainController.class
 com\chequeprint\config\ApiConfig.class
 com\chequeprint\service\ChequeAiCommand.class
+com\chequeprint\service\BankApiService.class
 com\chequeprint\controller\LoginController$PasswordResetRequest.class
 com\chequeprint\controller\ModernDashboardController.class
 com\chequeprint\printpreview\PrintPreviewController.class

@@ -62,7 +62,7 @@ public class ChequeApiService {
     }
 
     /**
-     * Get all cheques via GET /api/cheque
+     * Get all cheques via GET /api/cheque (but not testing )
      */
     public ChequeApiResponse getAllCheques() {
         return fetchCheques(false);

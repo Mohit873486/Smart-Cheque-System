@@ -51,6 +51,9 @@ public class ApiService {
                 
                 // Parse JSON response
                 return mapper.readValue(response.toString(), new TypeReference<List<BankAccount>>() {});
+            } else if (status == 409 || status == 404) {
+                // Return empty list gracefully instead of throwing exception for no data
+                return java.util.Collections.emptyList();
             } else {
                 throw new Exception("Failed to load data. HTTP Status: " + status);
             }
