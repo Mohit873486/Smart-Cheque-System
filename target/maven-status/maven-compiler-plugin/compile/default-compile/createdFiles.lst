@@ -14,6 +14,7 @@ com\chequeprint\service\ChatHistoryService$1.class
 com\chequeprint\service\ApiService.class
 com\chequeprint\service\OpenAiChequeOcrService$OcrSaveResult.class
 com\chequeprint\util\BankTemplateLayoutStore.class
+com\chequeprint\controller\BankController$4.class
 com\chequeprint\util\SignatureService.class
 com\chequeprint\service\MultiAgentCoordinatorService$MultiAgentResult.class
 com\chequeprint\controller\SettingsController$1.class
@@ -30,6 +31,7 @@ com\chequeprint\controller\InvoiceController.class
 com\chequeprint\controller\BankController$Delta.class
 com\chequeprint\controller\LoginController$2.class
 com\chequeprint\controller\SettingsController$2.class
+com\chequeprint\service\BankService$1.class
 com\chequeprint\model\ChequeLayout.class
 com\chequeprint\service\CommandParser$CommandAction.class
 com\chequeprint\service\ChequeOcrService.class
@@ -94,6 +96,7 @@ com\chequeprint\controller\ModernDashboardController.class
 com\chequeprint\printpreview\PrintPreviewController.class
 com\chequeprint\service\OpenAiChequeOcrService.class
 com\chequeprint\util\ChequeApiClient$1.class
+com\chequeprint\service\FxPrinterService.class
 com\chequeprint\service\SettingService.class
 com\chequeprint\model\UserStatus.class
 com\chequeprint\controller\ModernDashboardController$1.class
@@ -109,6 +112,7 @@ com\chequeprint\controller\MainController$2.class
 com\chequeprint\service\AuthenticationResult.class
 com\chequeprint\model\BankTemplateLayout$1.class
 com\chequeprint\service\SmartSuggestionService$SmartSuggestions.class
+com\chequeprint\util\GlobalErrorHandler.class
 com\chequeprint\service\UserService.class
 com\chequeprint\util\PasswordUtil.class
 com\chequeprint\service\ChequeAiActionExecutor$AiActionResult.class
@@ -138,6 +142,7 @@ com\chequeprint\preview\ChequeData.class
 com\chequeprint\service\BatchPrintException.class
 com\chequeprint\service\ChequeApiService$1.class
 com\chequeprint\dao\UserDAO.class
+com\chequeprint\util\Session.class
 com\chequeprint\model\LayoutField.class
 com\chequeprint\service\BankService.class
 com\chequeprint\controller\InvoiceController$1.class
@@ -154,6 +159,7 @@ com\chequeprint\dao\ChequeDAO.class
 com\chequeprint\preview\BankTemplateStore.class
 com\chequeprint\util\AmountToWords.class
 com\chequeprint\controller\DashboardController$DashboardData.class
+com\chequeprint\controller\BankController$3.class
 com\chequeprint\service\ChequeReminderService.class
 com\chequeprint\preview\ChequeLayout.class
 com\chequeprint\model\User.class

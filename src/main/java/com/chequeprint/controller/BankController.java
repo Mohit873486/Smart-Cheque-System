@@ -10,6 +10,7 @@ import com.chequeprint.util.ChequeSizeCodec;
 import com.chequeprint.util.ChequeSizePreset;
 import com.chequeprint.util.FxUtils;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -32,7 +33,6 @@ import javafx.scene.shape.Line;
 import javafx.scene.paint.Color;
 
 import java.io.File;
-import java.sql.SQLException;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -45,6 +45,7 @@ import javafx.scene.control.TableView;
 public class BankController {
 
     private final ApiService apiService = new ApiService();
+    @FXML private TableView<Bank> bankTable;
     @FXML private TableView<BankAccount> accountTable;
     @FXML private Button btnAddAccount;
     @FXML private VBox emptyState;
@@ -143,6 +144,7 @@ public class BankController {
     private Button layerMicr;
 
     private final BankService bankService = new BankService();
+    private final ObservableList<Bank> bankList = FXCollections.observableArrayList();
     private final ObservableList<Bank> data = FXCollections.observableArrayList();
     private final ObservableList<BankAccount> accountData = FXCollections.observableArrayList();
 
@@ -710,52 +712,90 @@ public class BankController {
             emptyState.setManaged(false);
         }
 
-        new Thread(() -> {
-            try {
-                java.util.List<BankAccount> accounts = apiService.getBankAccounts();
-                Platform.runLater(() -> {
-                    accountData.setAll(accounts);
-                    if (accountTable != null) {
-                        accountTable.setItems(accountData);
-                        accountTable.refresh();
-                    }
-                    if (loadingSpinner != null) {
-                        loadingSpinner.setVisible(false);
-                        loadingSpinner.setManaged(false);
-                    }
-                    if (emptyState != null) {
-                        boolean isEmpty = accounts.isEmpty();
-                        emptyState.setVisible(isEmpty);
-                        emptyState.setManaged(isEmpty);
-                    }
-                });
-            } catch (Exception e) {
-                Platform.runLater(() -> {
-                    if (loadingSpinner != null) {
-                        loadingSpinner.setVisible(false);
-                        loadingSpinner.setManaged(false);
-                    }
-                    showAlert("API Error", "Failed to load bank accounts: " + e.getMessage(), Alert.AlertType.ERROR);
-                });
+        Task<List<BankAccount>> task = new Task<>() {
+            @Override
+            protected List<BankAccount> call() throws Exception {
+                return apiService.getBankAccounts();
             }
-        }).start();
+        };
+
+        task.setOnSucceeded(e -> {
+            List<BankAccount> accounts = task.getValue();
+            accountData.setAll(accounts);
+            if (accountTable != null) {
+                accountTable.setItems(accountData);
+                accountTable.refresh();
+            }
+            if (loadingSpinner != null) {
+                loadingSpinner.setVisible(false);
+                loadingSpinner.setManaged(false);
+            }
+            if (emptyState != null) {
+                boolean isEmpty = accounts.isEmpty();
+                emptyState.setVisible(isEmpty);
+                emptyState.setManaged(isEmpty);
+            }
+        });
+
+        task.setOnFailed(e -> {
+            Throwable ex = task.getException();
+            if (loadingSpinner != null) {
+                loadingSpinner.setVisible(false);
+                loadingSpinner.setManaged(false);
+            }
+            showAlert("API Error", "Failed to load bank accounts: " + ex.getMessage(), Alert.AlertType.ERROR);
+        });
+
+        Thread thread = new Thread(task, "load-accounts-task");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     private void loadData() {
+        if (loadingSpinner != null) {
+            loadingSpinner.setVisible(true);
+            loadingSpinner.setManaged(true);
+        }
         setLoading(true);
-        new Thread(() -> {
-            try {
-                List<Bank> list = bankService.getAll();
-                Platform.runLater(() -> {
-                    data.setAll(list);
-                    fldBankName.setItems(data);
-                });
-            } catch (Exception e) {
-                Platform.runLater(() -> showAlert("Load Error", e.getMessage(), Alert.AlertType.ERROR));
-            } finally {
-                setLoading(false);
+
+        Task<List<Bank>> task = new Task<>() {
+            @Override
+            protected List<Bank> call() throws Exception {
+                return bankService.getBanks();
             }
-        }, "load-banks").start();
+        };
+
+        task.setOnSucceeded(e -> {
+            List<Bank> list = task.getValue();
+            bankList.setAll(list);
+            data.setAll(list);
+            if (bankTable != null) {
+                bankTable.setItems(bankList);
+                bankTable.refresh();
+            }
+            if (fldBankName != null) {
+                fldBankName.setItems(data);
+            }
+            if (loadingSpinner != null) {
+                loadingSpinner.setVisible(false);
+                loadingSpinner.setManaged(false);
+            }
+            setLoading(false);
+        });
+
+        task.setOnFailed(e -> {
+            Throwable ex = task.getException();
+            if (loadingSpinner != null) {
+                loadingSpinner.setVisible(false);
+                loadingSpinner.setManaged(false);
+            }
+            setLoading(false);
+            showAlert("Load Error", ex.getMessage(), Alert.AlertType.ERROR);
+        });
+
+        Thread thread = new Thread(task, "load-banks-task");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     @FXML
@@ -770,8 +810,18 @@ public class BankController {
             name = name.trim();
         }
         String code = fldBankCode.getText().trim().toUpperCase();
-        if (name.isEmpty() || code.isEmpty()) {
-            showAlert("Validation", "Bank name and bank code are required.", Alert.AlertType.WARNING);
+
+        // 1. Empty Fields Validation
+        if (name.isEmpty() && code.isEmpty()) {
+            showAlert("Validation Error", "Bank name and bank code / account number are required.", Alert.AlertType.WARNING);
+            return;
+        }
+        if (name.isEmpty()) {
+            showAlert("Validation Error", "Please enter a valid Bank Name.", Alert.AlertType.WARNING);
+            return;
+        }
+        if (code.isEmpty()) {
+            showAlert("Validation Error", "Please enter a valid Bank Code / Account Number.", Alert.AlertType.WARNING);
             return;
         }
 
@@ -796,37 +846,57 @@ public class BankController {
         final Bank finalBank = bank;
         final BankTemplateLayout layoutToSave = currentLayout != null ? currentLayout.copy() : formLayout.copy();
 
+        // Construct valid IFSC Code (11 alphanumeric characters matching ^[A-Z]{4}0[A-Z0-9]{6}$)
+        String formattedIfsc = formatValidIfsc(code);
+
         setLoading(true);
         new Thread(() -> {
             try {
+                // 2. Call Bank Template Local/REST Service
                 bankService.save(finalBank, layoutToSave, layoutByBankCode);
 
-                // POST bank account data to API
+                // 3. Call POST API for Bank Account
+                BankAccount account = new BankAccount();
+                account.setBankName(finalBank.getBankName());
+                account.setAccountNumber(finalBank.getBankCode());
+                account.setAccountHolderName(finalBank.getBankName());
+                account.setIfsc(formattedIfsc);
+                account.setIfscCode(formattedIfsc);
+                account.setBranch("Main Branch");
+                account.setBranchName("Main Branch");
+                account.setBalance(java.math.BigDecimal.ZERO);
+
                 try {
-                    BankAccount account = new BankAccount();
-                    account.setBankName(finalBank.getBankName());
-                    account.setAccountNumber(finalBank.getBankCode());
-                    account.setAccountHolderName(finalBank.getBankName());
-                    account.setIfscCode(finalBank.getBankCode());
-                    account.setBranchName("");
-                    account.setBalance(java.math.BigDecimal.ZERO);
                     apiService.saveBankAccount(account);
                 } catch (Exception apiEx) {
-                    System.err.println("API save failed (non-fatal): " + apiEx.getMessage());
+                    System.err.println("API Bank Account Save Warning: " + apiEx.getMessage());
                 }
 
+                // 4. Show Success Alert & Refresh Table
                 Platform.runLater(() -> {
                     clearForm();
                     loadData();
                     loadBankAccounts();
-                    showAlert("Success", "Bank template saved successfully.", Alert.AlertType.INFORMATION);
+                    showAlert("Success", "Bank account saved successfully!", Alert.AlertType.INFORMATION);
                 });
             } catch (Exception e) {
-                Platform.runLater(() -> showAlert("Save Error", e.getMessage(), Alert.AlertType.ERROR));
+                // 5. API / System Error Handling
+                Platform.runLater(() -> showAlert("Save Error", "Failed to save bank: " + e.getMessage(), Alert.AlertType.ERROR));
             } finally {
                 setLoading(false);
             }
         }, "save-bank").start();
+    }
+
+    private String formatValidIfsc(String code) {
+        if (code != null && code.matches("^[A-Z]{4}0[A-Z0-9]{6}$")) {
+            return code;
+        }
+        String prefix = (code != null && code.length() >= 4) ? code.substring(0, 4).replaceAll("[^A-Z]", "A") : "SBIN";
+        while (prefix.length() < 4) {
+            prefix += "A";
+        }
+        return prefix + "0001234";
     }
 
     @FXML

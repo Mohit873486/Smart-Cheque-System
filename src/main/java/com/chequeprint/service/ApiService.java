@@ -31,9 +31,9 @@ public class ApiService {
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Accept", "application/json");
             
-            String token = SessionManager.getInstance().getToken();
-            if (token != null && !token.isBlank()) {
-                connection.setRequestProperty("Authorization", "Bearer " + token);
+            String authHeader = com.chequeprint.util.Session.getAuthorizationHeader();
+            if (!authHeader.isBlank()) {
+                connection.setRequestProperty("Authorization", authHeader);
             }
             
             connection.setConnectTimeout(5000);
@@ -73,9 +73,9 @@ public class ApiService {
             connection.setRequestProperty("Content-Type", "application/json");
             connection.setRequestProperty("Accept", "application/json");
             
-            String token = SessionManager.getInstance().getToken();
-            if (token != null && !token.isBlank()) {
-                connection.setRequestProperty("Authorization", "Bearer " + token);
+            String authHeader = com.chequeprint.util.Session.getAuthorizationHeader();
+            if (!authHeader.isBlank()) {
+                connection.setRequestProperty("Authorization", authHeader);
             }
             
             connection.setConnectTimeout(5000);

@@ -90,10 +90,10 @@ public class ApiClient {
             connection.setConnectTimeout(10000);
             connection.setReadTimeout(10000);
 
-            // Add Authorization header
-            String token = SessionManager.getInstance().getToken();
-            if (token != null && !token.isBlank()) {
-                connection.setRequestProperty("Authorization", "Bearer " + token);
+            // Add Authorization header: Authorization: Bearer <token>
+            String authHeader = Session.getAuthorizationHeader();
+            if (!authHeader.isBlank()) {
+                connection.setRequestProperty("Authorization", authHeader);
             }
 
             if (jsonBody != null && (method.equals("POST") || method.equals("PUT"))) {

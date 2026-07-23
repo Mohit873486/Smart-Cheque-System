@@ -66,6 +66,9 @@ public class AuthService {
         user.setStatus("Active");
 
         // 5. Store session context
+        com.chequeprint.util.Session.token = token;
+        com.chequeprint.util.Session.username = user.getUsername();
+        com.chequeprint.util.Session.setSession(token, user.getUsername());
         SessionManager.getInstance().start(user);
         SessionManager.getInstance().setToken(token);
         

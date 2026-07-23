@@ -7,65 +7,114 @@
 <StackPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
            fx:controller="com.chequeprint.controller.ChequeDialogController"
            style="-fx-background-color: transparent;"
-           prefWidth="630" prefHeight="410">
+           prefWidth="940" prefHeight="520">
     <padding>
         <Insets top="15" right="15" bottom="15" left="15" />
     </padding>
 
-    <VBox spacing="20" styleClass="dialog-root" VBox.vgrow="ALWAYS">
+    <VBox spacing="16" styleClass="dialog-root" VBox.vgrow="ALWAYS">
         <padding>
-            <Insets top="24" right="24" bottom="24" left="24" />
+            <Insets top="20" right="24" bottom="20" left="24" />
         </padding>
 
         <!-- Top Header -->
         <HBox alignment="CENTER_LEFT" spacing="12">
             <VBox spacing="4" HBox.hgrow="ALWAYS">
                 <Label fx:id="lblFormTitle" text="New Cheque" styleClass="dialog-header-title" />
-                <Label text="Fill in the details below to save or print a cheque" styleClass="dialog-header-subtitle" />
+                <Label text="Fill in details to preview, save, or print a cheque in real-time" styleClass="dialog-header-subtitle" />
             </VBox>
             <Button text="✕" styleClass="dialog-close-btn" onAction="#onCancel" focusTraversable="false" />
         </HBox>
 
         <Separator styleClass="dialog-separator" />
 
-        <!-- Form 2-Column Grid -->
-        <GridPane hgap="20" vgap="16" VBox.vgrow="ALWAYS">
-            <columnConstraints>
-                <ColumnConstraints percentWidth="50" />
-                <ColumnConstraints percentWidth="50" />
-            </columnConstraints>
-            <rowConstraints>
-                <RowConstraints vgrow="NEVER" />
-                <RowConstraints vgrow="NEVER" />
-            </rowConstraints>
+        <!-- Main Content Area: Form (Left) & Real-Time Cheque Preview (Right) -->
+        <HBox spacing="20" VBox.vgrow="ALWAYS">
+            <!-- Left Side: Form Inputs -->
+            <VBox spacing="14" prefWidth="420" minWidth="380">
+                <VBox spacing="6">
+                    <Label text="Payee Name" styleClass="form-label" />
+                    <TextField fx:id="fldPayee" promptText="Enter payee name" styleClass="form-input" maxWidth="Infinity" />
+                </VBox>
 
-            <!-- Row 0, Col 0: Payee Name -->
-            <VBox spacing="6" GridPane.columnIndex="0" GridPane.rowIndex="0">
-                <Label text="Payee Name" styleClass="form-label" />
-                <TextField fx:id="fldPayee" promptText="Enter payee name" styleClass="form-input" maxWidth="Infinity" />
+                <VBox spacing="6">
+                    <Label text="Bank" styleClass="form-label" />
+                    <ComboBox fx:id="cmbBank" styleClass="form-combo" maxWidth="Infinity" />
+                </VBox>
+
+                <VBox spacing="6">
+                    <Label text="Amount (₹)" styleClass="form-label" />
+                    <HBox fx:id="moneyInputShell" alignment="CENTER_LEFT" spacing="0" styleClass="money-input-shell">
+                        <Label text="₹" styleClass="money-prefix" />
+                        <TextField fx:id="fldAmount" promptText="0.00" styleClass="money-input" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
+                    </HBox>
+                </VBox>
+
+                <VBox spacing="6">
+                    <Label text="Issue Date" styleClass="form-label" />
+                    <DatePicker fx:id="datePicker" styleClass="form-date" maxWidth="Infinity" />
+                </VBox>
             </VBox>
 
-            <!-- Row 0, Col 1: Bank -->
-            <VBox spacing="6" GridPane.columnIndex="1" GridPane.rowIndex="0">
-                <Label text="Bank" styleClass="form-label" />
-                <ComboBox fx:id="cmbBank" styleClass="form-combo" maxWidth="Infinity" />
-            </VBox>
+            <Separator orientation="VERTICAL" />
 
-            <!-- Row 1, Col 0: Amount -->
-            <VBox spacing="6" GridPane.columnIndex="0" GridPane.rowIndex="1">
-                <Label text="Amount" styleClass="form-label" />
-                <HBox fx:id="moneyInputShell" alignment="CENTER_LEFT" spacing="0" styleClass="money-input-shell">
-                    <Label text="₹" styleClass="money-prefix" />
-                    <TextField fx:id="fldAmount" promptText="0.00" styleClass="money-input" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
-                </HBox>
-            </VBox>
+            <!-- Right Side: Live Visual Cheque Preview Card -->
+            <VBox spacing="10" HBox.hgrow="ALWAYS" alignment="TOP_CENTER">
+                <Label text="Real-Time Cheque Preview" style="-fx-font-size:13px; -fx-font-weight:bold; -fx-text-fill:#475569;" />
 
-            <!-- Row 1, Col 1: Issue Date -->
-            <VBox spacing="6" GridPane.columnIndex="1" GridPane.rowIndex="1">
-                <Label text="Issue Date" styleClass="form-label" />
-                <DatePicker fx:id="datePicker" styleClass="form-date" maxWidth="Infinity" />
+                <VBox fx:id="chequePreviewCard" spacing="12"
+                      style="-fx-background-color: #f8fafc; -fx-border-color: #cbd5e1; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.06), 8, 0, 0, 2);"
+                      prefWidth="440" prefHeight="260" minHeight="250">
+                    <padding>
+                        <Insets top="16" right="20" bottom="16" left="20" />
+                    </padding>
+
+                    <!-- Top Header: Bank Name & Date -->
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label fx:id="previewBank" text="STATE BANK OF INDIA" style="-fx-font-size:14px; -fx-font-weight:bold; -fx-text-fill:#1e293b;" HBox.hgrow="ALWAYS" />
+                        <VBox alignment="TOP_RIGHT" spacing="2">
+                            <Label text="DATE:" style="-fx-font-size:9px; -fx-font-weight:bold; -fx-text-fill:#64748b;" />
+                            <Label fx:id="previewDate" text="DD / MM / YYYY" style="-fx-font-size:12px; -fx-font-weight:bold; -fx-text-fill:#0f172a; -fx-border-color: #cbd5e1; -fx-border-width: 1px; -fx-padding: 2 6 2 6;" />
+                        </VBox>
+                    </HBox>
+
+                    <Separator style="-fx-opacity: 0.5;" />
+
+                    <!-- Payee Row -->
+                    <HBox alignment="CENTER_LEFT" spacing="8">
+                        <Label text="PAY TO:" style="-fx-font-size:11px; -fx-font-weight:bold; -fx-text-fill:#475569;" />
+                        <Label fx:id="previewName" text="PAYEE NAME" style="-fx-font-size:13px; -fx-font-weight:bold; -fx-text-fill:#2563eb;" HBox.hgrow="ALWAYS" />
+                        <Label text="OR BEARER" style="-fx-font-size:10px; -fx-text-fill:#94a3b8;" />
+                    </HBox>
+
+                    <!-- Amount Words Row -->
+                    <VBox spacing="2">
+                        <Label text="RUPEES IN WORDS:" style="-fx-font-size:9px; -fx-font-weight:bold; -fx-text-fill:#64748b;" />
+                        <Label fx:id="previewAmountWords" text="Zero Rupees Only" style="-fx-font-size:11px; -fx-font-style:italic; -fx-text-fill:#334155;" wrapText="true" />
+                    </VBox>
+
+                    <Region VBox.vgrow="ALWAYS" />
+
+                    <!-- Amount Numeric Box & Signature Area -->
+                    <HBox alignment="BOTTOM_LEFT" spacing="12">
+                        <HBox alignment="CENTER_LEFT" style="-fx-background-color: #ffffff; -fx-border-color: #0284c7; -fx-border-width: 1.5px; -fx-border-radius: 4px; -fx-padding: 4 10 4 10;">
+                            <Label text="₹ " style="-fx-font-size:13px; -fx-font-weight:bold; -fx-text-fill:#0369a1;" />
+                            <Label fx:id="previewAmount" text="0.00" style="-fx-font-size:14px; -fx-font-weight:bold; -fx-text-fill:#0284c7;" />
+                        </HBox>
+                        <Region HBox.hgrow="ALWAYS" />
+                        <VBox alignment="BOTTOM_CENTER" spacing="2">
+                            <Label text="FOR CHEQUEPRINT INC." style="-fx-font-size:8px; -fx-font-weight:bold; -fx-text-fill:#94a3b8;" />
+                            <Label text="[ Authorized Signature ]" style="-fx-font-size:10px; -fx-text-fill:#64748b;" />
+                        </VBox>
+                    </HBox>
+
+                    <!-- MICR Band at bottom -->
+                    <HBox alignment="CENTER" style="-fx-background-color: #f1f5f9; -fx-padding: 4; -fx-border-color: #e2e8f0; -fx-border-width: 1px 0 0 0;">
+                        <Label text="⑈ 123456 ⑈  400240015 ⑈  000123 ⑈  10" style="-fx-font-family: 'Courier New', monospace; -fx-font-size:11px; -fx-font-weight:bold; -fx-text-fill:#475569;" />
+                    </HBox>
+                </VBox>
             </VBox>
-        </GridPane>
+        </HBox>
 
         <!-- Bottom Actions Footer -->
         <HBox spacing="12" alignment="CENTER_LEFT">

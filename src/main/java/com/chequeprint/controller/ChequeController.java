@@ -27,7 +27,6 @@ import javafx.scene.layout.VBox;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
 

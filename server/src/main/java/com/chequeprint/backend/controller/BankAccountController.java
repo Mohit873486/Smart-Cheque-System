@@ -15,19 +15,23 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class BankAccountController {
 
+    private final BankAccountService bankAccountService;
+
     @Autowired
-    private BankAccountService bankAccountService;
+    public BankAccountController(BankAccountService bankAccountService) {
+        this.bankAccountService = bankAccountService;
+    }
 
     @GetMapping
     public ResponseEntity<List<BankAccount>> getAllBankAccounts() {
-        return ResponseEntity.ok(bankAccountService.getAllBankAccounts());
+        List<BankAccount> accounts = bankAccountService.getAllBankAccounts();
+        return ResponseEntity.ok(accounts);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<BankAccount> getBankAccountById(@PathVariable Long id) {
-        return bankAccountService.getBankAccountById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        BankAccount bankAccount = bankAccountService.getBankAccountById(id);
+        return ResponseEntity.ok(bankAccount);
     }
 
     @PostMapping
@@ -38,12 +42,8 @@ public class BankAccountController {
 
     @PutMapping("/{id}")
     public ResponseEntity<BankAccount> updateBankAccount(@PathVariable Long id, @Valid @RequestBody BankAccount bankAccount) {
-        try {
-            BankAccount updatedBankAccount = bankAccountService.updateBankAccount(id, bankAccount);
-            return ResponseEntity.ok(updatedBankAccount);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        BankAccount updatedBankAccount = bankAccountService.updateBankAccount(id, bankAccount);
+        return ResponseEntity.ok(updatedBankAccount);
     }
 
     @DeleteMapping("/{id}")

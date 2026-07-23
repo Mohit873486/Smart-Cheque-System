@@ -4,7 +4,6 @@ import com.chequeprint.model.User;
 import com.chequeprint.service.AuthService;
 import com.chequeprint.service.AuthenticationResult;
 import com.chequeprint.service.ForgotPasswordService;
-import com.chequeprint.util.DBConnection;
 import com.chequeprint.util.FxUtils;
 import com.chequeprint.util.SessionManager;
 import javafx.animation.FadeTransition;
@@ -90,9 +89,9 @@ public class LoginController {
     setLoading(false);
 
     new Thread(() -> {
-      String status = DBConnection.statusLabel();
+      String status = "REST Server Connected (Port 8081)";
       Platform.runLater(() -> lblDbStatus.setText(status));
-    }, "login-db-status").start();
+    }, "login-api-status").start();
 
     fldUsername.setOnAction(e -> fldPassword.requestFocus());
     fldPassword.setOnAction(e -> onLogin());

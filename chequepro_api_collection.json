@@ -553,6 +553,122 @@
           }
         }
       ]
+    },
+    {
+      "name": "Bank Account Management",
+      "item": [
+        {
+          "name": "Create Bank Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankName\": \"State Bank of India\",\n  \"accountNumber\": \"12345678901\",\n  \"ifsc\": \"SBIN0001234\",\n  \"branch\": \"Main Branch\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bank/account",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank",
+                "account"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Bank Accounts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bank/account",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank",
+                "account"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Bank Account By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bank/account/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank",
+                "account",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Bank Account",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankName\": \"State Bank of India\",\n  \"accountNumber\": \"12345678901\",\n  \"ifsc\": \"SBIN0001234\",\n  \"branch\": \"Corporate Branch\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bank/account/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank",
+                "account",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Bank Account",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bank/account/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bank",
+                "account",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
     }
   ],
   "auth": {

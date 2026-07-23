@@ -33,6 +33,7 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+        com.chequeprint.util.GlobalErrorHandler.init();
         reminderScheduler.startDaily();
         showSplash(primaryStage);
     }

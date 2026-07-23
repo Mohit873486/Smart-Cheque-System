@@ -68,6 +68,7 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\Cheque
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\ChequeOcrService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\BankService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\PasswordUtil.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\FxPrinterService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\CommandParser.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\SignatureService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\dao\ChequeDAO.java
@@ -109,8 +110,10 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\ChequeS
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\InvoiceController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\BankTemplateLayout.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\GeminiApiClient.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\Session.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\UserService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\preview\ChequeRenderer.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\GlobalErrorHandler.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\BatchPrintException.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\UserRole.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\SmartSuggestionService.java

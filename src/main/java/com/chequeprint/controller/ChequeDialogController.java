@@ -12,10 +12,10 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.math.BigDecimal;
-import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -50,6 +50,19 @@ public class ChequeDialogController {
     private final java.util.Map<String, Integer> bankNameToId = new java.util.LinkedHashMap<>();
 
     @FXML
+    private VBox chequePreviewCard;
+    @FXML
+    private Label previewName;
+    @FXML
+    private Label previewAmount;
+    @FXML
+    private Label previewAmountWords;
+    @FXML
+    private Label previewDate;
+    @FXML
+    private Label previewBank;
+
+    @FXML
     private void initialize() {
         if (fldAmount != null && moneyInputShell != null) {
             fldAmount.focusedProperty().addListener((obs, oldVal, newVal) -> {
@@ -59,6 +72,72 @@ public class ChequeDialogController {
                     }
                 } else {
                     moneyInputShell.getStyleClass().remove("focused");
+                }
+            });
+        }
+        setupRealTimePreview();
+    }
+
+    private void setupRealTimePreview() {
+        // 1. Payee Name binding (fldPayee -> previewName)
+        if (fldPayee != null) {
+            fldPayee.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (previewName != null) {
+                    if (newVal == null || newVal.isBlank()) {
+                        previewName.setText("PAYEE NAME");
+                    } else {
+                        previewName.setText(newVal.trim().toUpperCase());
+                    }
+                }
+            });
+        }
+
+        // 2. Amount binding (fldAmount -> previewAmount & previewAmountWords)
+        if (fldAmount != null) {
+            fldAmount.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (previewAmount != null) {
+                    if (newVal == null || newVal.isBlank()) {
+                        previewAmount.setText("0.00");
+                        if (previewAmountWords != null) {
+                            previewAmountWords.setText("Zero Rupees Only");
+                        }
+                    } else {
+                        try {
+                            BigDecimal val = new BigDecimal(newVal.trim());
+                            previewAmount.setText(String.format("%,.2f", val));
+                            if (previewAmountWords != null) {
+                                previewAmountWords.setText(com.chequeprint.util.NumberToWordsConverter.convert(val));
+                            }
+                        } catch (Exception ex) {
+                            previewAmount.setText(newVal);
+                        }
+                    }
+                }
+            });
+        }
+
+        // 3. Bank binding (cmbBank -> previewBank)
+        if (cmbBank != null) {
+            cmbBank.valueProperty().addListener((obs, oldVal, newVal) -> {
+                if (previewBank != null) {
+                    if (newVal == null || newVal.isBlank()) {
+                        previewBank.setText("STATE BANK OF INDIA");
+                    } else {
+                        previewBank.setText(newVal.toUpperCase());
+                    }
+                }
+            });
+        }
+
+        // 4. Date binding (datePicker -> previewDate)
+        if (datePicker != null) {
+            datePicker.valueProperty().addListener((obs, oldVal, newVal) -> {
+                if (previewDate != null) {
+                    if (newVal != null) {
+                        previewDate.setText(newVal.format(java.time.format.DateTimeFormatter.ofPattern("dd / MM / yyyy")));
+                    } else {
+                        previewDate.setText("DD / MM / YYYY");
+                    }
                 }
             });
         }
@@ -188,7 +267,7 @@ public class ChequeDialogController {
                 selectedCheque.setBankId(bankId);
                 selectedCheque.setIssueDate(datePicker.getValue());
                 if (!chequeService.update(selectedCheque)) {
-                    throw new SQLException("Could not update cheque.");
+                    throw new RuntimeException("Could not update cheque.");
                 }
                 showAlert("Success", "Cheque updated.", Alert.AlertType.INFORMATION);
             }
@@ -214,7 +293,7 @@ public class ChequeDialogController {
                 if (payee.isEmpty()) FxUtils.shake(fldPayee);
                 if (amtStr.isEmpty()) FxUtils.shake(fldAmount);
                 if (datePicker.getValue() == null) FxUtils.shake(datePicker);
-                showAlert("Validation", "Payee name, amount, and issue date are required.", Alert.AlertType.WARNING);
+                showAlert("Validation", "Payee name, amount, and issue date are required before printing.", Alert.AlertType.WARNING);
                 return;
             }
 
@@ -233,51 +312,32 @@ public class ChequeDialogController {
                 return;
             }
 
-            String selectedBankName = cmbBank.getValue();
-            int bankId = bankNameToId.getOrDefault(selectedBankName,
-                    Math.max(1, cmbBank.getSelectionModel().getSelectedIndex() + 1));
+            // Print the Cheque Preview Node using native JavaFX PrinterJob
+            javafx.stage.Window window = btnSaveAndPrint.getScene() != null ? btnSaveAndPrint.getScene().getWindow() : null;
+            boolean printed = FxPrinterService.printNode(chequePreviewCard, window);
 
-            if (selectedCheque == null) {
-                Cheque newCheque = new Cheque(null, payee, amount, bankId, datePicker.getValue());
-                workflowService.createPending(newCheque, actor);
-                showAlert("Success",
-                        "Cheque created and submitted for approval. Print is available after manager approval.",
-                        Alert.AlertType.INFORMATION);
-            } else {
-                if (selectedCheque.getStatus() != Cheque.Status.Approved && selectedCheque.getStatus() != Cheque.Status.Printed) {
-                    if (AccessControl.can(actor, Permission.APPROVE_CHEQUE)) {
-                        showAlert("Approval Required",
-                                "This cheque is in " + selectedCheque.getStatus() + " status. You must approve it first using the 'Approve' button before printing.",
-                                Alert.AlertType.WARNING);
-                    } else {
-                        if (selectedCheque.getStatus() == Cheque.Status.Draft) {
-                            showAlert("Approval Required",
-                                    "This cheque is a draft. Save it first, then ask an Admin or Manager to approve it before printing.",
-                                    Alert.AlertType.INFORMATION);
-                        } else if (selectedCheque.getStatus() == Cheque.Status.Pending) {
-                            showAlert("Approval Required",
-                                    "This cheque is pending approval. Ask an Admin or Manager to approve it before printing.",
-                                    Alert.AlertType.INFORMATION);
-                        } else {
-                            showAlert("Cannot Print",
-                                    "This cheque cannot be printed. Current status: " + selectedCheque.getStatus(),
-                                    Alert.AlertType.WARNING);
-                        }
-                    }
-                    return;
+            if (printed) {
+                String selectedBankName = cmbBank.getValue();
+                int bankId = bankNameToId.getOrDefault(selectedBankName,
+                        Math.max(1, cmbBank.getSelectionModel().getSelectedIndex() + 1));
+
+                if (selectedCheque == null) {
+                    Cheque newCheque = new Cheque(null, payee, amount, bankId, datePicker.getValue());
+                    workflowService.createPending(newCheque, actor);
+                } else {
+                    selectedCheque.setPayeeName(payee);
+                    selectedCheque.setAmount(amount);
+                    selectedCheque.setBankId(bankId);
+                    selectedCheque.setIssueDate(datePicker.getValue());
+                    chequeService.update(selectedCheque);
+                    workflowService.print(selectedCheque.getId(), actor);
                 }
-                selectedCheque.setPayeeName(payee);
-                selectedCheque.setAmount(amount);
-                selectedCheque.setBankId(bankId);
-                selectedCheque.setIssueDate(datePicker.getValue());
-                chequeService.update(selectedCheque);
-                workflowService.print(selectedCheque.getId(), actor);
-                showAlert("Success", "Cheque printed successfully.", Alert.AlertType.INFORMATION);
+                showAlert("Success", "Cheque sent to printer successfully!", Alert.AlertType.INFORMATION);
+                saved = true;
+                closeStage();
             }
-            saved = true;
-            closeStage();
         } catch (Exception e) {
-            showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
+            showAlert("Print Error", e.getMessage(), Alert.AlertType.ERROR);
         }
     }
 
