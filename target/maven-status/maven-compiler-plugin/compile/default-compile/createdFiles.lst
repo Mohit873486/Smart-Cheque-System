@@ -74,6 +74,7 @@ com\chequeprint\service\ChequeAiCommand$Data.class
 com\chequeprint\model\AuditLog.class
 com\chequeprint\service\CommandDetectionService$1.class
 com\chequeprint\service\OpenAiChequeAssistantService.class
+com\chequeprint\util\DraggableLabelUtil.class
 com\chequeprint\service\MultiAgentCoordinatorService$1.class
 com\chequeprint\util\ChequeApiClient$2.class
 com\chequeprint\printpreview\PrintPreviewDocument$PrintHandler.class
@@ -103,6 +104,7 @@ com\chequeprint\controller\ModernDashboardController$1.class
 com\chequeprint\model\BankTemplateLayout.class
 com\chequeprint\model\Cheque$Status.class
 com\chequeprint\util\JasperPrintUtil$1.class
+com\chequeprint\util\DraggableLabelUtil$DragContext.class
 com\chequeprint\controller\DashboardController.class
 com\chequeprint\service\AccessControl.class
 com\chequeprint\service\OpenAiChequeOcrService$ChequeOcrResult.class
@@ -138,6 +140,7 @@ com\chequeprint\model\Invoice.class
 com\chequeprint\service\ApiService$1.class
 com\chequeprint\controller\AiAssistantController.class
 com\chequeprint\preview\BankTemplate.class
+com\chequeprint\service\BankService$2.class
 com\chequeprint\preview\ChequeData.class
 com\chequeprint\service\BatchPrintException.class
 com\chequeprint\service\ChequeApiService$1.class
@@ -162,6 +165,7 @@ com\chequeprint\controller\DashboardController$DashboardData.class
 com\chequeprint\controller\BankController$3.class
 com\chequeprint\service\ChequeReminderService.class
 com\chequeprint\preview\ChequeLayout.class
+com\chequeprint\util\DraggableLabelUtil$PositionChangeListener.class
 com\chequeprint\model\User.class
 com\chequeprint\service\ChequeWorkflowService.class
 com\chequeprint\util\ChequeSizePreset.class
@@ -171,6 +175,7 @@ com\chequeprint\config\AppConfig.class
 com\chequeprint\service\ChequeOcrResult.class
 com\chequeprint\util\JasperPrintUtil.class
 com\chequeprint\util\ChequeSnapshotRenderer$1.class
+com\chequeprint\service\BankService$3.class
 com\chequeprint\MainApp.class
 com\chequeprint\service\InvoiceService.class
 com\chequeprint\service\SmartSuggestionService$SuggestionInsight.class

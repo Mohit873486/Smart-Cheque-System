@@ -2,18 +2,11 @@ package com.chequeprint.backend.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+import java.time.LocalDateTime;
+
 @Entity
-@Table(name = "bank_accounts")
+@Table(name = "bank_account")
 public class BankAccount {
 
     @Id
@@ -29,13 +22,78 @@ public class BankAccount {
     private String accountNumber;
 
     @NotBlank(message = "IFSC code is required")
-    @Pattern(regexp = "^[A-Z]{4}0[A-Z0-9]{6}$", message = "Invalid IFSC code format (e.g. SBIN0001234)")
     @Column(name = "ifsc", nullable = false)
     private String ifsc;
 
     @Column(name = "branch")
     private String branch;
 
-    @Column(name = "signature_path")
-    private String signaturePath;
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    public BankAccount() {
+    }
+
+    public BankAccount(Long id, String bankName, String accountNumber, String ifsc, String branch) {
+        this.id = id;
+        this.bankName = bankName;
+        this.accountNumber = accountNumber;
+        this.ifsc = ifsc;
+        this.branch = branch;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getBankName() {
+        return bankName;
+    }
+
+    public void setBankName(String bankName) {
+        this.bankName = bankName;
+    }
+
+    public String getAccountNumber() {
+        return accountNumber;
+    }
+
+    public void setAccountNumber(String accountNumber) {
+        this.accountNumber = accountNumber;
+    }
+
+    public String getIfsc() {
+        return ifsc;
+    }
+
+    public void setIfsc(String ifsc) {
+        this.ifsc = ifsc;
+    }
+
+    public String getBranch() {
+        return branch;
+    }
+
+    public void setBranch(String branch) {
+        this.branch = branch;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }

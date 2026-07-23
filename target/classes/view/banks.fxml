@@ -249,15 +249,23 @@
                                 <Label text="Y (mm)" style="-fx-text-fill: #475569;" GridPane.rowIndex="1" GridPane.columnIndex="0" />
                                 <TextField fx:id="fldAdjustTop" promptText="0.0" styleClass="form-input" GridPane.rowIndex="1" GridPane.columnIndex="1" />
 
-                                <Label text="Width" style="-fx-text-fill: #475569;" GridPane.rowIndex="2" GridPane.columnIndex="0" />
-                                <TextField fx:id="fldAdjustWidth" promptText="auto" styleClass="form-input" GridPane.rowIndex="2" GridPane.columnIndex="1" />
+                                <Label text="Font" style="-fx-text-fill: #475569;" GridPane.rowIndex="2" GridPane.columnIndex="0" />
+                                <ComboBox fx:id="cmbFontFamily" promptText="Arial" styleClass="form-combo" maxWidth="Infinity" GridPane.rowIndex="2" GridPane.columnIndex="1" />
 
-                                <Label text="Height" style="-fx-text-fill: #475569;" GridPane.rowIndex="3" GridPane.columnIndex="0" />
-                                <TextField fx:id="fldAdjustHeight" promptText="auto" styleClass="form-input" GridPane.rowIndex="3" GridPane.columnIndex="1" />
+                                <Label text="Size (pt)" style="-fx-text-fill: #475569;" GridPane.rowIndex="3" GridPane.columnIndex="0" />
+                                <TextField fx:id="fldFontSize" promptText="12" styleClass="form-input" GridPane.rowIndex="3" GridPane.columnIndex="1" />
+
+                                <Label text="Width" style="-fx-text-fill: #475569;" GridPane.rowIndex="4" GridPane.columnIndex="0" />
+                                <TextField fx:id="fldAdjustWidth" promptText="auto" styleClass="form-input" GridPane.rowIndex="4" GridPane.columnIndex="1" />
+
+                                <Label text="Height" style="-fx-text-fill: #475569;" GridPane.rowIndex="5" GridPane.columnIndex="0" />
+                                <TextField fx:id="fldAdjustHeight" promptText="auto" styleClass="form-input" GridPane.rowIndex="5" GridPane.columnIndex="1" />
                             </GridPane>
 
-                            <ComboBox fx:id="cmbAdjustField" visible="false" managed="false" />
-                            <Button text="Apply" onAction="#onApplyFieldAdjustment" maxWidth="Infinity" styleClass="btn-secondary" style="-fx-cursor: hand; -fx-background-radius: 6;" />
+                            <HBox spacing="8" alignment="CENTER">
+                                <Button text="Reset" onAction="#onResetFieldAdjustment" HBox.hgrow="ALWAYS" maxWidth="Infinity" styleClass="btn-secondary" style="-fx-cursor: hand; -fx-background-radius: 6; -fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-font-weight: bold;" />
+                                <Button text="Apply" onAction="#onApplyFieldAdjustment" HBox.hgrow="ALWAYS" maxWidth="Infinity" styleClass="btn-primary" style="-fx-cursor: hand; -fx-background-radius: 6; -fx-font-weight: bold;" />
+                            </HBox>
                         </VBox>
 
                         <VBox spacing="12" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 16; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.02), 5, 0, 0, 2);">

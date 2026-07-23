@@ -227,6 +227,68 @@ public class BankService {
         }
     }
 
+    /**
+     * Saves template fields to Spring Boot REST API (POST /api/template/fields).
+     */
+    public boolean saveTemplateFields(List<Map<String, Object>> fieldList) throws Exception {
+        if (fieldList == null || fieldList.isEmpty()) {
+            return false;
+        }
+
+        String jsonPayload = objectMapper.writeValueAsString(fieldList);
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8081/api/template/fields"))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload));
+
+        addAuthToken(builder);
+        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        return response.statusCode() == 200 || response.statusCode() == 201;
+    }
+
+    /**
+     * Fetches template fields from Spring Boot REST API (GET /api/template/fields/{templateId}).
+     */
+    public List<Map<String, Object>> getTemplateFields(Long templateId) throws Exception {
+        if (templateId == null || templateId <= 0) {
+            return List.of();
+        }
+
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8081/api/template/fields/" + templateId))
+                .header("Accept", "application/json")
+                .GET();
+
+        addAuthToken(builder);
+        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() == 200) {
+            return objectMapper.readValue(response.body(), new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
+        }
+        return List.of();
+    }
+
+    /**
+     * Fetches templates by bankId from Spring Boot REST API (GET /api/template/{bankId}).
+     */
+    public List<Map<String, Object>> getTemplatesByBankId(Long bankId) throws Exception {
+        if (bankId == null || bankId <= 0) {
+            return List.of();
+        }
+
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8081/api/template/" + bankId))
+                .header("Accept", "application/json")
+                .GET();
+
+        addAuthToken(builder);
+        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() == 200) {
+            return objectMapper.readValue(response.body(), new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
+        }
+        return List.of();
+    }
+
     public Map<String, BankTemplateLayout> loadAllLayouts() {
         return layoutStore.loadAll();
     }

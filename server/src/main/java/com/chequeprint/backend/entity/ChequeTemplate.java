@@ -3,7 +3,7 @@ package com.chequeprint.backend.entity;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "cheque_templates")
+@Table(name = "cheque_template")
 public class ChequeTemplate {
 
     @Id
@@ -13,34 +13,25 @@ public class ChequeTemplate {
     @Column(name = "bank_id", nullable = false)
     private Long bankId;
 
-    @Column(name = "name_x")
-    private Double nameX;
+    @Column(name = "template_name", nullable = false)
+    private String templateName;
 
-    @Column(name = "name_y")
-    private Double nameY;
+    @Column(name = "width", nullable = false)
+    private Double width = 203.20;
 
-    @Column(name = "date_x")
-    private Double dateX;
-
-    @Column(name = "date_y")
-    private Double dateY;
-
-    @Column(name = "amount_x")
-    private Double amountX;
-
-    @Column(name = "amount_y")
-    private Double amountY;
-
-    @Column(name = "signature_x")
-    private Double signatureX;
-
-    @Column(name = "signature_y")
-    private Double signatureY;
+    @Column(name = "height", nullable = false)
+    private Double height = 92.00;
 
     public ChequeTemplate() {
     }
 
-    // Getters and Setters
+    public ChequeTemplate(Long id, Long bankId, String templateName, Double width, Double height) {
+        this.id = id;
+        this.bankId = bankId;
+        this.templateName = templateName;
+        this.width = width != null ? width : 203.20;
+        this.height = height != null ? height : 92.00;
+    }
 
     public Long getId() {
         return id;
@@ -58,67 +49,27 @@ public class ChequeTemplate {
         this.bankId = bankId;
     }
 
-    public Double getNameX() {
-        return nameX;
+    public String getTemplateName() {
+        return templateName;
     }
 
-    public void setNameX(Double nameX) {
-        this.nameX = nameX;
+    public void setTemplateName(String templateName) {
+        this.templateName = templateName;
     }
 
-    public Double getNameY() {
-        return nameY;
+    public Double getWidth() {
+        return width;
     }
 
-    public void setNameY(Double nameY) {
-        this.nameY = nameY;
+    public void setWidth(Double width) {
+        this.width = width;
     }
 
-    public Double getDateX() {
-        return dateX;
+    public Double getHeight() {
+        return height;
     }
 
-    public void setDateX(Double dateX) {
-        this.dateX = dateX;
-    }
-
-    public Double getDateY() {
-        return dateY;
-    }
-
-    public void setDateY(Double dateY) {
-        this.dateY = dateY;
-    }
-
-    public Double getAmountX() {
-        return amountX;
-    }
-
-    public void setAmountX(Double amountX) {
-        this.amountX = amountX;
-    }
-
-    public Double getAmountY() {
-        return amountY;
-    }
-
-    public void setAmountY(Double amountY) {
-        this.amountY = amountY;
-    }
-
-    public Double getSignatureX() {
-        return signatureX;
-    }
-
-    public void setSignatureX(Double signatureX) {
-        this.signatureX = signatureX;
-    }
-
-    public Double getSignatureY() {
-        return signatureY;
-    }
-
-    public void setSignatureY(Double signatureY) {
-        this.signatureY = signatureY;
+    public void setHeight(Double height) {
+        this.height = height;
     }
 }

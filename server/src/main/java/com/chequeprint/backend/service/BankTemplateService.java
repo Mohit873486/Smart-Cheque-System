@@ -1,75 +1,65 @@
 package com.chequeprint.backend.service;
 
-import com.chequeprint.backend.entity.BankTemplate;
-import com.chequeprint.backend.repository.BankTemplateRepository;
+import com.chequeprint.backend.entity.BankAccount;
+import com.chequeprint.backend.entity.ChequeTemplate;
+import com.chequeprint.backend.entity.TemplateField;
+import com.chequeprint.backend.repository.BankAccountRepository;
+import com.chequeprint.backend.repository.ChequeTemplateRepository;
+import com.chequeprint.backend.repository.TemplateFieldRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @Transactional
 public class BankTemplateService {
 
-    private final BankTemplateRepository repository;
-    private final AuditLogService auditLogService;
+    @Autowired
+    private BankAccountRepository bankAccountRepository;
 
     @Autowired
-    public BankTemplateService(BankTemplateRepository repository, AuditLogService auditLogService) {
-        this.repository = repository;
-        this.auditLogService = auditLogService;
+    private ChequeTemplateRepository chequeTemplateRepository;
+
+    @Autowired
+    private TemplateFieldRepository templateFieldRepository;
+
+    // 1. BankAccount Operations
+    public List<BankAccount> getAllBankAccounts() {
+        return bankAccountRepository.findAll();
     }
 
-    public List<BankTemplate> getAllTemplates() {
-        return repository.findAll();
+    public BankAccount createBankAccount(BankAccount bankAccount) {
+        return bankAccountRepository.save(bankAccount);
     }
 
-    public Optional<BankTemplate> getTemplateById(int id) {
-        return repository.findById(id);
+    // 2. ChequeTemplate Operations
+    public ChequeTemplate createTemplate(ChequeTemplate template) {
+        return chequeTemplateRepository.save(template);
     }
 
-    public BankTemplate createTemplate(BankTemplate template) {
-        if (template.getBankCode() == null || template.getBankCode().isBlank()) {
-            throw new IllegalArgumentException("Bank code is required.");
+    public List<ChequeTemplate> getTemplatesByBankId(Long bankId) {
+        return chequeTemplateRepository.findByBankId(bankId);
+    }
+
+    // 3. TemplateField Operations
+    public List<TemplateField> saveTemplateFields(List<TemplateField> fields) {
+        if (fields != null && !fields.isEmpty()) {
+            Long templateId = fields.get(0).getTemplateId();
+            if (templateId != null) {
+                templateFieldRepository.deleteByTemplateId(templateId);
+            }
+            return templateFieldRepository.saveAll(fields);
         }
-        Optional<BankTemplate> existing = repository.findByBankCode(template.getBankCode());
-        if (existing.isPresent()) {
-            throw new IllegalArgumentException("Bank template with code '" + template.getBankCode() + "' already exists.");
-        }
-        BankTemplate saved = repository.save(template);
-        auditLogService.record(null, "bank_templates", saved.getId(), "INSERT", "Created bank template: " + saved.getBankCode());
-        return saved;
+        return List.of();
     }
 
-    public BankTemplate updateTemplate(int id, BankTemplate updated) {
-        return repository.findById(id)
-                .map(existing -> {
-                    if (!existing.getBankCode().equals(updated.getBankCode())) {
-                        Optional<BankTemplate> duplicate = repository.findByBankCode(updated.getBankCode());
-                        if (duplicate.isPresent()) {
-                            throw new IllegalArgumentException("Bank template with code '" + updated.getBankCode() + "' already exists.");
-                        }
-                    }
-                    existing.setBankName(updated.getBankName());
-                    existing.setBankCode(updated.getBankCode());
-                    existing.setChequeSize(updated.getChequeSize());
-                    existing.setMicr(updated.isMicr());
-                    existing.setLogoPath(updated.getLogoPath());
-                    BankTemplate saved = repository.save(existing);
-                    auditLogService.record(null, "bank_templates", saved.getId(), "UPDATE", "Updated bank template: " + saved.getBankCode());
-                    return saved;
-                })
-                .orElseThrow(() -> new IllegalArgumentException("Bank template not found with ID: " + id));
+    public TemplateField saveTemplateField(TemplateField field) {
+        return templateFieldRepository.save(field);
     }
 
-    public void deleteTemplate(int id) {
-        Optional<BankTemplate> existing = repository.findById(id);
-        if (existing.isEmpty()) {
-            throw new IllegalArgumentException("Bank template not found with ID: " + id);
-        }
-        repository.deleteById(id);
-        auditLogService.record(null, "bank_templates", id, "DELETE", "Deleted bank template: " + existing.get().getBankCode());
+    public List<TemplateField> getFieldsByTemplateId(Long templateId) {
+        return templateFieldRepository.findByTemplateId(templateId);
     }
 }

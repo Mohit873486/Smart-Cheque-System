@@ -28,7 +28,8 @@ public class SecurityConfig {
                 // Allow login and registration endpoint publicly
                 .requestMatchers("/api/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
-                .requestMatchers("/api/bank/account/**").permitAll()
+                .requestMatchers("/api/bank/**").permitAll()
+                .requestMatchers("/api/template/**").permitAll()
                 
                 // Allow settings management only for Admins
                 .requestMatchers("/api/settings/**").hasRole("Admin")

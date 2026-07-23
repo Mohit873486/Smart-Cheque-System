@@ -33,6 +33,7 @@ import javafx.scene.shape.Line;
 import javafx.scene.paint.Color;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -61,6 +62,7 @@ public class BankController {
     @FXML private Button btnEditTemplate;
 
     private static final double PREVIEW_PPI = 90.0;
+    private final Map<Long, BankTemplateLayout> bankTemplateMap = new java.util.concurrent.ConcurrentHashMap<>();
 
     @FXML
     private ComboBox<Bank> fldBankName;
@@ -106,6 +108,29 @@ public class BankController {
     private Pane chequePreviewPane;
     @FXML
     private ComboBox<LayoutField> cmbAdjustField;
+    private LayoutField selectedLayoutField = LayoutField.PAYEE;
+
+    private LayoutField getSelectedField() {
+        if (cmbAdjustField != null && cmbAdjustField.getValue() != null) {
+            return cmbAdjustField.getValue();
+        }
+        return selectedLayoutField;
+    }
+
+    private void setSelectedField(LayoutField field) {
+        this.selectedLayoutField = field;
+        if (cmbAdjustField != null && cmbAdjustField.getValue() != field) {
+            cmbAdjustField.setValue(field);
+        }
+        updateFieldHighlights();
+        if (field != null) {
+            loadAdjustmentFields(field);
+            StackPane node = fieldNodes.get(field);
+            if (node != null) {
+                updateHUD(field, node);
+            }
+        }
+    }
     @FXML
     private TextField fldAdjustLeft;
     @FXML
@@ -114,6 +139,10 @@ public class BankController {
     private TextField fldAdjustWidth;
     @FXML
     private TextField fldAdjustHeight;
+    @FXML
+    private ComboBox<String> cmbFontFamily;
+    @FXML
+    private TextField fldFontSize;
 
     // Canva specific fields
     @FXML
@@ -214,6 +243,27 @@ public class BankController {
     }
 
     private void setupForm() {
+        if (cmbFontFamily != null) {
+            cmbFontFamily.setItems(FXCollections.observableArrayList("Arial", "Courier New", "Consolas", "Times New Roman", "Verdana", "Tahoma"));
+            cmbFontFamily.setValue("Arial");
+            cmbFontFamily.valueProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null && getSelectedField() != null) {
+                    applySelectedFieldFont(getSelectedField(), newVal, getSelectedFontSize());
+                }
+            });
+        }
+        if (fldFontSize != null) {
+            fldFontSize.setText("12");
+            fldFontSize.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null && getSelectedField() != null) {
+                    try {
+                        int size = Integer.parseInt(newVal.trim());
+                        String family = cmbFontFamily != null && cmbFontFamily.getValue() != null ? cmbFontFamily.getValue() : "Arial";
+                        applySelectedFieldFont(getSelectedField(), family, size);
+                    } catch (Exception ignored) {}
+                }
+            });
+        }
         if (btnDelete != null) btnDelete.setDisable(true);
         fldBankName.setItems(data);
         fldBankName.setConverter(new StringConverter<Bank>() {
@@ -354,12 +404,16 @@ public class BankController {
     }
 
     private void setupAdjustmentPanel() {
-        cmbAdjustField.setItems(FXCollections.observableArrayList(LayoutField.values()));
-        cmbAdjustField.setValue(LayoutField.PAYEE);
-        cmbAdjustField.valueProperty().addListener((obs, old, field) -> {
-            loadAdjustmentFields(field);
-            updateFieldHighlights();
-        });
+        if (cmbAdjustField != null) {
+            cmbAdjustField.setItems(FXCollections.observableArrayList(LayoutField.values()));
+            cmbAdjustField.setValue(LayoutField.PAYEE);
+            cmbAdjustField.valueProperty().addListener((obs, old, field) -> {
+                if (field != null) {
+                    setSelectedField(field);
+                }
+            });
+        }
+        setSelectedField(LayoutField.PAYEE);
     }
 
     private void createFieldNode(LayoutField field, String text, String style) {
@@ -397,7 +451,7 @@ public class BankController {
             }
             dragDelta.x = e.getX();
             dragDelta.y = e.getY();
-            cmbAdjustField.setValue(field);
+            setSelectedField(field);
             e.consume();
         });
         
@@ -422,7 +476,7 @@ public class BankController {
             resizeDelta.y = e.getScreenY();
             dragDelta.x = node.getPrefWidth();
             dragDelta.y = node.getPrefHeight();
-            cmbAdjustField.setValue(field);
+            setSelectedField(field);
             e.consume();
         });
         
@@ -548,7 +602,7 @@ public class BankController {
         double xr = paneW <= 0 ? 0 : nx / paneW;
         double yr = paneH <= 0 ? 0 : ny / paneH;
         currentLayout.setFieldPosition(field, xr, yr);
-        if (field == cmbAdjustField.getValue()) {
+        if (field == getSelectedField()) {
             loadAdjustmentFields(field);
         }
         updateHUD(field, node);
@@ -615,10 +669,10 @@ public class BankController {
         }
 
         lblPreviewSize.setText(String.format("Preview Size: %.2f x %.2f inches", currentLayout.getWidthInches(), currentLayout.getHeightInches()));
-        loadAdjustmentFields(cmbAdjustField.getValue());
+        loadAdjustmentFields(getSelectedField());
         updateFieldHighlights();
 
-        LayoutField selected = cmbAdjustField.getValue();
+        LayoutField selected = getSelectedField();
         if (selected != null) {
             StackPane node = fieldNodes.get(selected);
             if (node != null) {
@@ -640,38 +694,6 @@ public class BankController {
         if (zoomLevel > 0.4) {
             zoomLevel -= 0.1;
             layoutPreviewPane();
-        }
-    }
-
-    @FXML
-    private void onApplyFieldAdjustment() {
-        if (currentLayout == null || cmbAdjustField.getValue() == null) {
-            return;
-        }
-
-        try {
-            LayoutField field = cmbAdjustField.getValue();
-            double widthMm = currentLayout.getWidthInches() * 25.4;
-            double heightMm = currentLayout.getHeightInches() * 25.4;
-
-            double leftMm = parsePositive(fldAdjustLeft.getText(), "Left");
-            double topMm = parsePositive(fldAdjustTop.getText(), "Top");
-            double fieldWidthMm = parsePositive(fldAdjustWidth.getText(), "Width");
-            double fieldHeightMm = parsePositive(fldAdjustHeight.getText(), "Height");
-
-            fieldWidthMm = Math.min(fieldWidthMm, Math.max(1.0, widthMm - leftMm));
-            fieldHeightMm = Math.min(fieldHeightMm, Math.max(1.0, heightMm - topMm));
-
-            currentLayout.setFieldLayout(
-                    field,
-                    leftMm / widthMm,
-                    topMm / heightMm,
-                    fieldWidthMm / widthMm,
-                    fieldHeightMm / heightMm);
-            refreshPreview();
-            persistCurrentLayoutIfPossible();
-        } catch (IllegalArgumentException ex) {
-            showAlert("Adjustment", ex.getMessage(), Alert.AlertType.WARNING);
         }
     }
 
@@ -872,12 +894,16 @@ public class BankController {
                     System.err.println("API Bank Account Save Warning: " + apiEx.getMessage());
                 }
 
-                // 4. Show Success Alert & Refresh Table
+                // 4. Save Template Fields to REST API (POST /api/template/fields)
+                Long templateId = finalBank.getId() != null ? finalBank.getId().longValue() : 1L;
+                saveTemplateFieldsToApi(templateId);
+
+                // 5. Show Success Alert & Refresh Table
                 Platform.runLater(() -> {
                     clearForm();
                     loadData();
                     loadBankAccounts();
-                    showAlert("Success", "Bank account saved successfully!", Alert.AlertType.INFORMATION);
+                    showAlert("Success", "Bank template & field positions saved successfully!", Alert.AlertType.INFORMATION);
                 });
             } catch (Exception e) {
                 // 5. API / System Error Handling
@@ -962,8 +988,21 @@ public class BankController {
     }
 
     private void populateForm(Bank bank) {
+        if (bank == null) {
+            clearOldUI();
+            return;
+        }
+
+        // 1. Clear old UI canvas & inspector selection state
+        clearOldUI();
+
         selectedBank = bank;
-        lblFormTitle.setText("Edit Bank Template");
+        Long bankId = bank.getId() != null ? bank.getId().longValue() : 1L;
+
+        // 2. Load new template from Map cache or REST API
+        loadNewTemplate(bankId, bank);
+
+        lblFormTitle.setText("Edit Bank Template (" + bank.getBankName() + ")");
         btnSave.setText("Update Template");
         btnDelete.setDisable(false);
         if (btnNewBank != null) {
@@ -1302,7 +1341,7 @@ public class BankController {
     }
 
     private void updateFieldHighlights() {
-        LayoutField selected = cmbAdjustField.getValue();
+        LayoutField selected = getSelectedField();
 
         if (layerDate != null) {
             setLayerButtonSelected(layerDate, selected == LayoutField.DATE);
@@ -1369,19 +1408,19 @@ public class BankController {
     }
 
     @FXML
-    private void onSelectLayerDate() { cmbAdjustField.setValue(LayoutField.DATE); }
+    private void onSelectLayerDate() { setSelectedField(LayoutField.DATE); }
     @FXML
-    private void onSelectLayerPayee() { cmbAdjustField.setValue(LayoutField.PAYEE); }
+    private void onSelectLayerPayee() { setSelectedField(LayoutField.PAYEE); }
     @FXML
-    private void onSelectLayerAmountNumber() { cmbAdjustField.setValue(LayoutField.AMOUNT_NUMBER); }
+    private void onSelectLayerAmountNumber() { setSelectedField(LayoutField.AMOUNT_NUMBER); }
     @FXML
-    private void onSelectLayerAmountWords() { cmbAdjustField.setValue(LayoutField.AMOUNT_WORDS); }
+    private void onSelectLayerAmountWords() { setSelectedField(LayoutField.AMOUNT_WORDS); }
     @FXML
-    private void onSelectLayerSignature() { cmbAdjustField.setValue(LayoutField.SIGNATURE); }
+    private void onSelectLayerSignature() { setSelectedField(LayoutField.SIGNATURE); }
     @FXML
-    private void onSelectLayerBankLogo() { cmbAdjustField.setValue(LayoutField.BANK_LOGO); }
+    private void onSelectLayerBankLogo() { setSelectedField(LayoutField.BANK_LOGO); }
     @FXML
-    private void onSelectLayerMicr() { cmbAdjustField.setValue(LayoutField.MICR); }
+    private void onSelectLayerMicr() { setSelectedField(LayoutField.MICR); }
 
     @FXML
     private void onAlignLeft() { alignSelected(0.0, -1); }
@@ -1398,7 +1437,7 @@ public class BankController {
 
     private void alignSelected(double targetX, double targetY) {
         if (currentLayout == null) return;
-        LayoutField field = cmbAdjustField.getValue();
+        LayoutField field = getSelectedField();
         if (field == null) return;
 
         StackPane node = fieldNodes.get(field);
@@ -1443,6 +1482,69 @@ public class BankController {
     }
 
     @FXML
+    private void onResetFieldAdjustment() {
+        LayoutField field = getSelectedField();
+        if (field == null || currentLayout == null) {
+            return;
+        }
+
+        BankTemplateLayout defaultLayout = new BankTemplateLayout(currentLayout.getWidthInches(), currentLayout.getHeightInches());
+        FieldPosition defaultPos = defaultLayout.get(field);
+
+        currentLayout.setFieldLayout(field, defaultPos.getXRatio(), defaultPos.getYRatio(), defaultPos.getWidthRatio(), defaultPos.getHeightRatio());
+
+        if (cmbFontFamily != null) cmbFontFamily.setValue("Arial");
+        if (fldFontSize != null) fldFontSize.setText("12");
+
+        applySelectedFieldFont(field, "Arial", 12);
+        loadAdjustmentFields(field);
+        refreshPreview();
+        persistCurrentLayoutIfPossible();
+    }
+
+    @FXML
+    private void onApplyFieldAdjustment() {
+        LayoutField field = getSelectedField();
+        if (field == null || currentLayout == null) {
+            return;
+        }
+
+        try {
+            double leftMm = parsePositive(fldAdjustLeft.getText(), "X (mm)");
+            double topMm = parsePositive(fldAdjustTop.getText(), "Y (mm)");
+
+            double widthMm = currentLayout.getWidthInches() * 25.4;
+            double heightMm = currentLayout.getHeightInches() * 25.4;
+
+            double xRatio = leftMm / widthMm;
+            double yRatio = topMm / heightMm;
+
+            double widthRatio = -1;
+            if (fldAdjustWidth != null && !fldAdjustWidth.getText().isBlank()) {
+                double wMm = parsePositive(fldAdjustWidth.getText(), "Width (mm)");
+                widthRatio = wMm / widthMm;
+            }
+
+            double heightRatio = -1;
+            if (fldAdjustHeight != null && !fldAdjustHeight.getText().isBlank()) {
+                double hMm = parsePositive(fldAdjustHeight.getText(), "Height (mm)");
+                heightRatio = hMm / heightMm;
+            }
+
+            currentLayout.setFieldLayout(field, xRatio, yRatio, widthRatio, heightRatio);
+
+            String fontFamily = cmbFontFamily != null && cmbFontFamily.getValue() != null ? cmbFontFamily.getValue() : "Arial";
+            int fontSize = getSelectedFontSize();
+            applySelectedFieldFont(field, fontFamily, fontSize);
+
+            refreshPreview();
+            persistCurrentLayoutIfPossible();
+        } catch (Exception ex) {
+            showAlert("Adjustment Error", ex.getMessage(), Alert.AlertType.WARNING);
+        }
+    }
+
+    @FXML
     private void onPresetSmall() { setPresetSize(40.0, 8.0); }
     @FXML
     private void onPresetMedium() { setPresetSize(80.0, 10.0); }
@@ -1457,7 +1559,7 @@ public class BankController {
 
     private void setPresetSize(double widthMm, double heightMm) {
         if (currentLayout == null) return;
-        LayoutField field = cmbAdjustField.getValue();
+        LayoutField field = getSelectedField();
         if (field == null) return;
 
         double widthInches = currentLayout.getWidthInches();
@@ -1528,6 +1630,207 @@ public class BankController {
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.showAndWait();
+    }
+
+    public void saveTemplateFieldsToApi(Long templateId) {
+        if (templateId == null || templateId <= 0) {
+            templateId = 1L;
+        }
+
+        List<Map<String, Object>> fieldsPayload = new ArrayList<>();
+        String fontFamily = cmbFontFamily != null && cmbFontFamily.getValue() != null ? cmbFontFamily.getValue() : "Arial";
+        int fontSize = 12;
+        if (fldFontSize != null && !fldFontSize.getText().isBlank()) {
+            try {
+                fontSize = Integer.parseInt(fldFontSize.getText().trim());
+            } catch (Exception ignored) {}
+        }
+
+        for (Map.Entry<LayoutField, StackPane> entry : fieldNodes.entrySet()) {
+            LayoutField field = entry.getKey();
+            StackPane node = entry.getValue();
+
+            Map<String, Object> fieldMap = new HashMap<>();
+            fieldMap.put("templateId", templateId);
+            fieldMap.put("fieldName", mapFieldName(field));
+            fieldMap.put("xPosition", node.getLayoutX());
+            fieldMap.put("yPosition", node.getLayoutY());
+            fieldMap.put("fontSize", fontSize);
+            fieldMap.put("fontFamily", fontFamily);
+
+            fieldsPayload.add(fieldMap);
+        }
+
+        final Long targetTemplateId = templateId;
+        new Thread(() -> {
+            try {
+                // Call POST /api/template/fields
+                boolean success = bankService.saveTemplateFields(fieldsPayload);
+                if (success) {
+                    // Reload template fields from GET /api/template/fields/{templateId}
+                    List<Map<String, Object>> reloadedFields = bankService.getTemplateFields(targetTemplateId);
+                    Platform.runLater(() -> {
+                        applyReloadedFields(reloadedFields);
+                        System.out.println("Successfully reloaded template fields from REST API.");
+                    });
+                }
+            } catch (Exception ex) {
+                System.err.println("Failed to save/reload template fields from REST API: " + ex.getMessage());
+            }
+        }, "save-template-fields-api").start();
+    }
+
+    private String mapFieldName(LayoutField field) {
+        return switch (field) {
+            case PAYEE -> "name";
+            case AMOUNT_NUMBER -> "amount";
+            case AMOUNT_WORDS -> "amount_words";
+            case DATE -> "date";
+            case SIGNATURE -> "signature";
+            case BANK_LOGO -> "logo";
+            case MICR -> "micr";
+        };
+    }
+
+    private void clearOldUI() {
+        setSelectedField(null);
+        if (lblActiveLayerName != null) {
+            lblActiveLayerName.setText("None");
+        }
+        if (lblCoordinatesHUD != null) {
+            lblCoordinatesHUD.setText("Select an element");
+        }
+        if (fldAdjustLeft != null) fldAdjustLeft.clear();
+        if (fldAdjustTop != null) fldAdjustTop.clear();
+        if (fldAdjustWidth != null) fldAdjustWidth.clear();
+        if (fldAdjustHeight != null) fldAdjustHeight.clear();
+        if (inspectorGrid != null) inspectorGrid.setDisable(true);
+        if (alignmentPanel != null) alignmentPanel.setDisable(true);
+
+        updateFieldHighlights();
+    }
+
+    public void loadNewTemplate(Long bankId, Bank bank) {
+        if (bankId == null || bankId <= 0) {
+            return;
+        }
+
+        // Check Map<BankId, Template> cache first
+        if (bankTemplateMap.containsKey(bankId)) {
+            currentLayout = bankTemplateMap.get(bankId).copy();
+            layoutPreviewPane();
+            refreshPreview();
+        }
+
+        new Thread(() -> {
+            try {
+                // Call API GET /api/template/{bankId}
+                List<Map<String, Object>> templates = bankService.getTemplatesByBankId(bankId);
+                Long templateId = bankId;
+                if (!templates.isEmpty() && templates.get(0).get("id") instanceof Number) {
+                    templateId = ((Number) templates.get(0).get("id")).longValue();
+                }
+
+                // Call API GET /api/template/fields/{templateId}
+                List<Map<String, Object>> fields = bankService.getTemplateFields(templateId);
+
+                final Long targetBankId = bankId;
+                Platform.runLater(() -> {
+                    applyReloadedFields(fields);
+                    if (currentLayout != null) {
+                        bankTemplateMap.put(targetBankId, currentLayout.copy());
+                    }
+                });
+            } catch (Exception e) {
+                System.err.println("Multi-bank template load warning: " + e.getMessage());
+            }
+        }, "load-new-template").start();
+    }
+
+    public void loadTemplateFromBackend(Long bankId) {
+        loadNewTemplate(bankId, selectedBank);
+    }
+
+    private void applyReloadedFields(List<Map<String, Object>> fields) {
+        if (fields == null || fields.isEmpty() || currentLayout == null) {
+            return;
+        }
+
+        double paneW = chequePreviewPane.getPrefWidth();
+        double paneH = chequePreviewPane.getPrefHeight();
+        if (paneW <= 0) paneW = 720;
+        if (paneH <= 0) paneH = 300;
+
+        for (Map<String, Object> map : fields) {
+            String name = (String) map.get("fieldName");
+            Object xObj = map.get("xPosition");
+            Object yObj = map.get("yPosition");
+            Object fontFamilyObj = map.get("fontFamily");
+            Object fontSizeObj = map.get("fontSize");
+
+            if (name != null && xObj instanceof Number && yObj instanceof Number) {
+                double x = ((Number) xObj).doubleValue();
+                double y = ((Number) yObj).doubleValue();
+                String fontFamily = fontFamilyObj instanceof String ? (String) fontFamilyObj : "Arial";
+                int fontSize = fontSizeObj instanceof Number ? ((Number) fontSizeObj).intValue() : 12;
+
+                LayoutField field = unmapFieldName(name);
+                if (field != null) {
+                    StackPane node = fieldNodes.get(field);
+                    if (node != null) {
+                        // Step 3: Render fields on Pane - Set layoutX and layoutY
+                        node.setLayoutX(x);
+                        node.setLayoutY(y);
+
+                        // Step 4: Apply font settings
+                        for (javafx.scene.Node child : node.getChildren()) {
+                            if (child instanceof Label label) {
+                                label.setFont(javafx.scene.text.Font.font(fontFamily, fontSize));
+                                label.setStyle("-fx-font-family: '" + fontFamily + "'; -fx-font-size: " + fontSize + "px;");
+                            }
+                        }
+
+                        currentLayout.setFieldPosition(field, x / paneW, y / paneH);
+                    }
+                }
+            }
+        }
+        refreshPreview();
+    }
+
+    private LayoutField unmapFieldName(String name) {
+        return switch (name.toLowerCase()) {
+            case "name", "payee" -> LayoutField.PAYEE;
+            case "amount", "amount_number" -> LayoutField.AMOUNT_NUMBER;
+            case "amount_words" -> LayoutField.AMOUNT_WORDS;
+            case "date" -> LayoutField.DATE;
+            case "signature" -> LayoutField.SIGNATURE;
+            case "logo" -> LayoutField.BANK_LOGO;
+            case "micr" -> LayoutField.MICR;
+            default -> null;
+        };
+    }
+
+    private void applySelectedFieldFont(LayoutField field, String fontFamily, int fontSize) {
+        if (field == null) return;
+        StackPane node = fieldNodes.get(field);
+        if (node != null) {
+            for (javafx.scene.Node child : node.getChildren()) {
+                if (child instanceof Label label) {
+                    label.setFont(javafx.scene.text.Font.font(fontFamily, fontSize));
+                    label.setStyle("-fx-font-family: '" + fontFamily + "'; -fx-font-size: " + fontSize + "px;");
+                }
+            }
+        }
+    }
+
+    private int getSelectedFontSize() {
+        if (fldFontSize != null && !fldFontSize.getText().isBlank()) {
+            try {
+                return Integer.parseInt(fldFontSize.getText().trim());
+            } catch (Exception ignored) {}
+        }
+        return 12;
     }
 
     private static final class Delta {
