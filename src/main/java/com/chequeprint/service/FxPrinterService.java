@@ -9,6 +9,8 @@ import javafx.scene.Node;
 import javafx.scene.transform.Scale;
 import javafx.stage.Window;
 
+//not proper 
+
 /**
  * Service class for JavaFX native printing using PrinterJob.
  * Opens native printer selection dialog and prints any JavaFX Node (cheque preview layout).
