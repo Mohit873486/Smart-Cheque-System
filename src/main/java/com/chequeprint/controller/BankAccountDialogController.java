@@ -18,6 +18,7 @@ public class BankAccountDialogController {
     @FXML private TextField fldAccountNumber;
     @FXML private TextField fldHolderName;
     @FXML private TextField fldIfscCode;
+    @FXML private TextField fldBranchName;
     @FXML private Button btnSave;
 
     private Consumer<BankAccount> onSaveCallback;
@@ -38,6 +39,7 @@ public class BankAccountDialogController {
             if (fldAccountNumber != null) fldAccountNumber.setText(account.getAccountNumber() != null ? account.getAccountNumber() : "");
             if (fldHolderName != null) fldHolderName.setText(account.getAccountHolderName() != null ? account.getAccountHolderName() : "");
             if (fldIfscCode != null) fldIfscCode.setText(account.getIfscCode() != null ? account.getIfscCode() : "");
+            if (fldBranchName != null) fldBranchName.setText(account.getBranchName() != null ? account.getBranchName() : "");
         }
     }
 
@@ -47,6 +49,7 @@ public class BankAccountDialogController {
         String accountNumber = fldAccountNumber.getText() != null ? fldAccountNumber.getText().trim() : "";
         String holderName = fldHolderName.getText() != null ? fldHolderName.getText().trim() : "";
         String ifscCode = fldIfscCode.getText() != null ? fldIfscCode.getText().trim() : "";
+        String branchName = fldBranchName != null && fldBranchName.getText() != null ? fldBranchName.getText().trim() : "";
 
         if (bankName.isEmpty() || accountNumber.isEmpty() || holderName.isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
@@ -62,6 +65,8 @@ public class BankAccountDialogController {
         account.setAccountNumber(accountNumber);
         account.setAccountHolderName(holderName);
         account.setIfsc(ifscCode);
+        account.setBranch(branchName);
+        account.setBranchName(branchName);
 
         if (onSaveCallback != null) {
             onSaveCallback.accept(account);

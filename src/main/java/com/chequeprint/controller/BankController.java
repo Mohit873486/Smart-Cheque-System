@@ -110,6 +110,10 @@ public class BankController {
     @FXML
     private Label lblFormTitle;
     @FXML
+    private Label lblTemplateMapping;
+    @FXML
+    private Label lblTemplateMappingDesigner;
+    @FXML
     private Label lblPreviewSize;
     @FXML
     private Label lblZoom;
@@ -245,15 +249,45 @@ public class BankController {
             });
 
             controller.setOnSaveCallback(account -> {
+                // Check if account number exists
+                BankAccount existingAcc = null;
+                if (account.getAccountNumber() != null) {
+                    for (BankAccount acc : accountData) {
+                        if (acc.getAccountNumber() != null && acc.getAccountNumber().equalsIgnoreCase(account.getAccountNumber().trim())) {
+                            existingAcc = acc;
+                            break;
+                        }
+                    }
+                }
+
+                final BankAccount match = existingAcc;
+                final boolean exists = (match != null);
+
                 Task<BankAccount> saveTask = new Task<>() {
                     @Override
                     protected BankAccount call() throws Exception {
-                        return apiService.saveBankAccount(account);
+                        if (exists && match.getId() != null) {
+                            return apiService.updateBankAccount(match.getId(), account);
+                        } else {
+                            return apiService.saveBankAccount(account);
+                        }
                     }
                 };
                 saveTask.setOnSucceeded(ev -> {
                     BankAccount saved = saveTask.getValue();
-                    accountData.add(saved != null ? saved : account);
+                    BankAccount finalObj = saved != null ? saved : account;
+
+                    if (exists && match != null) {
+                        int idx = accountData.indexOf(match);
+                        if (idx >= 0) {
+                            accountData.set(idx, finalObj);
+                        } else {
+                            accountData.add(finalObj);
+                        }
+                    } else {
+                        accountData.add(finalObj);
+                    }
+
                     if (accountTable != null) {
                         accountTable.setItems(accountData);
                         accountTable.refresh();
@@ -262,16 +296,16 @@ public class BankController {
                         emptyState.setVisible(accountData.isEmpty());
                     }
                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                    alert.setTitle("Success");
+                    alert.setTitle(exists ? "Account Exists" : "Success");
                     alert.setHeaderText(null);
-                    alert.setContentText("Bank account added successfully!");
+                    alert.setContentText(exists ? "Account already exists! Details updated successfully." : "Saved successfully!");
                     alert.showAndWait();
                 });
                 saveTask.setOnFailed(ev -> {
                     Throwable ex = saveTask.getException();
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle("Error");
-                    alert.setHeaderText("Failed to Add Account");
+                    alert.setHeaderText("Failed to Save Account");
                     alert.setContentText(ex != null ? ex.getMessage() : "Unknown error");
                     alert.showAndWait();
                 });
@@ -523,18 +557,41 @@ public class BankController {
         }
     }
 
+    private void updateTemplateMappingLabel(BankAccount account) {
+        if (account == null) {
+            if (lblTemplateMapping != null) lblTemplateMapping.setText("Select an account to view template mapping");
+            if (lblTemplateMappingDesigner != null) lblTemplateMappingDesigner.setText("Template for: Select Account");
+            return;
+        }
+
+        String bankName = account.getBankName() != null && !account.getBankName().isBlank() ? account.getBankName() : "Bank";
+        String accNo = account.getAccountNumber() != null ? account.getAccountNumber().trim() : "";
+        String last4 = accNo.length() >= 4 ? accNo.substring(accNo.length() - 4) : accNo;
+        String labelText = "Template for: " + bankName + " (xxxx" + last4 + ")";
+
+        if (lblTemplateMapping != null) {
+            lblTemplateMapping.setText(labelText);
+        }
+        if (lblTemplateMappingDesigner != null) {
+            lblTemplateMappingDesigner.setText(labelText);
+        }
+    }
+
     private void setupAccountTableListener() {
         if (accountTable != null) {
-            if (accountTable.getColumns().size() >= 4) {
+            if (accountTable.getColumns().size() >= 5) {
                 accountTable.getColumns().get(0).setCellValueFactory(new PropertyValueFactory<>("bankName"));
                 accountTable.getColumns().get(1).setCellValueFactory(new PropertyValueFactory<>("accountNumber"));
                 accountTable.getColumns().get(2).setCellValueFactory(new PropertyValueFactory<>("accountHolderName"));
                 accountTable.getColumns().get(3).setCellValueFactory(new PropertyValueFactory<>("ifscCode"));
+                accountTable.getColumns().get(4).setCellValueFactory(new PropertyValueFactory<>("branchName"));
             }
             accountTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
                 boolean hasSelection = (newVal != null);
                 if (btnEditAccountAction != null) btnEditAccountAction.setDisable(!hasSelection);
                 if (btnDeleteAccountAction != null) btnDeleteAccountAction.setDisable(!hasSelection);
+                updateTemplateMappingLabel(newVal);
+
                 if (newVal == null) {
                     if (previewEmptyState != null) previewEmptyState.setVisible(true);
                     if (previewPane != null) {
@@ -589,6 +646,7 @@ public class BankController {
         Task<com.chequeprint.model.ChequeTemplate> saveTask = new Task<>() {
             @Override
             protected com.chequeprint.model.ChequeTemplate call() throws Exception {
+                currentTemplate.updateConfigJson();
                 return apiService.saveChequeTemplate(currentTemplate);
             }
         };
@@ -599,16 +657,27 @@ public class BankController {
                 previewLoading.setVisible(false);
             }
             com.chequeprint.model.ChequeTemplate saved = saveTask.getValue();
-            if (saved != null && saved.getBankId() != null) {
-                templateCache.put(String.valueOf(saved.getBankId()), saved);
+            if (saved != null) {
+                saved.parseConfigJsonIfPresent();
+                if (saved.getBankId() != null) {
+                    templateCache.put(String.valueOf(saved.getBankId()), saved);
+                }
                 currentTemplate = saved;
+
+                BankAccount selectedAccObj = accountTable != null ? accountTable.getSelectionModel().getSelectedItem() : null;
+                if (selectedAccObj != null && saved.getId() != null) {
+                    selectedAccObj.setTemplateId(saved.getId());
+                }
+
+                // Instant reload of live preview after save
+                setCurrentTemplate(saved);
             }
 
             // Success message
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Template Saved");
             alert.setHeaderText("Success!");
-            alert.setContentText("Cheque template saved successfully to database.");
+            alert.setContentText("Cheque template updated successfully in database.");
             alert.showAndWait();
         });
 
@@ -705,6 +774,12 @@ public class BankController {
             com.chequeprint.model.ChequeTemplate template = task.getValue();
             if (template == null) {
                 template = new com.chequeprint.model.ChequeTemplate(bankId, "Default Bank Template");
+            }
+            if (template.getId() != null) {
+                BankAccount sel = accountTable != null ? accountTable.getSelectionModel().getSelectedItem() : null;
+                if (sel != null) {
+                    sel.setTemplateId(template.getId());
+                }
             }
             templateCache.put(cacheKey, template);
             setCurrentTemplate(template);
@@ -882,6 +957,35 @@ public class BankController {
         }
     }
 
+    private void renderAlignmentGuides(Pane pane, double centerX, double centerY) {
+        if (pane == null) return;
+        removeAlignmentGuides(pane);
+
+        double w = pane.getWidth() > 0 ? pane.getWidth() : (pane.getPrefWidth() > 0 ? pane.getPrefWidth() : 300.0);
+        double h = pane.getHeight() > 0 ? pane.getHeight() : (pane.getPrefHeight() > 0 ? pane.getPrefHeight() : 170.0);
+
+        javafx.scene.shape.Line horizGuide = new javafx.scene.shape.Line(0, centerY, w, centerY);
+        horizGuide.setStroke(javafx.scene.paint.Color.web("#2563eb", 0.75));
+        horizGuide.getStrokeDashArray().addAll(4.0, 4.0);
+        horizGuide.setStrokeWidth(1.2);
+        horizGuide.setId("alignment-guide-horiz");
+        horizGuide.setMouseTransparent(true);
+
+        javafx.scene.shape.Line vertGuide = new javafx.scene.shape.Line(centerX, 0, centerX, h);
+        vertGuide.setStroke(javafx.scene.paint.Color.web("#2563eb", 0.75));
+        vertGuide.getStrokeDashArray().addAll(4.0, 4.0);
+        vertGuide.setStrokeWidth(1.2);
+        vertGuide.setId("alignment-guide-vert");
+        vertGuide.setMouseTransparent(true);
+
+        pane.getChildren().addAll(horizGuide, vertGuide);
+    }
+
+    private void removeAlignmentGuides(Pane pane) {
+        if (pane == null) return;
+        pane.getChildren().removeIf(node -> "alignment-guide-horiz".equals(node.getId()) || "alignment-guide-vert".equals(node.getId()));
+    }
+
     private void makeLabelDraggable(Label label, String fieldKey, com.chequeprint.model.ChequeTemplate.FieldConfig cfg, double scaleX, double scaleY) {
         if (label == null || cfg == null) return;
         label.setCursor(javafx.scene.Cursor.HAND);
@@ -910,13 +1014,22 @@ public class BankController {
             label.setLayoutX(newLayoutX);
             label.setLayoutY(newLayoutY);
 
-            cfg.setX(newLayoutX / scaleX);
-            cfg.setY(newLayoutY / scaleY);
+            double mmX = newLayoutX / scaleX;
+            double mmY = newLayoutY / scaleY;
 
+            cfg.setX(mmX);
+            cfg.setY(mmY);
+
+            if (lblCoordinatesHUD != null) {
+                lblCoordinatesHUD.setText(String.format("X: %.1f mm | Y: %.1f mm", mmX, mmY));
+            }
+
+            renderAlignmentGuides(previewPane, newLayoutX + label.getWidth() / 2.0, newLayoutY + label.getHeight() / 2.0);
             event.consume();
         });
 
         label.setOnMouseReleased(event -> {
+            removeAlignmentGuides(previewPane);
             if (currentTemplate != null) {
                 renderPreview(currentTemplate);
             }
@@ -925,7 +1038,7 @@ public class BankController {
     }
 
     private double scalePos(double val, double scale, double fallback) {
-        if (val <= 0) return fallback;
+        if (val < 0) return fallback;
         return val * scale;
     }
 
@@ -947,6 +1060,7 @@ public class BankController {
         if (cmbBankAccount != null) {
             cmbBankAccount.setItems(accountData);
             cmbBankAccount.valueProperty().addListener((obs, oldVal, newVal) -> {
+                updateTemplateMappingLabel(newVal);
                 if (newVal != null && newVal.getId() != null) {
                     Long bankId = newVal.getId().longValue();
                     Session.setSelectedBankId(bankId);

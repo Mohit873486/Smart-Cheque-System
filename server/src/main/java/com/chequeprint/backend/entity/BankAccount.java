@@ -29,6 +29,12 @@ public class BankAccount {
     @Column(name = "account_holder_name", nullable = false)
     private String accountHolderName;
 
+    @Column(name = "branch")
+    private String branch;
+
+    @Column(name = "template_id")
+    private Long templateId;
+
     @Column(name = "signature_path")
     private String signaturePath;
 
@@ -38,12 +44,13 @@ public class BankAccount {
     public BankAccount() {
     }
 
-    public BankAccount(Long id, String bankName, String accountNumber, String accountHolderName, String ifsc) {
+    public BankAccount(Long id, String bankName, String accountNumber, String accountHolderName, String ifsc, String branch) {
         this.id = id;
         this.bankName = bankName;
         this.accountNumber = accountNumber;
         this.accountHolderName = accountHolderName;
         this.ifsc = ifsc;
+        this.branch = branch;
     }
 
     @PrePersist
@@ -93,12 +100,28 @@ public class BankAccount {
         this.ifsc = ifsc;
     }
 
+    public String getBranch() {
+        return branch;
+    }
+
+    public void setBranch(String branch) {
+        this.branch = branch;
+    }
+
     public String getSignaturePath() {
         return signaturePath;
     }
 
     public void setSignaturePath(String signaturePath) {
         this.signaturePath = signaturePath;
+    }
+
+    public Long getTemplateId() {
+        return templateId;
+    }
+
+    public void setTemplateId(Long templateId) {
+        this.templateId = templateId;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -87,7 +87,6 @@ CREATE TABLE IF NOT EXISTS accounts (
     account_number VARCHAR(30) NOT NULL UNIQUE,
     account_holder_name VARCHAR(150) NOT NULL,
     bank_name VARCHAR(100) NOT NULL,
-    branch_name VARCHAR(100) NOT NULL,
     ifsc_code VARCHAR(20) NOT NULL,
     balance DECIMAL(15,2) NOT NULL DEFAULT 0.00,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -290,10 +289,10 @@ INSERT IGNORE INTO bank_templates (bank_name, bank_code, cheque_size, micr) VALU
 ('IndusInd Bank', 'IIB', '8.5x3.66in', TRUE);
 
 -- SAMPLE ACCOUNTS
-INSERT IGNORE INTO accounts (id, account_number, account_holder_name, bank_name, branch_name, ifsc_code, balance)
+INSERT IGNORE INTO accounts (id, account_number, account_holder_name, bank_name, ifsc_code, balance)
 VALUES
-(1, '123456789012', 'Acme Corp Operating Account', 'State Bank of India', 'Mumbai Main Branch', 'SBIN0000123', 5000000.00),
-(2, '987654321098', 'Acme Corp Payroll Account', 'HDFC Bank', 'Delhi Connaught Place Branch', 'HDFC0000456', 2500000.00);
+(1, '123456789012', 'Acme Corp Operating Account', 'State Bank of India', 'SBIN0000123', 5000000.00),
+(2, '987654321098', 'Acme Corp Payroll Account', 'HDFC Bank', 'HDFC0000456', 2500000.00);
 
 -- SAMPLE CHEQUES
 INSERT IGNORE INTO cheques (cheque_no, payee_name, amount, amount_words, bank_id, account_id, issue_date, status)

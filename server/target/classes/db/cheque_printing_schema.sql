@@ -18,8 +18,10 @@ CREATE TABLE bank_account (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     bank_name VARCHAR(100) NOT NULL,
     account_number VARCHAR(35) NOT NULL UNIQUE,
+    account_holder_name VARCHAR(150) NOT NULL,
     ifsc VARCHAR(11) NOT NULL,
-    branch VARCHAR(100) NOT NULL,
+    branch VARCHAR(100),
+    signature_path VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -56,11 +58,11 @@ CREATE TABLE template_field (
 -- ============================================================
 
 -- Insert Sample Bank Accounts
-INSERT INTO bank_account (id, bank_name, account_number, ifsc, branch) VALUES
-(1, 'State Bank of India', '123456789012', 'SBIN0000123', 'Mumbai Main Branch'),
-(2, 'HDFC Bank', '987654321098', 'HDFC0000456', 'Delhi Connaught Place Branch'),
-(3, 'ICICI Bank', '556677889900', 'ICIC0000789', 'Bandra West Branch'),
-(4, 'Axis Bank', '112233445566', 'UTIB0000112', 'MG Road Branch');
+INSERT INTO bank_account (id, bank_name, account_number, account_holder_name, ifsc, branch) VALUES
+(1, 'State Bank of India', '123456789012', 'Acme Corp Operating Account', 'SBIN0000123', 'Mumbai Main Branch'),
+(2, 'HDFC Bank', '987654321098', 'Acme Corp Payroll Account', 'HDFC0000456', 'Delhi Connaught Place Branch'),
+(3, 'ICICI Bank', '556677889900', 'Acme Corp Reserve Account', 'ICIC0000789', 'Bandra West Branch'),
+(4, 'Axis Bank', '112233445566', 'Acme Corp Vendor Account', 'UTIB0000112', 'MG Road Branch');
 
 -- Insert Sample Cheque Templates
 INSERT INTO cheque_template (id, bank_id, template_name, width, height) VALUES

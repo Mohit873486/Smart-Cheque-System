@@ -56,6 +56,12 @@
                 <Label text="IFSC Code" styleClass="form-label" />
                 <TextField fx:id="fldIfscCode" promptText="e.g. SBIN0001234" styleClass="form-input" maxWidth="Infinity" />
             </VBox>
+
+            <!-- Branch Name -->
+            <VBox spacing="6">
+                <Label text="Branch Name" styleClass="form-label" />
+                <TextField fx:id="fldBranchName" promptText="e.g. Mumbai Main Branch" styleClass="form-input" maxWidth="Infinity" />
+            </VBox>
         </VBox>
 
         <!-- Bottom Actions Footer -->

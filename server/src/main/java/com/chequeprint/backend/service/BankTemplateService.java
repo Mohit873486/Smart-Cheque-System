@@ -60,7 +60,30 @@ public class BankTemplateService {
 
     // 2. ChequeTemplate Operations
     public ChequeTemplate createTemplate(ChequeTemplate template) {
+        if (template.getId() != null) {
+            java.util.Optional<ChequeTemplate> existingById = chequeTemplateRepository.findById(template.getId());
+            if (existingById.isPresent()) {
+                ChequeTemplate existing = existingById.get();
+                updateTemplateProperties(existing, template);
+                return chequeTemplateRepository.save(existing);
+            }
+        }
+        if (template.getBankId() != null) {
+            List<ChequeTemplate> existingByBank = chequeTemplateRepository.findByBankId(template.getBankId());
+            if (!existingByBank.isEmpty()) {
+                ChequeTemplate existing = existingByBank.get(0);
+                updateTemplateProperties(existing, template);
+                return chequeTemplateRepository.save(existing);
+            }
+        }
         return chequeTemplateRepository.save(template);
+    }
+
+    private void updateTemplateProperties(ChequeTemplate existing, ChequeTemplate template) {
+        existing.setTemplateName(template.getTemplateName());
+        if (template.getWidth() != null) existing.setWidth(template.getWidth());
+        if (template.getHeight() != null) existing.setHeight(template.getHeight());
+        if (template.getConfigJson() != null) existing.setConfigJson(template.getConfigJson());
     }
 
     public List<ChequeTemplate> getTemplatesByBankId(Long bankId) {

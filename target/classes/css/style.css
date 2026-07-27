@@ -2474,3 +2474,94 @@ ScrollPane .donut-center,
     -fx-text-fill: #2563eb;
     -fx-font-weight: 700;
 }
+
+/* ══════════════════════════════════════════
+   PRODUCTION TABLE VIEW STYLING (Bank Table)
+══════════════════════════════════════════ */
+.table-view {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 10px;
+    -fx-border-color: #e2e8f0;
+    -fx-border-width: 1px;
+    -fx-border-radius: 10px;
+    -fx-padding: 0;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.03), 8, 0, 0, 2);
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #f8fafc;
+    -fx-background-radius: 10px 10px 0 0;
+    -fx-padding: 2px 0;
+}
+
+.table-view .column-header, .table-view .filler {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #e2e8f0 transparent;
+    -fx-border-width: 0 0 1px 0;
+    -fx-padding: 12px 14px;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #475569;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-alignment: center-left;
+}
+
+/* Row Spacing & Height */
+.table-row-cell {
+    -fx-background-color: #ffffff;
+    -fx-border-color: transparent transparent #f1f5f9 transparent;
+    -fx-border-width: 0 0 1px 0;
+    -fx-cell-size: 46px;
+    -fx-padding: 2px 0;
+    -fx-cursor: hand;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #fcfdfe;
+}
+
+/* Row Hover Effect */
+.table-row-cell:hover {
+    -fx-background-color: #f1f5f9;
+}
+
+/* Highlight Selected Row */
+.table-row-cell:selected {
+    -fx-background-color: #eff6ff;
+    -fx-border-color: transparent transparent #dbeafe #2563eb;
+    -fx-border-width: 0 0 1px 4px;
+}
+
+.table-row-cell:selected .table-cell {
+    -fx-text-fill: #1e40af;
+    -fx-font-weight: bold;
+}
+
+.table-cell {
+    -fx-padding: 10px 14px;
+    -fx-text-fill: #1e293b;
+    -fx-font-size: 13px;
+    -fx-alignment: center-left;
+}
+
+/* ══════════════════════════════════════════
+   PRODUCTION CHEQUE MOCK PREVIEW STYLING
+══════════════════════════════════════════ */
+.cheque-mock {
+    -fx-background-color: linear-gradient(to bottom right, #ffffff 0%, #fcfdfe 60%, #f8fafc 100%);
+    -fx-border-color: #64748b;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-effect: dropshadow(three-pass-box, rgba(15, 23, 42, 0.12), 16, 0, 0, 8);
+}
+
+.preview-frame {
+    -fx-background-color: #e2e8f0;
+    -fx-background-radius: 10px;
+    -fx-border-color: #cbd5e1;
+    -fx-border-radius: 10px;
+    -fx-border-width: 1px;
+}

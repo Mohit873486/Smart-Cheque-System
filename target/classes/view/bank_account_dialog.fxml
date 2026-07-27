@@ -35,26 +35,32 @@
         <VBox spacing="14" VBox.vgrow="ALWAYS">
             <!-- Bank Name -->
             <VBox spacing="6">
-                <Label text="Bank Name" styleClass="form-label" />
+                <Label text="Bank Name *" styleClass="form-label" />
                 <TextField fx:id="fldBankName" promptText="e.g. State Bank of India" styleClass="form-input" maxWidth="Infinity" />
             </VBox>
 
             <!-- Account Number -->
             <VBox spacing="6">
-                <Label text="Account Number" styleClass="form-label" />
+                <Label text="Account Number *" styleClass="form-label" />
                 <TextField fx:id="fldAccountNumber" promptText="e.g. 123456789012" styleClass="form-input" maxWidth="Infinity" />
             </VBox>
 
             <!-- Holder Name -->
             <VBox spacing="6">
-                <Label text="Account Holder Name" styleClass="form-label" />
-                <TextField fx:id="fldHolderName" promptText="e.g. Account Holder Name" styleClass="form-input" maxWidth="Infinity" />
+                <Label text="Account Holder Name *" styleClass="form-label" />
+                <TextField fx:id="fldHolderName" promptText="e.g. Acme Corp Operating Account" styleClass="form-input" maxWidth="Infinity" />
             </VBox>
 
-            <!-- IFSC / Branch Code -->
+            <!-- IFSC Code -->
             <VBox spacing="6">
-                <Label text="IFSC / Branch Code" styleClass="form-label" />
+                <Label text="IFSC Code" styleClass="form-label" />
                 <TextField fx:id="fldIfscCode" promptText="e.g. SBIN0001234" styleClass="form-input" maxWidth="Infinity" />
+            </VBox>
+
+            <!-- Branch Name -->
+            <VBox spacing="6">
+                <Label text="Branch Name" styleClass="form-label" />
+                <TextField fx:id="fldBranchName" promptText="e.g. Mumbai Main Branch" styleClass="form-input" maxWidth="Infinity" />
             </VBox>
         </VBox>
 

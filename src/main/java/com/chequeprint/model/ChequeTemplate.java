@@ -16,15 +16,15 @@ public class ChequeTemplate implements Serializable {
     private Double height = 92.00;   // Standard cheque height in mm (3.625 inches)
     private String configJson;
 
-    // Single source of truth for field coordinates, font size, and visibility
-    private FieldConfig dateField = new FieldConfig(520.0, 28.0, 13.0, true);
-    private FieldConfig payeeField = new FieldConfig(95.0, 72.0, 13.0, true);
-    private FieldConfig amountWordsField = new FieldConfig(95.0, 108.0, 12.0, true);
-    private FieldConfig amountNumField = new FieldConfig(530.0, 122.0, 14.0, true);
-    private FieldConfig bearerField = new FieldConfig(580.0, 72.0, 12.0, true);
-    private FieldConfig acPayeeField = new FieldConfig(40.0, 25.0, 14.0, true);
-    private FieldConfig signatureField = new FieldConfig(530.0, 160.0, 12.0, true);
-    private FieldConfig micrField = new FieldConfig(200.0, 180.0, 12.0, true);
+    // Single source of truth for field coordinates in physical mm (203.2mm x 92mm scale), font size, and visibility
+    private FieldConfig dateField = new FieldConfig(155.0, 12.0, 12.0, true);
+    private FieldConfig payeeField = new FieldConfig(25.0, 26.0, 13.0, true);
+    private FieldConfig amountWordsField = new FieldConfig(30.0, 38.0, 11.0, true);
+    private FieldConfig amountNumField = new FieldConfig(145.0, 42.0, 13.0, true);
+    private FieldConfig bearerField = new FieldConfig(165.0, 26.0, 10.0, true);
+    private FieldConfig acPayeeField = new FieldConfig(10.0, 10.0, 12.0, true);
+    private FieldConfig signatureField = new FieldConfig(140.0, 70.0, 10.0, true);
+    private FieldConfig micrField = new FieldConfig(50.0, 82.0, 11.0, true);
 
     public ChequeTemplate() {}
 
@@ -49,7 +49,34 @@ public class ChequeTemplate implements Serializable {
     public void setHeight(Double height) { this.height = height; }
 
     public String getConfigJson() { return configJson; }
-    public void setConfigJson(String configJson) { this.configJson = configJson; }
+    public void setConfigJson(String configJson) { 
+        this.configJson = configJson;
+        parseConfigJsonIfPresent();
+    }
+
+    public void parseConfigJsonIfPresent() {
+        if (configJson != null && !configJson.isBlank()) {
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                ChequeTemplate parsed = mapper.readValue(configJson, ChequeTemplate.class);
+                if (parsed.getDateField() != null) this.dateField = parsed.getDateField();
+                if (parsed.getPayeeField() != null) this.payeeField = parsed.getPayeeField();
+                if (parsed.getAmountWordsField() != null) this.amountWordsField = parsed.getAmountWordsField();
+                if (parsed.getAmountNumField() != null) this.amountNumField = parsed.getAmountNumField();
+                if (parsed.getBearerField() != null) this.bearerField = parsed.getBearerField();
+                if (parsed.getAcPayeeField() != null) this.acPayeeField = parsed.getAcPayeeField();
+                if (parsed.getSignatureField() != null) this.signatureField = parsed.getSignatureField();
+                if (parsed.getMicrField() != null) this.micrField = parsed.getMicrField();
+            } catch (Exception ignored) {}
+        }
+    }
+
+    public void updateConfigJson() {
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            this.configJson = mapper.writeValueAsString(this);
+        } catch (Exception ignored) {}
+    }
 
     public FieldConfig getDateField() { return dateField; }
     public void setDateField(FieldConfig dateField) { this.dateField = dateField; }

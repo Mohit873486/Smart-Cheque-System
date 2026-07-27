@@ -15,16 +15,23 @@ public class BankAccount {
     @JsonProperty("ifsc")
     private String ifsc;
 
+    @JsonProperty("branch")
+    private String branch;
+
+    @JsonProperty("template_id")
+    private Long templateId;
+
     private BigDecimal balance;
     private String signaturePath;
 
     public BankAccount() {}
 
-    public BankAccount(String accountNumber, String accountHolderName, String bankName, String ifsc, BigDecimal balance) {
+    public BankAccount(String accountNumber, String accountHolderName, String bankName, String ifsc, String branch, BigDecimal balance) {
         this.accountNumber = accountNumber;
         this.accountHolderName = accountHolderName;
         this.bankName = bankName;
         this.ifsc = ifsc;
+        this.branch = branch;
         this.balance = balance;
     }
 
@@ -46,11 +53,20 @@ public class BankAccount {
     public String getIfscCode() { return ifsc != null ? ifsc : ""; }
     public void setIfscCode(String ifscCode) { this.ifsc = ifscCode; }
 
+    public String getBranch() { return branch; }
+    public void setBranch(String branch) { this.branch = branch; }
+
+    public String getBranchName() { return branch != null ? branch : ""; }
+    public void setBranchName(String branchName) { this.branch = branchName; }
+
     public BigDecimal getBalance() { return balance; }
     public void setBalance(BigDecimal balance) { this.balance = balance; }
 
     public String getSignaturePath() { return signaturePath; }
     public void setSignaturePath(String signaturePath) { this.signaturePath = signaturePath; }
+
+    public Long getTemplateId() { return templateId; }
+    public void setTemplateId(Long templateId) { this.templateId = templateId; }
 
     @Override
     public String toString() {

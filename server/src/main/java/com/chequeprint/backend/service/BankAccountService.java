@@ -28,8 +28,9 @@ public class BankAccountService {
     }
 
     public BankAccount createBankAccount(BankAccount bankAccount) {
-        if (bankAccountRepository.existsByAccountNumber(bankAccount.getAccountNumber())) {
-            throw new IllegalArgumentException("Bank Account with account number " + bankAccount.getAccountNumber() + " already exists.");
+        java.util.Optional<BankAccount> existingOpt = bankAccountRepository.findByAccountNumber(bankAccount.getAccountNumber());
+        if (existingOpt.isPresent()) {
+            return updateBankAccount(existingOpt.get().getId(), bankAccount);
         }
         return bankAccountRepository.save(bankAccount);
     }
@@ -46,6 +47,9 @@ public class BankAccountService {
         existingAccount.setAccountNumber(updatedBankAccount.getAccountNumber());
         existingAccount.setAccountHolderName(updatedBankAccount.getAccountHolderName());
         existingAccount.setIfsc(updatedBankAccount.getIfsc());
+        if (updatedBankAccount.getBranch() != null) {
+            existingAccount.setBranch(updatedBankAccount.getBranch());
+        }
         if (updatedBankAccount.getSignaturePath() != null) {
             existingAccount.setSignaturePath(updatedBankAccount.getSignaturePath());
         }

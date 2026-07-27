@@ -20,8 +20,19 @@ public class ChequeTemplateService {
     }
 
     public ChequeTemplate saveOrUpdateTemplate(ChequeTemplate template) {
-        List<ChequeTemplate> existingList = chequeTemplateRepository.findByBankId(template.getBankId());
+        if (template.getId() != null) {
+            Optional<ChequeTemplate> existingById = chequeTemplateRepository.findById(template.getId());
+            if (existingById.isPresent()) {
+                ChequeTemplate toUpdate = existingById.get();
+                toUpdate.setTemplateName(template.getTemplateName());
+                if (template.getWidth() != null) toUpdate.setWidth(template.getWidth());
+                if (template.getHeight() != null) toUpdate.setHeight(template.getHeight());
+                if (template.getConfigJson() != null) toUpdate.setConfigJson(template.getConfigJson());
+                return chequeTemplateRepository.save(toUpdate);
+            }
+        }
         
+        List<ChequeTemplate> existingList = chequeTemplateRepository.findByBankId(template.getBankId());
         if (!existingList.isEmpty()) {
             ChequeTemplate toUpdate = existingList.get(0);
             toUpdate.setTemplateName(template.getTemplateName());
