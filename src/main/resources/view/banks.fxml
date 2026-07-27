@@ -40,10 +40,10 @@
 
                             <TableView fx:id="accountTable" VBox.vgrow="ALWAYS" styleClass="clean-table">
                                 <columns>
-                                    <TableColumn text="Bank Name" prefWidth="220" />
-                                    <TableColumn text="Account Number" prefWidth="200" />
-                                    <TableColumn text="IFSC Code" prefWidth="180" />
-                                    <TableColumn text="Branch / Status" prefWidth="160" />
+                                    <TableColumn text="Bank Name" prefWidth="200" />
+                                    <TableColumn text="Account Number" prefWidth="180" />
+                                    <TableColumn text="Account Holder Name" prefWidth="220" />
+                                    <TableColumn text="IFSC Code" prefWidth="140" />
                                 </columns>
                                 <columnResizePolicy>
                                     <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

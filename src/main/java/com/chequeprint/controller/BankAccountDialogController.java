@@ -48,11 +48,11 @@ public class BankAccountDialogController {
         String holderName = fldHolderName.getText() != null ? fldHolderName.getText().trim() : "";
         String ifscCode = fldIfscCode.getText() != null ? fldIfscCode.getText().trim() : "";
 
-        if (bankName.isEmpty() || accountNumber.isEmpty()) {
+        if (bankName.isEmpty() || accountNumber.isEmpty() || holderName.isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Validation Error");
             alert.setHeaderText(null);
-            alert.setContentText("Bank Name and Account Number are required.");
+            alert.setContentText("Bank Name, Account Number, and Account Holder Name are required.");
             alert.showAndWait();
             return;
         }
@@ -62,7 +62,6 @@ public class BankAccountDialogController {
         account.setAccountNumber(accountNumber);
         account.setAccountHolderName(holderName);
         account.setIfsc(ifscCode);
-        account.setBranch(ifscCode);
 
         if (onSaveCallback != null) {
             onSaveCallback.accept(account);

@@ -12,9 +12,6 @@ public class BankAccount {
     private String accountHolderName;
     private String bankName;
 
-    @JsonProperty("branch")
-    private String branch;
-
     @JsonProperty("ifsc")
     private String ifsc;
 
@@ -23,11 +20,10 @@ public class BankAccount {
 
     public BankAccount() {}
 
-    public BankAccount(String accountNumber, String accountHolderName, String bankName, String branch, String ifsc, BigDecimal balance) {
+    public BankAccount(String accountNumber, String accountHolderName, String bankName, String ifsc, BigDecimal balance) {
         this.accountNumber = accountNumber;
         this.accountHolderName = accountHolderName;
         this.bankName = bankName;
-        this.branch = branch;
         this.ifsc = ifsc;
         this.balance = balance;
     }
@@ -43,12 +39,6 @@ public class BankAccount {
 
     public String getBankName() { return bankName; }
     public void setBankName(String bankName) { this.bankName = bankName; }
-
-    public String getBranch() { return branch; }
-    public void setBranch(String branch) { this.branch = branch; }
-
-    public String getBranchName() { return branch != null ? branch : ""; }
-    public void setBranchName(String branchName) { this.branch = branchName; }
 
     public String getIfsc() { return ifsc; }
     public void setIfsc(String ifsc) { this.ifsc = ifsc; }

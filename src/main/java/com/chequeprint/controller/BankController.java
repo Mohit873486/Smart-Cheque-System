@@ -528,8 +528,8 @@ public class BankController {
             if (accountTable.getColumns().size() >= 4) {
                 accountTable.getColumns().get(0).setCellValueFactory(new PropertyValueFactory<>("bankName"));
                 accountTable.getColumns().get(1).setCellValueFactory(new PropertyValueFactory<>("accountNumber"));
-                accountTable.getColumns().get(2).setCellValueFactory(new PropertyValueFactory<>("ifscCode"));
-                accountTable.getColumns().get(3).setCellValueFactory(new PropertyValueFactory<>("branchName"));
+                accountTable.getColumns().get(2).setCellValueFactory(new PropertyValueFactory<>("accountHolderName"));
+                accountTable.getColumns().get(3).setCellValueFactory(new PropertyValueFactory<>("ifscCode"));
             }
             accountTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
                 boolean hasSelection = (newVal != null);

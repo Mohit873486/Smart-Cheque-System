@@ -143,16 +143,16 @@ public class ChequeSnapshotRenderer {
             case "BOB", "BARODA" -> "BARB0000321";
             default -> "BANK0000999";
         };
-        Label branchLbl = new Label("BRANCH: " + ifsc);
-        branchLbl.setFont(Font.font("Arial", FontWeight.NORMAL, 9));
-        branchLbl.setTextFill(Color.web("#475569"));
-        branchLbl.setLayoutX(widthPx - 180);
-        branchLbl.setLayoutY(20);
+        Label ifscLbl = new Label("IFSC: " + ifsc);
+        ifscLbl.setFont(Font.font("Arial", FontWeight.NORMAL, 9));
+        ifscLbl.setTextFill(Color.web("#475569"));
+        ifscLbl.setLayoutX(widthPx - 180);
+        ifscLbl.setLayoutY(20);
         
         javafx.scene.shape.Line branchLine = new javafx.scene.shape.Line(widthPx - 180, 32, widthPx - 30, 32);
         branchLine.setStroke(Color.web("#94a3b8"));
         branchLine.setStrokeWidth(0.8);
-        pane.getChildren().addAll(branchLbl, branchLine);
+        pane.getChildren().addAll(ifscLbl, branchLine);
 
         // 5. MICR bottom band background
         javafx.scene.shape.Rectangle micrBand = new javafx.scene.shape.Rectangle(0, heightPx - 40, widthPx, 40);

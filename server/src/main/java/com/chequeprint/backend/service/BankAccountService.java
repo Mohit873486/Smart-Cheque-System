@@ -44,10 +44,8 @@ public class BankAccountService {
 
         existingAccount.setBankName(updatedBankAccount.getBankName());
         existingAccount.setAccountNumber(updatedBankAccount.getAccountNumber());
+        existingAccount.setAccountHolderName(updatedBankAccount.getAccountHolderName());
         existingAccount.setIfsc(updatedBankAccount.getIfsc());
-        if (updatedBankAccount.getBranch() != null) {
-            existingAccount.setBranch(updatedBankAccount.getBranch());
-        }
         if (updatedBankAccount.getSignaturePath() != null) {
             existingAccount.setSignaturePath(updatedBankAccount.getSignaturePath());
         }

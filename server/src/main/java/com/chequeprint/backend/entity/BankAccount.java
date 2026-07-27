@@ -25,8 +25,9 @@ public class BankAccount {
     @Column(name = "ifsc", nullable = false)
     private String ifsc;
 
-    @Column(name = "branch")
-    private String branch;
+    @NotBlank(message = "Account holder name is required")
+    @Column(name = "account_holder_name", nullable = false)
+    private String accountHolderName;
 
     @Column(name = "signature_path")
     private String signaturePath;
@@ -37,12 +38,12 @@ public class BankAccount {
     public BankAccount() {
     }
 
-    public BankAccount(Long id, String bankName, String accountNumber, String ifsc, String branch) {
+    public BankAccount(Long id, String bankName, String accountNumber, String accountHolderName, String ifsc) {
         this.id = id;
         this.bankName = bankName;
         this.accountNumber = accountNumber;
+        this.accountHolderName = accountHolderName;
         this.ifsc = ifsc;
-        this.branch = branch;
     }
 
     @PrePersist
@@ -76,20 +77,20 @@ public class BankAccount {
         this.accountNumber = accountNumber;
     }
 
+    public String getAccountHolderName() {
+        return accountHolderName;
+    }
+
+    public void setAccountHolderName(String accountHolderName) {
+        this.accountHolderName = accountHolderName;
+    }
+
     public String getIfsc() {
         return ifsc;
     }
 
     public void setIfsc(String ifsc) {
         this.ifsc = ifsc;
-    }
-
-    public String getBranch() {
-        return branch;
-    }
-
-    public void setBranch(String branch) {
-        this.branch = branch;
     }
 
     public String getSignaturePath() {
