@@ -21,7 +21,7 @@ public class ChequeTemplateController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
+    @PostMapping("/save")
     public ResponseEntity<ChequeTemplate> saveTemplate(@RequestBody ChequeTemplate template) {
         ChequeTemplate savedTemplate = chequeTemplateService.saveOrUpdateTemplate(template);
         return ResponseEntity.ok(savedTemplate);

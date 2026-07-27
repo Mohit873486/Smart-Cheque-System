@@ -13,6 +13,7 @@ public final class SessionManager {
 
     private User currentUser;
     private String jwtToken;
+    private Long selectedBankId;
     private Instant loginTime;
     private Instant lastActivityTime;
     private final long SESSION_TIMEOUT_SECONDS = 900; // 15 minutes
@@ -73,6 +74,14 @@ public final class SessionManager {
         return AccessControl.can(currentUser, permission);
     }
 
+    public void setSelectedBankId(Long selectedBankId) {
+        this.selectedBankId = selectedBankId;
+    }
+
+    public Long getSelectedBankId() {
+        return this.selectedBankId;
+    }
+
     public Instant loginTime() {
         return loginTime;
     }
@@ -80,6 +89,7 @@ public final class SessionManager {
     public void clear() {
         this.currentUser = null;
         this.jwtToken = null;
+        this.selectedBankId = null;
         this.loginTime = null;
         this.lastActivityTime = null;
     }

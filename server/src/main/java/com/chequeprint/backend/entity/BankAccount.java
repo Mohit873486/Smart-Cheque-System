@@ -28,6 +28,9 @@ public class BankAccount {
     @Column(name = "branch")
     private String branch;
 
+    @Column(name = "signature_path")
+    private String signaturePath;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
@@ -87,6 +90,14 @@ public class BankAccount {
 
     public void setBranch(String branch) {
         this.branch = branch;
+    }
+
+    public String getSignaturePath() {
+        return signaturePath;
+    }
+
+    public void setSignaturePath(String signaturePath) {
+        this.signaturePath = signaturePath;
     }
 
     public LocalDateTime getCreatedAt() {

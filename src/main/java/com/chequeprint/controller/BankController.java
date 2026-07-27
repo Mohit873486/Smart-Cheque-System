@@ -9,6 +9,7 @@ import com.chequeprint.util.BankTemplatePdfExporter;
 import com.chequeprint.util.ChequeSizeCodec;
 import com.chequeprint.util.ChequeSizePreset;
 import com.chequeprint.util.FxUtils;
+import com.chequeprint.util.Session;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.collections.FXCollections;
@@ -64,6 +65,8 @@ public class BankController {
     private static final double PREVIEW_PPI = 90.0;
     private final Map<Long, BankTemplateLayout> bankTemplateMap = new java.util.concurrent.ConcurrentHashMap<>();
 
+    @FXML
+    private ComboBox<BankAccount> cmbBankAccount;
     @FXML
     private ComboBox<Bank> fldBankName;
     @FXML
@@ -194,6 +197,17 @@ public class BankController {
 
     @FXML
     private void onEditTemplate() {
+        if (accountTable != null && accountTable.getSelectionModel().getSelectedItem() != null) {
+            BankAccount selected = accountTable.getSelectionModel().getSelectedItem();
+            if (cmbBankAccount != null) {
+                cmbBankAccount.setValue(selected);
+            }
+            if (selected.getId() != null) {
+                Long bankId = selected.getId().longValue();
+                Session.setSelectedBankId(bankId);
+                loadTemplateFromBackend(bankId);
+            }
+        }
         // Switch to the template designer tab
         if (fldBankName != null && fldBankName.getScene() != null) {
             javafx.scene.control.TabPane tabPane = (javafx.scene.control.TabPane) fldBankName.getScene().getRoot();
@@ -237,12 +251,42 @@ public class BankController {
                     if (previewMicr != null) {
                         previewMicr.setText("⑈" + newVal.getAccountNumber() + "⑈ 000000000 ⑈00⑈");
                     }
+                    if (cmbBankAccount != null) {
+                        cmbBankAccount.setValue(newVal);
+                    }
+                    if (newVal.getId() != null) {
+                        Long bankId = newVal.getId().longValue();
+                        Session.setSelectedBankId(bankId);
+                        loadTemplateFromBackend(bankId);
+                    }
                 }
             });
         }
     }
 
     private void setupForm() {
+        if (cmbBankAccount != null) {
+            cmbBankAccount.setItems(accountData);
+            cmbBankAccount.valueProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null && newVal.getId() != null) {
+                    Long bankId = newVal.getId().longValue();
+                    Session.setSelectedBankId(bankId);
+
+                    if (fldBankName != null && data != null) {
+                        for (Bank b : data) {
+                            if (b.getBankName() != null && b.getBankName().equalsIgnoreCase(newVal.getBankName())) {
+                                fldBankName.setValue(b);
+                                break;
+                            }
+                        }
+                    }
+                    if (fldBankCode != null && newVal.getBankName() != null) {
+                        fldBankCode.setText(newVal.getBankName());
+                    }
+                    loadTemplateFromBackend(bankId);
+                }
+            });
+        }
         if (cmbFontFamily != null) {
             cmbFontFamily.setItems(FXCollections.observableArrayList("Arial", "Courier New", "Consolas", "Times New Roman", "Verdana", "Tahoma"));
             cmbFontFamily.setValue("Arial");
@@ -452,6 +496,7 @@ public class BankController {
             dragDelta.x = e.getX();
             dragDelta.y = e.getY();
             setSelectedField(field);
+            node.toFront();
             e.consume();
         });
         
@@ -602,6 +647,12 @@ public class BankController {
         double xr = paneW <= 0 ? 0 : nx / paneW;
         double yr = paneH <= 0 ? 0 : ny / paneH;
         currentLayout.setFieldPosition(field, xr, yr);
+
+        Long currentBankId = Session.getSelectedBankId();
+        if (currentBankId != null && bankTemplateMap != null && currentLayout != null) {
+            bankTemplateMap.put(currentBankId, currentLayout.copy());
+        }
+
         if (field == getSelectedField()) {
             loadAdjustmentFields(field);
         }
@@ -747,6 +798,18 @@ public class BankController {
             if (accountTable != null) {
                 accountTable.setItems(accountData);
                 accountTable.refresh();
+            }
+            if (cmbBankAccount != null) {
+                cmbBankAccount.setItems(accountData);
+                Long currentGlobalId = Session.getSelectedBankId();
+                if (currentGlobalId != null) {
+                    for (BankAccount acc : accounts) {
+                        if (acc.getId() != null && acc.getId().longValue() == currentGlobalId) {
+                            cmbBankAccount.setValue(acc);
+                            break;
+                        }
+                    }
+                }
             }
             if (loadingSpinner != null) {
                 loadingSpinner.setVisible(false);
@@ -1060,6 +1123,10 @@ public class BankController {
         currentLayout.ensureAllFields();
         layoutPreviewPane();
         refreshPreview();
+
+        if (bank.getId() != null && bank.getId() > 0) {
+            loadTemplateFromBackend(bank.getId().longValue());
+        }
     }
 
     private void clearForm() {
@@ -1215,8 +1282,25 @@ public class BankController {
 
         fldAdjustLeft.setText(formatMm(pos.getXRatio() * widthMm));
         fldAdjustTop.setText(formatMm(pos.getYRatio() * heightMm));
-        fldAdjustWidth.setText(formatMm(effectiveWidthRatio(field, pos) * widthMm));
-        fldAdjustHeight.setText(formatMm(effectiveHeightRatio(field, pos) * heightMm));
+        if (fldAdjustWidth != null) fldAdjustWidth.setText(formatMm(effectiveWidthRatio(field, pos) * widthMm));
+        if (fldAdjustHeight != null) fldAdjustHeight.setText(formatMm(effectiveHeightRatio(field, pos) * heightMm));
+
+        // Load Font and Size properties for selected field
+        StackPane node = fieldNodes.get(field);
+        if (node != null) {
+            for (javafx.scene.Node child : node.getChildren()) {
+                if (child instanceof Label label && label.getFont() != null) {
+                    String family = label.getFont().getFamily();
+                    if (cmbFontFamily != null && family != null && !family.isBlank()) {
+                        cmbFontFamily.setValue(family);
+                    }
+                    if (fldFontSize != null) {
+                        int size = (int) Math.round(label.getFont().getSize());
+                        fldFontSize.setText(String.valueOf(size));
+                    }
+                }
+            }
+        }
     }
 
     private double fieldWidthPx(LayoutField field, FieldPosition pos) {
@@ -1531,11 +1615,26 @@ public class BankController {
                 heightRatio = hMm / heightMm;
             }
 
+            // 1. Update model
             currentLayout.setFieldLayout(field, xRatio, yRatio, widthRatio, heightRatio);
 
+            Long currentBankId = Session.getSelectedBankId();
+            if (currentBankId != null && bankTemplateMap != null) {
+                bankTemplateMap.put(currentBankId, currentLayout.copy());
+            }
+
+            // 2. Update field UI
             String fontFamily = cmbFontFamily != null && cmbFontFamily.getValue() != null ? cmbFontFamily.getValue() : "Arial";
             int fontSize = getSelectedFontSize();
             applySelectedFieldFont(field, fontFamily, fontSize);
+
+            StackPane node = fieldNodes.get(field);
+            if (node != null && chequePreviewPane != null) {
+                double paneW = chequePreviewPane.getPrefWidth() > 0 ? chequePreviewPane.getPrefWidth() : 720;
+                double paneH = chequePreviewPane.getPrefHeight() > 0 ? chequePreviewPane.getPrefHeight() : 300;
+                node.setLayoutX(xRatio * paneW);
+                node.setLayoutY(yRatio * paneH);
+            }
 
             refreshPreview();
             persistCurrentLayoutIfPossible();
@@ -1637,7 +1736,9 @@ public class BankController {
             templateId = 1L;
         }
 
+        List<Map<String, Object>> directPayload = new ArrayList<>();
         List<Map<String, Object>> fieldsPayload = new ArrayList<>();
+
         String fontFamily = cmbFontFamily != null && cmbFontFamily.getValue() != null ? cmbFontFamily.getValue() : "Arial";
         int fontSize = 12;
         if (fldFontSize != null && !fldFontSize.getText().isBlank()) {
@@ -1650,6 +1751,13 @@ public class BankController {
             LayoutField field = entry.getKey();
             StackPane node = entry.getValue();
 
+            // 1. Create JSON item: { "key": "DATE", "x": 100, "y": 50 }
+            Map<String, Object> directItem = new HashMap<>();
+            directItem.put("key", field.name());
+            directItem.put("x", (int) Math.round(node.getLayoutX()));
+            directItem.put("y", (int) Math.round(node.getLayoutY()));
+            directPayload.add(directItem);
+
             Map<String, Object> fieldMap = new HashMap<>();
             fieldMap.put("templateId", templateId);
             fieldMap.put("fieldName", mapFieldName(field));
@@ -1657,21 +1765,22 @@ public class BankController {
             fieldMap.put("yPosition", node.getLayoutY());
             fieldMap.put("fontSize", fontSize);
             fieldMap.put("fontFamily", fontFamily);
-
             fieldsPayload.add(fieldMap);
         }
 
         final Long targetTemplateId = templateId;
         new Thread(() -> {
             try {
-                // Call POST /api/template/fields
-                boolean success = bankService.saveTemplateFields(fieldsPayload);
-                if (success) {
-                    // Reload template fields from GET /api/template/fields/{templateId}
+                // 3. Send API: POST /api/template-fields
+                boolean directSuccess = bankService.saveTemplateFieldsDirect(directPayload);
+                boolean fieldsSuccess = bankService.saveTemplateFields(fieldsPayload);
+
+                if (directSuccess || fieldsSuccess) {
                     List<Map<String, Object>> reloadedFields = bankService.getTemplateFields(targetTemplateId);
                     Platform.runLater(() -> {
                         applyReloadedFields(reloadedFields);
-                        System.out.println("Successfully reloaded template fields from REST API.");
+                        // 4. Show success message
+                        showAlert("Success", "Template fields updated successfully!", Alert.AlertType.INFORMATION);
                     });
                 }
             } catch (Exception ex) {
@@ -1778,16 +1887,21 @@ public class BankController {
                 if (field != null) {
                     StackPane node = fieldNodes.get(field);
                     if (node != null) {
-                        // Step 3: Render fields on Pane - Set layoutX and layoutY
+                        // Step 3: Set layoutX and layoutY
                         node.setLayoutX(x);
                         node.setLayoutY(y);
 
-                        // Step 4: Apply font settings
+                        // Configure Label
                         for (javafx.scene.Node child : node.getChildren()) {
                             if (child instanceof Label label) {
                                 label.setFont(javafx.scene.text.Font.font(fontFamily, fontSize));
                                 label.setStyle("-fx-font-family: '" + fontFamily + "'; -fx-font-size: " + fontSize + "px;");
                             }
+                        }
+
+                        // Step 4: Add to canvas
+                        if (!chequePreviewPane.getChildren().contains(node)) {
+                            chequePreviewPane.getChildren().add(node);
                         }
 
                         currentLayout.setFieldPosition(field, x / paneW, y / paneH);

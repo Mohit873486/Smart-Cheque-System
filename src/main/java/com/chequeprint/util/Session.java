@@ -9,6 +9,17 @@ public class Session {
     // Public static fields for direct access: Session.token and Session.username
     public static String token;
     public static String username;
+    public static Long selectedBankId;
+
+    public static void setSelectedBankId(Long bankId) {
+        Session.selectedBankId = bankId;
+        SessionManager.getInstance().setSelectedBankId(bankId);
+    }
+
+    public static Long getSelectedBankId() {
+        if (selectedBankId != null) return selectedBankId;
+        return SessionManager.getInstance().getSelectedBankId();
+    }
 
     private Session() {
         // Utility class

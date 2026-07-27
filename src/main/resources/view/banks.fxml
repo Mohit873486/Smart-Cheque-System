@@ -146,26 +146,29 @@
                                     <ColumnConstraints percentWidth="65" />
                                 </columnConstraints>
 
-                                <Label text="Bank Name" style="-fx-text-fill: #475569;" GridPane.rowIndex="0" GridPane.columnIndex="0" />
-                                <ComboBox fx:id="fldBankName" editable="true" promptText="Select bank" styleClass="form-combo" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1" />
+                                <Label text="Select Account" style="-fx-text-fill: #475569;" GridPane.rowIndex="0" GridPane.columnIndex="0" />
+                                <ComboBox fx:id="cmbBankAccount" promptText="Select bank account" styleClass="form-combo" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1" />
 
-                                <Label text="Bank Code" style="-fx-text-fill: #475569;" GridPane.rowIndex="1" GridPane.columnIndex="0" />
-                                <TextField fx:id="fldBankCode" promptText="e.g. AXIS" styleClass="form-input" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+                                <Label text="Bank Name" style="-fx-text-fill: #475569;" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+                                <ComboBox fx:id="fldBankName" editable="true" promptText="Select bank" styleClass="form-combo" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1" />
 
-                                <Label text="Cheque Size" style="-fx-text-fill: #475569;" GridPane.rowIndex="2" GridPane.columnIndex="0" />
-                                <ComboBox fx:id="cmbChequeSize" styleClass="form-combo" maxWidth="Infinity" GridPane.rowIndex="2" GridPane.columnIndex="1" />
+                                <Label text="Bank Code" style="-fx-text-fill: #475569;" GridPane.rowIndex="2" GridPane.columnIndex="0" />
+                                <TextField fx:id="fldBankCode" promptText="e.g. AXIS" styleClass="form-input" GridPane.rowIndex="2" GridPane.columnIndex="1" />
 
-                                <Label text="Size Unit" style="-fx-text-fill: #475569;" GridPane.rowIndex="3" GridPane.columnIndex="0" />
-                                <ComboBox fx:id="cmbChequeSizeUnit" styleClass="form-combo" maxWidth="Infinity" GridPane.rowIndex="3" GridPane.columnIndex="1" />
+                                <Label text="Cheque Size" style="-fx-text-fill: #475569;" GridPane.rowIndex="3" GridPane.columnIndex="0" />
+                                <ComboBox fx:id="cmbChequeSize" styleClass="form-combo" maxWidth="Infinity" GridPane.rowIndex="3" GridPane.columnIndex="1" />
 
-                                <Label fx:id="lblCustomWidth" text="Custom W" style="-fx-text-fill: #475569;" GridPane.rowIndex="4" GridPane.columnIndex="0" />
-                                <TextField fx:id="fldCustomWidth" promptText="8.5" styleClass="form-input" GridPane.rowIndex="4" GridPane.columnIndex="1" />
+                                <Label text="Size Unit" style="-fx-text-fill: #475569;" GridPane.rowIndex="4" GridPane.columnIndex="0" />
+                                <ComboBox fx:id="cmbChequeSizeUnit" styleClass="form-combo" maxWidth="Infinity" GridPane.rowIndex="4" GridPane.columnIndex="1" />
 
-                                <Label fx:id="lblCustomHeight" text="Custom H" style="-fx-text-fill: #475569;" GridPane.rowIndex="5" GridPane.columnIndex="0" />
-                                <TextField fx:id="fldCustomHeight" promptText="3.66" styleClass="form-input" GridPane.rowIndex="5" GridPane.columnIndex="1" />
+                                <Label fx:id="lblCustomWidth" text="Custom W" style="-fx-text-fill: #475569;" GridPane.rowIndex="5" GridPane.columnIndex="0" />
+                                <TextField fx:id="fldCustomWidth" promptText="8.5" styleClass="form-input" GridPane.rowIndex="5" GridPane.columnIndex="1" />
 
-                                <Label text="MICR Line" style="-fx-text-fill: #475569;" GridPane.rowIndex="6" GridPane.columnIndex="0" />
-                                <CheckBox fx:id="chkMicr" selected="true" GridPane.rowIndex="6" GridPane.columnIndex="1" />
+                                <Label fx:id="lblCustomHeight" text="Custom H" style="-fx-text-fill: #475569;" GridPane.rowIndex="6" GridPane.columnIndex="0" />
+                                <TextField fx:id="fldCustomHeight" promptText="3.66" styleClass="form-input" GridPane.rowIndex="6" GridPane.columnIndex="1" />
+
+                                <Label text="MICR Line" style="-fx-text-fill: #475569;" GridPane.rowIndex="7" GridPane.columnIndex="0" />
+                                <CheckBox fx:id="chkMicr" selected="true" GridPane.rowIndex="7" GridPane.columnIndex="1" />
                             </GridPane>
 
                             <VBox spacing="8" style="-fx-padding: 8 0 0 0;">

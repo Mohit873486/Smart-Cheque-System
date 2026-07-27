@@ -17,7 +17,7 @@ import java.util.List;
  */
 public class BankApiService {
 
-    private static final String BASE_URL = "http://localhost:8080/api/bank/account";
+    private static final String BASE_URL = "http://localhost:8081/api/bank/account";
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 

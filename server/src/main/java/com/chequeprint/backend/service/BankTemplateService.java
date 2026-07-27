@@ -25,6 +25,30 @@ public class BankTemplateService {
     @Autowired
     private TemplateFieldRepository templateFieldRepository;
 
+    @Autowired
+    private com.chequeprint.backend.repository.BankTemplateRepository bankTemplateRepository;
+
+    public List<com.chequeprint.backend.entity.BankTemplate> getAllTemplates() {
+        return bankTemplateRepository.findAll();
+    }
+
+    public java.util.Optional<com.chequeprint.backend.entity.BankTemplate> getTemplateById(int id) {
+        return bankTemplateRepository.findById(id);
+    }
+
+    public com.chequeprint.backend.entity.BankTemplate createTemplate(com.chequeprint.backend.entity.BankTemplate template) {
+        return bankTemplateRepository.save(template);
+    }
+
+    public com.chequeprint.backend.entity.BankTemplate updateTemplate(int id, com.chequeprint.backend.entity.BankTemplate template) {
+        template.setId(id);
+        return bankTemplateRepository.save(template);
+    }
+
+    public void deleteTemplate(int id) {
+        bankTemplateRepository.deleteById(id);
+    }
+
     // 1. BankAccount Operations
     public List<BankAccount> getAllBankAccounts() {
         return bankAccountRepository.findAll();
