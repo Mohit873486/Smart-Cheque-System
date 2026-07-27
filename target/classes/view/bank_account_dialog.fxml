@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Smart Cheque Pro - Add Bank Account Dialog
+-->
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<StackPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.chequeprint.controller.BankAccountDialogController"
+           style="-fx-background-color: transparent;"
+           prefWidth="500" prefHeight="480">
+    <padding>
+        <Insets top="15" right="15" bottom="15" left="15" />
+    </padding>
+
+    <VBox spacing="20" styleClass="dialog-root" VBox.vgrow="ALWAYS">
+        <padding>
+            <Insets top="24" right="24" bottom="24" left="24" />
+        </padding>
+
+        <!-- Top Header -->
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label fx:id="lblTitle" text="Add Bank Account" styleClass="dialog-header-title" />
+                <Label fx:id="lblSubtitle" text="Connect a new bank account to issue and print cheques" styleClass="dialog-header-subtitle" />
+            </VBox>
+            <Button text="✕" styleClass="dialog-close-btn" onAction="#onCancel" focusTraversable="false" />
+        </HBox>
+
+        <Separator styleClass="dialog-separator" />
+
+        <!-- Form Grid -->
+        <VBox spacing="14" VBox.vgrow="ALWAYS">
+            <!-- Bank Name -->
+            <VBox spacing="6">
+                <Label text="Bank Name" styleClass="form-label" />
+                <TextField fx:id="fldBankName" promptText="e.g. State Bank of India" styleClass="form-input" maxWidth="Infinity" />
+            </VBox>
+
+            <!-- Account Number -->
+            <VBox spacing="6">
+                <Label text="Account Number" styleClass="form-label" />
+                <TextField fx:id="fldAccountNumber" promptText="e.g. 123456789012" styleClass="form-input" maxWidth="Infinity" />
+            </VBox>
+
+            <!-- Holder Name -->
+            <VBox spacing="6">
+                <Label text="Account Holder Name" styleClass="form-label" />
+                <TextField fx:id="fldHolderName" promptText="e.g. Account Holder Name" styleClass="form-input" maxWidth="Infinity" />
+            </VBox>
+
+            <!-- IFSC / Branch Code -->
+            <VBox spacing="6">
+                <Label text="IFSC / Branch Code" styleClass="form-label" />
+                <TextField fx:id="fldIfscCode" promptText="e.g. SBIN0001234" styleClass="form-input" maxWidth="Infinity" />
+            </VBox>
+        </VBox>
+
+        <!-- Bottom Actions Footer -->
+        <HBox spacing="12" alignment="CENTER_RIGHT">
+            <Button text="Cancel" styleClass="btn-secondary" onAction="#onCancel" />
+            <Button fx:id="btnSave" text="Add Account" styleClass="btn-primary" onAction="#onSave" />
+        </HBox>
+    </VBox>
+</StackPane>

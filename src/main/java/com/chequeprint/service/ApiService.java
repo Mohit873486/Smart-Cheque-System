@@ -109,4 +109,76 @@ public class ApiService {
             }
         }
     }
+
+    public BankAccount updateBankAccount(Integer id, BankAccount account) throws Exception {
+        HttpURLConnection connection = null;
+        try {
+            URL url = new URL("http://localhost:8081/api/bank/account/" + id);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("PUT");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Accept", "application/json");
+            
+            String authHeader = com.chequeprint.util.Session.getAuthorizationHeader();
+            if (!authHeader.isBlank()) {
+                connection.setRequestProperty("Authorization", authHeader);
+            }
+            
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+            connection.setDoOutput(true);
+
+            String jsonPayload = mapper.writeValueAsString(account);
+
+            try (java.io.OutputStream os = connection.getOutputStream()) {
+                byte[] input = jsonPayload.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            int status = connection.getResponseCode();
+            if (status >= 200 && status < 300) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String inputLine;
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                in.close();
+                
+                return mapper.readValue(response.toString(), BankAccount.class);
+            } else {
+                throw new Exception("Failed to update data. HTTP Status: " + status);
+            }
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    public void deleteBankAccount(Integer id) throws Exception {
+        HttpURLConnection connection = null;
+        try {
+            URL url = new URL("http://localhost:8081/api/bank/account/" + id);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("DELETE");
+            
+            String authHeader = com.chequeprint.util.Session.getAuthorizationHeader();
+            if (!authHeader.isBlank()) {
+                connection.setRequestProperty("Authorization", authHeader);
+            }
+            
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+
+            int status = connection.getResponseCode();
+            if (status != 204 && status != 200) {
+                throw new Exception("Failed to delete account. HTTP Status: " + status);
+            }
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
 }

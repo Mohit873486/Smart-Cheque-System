@@ -13,113 +13,128 @@
     <!-- Modern card layout + Cheque Preview panel + Loading + Empty  -->
     <!-- ============================================================ -->
     <Tab text="🏦 Bank Accounts">
-        <StackPane style="-fx-background-color: #f1f5f9; -fx-padding: 24;">
+        <ScrollPane fitToWidth="true" style="-fx-background-color: #f1f5f9; -fx-background: #f1f5f9;" vbarPolicy="AS_NEEDED" hbarPolicy="NEVER">
+            <StackPane style="-fx-background-color: #f1f5f9; -fx-padding: 24;">
 
-            <HBox spacing="20" alignment="TOP_CENTER">
+                <HBox spacing="20" alignment="TOP_CENTER">
 
-                <!-- ============== LEFT: Accounts Card ============== -->
-                <VBox spacing="20" HBox.hgrow="ALWAYS" maxWidth="Infinity"
-                      styleClass="surface-card">
+                    <!-- ============== LEFT: Accounts Card ============== -->
+                    <VBox spacing="20" HBox.hgrow="ALWAYS" maxWidth="Infinity"
+                          styleClass="surface-card">
 
-                    <!-- Header -->
-                    <HBox alignment="CENTER_LEFT" spacing="16">
-                        <VBox spacing="2">
-                            <Label text="Bank Accounts" styleClass="card-title" />
-                            <Label text="Manage your connected bank accounts" styleClass="card-subtitle" />
-                        </VBox>
-                        <Region HBox.hgrow="ALWAYS" />
-                        <Button fx:id="btnAddAccount" text="＋ Add Account" styleClass="btn-primary" onAction="#onAddAccount" />
-                        <Button text="↻ Refresh" onAction="#initialize" styleClass="btn-secondary" />
-                    </HBox>
+                        <!-- Header -->
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                            <VBox spacing="2">
+                                <Label text="Bank Accounts" styleClass="card-title" />
+                                <Label text="Manage your connected bank accounts" styleClass="card-subtitle" />
+                            </VBox>
+                            <Region HBox.hgrow="ALWAYS" />
+                            <Button fx:id="btnAddAccount" text="＋ Add Account" styleClass="btn-primary" onAction="#onAddAccount" />
+                            <Button text="↻ Refresh" onAction="#initialize" styleClass="btn-secondary" />
+                        </HBox>
 
-                    <Separator />
+                        <Separator />
 
-                    <!-- Table + overlays -->
-                    <StackPane VBox.vgrow="ALWAYS" styleClass="table-frame" minHeight="360">
+                        <!-- Table + overlays -->
+                        <StackPane VBox.vgrow="ALWAYS" styleClass="table-frame" minHeight="360">
 
-                        <TableView fx:id="accountTable" VBox.vgrow="ALWAYS" styleClass="clean-table">
-                            <columns>
-                                <TableColumn text="Bank Name" prefWidth="220" />
-                                <TableColumn text="Account Number" prefWidth="200" />
-                                <TableColumn text="Holder Name" prefWidth="220" />
-                                <TableColumn text="Status" prefWidth="120" />
-                            </columns>
-                            <columnResizePolicy>
-                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                            </columnResizePolicy>
-                        </TableView>
+                            <TableView fx:id="accountTable" VBox.vgrow="ALWAYS" styleClass="clean-table">
+                                <columns>
+                                    <TableColumn text="Bank Name" prefWidth="220" />
+                                    <TableColumn text="Account Number" prefWidth="200" />
+                                    <TableColumn text="IFSC Code" prefWidth="180" />
+                                    <TableColumn text="Branch / Status" prefWidth="160" />
+                                </columns>
+                                <columnResizePolicy>
+                                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                                </columnResizePolicy>
+                            </TableView>
 
-                        <!-- Empty State Overlay -->
-                        <VBox fx:id="emptyState" alignment="CENTER" spacing="10" styleClass="overlay-empty" visible="false" managed="false">
-                            <SVGPath content="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" styleClass="empty-icon" scaleX="2.6" scaleY="2.6" />
-                            <Label text="No accounts found" styleClass="empty-title" />
-                            <Label text="Add a new bank account to get started." styleClass="empty-subtitle" />
-                            <Button text="＋ Add your first account" styleClass="btn-primary" onAction="#onAddAccount" />
-                        </VBox>
+                            <!-- Empty State Overlay -->
+                            <VBox fx:id="emptyState" alignment="CENTER" spacing="10" styleClass="overlay-empty" visible="false" managed="false">
+                                <SVGPath content="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" styleClass="empty-icon" scaleX="2.6" scaleY="2.6" />
+                                <Label text="No accounts found" styleClass="empty-title" />
+                                <Label text="Add a new bank account to get started." styleClass="empty-subtitle" />
+                                <Button text="＋ Add your first account" styleClass="btn-primary" onAction="#onAddAccount" />
+                            </VBox>
 
-                        <!-- Loading Overlay -->
-                        <VBox fx:id="loadingSpinner" alignment="CENTER" spacing="14" styleClass="overlay-loading" visible="false" managed="false">
-                            <StackPane styleClass="spinner-ring">
-                                <ProgressIndicator styleClass="spinner-indicator" prefWidth="46" prefHeight="46" />
-                            </StackPane>
-                            <Label text="Loading accounts…" styleClass="loading-label" />
-                        </VBox>
+                            <!-- Loading Overlay -->
+                            <VBox fx:id="loadingSpinner" alignment="CENTER" spacing="14" styleClass="overlay-loading" visible="false" managed="false">
+                                <StackPane styleClass="spinner-ring">
+                                    <ProgressIndicator styleClass="spinner-indicator" prefWidth="46" prefHeight="46" />
+                                </StackPane>
+                                <Label text="Loading accounts…" styleClass="loading-label" />
+                            </VBox>
 
-                    </StackPane>
-                </VBox>
+                        </StackPane>
 
-                <!-- ============== RIGHT: Cheque Preview Card ============== -->
-                <VBox spacing="16" prefWidth="360" minWidth="360" maxWidth="360" styleClass="surface-card">
-
-                    <VBox spacing="2">
-                        <Label text="Cheque Preview" styleClass="card-title" style="-fx-font-size: 18px;" />
-                        <Label text="Live preview for the selected account" styleClass="card-subtitle" />
+                        <!-- Bottom Table Action Footer: Edit Account (Digit 2) & Delete Account (Digit 3) -->
+                        <HBox spacing="14" alignment="CENTER_LEFT" style="-fx-padding: 8 0 0 0;">
+                            <Button fx:id="btnEditAccountAction" text="✏ Edit Account" styleClass="btn-secondary" disable="true" onAction="#onEditAccountAction" minWidth="130" />
+                            <Button fx:id="btnDeleteAccountAction" text="🗑 Delete Account" styleClass="btn-danger-low" disable="true" onAction="#onDeleteAccountAction" minWidth="140" />
+                        </HBox>
                     </VBox>
 
-                    <Separator />
+                    <!-- ============== RIGHT: Cheque Preview Card ============== -->
+                    <VBox spacing="16" prefWidth="360" minWidth="360" maxWidth="360" styleClass="surface-card">
 
-                    <!-- Preview canvas -->
-                    <StackPane styleClass="preview-frame" minHeight="200">
-
-                        <!-- No selection state -->
-                        <VBox fx:id="previewEmptyState" alignment="CENTER" spacing="8" visible="true" managed="true">
-                            <SVGPath content="M4 6h16v12H4V6zm2 2v8h12V8H6z" styleClass="empty-icon" scaleX="1.6" scaleY="1.6" />
-                            <Label text="Select an account" styleClass="empty-subtitle" wrapText="true" textAlignment="CENTER" />
+                        <VBox spacing="2">
+                            <Label text="Cheque Preview" styleClass="card-title" style="-fx-font-size: 18px;" />
+                            <Label text="Live preview for the selected account" styleClass="card-subtitle" />
                         </VBox>
 
-                        <!-- Cheque mock preview -->
-                        <VBox fx:id="chequePreviewCard" spacing="0" styleClass="cheque-mock" visible="false" managed="false">
-                            <HBox alignment="CENTER_LEFT" spacing="8" styleClass="cheque-mock-header">
-                                <Label fx:id="previewBankName" text="Bank Name" styleClass="cheque-bank-name" />
-                                <Region HBox.hgrow="ALWAYS" />
-                                <Label fx:id="previewBankCode" text="CODE" styleClass="cheque-bank-code" />
-                            </HBox>
-                            <VBox spacing="10" style="-fx-padding: 14 12;">
-                                <HBox spacing="6">
-                                    <Label text="Pay:" styleClass="cheque-field-label" />
-                                    <Label fx:id="previewHolderName" text="Account Holder" styleClass="cheque-field-value" />
-                                </HBox>
-                                <HBox spacing="6">
-                                    <Label text="A/C No:" styleClass="cheque-field-label" />
-                                    <Label fx:id="previewAccountNumber" text="0000 0000 0000" styleClass="cheque-field-value" />
-                                </HBox>
-                                <Region VBox.vgrow="ALWAYS" />
-                                <Label fx:id="previewMicr" text="⑈000000⑈ 000000000 ⑈00⑈" styleClass="cheque-micr" />
+                        <Separator />
+
+                        <!-- Preview canvas -->
+                        <StackPane styleClass="preview-frame" minHeight="200">
+
+                            <!-- No selection state -->
+                            <VBox fx:id="previewEmptyState" alignment="CENTER" spacing="8" visible="true" managed="true">
+                                <SVGPath content="M4 6h16v12H4V6zm2 2v8h12V8H6z" styleClass="empty-icon" scaleX="1.6" scaleY="1.6" />
+                                <Label text="Select an account" styleClass="empty-subtitle" wrapText="true" textAlignment="CENTER" />
                             </VBox>
-                        </VBox>
 
-                        <!-- Preview loading overlay -->
-                        <VBox fx:id="previewLoading" alignment="CENTER" spacing="10" styleClass="overlay-loading" visible="false" managed="false">
-                            <ProgressIndicator styleClass="spinner-indicator" prefWidth="30" prefHeight="30" />
-                        </VBox>
-                    </StackPane>
+                            <!-- Cheque mock preview -->
+                            <VBox fx:id="chequePreviewCard" spacing="0" styleClass="cheque-mock" visible="false" managed="false">
+                                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="cheque-mock-header">
+                                    <Label fx:id="previewBankName" text="Bank Name" styleClass="cheque-bank-name" />
+                                    <Region HBox.hgrow="ALWAYS" />
+                                    <Label fx:id="previewBankCode" text="IFSC" styleClass="cheque-bank-code" />
+                                </HBox>
 
-                    <Button fx:id="btnEditTemplate" text="Edit Template →" styleClass="btn-secondary" maxWidth="Infinity" onAction="#onEditTemplate" disable="true" />
+                                <VBox spacing="6" styleClass="cheque-mock-body">
+                                    <HBox alignment="CENTER_LEFT" spacing="4">
+                                        <Label text="Pay:" styleClass="cheque-label-muted" />
+                                        <Label text="Your Payee Name" styleClass="cheque-payee-placeholder" />
+                                    </HBox>
+                                    <HBox alignment="CENTER_LEFT" spacing="4">
+                                        <Label text="A/C No:" styleClass="cheque-label-muted" />
+                                        <Label fx:id="previewAccountNumber" text="•••" styleClass="cheque-val-bold" />
+                                    </HBox>
+                                    <HBox alignment="CENTER_LEFT" spacing="4">
+                                        <Label text="Holder:" styleClass="cheque-label-muted" />
+                                        <Label fx:id="previewHolderName" text="•••" styleClass="cheque-val" />
+                                    </HBox>
+                                </VBox>
 
-                </VBox>
+                                <HBox alignment="CENTER_RIGHT" styleClass="cheque-mock-footer">
+                                    <Label fx:id="previewMicr" text="⑈123456⑈ 000000000 ⑈00⑈" styleClass="cheque-micr-preview" />
+                                </HBox>
+                            </VBox>
 
-            </HBox>
-        </StackPane>
+                            <!-- Preview loading overlay -->
+                            <VBox fx:id="previewLoading" alignment="CENTER" spacing="10" styleClass="overlay-loading" visible="false" managed="false">
+                                <ProgressIndicator styleClass="spinner-indicator" prefWidth="30" prefHeight="30" />
+                            </VBox>
+                        </StackPane>
+
+                        <Button fx:id="btnEditTemplate" text="Edit Template →" styleClass="btn-secondary" maxWidth="Infinity" onAction="#onEditTemplate" disable="true" />
+
+                    </VBox>
+
+                </HBox>
+            </StackPane>
+        </ScrollPane>
     </Tab>
 
     <!-- ============================================================ -->

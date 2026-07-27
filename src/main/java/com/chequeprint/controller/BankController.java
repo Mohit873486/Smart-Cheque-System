@@ -18,15 +18,24 @@ import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.Cursor;
 import javafx.scene.control.Alert;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
+import javafx.scene.control.Separator;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.TableColumn;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
@@ -50,6 +59,8 @@ public class BankController {
     @FXML private TableView<Bank> bankTable;
     @FXML private TableView<BankAccount> accountTable;
     @FXML private Button btnAddAccount;
+    @FXML private Button btnEditAccountAction;
+    @FXML private Button btnDeleteAccountAction;
     @FXML private VBox emptyState;
     @FXML private VBox loadingSpinner;
     @FXML private VBox previewEmptyState;
@@ -192,7 +203,243 @@ public class BankController {
 
     @FXML
     private void onAddAccount() {
-        // TODO: Implement adding an account flow or switch tabs
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/bank_account_dialog.fxml"));
+            javafx.scene.Parent root = loader.load();
+
+            BankAccountDialogController controller = loader.getController();
+
+            Stage stage = new Stage();
+            stage.initStyle(StageStyle.TRANSPARENT);
+            stage.initModality(Modality.APPLICATION_MODAL);
+            if (accountTable != null && accountTable.getScene() != null) {
+                stage.initOwner(accountTable.getScene().getWindow());
+            }
+            stage.setTitle("Add Bank Account");
+
+            javafx.scene.Scene scene = new javafx.scene.Scene(root);
+            scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
+            scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+            com.chequeprint.util.ThemeManager.applySavedTheme(scene);
+
+            // Drag support
+            final double[] xOffset = new double[1];
+            final double[] yOffset = new double[1];
+            root.setOnMousePressed(event -> {
+                xOffset[0] = event.getSceneX();
+                yOffset[0] = event.getSceneY();
+            });
+            root.setOnMouseDragged(event -> {
+                stage.setX(event.getScreenX() - xOffset[0]);
+                stage.setY(event.getScreenY() - yOffset[0]);
+            });
+
+            // Background blur/dim
+            javafx.scene.Parent ownerRoot = accountTable != null && accountTable.getScene() != null ? accountTable.getScene().getRoot() : null;
+            javafx.scene.effect.Effect oldEffect = ownerRoot != null ? ownerRoot.getEffect() : null;
+            if (ownerRoot != null) {
+                ownerRoot.setEffect(new javafx.scene.effect.BoxBlur(6, 6, 3));
+            }
+            stage.setOnHiding(e -> {
+                if (ownerRoot != null) {
+                    ownerRoot.setEffect(oldEffect);
+                }
+            });
+
+            controller.setOnSaveCallback(account -> {
+                Task<BankAccount> saveTask = new Task<>() {
+                    @Override
+                    protected BankAccount call() throws Exception {
+                        return apiService.saveBankAccount(account);
+                    }
+                };
+                saveTask.setOnSucceeded(ev -> {
+                    BankAccount saved = saveTask.getValue();
+                    accountData.add(saved != null ? saved : account);
+                    if (accountTable != null) {
+                        accountTable.setItems(accountData);
+                        accountTable.refresh();
+                    }
+                    if (emptyState != null) {
+                        emptyState.setVisible(accountData.isEmpty());
+                    }
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Success");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Bank account added successfully!");
+                    alert.showAndWait();
+                });
+                saveTask.setOnFailed(ev -> {
+                    Throwable ex = saveTask.getException();
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error");
+                    alert.setHeaderText("Failed to Add Account");
+                    alert.setContentText(ex != null ? ex.getMessage() : "Unknown error");
+                    alert.showAndWait();
+                });
+                new Thread(saveTask).start();
+            });
+
+            stage.setScene(scene);
+            stage.showAndWait();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void onEditAccountAction() {
+        if (accountTable == null || accountTable.getSelectionModel().getSelectedItem() == null) {
+            return;
+        }
+        BankAccount selected = accountTable.getSelectionModel().getSelectedItem();
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/bank_account_dialog.fxml"));
+            javafx.scene.Parent root = loader.load();
+
+            BankAccountDialogController controller = loader.getController();
+            controller.initData(selected);
+
+            Stage stage = new Stage();
+            stage.initStyle(StageStyle.TRANSPARENT);
+            stage.initModality(Modality.APPLICATION_MODAL);
+            if (accountTable.getScene() != null) {
+                stage.initOwner(accountTable.getScene().getWindow());
+            }
+            stage.setTitle("Edit Bank Account");
+
+            javafx.scene.Scene scene = new javafx.scene.Scene(root);
+            scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
+            scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+            com.chequeprint.util.ThemeManager.applySavedTheme(scene);
+
+            // Drag support
+            final double[] xOffset = new double[1];
+            final double[] yOffset = new double[1];
+            root.setOnMousePressed(event -> {
+                xOffset[0] = event.getSceneX();
+                yOffset[0] = event.getSceneY();
+            });
+            root.setOnMouseDragged(event -> {
+                stage.setX(event.getScreenX() - xOffset[0]);
+                stage.setY(event.getScreenY() - yOffset[0]);
+            });
+
+            // Blur effect
+            javafx.scene.Parent ownerRoot = accountTable.getScene() != null ? accountTable.getScene().getRoot() : null;
+            javafx.scene.effect.Effect oldEffect = ownerRoot != null ? ownerRoot.getEffect() : null;
+            if (ownerRoot != null) {
+                ownerRoot.setEffect(new javafx.scene.effect.BoxBlur(6, 6, 3));
+            }
+            stage.setOnHiding(e -> {
+                if (ownerRoot != null) {
+                    ownerRoot.setEffect(oldEffect);
+                }
+            });
+
+            controller.setOnSaveCallback(updatedAccount -> {
+                Task<BankAccount> updateTask = new Task<>() {
+                    @Override
+                    protected BankAccount call() throws Exception {
+                        if (selected.getId() != null) {
+                            return apiService.updateBankAccount(selected.getId(), updatedAccount);
+                        } else {
+                            return apiService.saveBankAccount(updatedAccount);
+                        }
+                    }
+                };
+                updateTask.setOnSucceeded(ev -> {
+                    BankAccount result = updateTask.getValue();
+                    int idx = accountData.indexOf(selected);
+                    if (idx >= 0) {
+                        accountData.set(idx, result != null ? result : updatedAccount);
+                    }
+                    if (accountTable != null) {
+                        accountTable.refresh();
+                    }
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Success");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Bank account updated successfully!");
+                    alert.showAndWait();
+                });
+                updateTask.setOnFailed(ev -> {
+                    Throwable ex = updateTask.getException();
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error");
+                    alert.setHeaderText("Failed to Update Account");
+                    alert.setContentText(ex != null ? ex.getMessage() : "Unknown error");
+                    alert.showAndWait();
+                });
+                new Thread(updateTask).start();
+            });
+
+            stage.setScene(scene);
+            stage.showAndWait();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void onDeleteAccountAction() {
+        if (accountTable == null || accountTable.getSelectionModel().getSelectedItem() == null) {
+            return;
+        }
+        BankAccount selected = accountTable.getSelectionModel().getSelectedItem();
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Delete Bank Account");
+        confirm.setHeaderText("Are you sure you want to delete this bank account?");
+        confirm.setContentText(selected.getBankName() + " (" + selected.getAccountNumber() + ")");
+
+        confirm.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) {
+                Task<Void> deleteTask = new Task<>() {
+                    @Override
+                    protected Void call() throws Exception {
+                        if (selected.getId() != null) {
+                            apiService.deleteBankAccount(selected.getId());
+                        }
+                        return null;
+                    }
+                };
+                deleteTask.setOnSucceeded(ev -> {
+                    accountData.remove(selected);
+                    if (accountTable != null) {
+                        accountTable.refresh();
+                    }
+                    if (emptyState != null) {
+                        emptyState.setVisible(accountData.isEmpty());
+                    }
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Deleted");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Bank account deleted successfully.");
+                    alert.showAndWait();
+                });
+                deleteTask.setOnFailed(ev -> {
+                    Throwable ex = deleteTask.getException();
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error");
+                    alert.setHeaderText("Failed to Delete Account");
+                    alert.setContentText(ex != null ? ex.getMessage() : "Unknown error");
+                    alert.showAndWait();
+                });
+                new Thread(deleteTask).start();
+            }
+        });
+    }
+
+    private VBox createStyledFormField(String labelText, String placeholder) {
+        VBox box = new VBox(6);
+        Label lbl = new Label(labelText);
+        lbl.setStyle("-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;");
+        TextField tf = new TextField();
+        tf.setPromptText(placeholder);
+        tf.setStyle("-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 9 12; -fx-font-size: 13px;");
+        box.getChildren().addAll(lbl, tf);
+        return box;
     }
 
     @FXML
@@ -210,9 +457,11 @@ public class BankController {
         }
         // Switch to the template designer tab
         if (fldBankName != null && fldBankName.getScene() != null) {
-            javafx.scene.control.TabPane tabPane = (javafx.scene.control.TabPane) fldBankName.getScene().getRoot();
-            if (tabPane != null && tabPane.getTabs().size() > 1) {
-                tabPane.getSelectionModel().select(1);
+            javafx.scene.Node tabPaneNode = fldBankName.getScene().lookup(".tab-pane");
+            if (tabPaneNode instanceof javafx.scene.control.TabPane tabPane) {
+                if (tabPane.getTabs().size() > 1) {
+                    tabPane.getSelectionModel().select(1);
+                }
             }
         }
     }
@@ -232,7 +481,16 @@ public class BankController {
 
     private void setupAccountTableListener() {
         if (accountTable != null) {
+            if (accountTable.getColumns().size() >= 4) {
+                accountTable.getColumns().get(0).setCellValueFactory(new PropertyValueFactory<>("bankName"));
+                accountTable.getColumns().get(1).setCellValueFactory(new PropertyValueFactory<>("accountNumber"));
+                accountTable.getColumns().get(2).setCellValueFactory(new PropertyValueFactory<>("ifscCode"));
+                accountTable.getColumns().get(3).setCellValueFactory(new PropertyValueFactory<>("branchName"));
+            }
             accountTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+                boolean hasSelection = (newVal != null);
+                if (btnEditAccountAction != null) btnEditAccountAction.setDisable(!hasSelection);
+                if (btnDeleteAccountAction != null) btnDeleteAccountAction.setDisable(!hasSelection);
                 if (newVal == null) {
                     if (previewEmptyState != null) previewEmptyState.setVisible(true);
                     if (chequePreviewCard != null) chequePreviewCard.setVisible(false);

@@ -2332,7 +2332,12 @@ ScrollPane .donut-center,
     -fx-background-color: #f8fafc;
 }
 .clean-table .table-row-cell:selected {
-    -fx-background-color: #eff6ff;
+    -fx-background-color: #2563eb;
+}
+.clean-table .table-row-cell:selected .text,
+.clean-table .table-row-cell:selected .table-cell {
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: 600;
 }
 
 /* --- Empty state overlay --- */
@@ -2437,4 +2442,35 @@ ScrollPane .donut-center,
 }
 .btn-danger:hover {
     -fx-background-color: #dc2626;
+}
+
+/* --- Modern TabPane Header (Digit 1 Fix) --- */
+.tab-pane .tab-header-area {
+    -fx-padding: 0 0 8 0;
+}
+.tab-pane .tab-header-background {
+    -fx-background-color: #f1f5f9;
+}
+.tab-pane .tab {
+    -fx-background-color: #e2e8f0;
+    -fx-background-radius: 8 8 0 0;
+    -fx-padding: 6 16;
+    -fx-cursor: hand;
+}
+.tab-pane .tab:hover {
+    -fx-background-color: #cbd5e1;
+}
+.tab-pane .tab:selected {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #2563eb transparent transparent transparent;
+    -fx-border-width: 3 0 0 0;
+}
+.tab-pane .tab .tab-label {
+    -fx-text-fill: #475569;
+    -fx-font-weight: 600;
+    -fx-font-size: 13px;
+}
+.tab-pane .tab:selected .tab-label {
+    -fx-text-fill: #2563eb;
+    -fx-font-weight: 700;
 }
