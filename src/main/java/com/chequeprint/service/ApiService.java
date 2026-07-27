@@ -181,4 +181,85 @@ public class ApiService {
             }
         }
     }
+
+    public com.chequeprint.model.ChequeTemplate getChequeTemplateByBankId(Long bankId) throws Exception {
+        HttpURLConnection connection = null;
+        try {
+            URL url = new URL("http://localhost:8081/api/template/bank/" + bankId);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Accept", "application/json");
+            
+            String authHeader = com.chequeprint.util.Session.getAuthorizationHeader();
+            if (!authHeader.isBlank()) {
+                connection.setRequestProperty("Authorization", authHeader);
+            }
+            
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+
+            int status = connection.getResponseCode();
+            if (status >= 200 && status < 300) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String inputLine;
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                in.close();
+                return mapper.readValue(response.toString(), com.chequeprint.model.ChequeTemplate.class);
+            } else {
+                return null;
+            }
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    public com.chequeprint.model.ChequeTemplate saveChequeTemplate(com.chequeprint.model.ChequeTemplate template) throws Exception {
+        HttpURLConnection connection = null;
+        try {
+            URL url = new URL("http://localhost:8081/api/template/save");
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Accept", "application/json");
+            
+            String authHeader = com.chequeprint.util.Session.getAuthorizationHeader();
+            if (!authHeader.isBlank()) {
+                connection.setRequestProperty("Authorization", authHeader);
+            }
+            
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+            connection.setDoOutput(true);
+
+            String jsonPayload = mapper.writeValueAsString(template);
+
+            try (java.io.OutputStream os = connection.getOutputStream()) {
+                byte[] input = jsonPayload.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            int status = connection.getResponseCode();
+            if (status >= 200 && status < 300) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String inputLine;
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                in.close();
+                return mapper.readValue(response.toString(), com.chequeprint.model.ChequeTemplate.class);
+            } else {
+                throw new Exception("Failed to save cheque template. HTTP Status: " + status);
+            }
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
 }

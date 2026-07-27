@@ -22,6 +22,9 @@ public class ChequeTemplate {
     @Column(name = "height", nullable = false)
     private Double height = 92.00;
 
+    @Column(name = "config_json", columnDefinition = "LONGTEXT")
+    private String configJson;
+
     public ChequeTemplate() {
     }
 
@@ -71,5 +74,13 @@ public class ChequeTemplate {
 
     public void setHeight(Double height) {
         this.height = height;
+    }
+
+    public String getConfigJson() {
+        return configJson;
+    }
+
+    public void setConfigJson(String configJson) {
+        this.configJson = configJson;
     }
 }

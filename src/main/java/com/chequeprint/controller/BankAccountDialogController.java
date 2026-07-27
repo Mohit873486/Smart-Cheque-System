@@ -41,55 +41,18 @@ public class BankAccountDialogController {
         }
     }
 
-    // Standard Indian Financial System Code (IFSC) Regex: 4 letters, '0', 6 alphanumeric chars
-    private static final String IFSC_REGEX = "^[A-Z]{4}0[A-Z0-9]{6}$";
-    // Account Number Regex: 9 to 18 numeric digits
-    private static final String ACCOUNT_NUM_REGEX = "^[0-9]{9,18}$";
-
     @FXML
     private void onSave() {
         String bankName = fldBankName.getText() != null ? fldBankName.getText().trim() : "";
         String accountNumber = fldAccountNumber.getText() != null ? fldAccountNumber.getText().trim() : "";
         String holderName = fldHolderName.getText() != null ? fldHolderName.getText().trim() : "";
-        String ifscCode = fldIfscCode.getText() != null ? fldIfscCode.getText().trim().toUpperCase() : "";
+        String ifscCode = fldIfscCode.getText() != null ? fldIfscCode.getText().trim() : "";
 
-        // Reset field styling
-        resetFieldStyles();
-
-        StringBuilder errors = new StringBuilder();
-
-        // 1. Bank Name Validation
-        if (bankName.isEmpty()) {
-            errors.append("• Bank Name is required.\n");
-            markInvalid(fldBankName);
-        } else if (bankName.length() < 2) {
-            errors.append("• Bank Name must be at least 2 characters long.\n");
-            markInvalid(fldBankName);
-        }
-
-        // 2. Account Number Validation
-        if (accountNumber.isEmpty()) {
-            errors.append("• Account Number is required.\n");
-            markInvalid(fldAccountNumber);
-        } else if (!accountNumber.matches(ACCOUNT_NUM_REGEX)) {
-            errors.append("• Account Number must contain 9 to 18 numeric digits (e.g. 123456789012).\n");
-            markInvalid(fldAccountNumber);
-        }
-
-        // 3. IFSC Code Format Validation
-        if (ifscCode.isEmpty()) {
-            errors.append("• IFSC Code is required.\n");
-            markInvalid(fldIfscCode);
-        } else if (!ifscCode.matches(IFSC_REGEX)) {
-            errors.append("• Invalid IFSC Code format (e.g. SBIN0000123). Must be 4 uppercase letters, '0', and 6 alphanumeric characters.\n");
-            markInvalid(fldIfscCode);
-        }
-
-        if (errors.length() > 0) {
+        if (bankName.isEmpty() || accountNumber.isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Validation Error");
-            alert.setHeaderText("Please correct the following errors:");
-            alert.setContentText(errors.toString());
+            alert.setHeaderText(null);
+            alert.setContentText("Bank Name and Account Number are required.");
             alert.showAndWait();
             return;
         }
@@ -105,20 +68,6 @@ public class BankAccountDialogController {
             onSaveCallback.accept(account);
         }
         closeStage();
-    }
-
-    private void resetFieldStyles() {
-        String defaultStyle = "-fx-border-color: #e5e7eb;";
-        if (fldBankName != null) fldBankName.setStyle(defaultStyle);
-        if (fldAccountNumber != null) fldAccountNumber.setStyle(defaultStyle);
-        if (fldHolderName != null) fldHolderName.setStyle(defaultStyle);
-        if (fldIfscCode != null) fldIfscCode.setStyle(defaultStyle);
-    }
-
-    private void markInvalid(TextField field) {
-        if (field != null) {
-            field.setStyle("-fx-border-color: #ef4444; -fx-border-width: 1.5; -fx-background-color: #fef2f2;");
-        }
     }
 
     @FXML

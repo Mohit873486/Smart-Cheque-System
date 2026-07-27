@@ -27,6 +27,7 @@ public class ChequeTemplateService {
             toUpdate.setTemplateName(template.getTemplateName());
             if (template.getWidth() != null) toUpdate.setWidth(template.getWidth());
             if (template.getHeight() != null) toUpdate.setHeight(template.getHeight());
+            if (template.getConfigJson() != null) toUpdate.setConfigJson(template.getConfigJson());
             return chequeTemplateRepository.save(toUpdate);
         } else {
             return chequeTemplateRepository.save(template);

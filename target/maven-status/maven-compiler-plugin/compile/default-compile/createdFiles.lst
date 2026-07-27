@@ -44,6 +44,7 @@ com\chequeprint\service\MultiAgentCoordinatorService.class
 com\chequeprint\service\ChequeService.class
 com\chequeprint\util\ThemeManager.class
 com\chequeprint\controller\SettingsController$3.class
+com\chequeprint\controller\BankController$8.class
 com\chequeprint\service\BankApiService$1.class
 com\chequeprint\util\QrCodeGenerator.class
 com\chequeprint\model\FieldPosition.class
@@ -82,6 +83,7 @@ com\chequeprint\printpreview\PrintPreviewDocument$PrintHandler.class
 com\chequeprint\service\SmartSuggestionService.class
 com\chequeprint\util\SessionManager.class
 com\chequeprint\service\OcrException.class
+com\chequeprint\controller\BankController$9.class
 com\chequeprint\util\SignatureOverlayHelper$Delta.class
 com\chequeprint\model\Cheque.class
 com\chequeprint\service\AIService.class
@@ -137,6 +139,7 @@ com\chequeprint\preview\ChequePreviewPanel.class
 com\chequeprint\service\ChequeApiService.class
 com\chequeprint\controller\UserManagementController.class
 com\chequeprint\controller\BankController.class
+com\chequeprint\model\ChequeTemplate$FieldConfig.class
 com\chequeprint\controller\SupportController.class
 com\chequeprint\model\Invoice.class
 com\chequeprint\service\ApiService$1.class
@@ -160,6 +163,7 @@ com\chequeprint\controller\SignupController.class
 com\chequeprint\service\CommandParser.class
 com\chequeprint\controller\BankController$2.class
 com\chequeprint\controller\ChequeHistoryController$1.class
+com\chequeprint\model\ChequeTemplate.class
 com\chequeprint\controller\ChequeDialogController.class
 com\chequeprint\service\ChequeAiActionExecutor.class
 com\chequeprint\dao\ChequeDAO.class

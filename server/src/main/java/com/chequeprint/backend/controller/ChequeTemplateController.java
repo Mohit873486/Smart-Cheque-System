@@ -14,7 +14,7 @@ public class ChequeTemplateController {
     @Autowired
     private ChequeTemplateService chequeTemplateService;
 
-    @GetMapping("/bank/{bankId}")
+    @GetMapping({"/{bankId}", "/bank/{bankId}"})
     public ResponseEntity<ChequeTemplate> getTemplateByBankId(@PathVariable Long bankId) {
         return chequeTemplateService.getTemplateByBankId(bankId)
                 .map(ResponseEntity::ok)

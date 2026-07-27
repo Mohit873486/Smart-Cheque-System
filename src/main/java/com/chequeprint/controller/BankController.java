@@ -18,6 +18,9 @@ import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.Cursor;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ListCell;
+import javafx.print.PrinterJob;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -64,12 +67,7 @@ public class BankController {
     @FXML private VBox emptyState;
     @FXML private VBox loadingSpinner;
     @FXML private VBox previewEmptyState;
-    @FXML private VBox chequePreviewCard;
-    @FXML private Label previewBankName;
-    @FXML private Label previewBankCode;
-    @FXML private Label previewHolderName;
-    @FXML private Label previewAccountNumber;
-    @FXML private Label previewMicr;
+    @FXML private Pane previewPane;
     @FXML private VBox previewLoading;
     @FXML private Button btnEditTemplate;
 
@@ -479,6 +477,52 @@ public class BankController {
         FxUtils.animateIn(previewViewport, 0);
     }
 
+    private com.chequeprint.model.ChequeTemplate currentTemplate = new com.chequeprint.model.ChequeTemplate();
+
+    public com.chequeprint.model.ChequeTemplate getCurrentTemplate() {
+        return currentTemplate;
+    }
+
+    public void clearPreviewPane() {
+        if (previewPane != null) {
+            previewPane.getChildren().clear();
+        }
+    }
+
+    public void setCurrentTemplate(com.chequeprint.model.ChequeTemplate template) {
+        clearPreviewPane();
+        this.currentTemplate = template != null ? template : new com.chequeprint.model.ChequeTemplate();
+        renderPreview(this.currentTemplate);
+    }
+
+    public void updateFieldPosition(String fieldName, double x, double y, double fontSize, boolean visible) {
+        if (currentTemplate == null) {
+            currentTemplate = new com.chequeprint.model.ChequeTemplate();
+        }
+
+        com.chequeprint.model.ChequeTemplate.FieldConfig cfg = switch (fieldName != null ? fieldName.toLowerCase().trim() : "") {
+            case "date", "datefield" -> currentTemplate.getDateField();
+            case "payee", "payeefield" -> currentTemplate.getPayeeField();
+            case "amountwords", "words" -> currentTemplate.getAmountWordsField();
+            case "amountnum", "figures" -> currentTemplate.getAmountNumField();
+            case "acpayee" -> currentTemplate.getAcPayeeField();
+            case "bearer" -> currentTemplate.getBearerField();
+            case "signature" -> currentTemplate.getSignatureField();
+            case "micr" -> currentTemplate.getMicrField();
+            default -> null;
+        };
+
+        if (cfg != null) {
+            cfg.setX(x);
+            cfg.setY(y);
+            if (fontSize > 0) cfg.setFontSize(fontSize);
+            cfg.setVisible(visible);
+
+            // Re-render live preview instantly in real-time
+            setCurrentTemplate(currentTemplate);
+        }
+    }
+
     private void setupAccountTableListener() {
         if (accountTable != null) {
             if (accountTable.getColumns().size() >= 4) {
@@ -493,22 +537,16 @@ public class BankController {
                 if (btnDeleteAccountAction != null) btnDeleteAccountAction.setDisable(!hasSelection);
                 if (newVal == null) {
                     if (previewEmptyState != null) previewEmptyState.setVisible(true);
-                    if (chequePreviewCard != null) chequePreviewCard.setVisible(false);
+                    if (previewPane != null) {
+                        previewPane.setVisible(false);
+                        previewPane.getChildren().clear();
+                    }
                     if (btnEditTemplate != null) btnEditTemplate.setDisable(true);
                 } else {
                     if (previewEmptyState != null) previewEmptyState.setVisible(false);
-                    if (chequePreviewCard != null) chequePreviewCard.setVisible(true);
+                    if (previewPane != null) previewPane.setVisible(true);
                     if (btnEditTemplate != null) btnEditTemplate.setDisable(false);
 
-                    if (previewBankName != null) previewBankName.setText(newVal.getBankName());
-                    if (previewBankCode != null) previewBankCode.setText(newVal.getIfscCode() != null ? newVal.getIfscCode() : "");
-                    if (previewHolderName != null) previewHolderName.setText(newVal.getAccountHolderName());
-                    if (previewAccountNumber != null) previewAccountNumber.setText(newVal.getAccountNumber());
-                    
-                    // Default micr for preview if applicable
-                    if (previewMicr != null) {
-                        previewMicr.setText("⑈" + newVal.getAccountNumber() + "⑈ 000000000 ⑈00⑈");
-                    }
                     if (cmbBankAccount != null) {
                         cmbBankAccount.setValue(newVal);
                     }
@@ -516,10 +554,393 @@ public class BankController {
                         Long bankId = newVal.getId().longValue();
                         Session.setSelectedBankId(bankId);
                         loadTemplateFromBackend(bankId);
+                    } else {
+                        setCurrentTemplate(new com.chequeprint.model.ChequeTemplate());
                     }
                 }
             });
         }
+    }
+
+    private final Map<String, com.chequeprint.model.ChequeTemplate> templateCache = new java.util.concurrent.ConcurrentHashMap<>();
+
+    @FXML
+    private void onSaveTemplate() {
+        if (currentTemplate == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Save Warning");
+            alert.setHeaderText(null);
+            alert.setContentText("No cheque template selected to save.");
+            alert.showAndWait();
+            return;
+        }
+
+        BankAccount selectedAcc = accountTable != null ? accountTable.getSelectionModel().getSelectedItem() : null;
+        if (selectedAcc != null && selectedAcc.getId() != null) {
+            currentTemplate.setBankId(selectedAcc.getId().longValue());
+            currentTemplate.setTemplateName(selectedAcc.getBankName() + " Template");
+        }
+
+        // Show loading spinner during save
+        if (previewLoading != null) {
+            previewLoading.setVisible(true);
+        }
+
+        Task<com.chequeprint.model.ChequeTemplate> saveTask = new Task<>() {
+            @Override
+            protected com.chequeprint.model.ChequeTemplate call() throws Exception {
+                return apiService.saveChequeTemplate(currentTemplate);
+            }
+        };
+
+        saveTask.setOnSucceeded(e -> {
+            // Hide loading spinner
+            if (previewLoading != null) {
+                previewLoading.setVisible(false);
+            }
+            com.chequeprint.model.ChequeTemplate saved = saveTask.getValue();
+            if (saved != null && saved.getBankId() != null) {
+                templateCache.put(String.valueOf(saved.getBankId()), saved);
+                currentTemplate = saved;
+            }
+
+            // Success message
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Template Saved");
+            alert.setHeaderText("Success!");
+            alert.setContentText("Cheque template saved successfully to database.");
+            alert.showAndWait();
+        });
+
+        saveTask.setOnFailed(e -> {
+            // Hide loading spinner
+            if (previewLoading != null) {
+                previewLoading.setVisible(false);
+            }
+            Throwable ex = saveTask.getException();
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Save Error");
+            alert.setHeaderText("Failed to Save Cheque Template");
+            alert.setContentText(ex != null ? ex.getMessage() : "Unable to connect to Spring Boot REST server.");
+            alert.showAndWait();
+        });
+
+        new Thread(saveTask).start();
+    }
+
+    @FXML
+    private void onPrintCheque() {
+        if (currentTemplate == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Print Warning");
+            alert.setHeaderText(null);
+            alert.setContentText("No cheque template loaded for printing.");
+            alert.showAndWait();
+            return;
+        }
+
+        PrinterJob job = PrinterJob.createPrinterJob();
+        if (job == null) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Printer Error");
+            alert.setHeaderText(null);
+            alert.setContentText("Could not initialize printer job. Please check system printer configuration.");
+            alert.showAndWait();
+            return;
+        }
+
+        boolean proceed = previewPane != null && previewPane.getScene() != null ?
+                job.showPrintDialog(previewPane.getScene().getWindow()) : job.showPrintDialog(null);
+
+        if (proceed) {
+            // Render exact physical mm layout for printing
+            Pane printCanvas = new Pane();
+            printCanvas.setPrefWidth(currentTemplate.getWidth() * 3.7795); // Convert mm to points
+            printCanvas.setPrefHeight(currentTemplate.getHeight() * 3.7795);
+            
+            boolean printed = job.printPage(previewPane != null ? previewPane : printCanvas);
+            if (printed) {
+                job.endJob();
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Print Completed");
+                alert.setHeaderText("Success!");
+                alert.setContentText("Cheque template sent to printer with precise field alignment.");
+                alert.showAndWait();
+            } else {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Print Error");
+                alert.setHeaderText("Printing Failed");
+                alert.setContentText("Failed to send page to target printer.");
+                alert.showAndWait();
+            }
+        }
+    }
+
+    private void loadTemplateFromBackend(Long bankId) {
+        if (bankId == null) {
+            setCurrentTemplate(new com.chequeprint.model.ChequeTemplate());
+            return;
+        }
+
+        String cacheKey = String.valueOf(bankId);
+        if (templateCache.containsKey(cacheKey)) {
+            // Serve directly from in-memory cache, skipping redundant REST API calls
+            setCurrentTemplate(templateCache.get(cacheKey));
+            return;
+        }
+
+        if (previewLoading != null) {
+            previewLoading.setVisible(true);
+        }
+
+        Task<com.chequeprint.model.ChequeTemplate> task = new Task<>() {
+            @Override
+            protected com.chequeprint.model.ChequeTemplate call() throws Exception {
+                return apiService.getChequeTemplateByBankId(bankId);
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            if (previewLoading != null) previewLoading.setVisible(false);
+            com.chequeprint.model.ChequeTemplate template = task.getValue();
+            if (template == null) {
+                template = new com.chequeprint.model.ChequeTemplate(bankId, "Default Bank Template");
+            }
+            templateCache.put(cacheKey, template);
+            setCurrentTemplate(template);
+        });
+
+        task.setOnFailed(e -> {
+            if (previewLoading != null) previewLoading.setVisible(false);
+            System.err.println("Failed to fetch template for bankId " + bankId + ": " + task.getException().getMessage());
+            com.chequeprint.model.ChequeTemplate defaultTemplate = new com.chequeprint.model.ChequeTemplate(bankId, "Default Bank Template");
+            templateCache.put(cacheKey, defaultTemplate);
+            setCurrentTemplate(defaultTemplate);
+        });
+
+        new Thread(task).start();
+    }
+
+    private void renderGridOverlay(Pane pane, double spacing) {
+        if (pane == null) return;
+        double w = pane.getWidth() > 0 ? pane.getWidth() : (pane.getPrefWidth() > 0 ? pane.getPrefWidth() : 300.0);
+        double h = pane.getHeight() > 0 ? pane.getHeight() : (pane.getPrefHeight() > 0 ? pane.getPrefHeight() : 170.0);
+
+        for (double x = spacing; x < w; x += spacing) {
+            javafx.scene.shape.Line line = new javafx.scene.shape.Line(x, 0, x, h);
+            line.setStroke(javafx.scene.paint.Color.web("#cbd5e1", 0.45));
+            line.getStrokeDashArray().addAll(2.0, 2.0);
+            line.setMouseTransparent(true);
+            pane.getChildren().add(line);
+        }
+
+        for (double y = spacing; y < h; y += spacing) {
+            javafx.scene.shape.Line line = new javafx.scene.shape.Line(0, y, w, y);
+            line.setStroke(javafx.scene.paint.Color.web("#cbd5e1", 0.45));
+            line.getStrokeDashArray().addAll(2.0, 2.0);
+            line.setMouseTransparent(true);
+            pane.getChildren().add(line);
+        }
+    }
+
+    public void renderPreview(com.chequeprint.model.ChequeTemplate template) {
+        if (previewPane == null) return;
+        previewPane.getChildren().clear();
+
+        if (template == null) {
+            template = new com.chequeprint.model.ChequeTemplate();
+        }
+
+        // Scale factors from standard cheque dimensions to previewPane bounds (300px x 170px)
+        double targetWidth = previewPane.getPrefWidth() > 0 ? previewPane.getPrefWidth() : 300.0;
+        double targetHeight = previewPane.getPrefHeight() > 0 ? previewPane.getPrefHeight() : 170.0;
+
+        double baseWidth = template.getWidth() > 0 ? template.getWidth() : 203.20;
+        double baseHeight = template.getHeight() > 0 ? template.getHeight() : 92.00;
+
+        double scaleX = targetWidth / (baseWidth > 100 ? baseWidth : 600.0);
+        double scaleY = targetHeight / (baseHeight > 50 ? baseHeight : 270.0);
+
+        // Render grid lines when grid toggle is active
+        if (chkShowGrid == null || chkShowGrid.isSelected()) {
+            renderGridOverlay(previewPane, 20.0);
+        }
+
+        // Get current selected bank account for preview text, or fallback defaults
+        BankAccount selectedAcc = accountTable != null ? accountTable.getSelectionModel().getSelectedItem() : null;
+        String bankNameText = selectedAcc != null ? selectedAcc.getBankName() : "State Bank of India";
+        String payeeNameText = selectedAcc != null && selectedAcc.getAccountHolderName() != null ? selectedAcc.getAccountHolderName() : "PAYEE NAME HERE";
+        String accountNumberText = selectedAcc != null ? selectedAcc.getAccountNumber() : "123456789012";
+        String ifscText = selectedAcc != null && selectedAcc.getIfscCode() != null ? selectedAcc.getIfscCode() : "SBIN0000123";
+
+        // 1. Bank Header
+        Label lblBankHeader = new Label(bankNameText + " (" + ifscText + ")");
+        lblBankHeader.setStyle("-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: #1e3a8a;");
+        lblBankHeader.setLayoutX(12);
+        lblBankHeader.setLayoutY(8);
+        previewPane.getChildren().add(lblBankHeader);
+
+        // 2. Date Field
+        if (template.getDateField() != null && template.getDateField().isVisible()) {
+            com.chequeprint.model.ChequeTemplate.FieldConfig cfg = template.getDateField();
+            Label lblDate = new Label("D D M M Y Y Y Y");
+            lblDate.setStyle(formatFieldStyle("date", cfg));
+            lblDate.setLayoutX(scalePos(cfg.getX(), scaleX, 180));
+            lblDate.setLayoutY(scalePos(cfg.getY(), scaleY, 12));
+            makeLabelDraggable(lblDate, "date", cfg, scaleX, scaleY);
+            previewPane.getChildren().add(lblDate);
+        }
+
+        // 3. Payee Field
+        if (template.getPayeeField() != null && template.getPayeeField().isVisible()) {
+            com.chequeprint.model.ChequeTemplate.FieldConfig cfg = template.getPayeeField();
+            Label lblPayee = new Label("Pay: " + payeeNameText);
+            lblPayee.setStyle(formatFieldStyle("payee", cfg));
+            lblPayee.setLayoutX(scalePos(cfg.getX(), scaleX, 35));
+            lblPayee.setLayoutY(scalePos(cfg.getY(), scaleY, 45));
+            makeLabelDraggable(lblPayee, "payee", cfg, scaleX, scaleY);
+            previewPane.getChildren().add(lblPayee);
+        }
+
+        // 4. Amount in Words Field
+        if (template.getAmountWordsField() != null && template.getAmountWordsField().isVisible()) {
+            com.chequeprint.model.ChequeTemplate.FieldConfig cfg = template.getAmountWordsField();
+            Label lblWords = new Label("Rupees: Ten Thousand Five Hundred Only");
+            lblWords.setStyle(formatFieldStyle("amountwords", cfg));
+            lblWords.setLayoutX(scalePos(cfg.getX(), scaleX, 35));
+            lblWords.setLayoutY(scalePos(cfg.getY(), scaleY, 70));
+            makeLabelDraggable(lblWords, "amountwords", cfg, scaleX, scaleY);
+            previewPane.getChildren().add(lblWords);
+        }
+
+        // 5. Amount in Figures Field
+        if (template.getAmountNumField() != null && template.getAmountNumField().isVisible()) {
+            com.chequeprint.model.ChequeTemplate.FieldConfig cfg = template.getAmountNumField();
+            Label lblNum = new Label("₹ 10,500/-");
+            lblNum.setStyle(formatFieldStyle("amountnum", cfg) + "; -fx-font-weight: bold; -fx-background-color: #f8fafc; -fx-padding: 2 6; -fx-border-color: #cbd5e1; -fx-border-radius: 4;");
+            lblNum.setLayoutX(scalePos(cfg.getX(), scaleX, 200));
+            lblNum.setLayoutY(scalePos(cfg.getY(), scaleY, 75));
+            makeLabelDraggable(lblNum, "amountnum", cfg, scaleX, scaleY);
+            previewPane.getChildren().add(lblNum);
+        }
+
+        // 6. A/C Payee Lines
+        if (template.getAcPayeeField() != null && template.getAcPayeeField().isVisible()) {
+            com.chequeprint.model.ChequeTemplate.FieldConfig cfg = template.getAcPayeeField();
+            Label lblAcPayee = new Label("// A/C PAYEE ONLY //");
+            lblAcPayee.setStyle(formatFieldStyle("acpayee", cfg) + "; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
+            lblAcPayee.setLayoutX(scalePos(cfg.getX(), scaleX, 12));
+            lblAcPayee.setLayoutY(scalePos(cfg.getY(), scaleY, 12));
+            makeLabelDraggable(lblAcPayee, "acpayee", cfg, scaleX, scaleY);
+            previewPane.getChildren().add(lblAcPayee);
+        }
+
+        // 7. Bearer Field
+        if (template.getBearerField() != null && template.getBearerField().isVisible()) {
+            com.chequeprint.model.ChequeTemplate.FieldConfig cfg = template.getBearerField();
+            Label lblBearer = new Label("OR BEARER");
+            lblBearer.setStyle(formatFieldStyle("bearer", cfg) + "; -fx-text-fill: #94a3b8;");
+            lblBearer.setLayoutX(scalePos(cfg.getX(), scaleX, 230));
+            lblBearer.setLayoutY(scalePos(cfg.getY(), scaleY, 45));
+            makeLabelDraggable(lblBearer, "bearer", cfg, scaleX, scaleY);
+            previewPane.getChildren().add(lblBearer);
+        }
+
+        // 8. Signature Field
+        if (template.getSignatureField() != null && template.getSignatureField().isVisible()) {
+            com.chequeprint.model.ChequeTemplate.FieldConfig cfg = template.getSignatureField();
+            Label lblSig = new Label("Authorized Signatory");
+            lblSig.setStyle(formatFieldStyle("signature", cfg) + "; -fx-text-fill: #64748b;");
+            lblSig.setLayoutX(scalePos(cfg.getX(), scaleX, 190));
+            lblSig.setLayoutY(scalePos(cfg.getY(), scaleY, 110));
+            makeLabelDraggable(lblSig, "signature", cfg, scaleX, scaleY);
+            previewPane.getChildren().add(lblSig);
+        }
+
+        // 9. MICR Field
+        if (template.getMicrField() != null && template.getMicrField().isVisible()) {
+            com.chequeprint.model.ChequeTemplate.FieldConfig cfg = template.getMicrField();
+            Label lblMicr = new Label("⑈" + accountNumberText + "⑈ 000000000 ⑈00⑈");
+            lblMicr.setStyle(formatFieldStyle("micr", cfg) + "; -fx-font-family: 'Courier New', monospace; -fx-text-fill: #334155;");
+            lblMicr.setLayoutX(scalePos(cfg.getX(), scaleX, 60));
+            lblMicr.setLayoutY(scalePos(cfg.getY(), scaleY, 142));
+            makeLabelDraggable(lblMicr, "micr", cfg, scaleX, scaleY);
+            previewPane.getChildren().add(lblMicr);
+        }
+    }
+
+    private String selectedFieldName = null;
+
+    public String getSelectedFieldName() {
+        return selectedFieldName;
+    }
+
+    public void selectField(String fieldName) {
+        this.selectedFieldName = fieldName;
+        if (currentTemplate != null) {
+            renderPreview(currentTemplate);
+        }
+    }
+
+    private void makeLabelDraggable(Label label, String fieldKey, com.chequeprint.model.ChequeTemplate.FieldConfig cfg, double scaleX, double scaleY) {
+        if (label == null || cfg == null) return;
+        label.setCursor(javafx.scene.Cursor.HAND);
+        final double[] dragOffset = new double[2];
+
+        label.setOnMousePressed(event -> {
+            dragOffset[0] = event.getX();
+            dragOffset[1] = event.getY();
+            this.selectedFieldName = fieldKey;
+            label.toFront();
+            if (currentTemplate != null) {
+                renderPreview(currentTemplate);
+            }
+            event.consume();
+        });
+
+        label.setOnMouseDragged(event -> {
+            double newLayoutX = label.getLayoutX() + event.getX() - dragOffset[0];
+            double newLayoutY = label.getLayoutY() + event.getY() - dragOffset[1];
+
+            if (previewPane != null) {
+                newLayoutX = Math.max(0, Math.min(newLayoutX, previewPane.getWidth() - label.getWidth()));
+                newLayoutY = Math.max(0, Math.min(newLayoutY, previewPane.getHeight() - label.getHeight()));
+            }
+
+            label.setLayoutX(newLayoutX);
+            label.setLayoutY(newLayoutY);
+
+            cfg.setX(newLayoutX / scaleX);
+            cfg.setY(newLayoutY / scaleY);
+
+            event.consume();
+        });
+
+        label.setOnMouseReleased(event -> {
+            if (currentTemplate != null) {
+                renderPreview(currentTemplate);
+            }
+            event.consume();
+        });
+    }
+
+    private double scalePos(double val, double scale, double fallback) {
+        if (val <= 0) return fallback;
+        return val * scale;
+    }
+
+    private String formatFieldStyle(String fieldKey, com.chequeprint.model.ChequeTemplate.FieldConfig cfg) {
+        if (cfg == null) return "-fx-font-size: 10px; -fx-text-fill: #0f172a;";
+        double sz = cfg.getFontSize() > 0 ? Math.min(cfg.getFontSize(), 14.0) : 10.0;
+        String family = cfg.getFontFamily() != null ? cfg.getFontFamily() : "Arial";
+        String weight = cfg.isBold() ? "bold" : "normal";
+        String posture = cfg.isItalic() ? "italic" : "normal";
+
+        String highlight = "";
+        if (fieldKey != null && fieldKey.equalsIgnoreCase(selectedFieldName)) {
+            highlight = "; -fx-border-color: #2563eb; -fx-border-width: 1.5px; -fx-border-style: dashed; -fx-background-color: rgba(37,99,235,0.15); -fx-padding: 2 4; -fx-border-radius: 4; -fx-background-radius: 4;";
+        }
+        return String.format("-fx-font-size: %.1fpx; -fx-font-family: '%s'; -fx-font-weight: %s; -fx-font-style: %s; -fx-text-fill: #0f172a;", sz, family, weight, posture) + highlight;
     }
 
     private void setupForm() {
@@ -1675,11 +2096,17 @@ public class BankController {
     @FXML
     private void onToggleGrid() {
         updateGridOverlay();
+        if (currentTemplate != null) {
+            renderPreview(currentTemplate);
+        }
     }
 
     @FXML
     private void onToggleRulers() {
         updateGridOverlay();
+        if (currentTemplate != null) {
+            renderPreview(currentTemplate);
+        }
     }
 
     private void updateFieldHighlights() {
@@ -2112,10 +2539,6 @@ public class BankController {
                 System.err.println("Multi-bank template load warning: " + e.getMessage());
             }
         }, "load-new-template").start();
-    }
-
-    public void loadTemplateFromBackend(Long bankId) {
-        loadNewTemplate(bankId, selectedBank);
     }
 
     private void applyReloadedFields(List<Map<String, Object>> fields) {

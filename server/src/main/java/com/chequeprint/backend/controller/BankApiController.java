@@ -11,14 +11,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/bank")
+@RequestMapping({"/api/bank", "/api/banks"})
 @CrossOrigin(origins = "*")
 public class BankApiController {
 
     @Autowired
     private BankTemplateService bankTemplateService;
 
-    // GET /api/bank - Get all bank accounts
+    // GET /api/bank or GET /api/banks - Get all bank accounts
     @GetMapping
     public ResponseEntity<List<BankAccount>> getAllBanks() {
         List<BankAccount> banks = bankTemplateService.getAllBankAccounts();
