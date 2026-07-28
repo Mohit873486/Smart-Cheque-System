@@ -126,24 +126,21 @@
                             prefWidth="380" minWidth="380" maxWidth="380" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED">
                     <VBox spacing="16" style="-fx-padding: 18; -fx-background-color: #ffffff;">
 
-                        <!-- SECTION 1: SELECT BANK ACCOUNT -->
-                        <VBox spacing="10" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 16; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.02), 5, 0, 0, 2);">
-                            <HBox alignment="CENTER_LEFT" spacing="6">
-                                <VBox spacing="2">
-                                    <Label text="Select Bank Account" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #0f172a;" />
-                                    <Label fx:id="lblTemplateMappingDesigner" text="Template for: Select Account" style="-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: #2563eb;" />
+                        <!-- TOP SECTION: SELECTED BANK ACCOUNT DISPLAY & PICKER -->
+                        <VBox spacing="10" style="-fx-background-color: linear-gradient(to right, #eff6ff, #f8fafc); -fx-border-color: #bfdbfe; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 16; -fx-effect: dropshadow(three-pass-box, rgba(37,99,235,0.06), 6, 0, 0, 2);">
+                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                <Label text="🏛️" style="-fx-font-size: 22px;" />
+                                <VBox spacing="2" HBox.hgrow="ALWAYS">
+                                    <Label text="ACTIVE BANK ACCOUNT" style="-fx-font-weight: bold; -fx-font-size: 10px; -fx-text-fill: #2563eb;" />
+                                    <Label fx:id="lblTemplateMappingDesigner" text="Select a Bank Account" style="-fx-font-weight: bold; -fx-font-size: 15px; -fx-text-fill: #0f172a;" />
                                 </VBox>
                             </HBox>
-                            <ComboBox fx:id="cmbBankAccount" promptText="-- Select Bank Account --" styleClass="form-combo" maxWidth="Infinity" />
+                            <ComboBox fx:id="cmbBankAccount" promptText="-- Choose Bank Account --" styleClass="form-combo" maxWidth="Infinity" style="-fx-font-weight: bold; -fx-background-radius: 6;" />
                         </VBox>
 
-                        <!-- SECTION 2: TEMPLATE EDITOR -->
+                        <!-- SECTION 2: CHEQUE TEMPLATE DIMENSIONS & DESIGNER CONTROLS -->
                         <VBox spacing="12" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 16; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.02), 5, 0, 0, 2);">
-                            <HBox alignment="CENTER_LEFT" spacing="6">
-                                <Label fx:id="lblFormTitle" text="Add New Bank Template" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #0f172a;" />
-                                <Region HBox.hgrow="ALWAYS" />
-                                <Button fx:id="btnNewBank" text="+ NEW BANK" styleClass="btn-primary" onAction="#onClear" visible="true" managed="true" style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px; -fx-padding: 5 10; -fx-background-radius: 6; -fx-cursor: hand;" />
-                            </HBox>
+                            <Label text="Cheque Dimensions" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #0f172a;" />
 
                             <GridPane hgap="8" vgap="10">
                                 <columnConstraints>
@@ -151,34 +148,25 @@
                                     <ColumnConstraints percentWidth="62" />
                                 </columnConstraints>
 
-                                <Label text="Bank Name" style="-fx-text-fill: #475569;" GridPane.rowIndex="0" GridPane.columnIndex="0" />
-                                <ComboBox fx:id="fldBankName" editable="true" promptText="Select bank" styleClass="form-combo" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1" />
+                                <Label text="Cheque Size" style="-fx-text-fill: #475569;" GridPane.rowIndex="0" GridPane.columnIndex="0" />
+                                <ComboBox fx:id="cmbChequeSize" styleClass="form-combo" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1" />
 
-                                <Label text="Bank Code" style="-fx-text-fill: #475569;" GridPane.rowIndex="1" GridPane.columnIndex="0" />
-                                <TextField fx:id="fldBankCode" promptText="e.g. SBI / HDFC" styleClass="form-input" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+                                <Label text="Size Unit" style="-fx-text-fill: #475569;" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+                                <ComboBox fx:id="cmbChequeSizeUnit" styleClass="form-combo" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1" />
 
-                                <Label text="Cheque Size" style="-fx-text-fill: #475569;" GridPane.rowIndex="2" GridPane.columnIndex="0" />
-                                <ComboBox fx:id="cmbChequeSize" styleClass="form-combo" maxWidth="Infinity" GridPane.rowIndex="2" GridPane.columnIndex="1" />
+                                <Label fx:id="lblCustomWidth" text="Custom W" style="-fx-text-fill: #475569;" GridPane.rowIndex="2" GridPane.columnIndex="0" />
+                                <TextField fx:id="fldCustomWidth" promptText="203.2" styleClass="form-input" GridPane.rowIndex="2" GridPane.columnIndex="1" />
 
-                                <Label text="Size Unit" style="-fx-text-fill: #475569;" GridPane.rowIndex="3" GridPane.columnIndex="0" />
-                                <ComboBox fx:id="cmbChequeSizeUnit" styleClass="form-combo" maxWidth="Infinity" GridPane.rowIndex="3" GridPane.columnIndex="1" />
+                                <Label fx:id="lblCustomHeight" text="Custom H" style="-fx-text-fill: #475569;" GridPane.rowIndex="3" GridPane.columnIndex="0" />
+                                <TextField fx:id="fldCustomHeight" promptText="92.0" styleClass="form-input" GridPane.rowIndex="3" GridPane.columnIndex="1" />
 
-                                <Label fx:id="lblCustomWidth" text="Custom W" style="-fx-text-fill: #475569;" GridPane.rowIndex="4" GridPane.columnIndex="0" />
-                                <TextField fx:id="fldCustomWidth" promptText="203.2" styleClass="form-input" GridPane.rowIndex="4" GridPane.columnIndex="1" />
-
-                                <Label fx:id="lblCustomHeight" text="Custom H" style="-fx-text-fill: #475569;" GridPane.rowIndex="5" GridPane.columnIndex="0" />
-                                <TextField fx:id="fldCustomHeight" promptText="92.0" styleClass="form-input" GridPane.rowIndex="5" GridPane.columnIndex="1" />
-
-                                <Label text="MICR Line" style="-fx-text-fill: #475569;" GridPane.rowIndex="6" GridPane.columnIndex="0" />
-                                <CheckBox fx:id="chkMicr" selected="true" GridPane.rowIndex="6" GridPane.columnIndex="1" />
+                                <Label text="MICR Line" style="-fx-text-fill: #475569;" GridPane.rowIndex="4" GridPane.columnIndex="0" />
+                                <CheckBox fx:id="chkMicr" selected="true" GridPane.rowIndex="4" GridPane.columnIndex="1" />
                             </GridPane>
 
                             <VBox spacing="8" style="-fx-padding: 8 0 0 0;">
                                 <Button fx:id="btnSave" text="💾 Save Template" styleClass="btn-primary" onAction="#onSave" maxWidth="Infinity" style="-fx-cursor: hand; -fx-background-radius: 6; -fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10;" />
-                                <HBox spacing="8">
-                                    <Button fx:id="btnClear" text="↻ Reset" styleClass="btn-secondary" onAction="#onClear" HBox.hgrow="ALWAYS" maxWidth="Infinity" style="-fx-cursor: hand; -fx-background-radius: 6;" />
-                                    <Button fx:id="btnDelete" text="🗑 Delete" styleClass="btn-danger" onAction="#onDelete" HBox.hgrow="ALWAYS" maxWidth="Infinity" style="-fx-cursor: hand; -fx-background-radius: 6; -fx-background-color: #ef4444; -fx-text-fill: white;" />
-                                </HBox>
+                                <Button fx:id="btnClear" text="↻ Reset Coordinates" styleClass="btn-secondary" onAction="#onClear" maxWidth="Infinity" style="-fx-cursor: hand; -fx-background-radius: 6;" />
                             </VBox>
                         </VBox>
 

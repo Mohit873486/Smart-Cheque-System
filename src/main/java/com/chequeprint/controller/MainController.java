@@ -485,7 +485,16 @@ public class MainController {
     try {
       Node view;
 
-      FXMLLoader loader = new FXMLLoader(getClass().getResource(path));
+      java.net.URL resourceUrl = getClass().getResource(path);
+      if (resourceUrl == null) {
+        String relativePath = path.startsWith("/") ? path.substring(1) : path;
+        resourceUrl = Thread.currentThread().getContextClassLoader().getResource(relativePath);
+      }
+      if (resourceUrl == null) {
+        throw new IllegalStateException("Cannot find FXML view resource at classpath: " + path);
+      }
+
+      FXMLLoader loader = new FXMLLoader(resourceUrl);
       view = loader.load();
 
       view.setOpacity(0);

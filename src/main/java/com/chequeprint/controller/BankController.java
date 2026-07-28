@@ -490,8 +490,8 @@ public class BankController {
             }
         }
         // Switch to the template designer tab
-        if (fldBankName != null && fldBankName.getScene() != null) {
-            javafx.scene.Node tabPaneNode = fldBankName.getScene().lookup(".tab-pane");
+        if (cmbBankAccount != null && cmbBankAccount.getScene() != null) {
+            javafx.scene.Node tabPaneNode = cmbBankAccount.getScene().lookup(".tab-pane");
             if (tabPaneNode instanceof javafx.scene.control.TabPane tabPane) {
                 if (tabPane.getTabs().size() > 1) {
                     tabPane.getSelectionModel().select(1);
@@ -514,8 +514,11 @@ public class BankController {
 
         // Auto sync event system: Refresh preview whenever bank, template, or cheque data changes
         AppState.getInstance().addStateChangeListener(() -> {
-            currentLayout = AppState.getInstance().getSelectedTemplate();
-            refreshPreview();
+            BankTemplateLayout latestTemplate = AppState.getInstance().getSelectedTemplate();
+            if (latestTemplate != null) {
+                this.currentLayout = latestTemplate;
+                refreshPreview();
+            }
         });
     }
 
@@ -568,17 +571,17 @@ public class BankController {
     private void updateTemplateMappingLabel(BankAccount account) {
         if (account == null) {
             if (lblTemplateMapping != null) lblTemplateMapping.setText("Select an account to view template mapping");
-            if (lblTemplateMappingDesigner != null) lblTemplateMappingDesigner.setText("Template for: Select Account");
+            if (lblTemplateMappingDesigner != null) lblTemplateMappingDesigner.setText("Select a Bank Account");
             return;
         }
 
-        String bankName = account.getBankName() != null && !account.getBankName().isBlank() ? account.getBankName() : "Bank";
+        String bankName = account.getBankName() != null && !account.getBankName().isBlank() ? account.getBankName() : "Bank Account";
         String accNo = account.getAccountNumber() != null ? account.getAccountNumber().trim() : "";
         String last4 = accNo.length() >= 4 ? accNo.substring(accNo.length() - 4) : accNo;
-        String labelText = "Template for: " + bankName + " (xxxx" + last4 + ")";
+        String labelText = bankName + (last4.isEmpty() ? "" : " (••• " + last4 + ")");
 
         if (lblTemplateMapping != null) {
-            lblTemplateMapping.setText(labelText);
+            lblTemplateMapping.setText("Template for: " + labelText);
         }
         if (lblTemplateMappingDesigner != null) {
             lblTemplateMappingDesigner.setText(labelText);
@@ -961,19 +964,14 @@ public class BankController {
                 if (newVal != null && newVal.getId() != null) {
                     Long bankId = newVal.getId().longValue();
                     Session.setSelectedBankId(bankId);
+                    AppState.getInstance().setSelectedBankAccount(newVal);
 
-                    if (fldBankName != null && data != null) {
-                        for (Bank b : data) {
-                            if (b.getBankName() != null && b.getBankName().equalsIgnoreCase(newVal.getBankName())) {
-                                fldBankName.setValue(b);
-                                break;
-                            }
-                        }
-                    }
                     if (fldBankCode != null && newVal.getBankName() != null) {
                         fldBankCode.setText(newVal.getBankName());
                     }
-                    loadTemplateFromBackend(bankId);
+                    Bank b = new Bank(newVal.getBankName(), newVal.getBankName(), "STANDARD", true);
+                    b.setId(newVal.getId());
+                    loadNewTemplate(bankId, b);
                 }
             });
         }
@@ -999,44 +997,15 @@ public class BankController {
             });
         }
         if (btnDelete != null) btnDelete.setDisable(true);
-        fldBankName.setItems(data);
-        fldBankName.setConverter(new StringConverter<Bank>() {
-            @Override
-            public String toString(Bank bank) {
-                return bank == null ? "" : bank.getBankName();
-            }
 
-            @Override
-            public Bank fromString(String string) {
-                if (string == null || string.trim().isEmpty()) {
-                    return null;
-                }
-                for (Bank b : data) {
-                    if (string.equalsIgnoreCase(b.getBankName())) {
-                        return b;
-                    }
-                }
-                Bank b = new Bank();
-                b.setBankName(string.trim());
-                return b;
-            }
-        });
+        if (cmbChequeSize != null) {
+            cmbChequeSize.setItems(FXCollections.observableArrayList(ChequeSizePreset.values()));
+            cmbChequeSize.setValue(ChequeSizePreset.STANDARD);
+        }
+        if (chkMicr != null) chkMicr.setSelected(true);
 
-        fldBankName.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if (isUpdatingForm) {
-                return;
-            }
-            if (newVal != null && newVal.getId() != null && newVal.getId() > 0) {
-                populateForm(newVal);
-            }
-        });
-
-        cmbChequeSize.setItems(FXCollections.observableArrayList(ChequeSizePreset.values()));
-        cmbChequeSize.setValue(ChequeSizePreset.STANDARD);
-        chkMicr.setSelected(true);
-
-        fldCustomWidth.setDisable(true);
-        fldCustomHeight.setDisable(true);
+        if (fldCustomWidth != null) fldCustomWidth.setDisable(true);
+        if (fldCustomHeight != null) fldCustomHeight.setDisable(true);
 
         if (cmbChequeSizeUnit != null) {
             cmbChequeSizeUnit.setItems(FXCollections.observableArrayList(
@@ -1462,11 +1431,13 @@ public class BankController {
 
     private void setLoading(boolean loading) {
         Platform.runLater(() -> {
-            if (fldBankCode.getScene() != null && fldBankCode.getScene().getRoot() != null) {
+            if (cmbBankAccount != null && cmbBankAccount.getScene() != null && cmbBankAccount.getScene().getRoot() != null) {
+                cmbBankAccount.getScene().getRoot().setCursor(loading ? Cursor.WAIT : Cursor.DEFAULT);
+            } else if (fldBankCode != null && fldBankCode.getScene() != null && fldBankCode.getScene().getRoot() != null) {
                 fldBankCode.getScene().getRoot().setCursor(loading ? Cursor.WAIT : Cursor.DEFAULT);
             }
-            btnSave.setDisable(loading);
-            btnDelete.setDisable(loading || selectedBank == null);
+            if (btnSave != null) btnSave.setDisable(loading);
+            if (btnDelete != null) btnDelete.setDisable(loading || selectedBank == null);
         });
     }
 
@@ -1497,12 +1468,23 @@ public class BankController {
             if (cmbBankAccount != null) {
                 cmbBankAccount.setItems(accountData);
                 Long currentGlobalId = Session.getSelectedBankId();
+                BankAccount targetAcc = null;
                 if (currentGlobalId != null) {
                     for (BankAccount acc : accounts) {
                         if (acc.getId() != null && acc.getId().longValue() == currentGlobalId) {
-                            cmbBankAccount.setValue(acc);
+                            targetAcc = acc;
                             break;
                         }
+                    }
+                }
+                if (targetAcc == null && !accounts.isEmpty()) {
+                    targetAcc = accounts.get(0);
+                }
+                if (targetAcc != null) {
+                    cmbBankAccount.setValue(targetAcc);
+                    AppState.getInstance().setSelectedBankAccount(targetAcc);
+                    if (targetAcc.getId() != null) {
+                        loadNewTemplate(targetAcc.getId().longValue(), new Bank(targetAcc.getBankName(), targetAcc.getBankName(), "STANDARD", true));
                     }
                 }
             }
@@ -1580,30 +1562,15 @@ public class BankController {
 
     @FXML
     private void onSave() {
-        String name = "";
-        if (fldBankName.getValue() != null) {
-            name = fldBankName.getValue().getBankName();
+        BankAccount selectedAcc = cmbBankAccount != null ? cmbBankAccount.getValue() : null;
+        if (selectedAcc == null || selectedAcc.getId() == null) {
+            showAlert("No Bank Account Selected", "⚠️ Please select a valid Bank Account from the dropdown list before saving the cheque template.", Alert.AlertType.WARNING);
+            return;
         }
-        if (name == null || name.trim().isEmpty()) {
-            name = fldBankName.getEditor().getText().trim();
-        } else {
-            name = name.trim();
-        }
-        String code = fldBankCode.getText().trim().toUpperCase();
 
-        // 1. Empty Fields Validation
-        if (name.isEmpty() && code.isEmpty()) {
-            showAlert("Validation Error", "Bank name and bank code / account number are required.", Alert.AlertType.WARNING);
-            return;
-        }
-        if (name.isEmpty()) {
-            showAlert("Validation Error", "Please enter a valid Bank Name.", Alert.AlertType.WARNING);
-            return;
-        }
-        if (code.isEmpty()) {
-            showAlert("Validation Error", "Please enter a valid Bank Code / Account Number.", Alert.AlertType.WARNING);
-            return;
-        }
+        String name = selectedAcc.getBankName() != null ? selectedAcc.getBankName().trim() : "Bank";
+        String code = selectedAcc.getAccountNumber() != null && !selectedAcc.getAccountNumber().isBlank() ? selectedAcc.getAccountNumber().trim().toUpperCase() : "BANK";
+        Integer bankId = selectedAcc.getId();
 
         ChequeSizePreset preset = cmbChequeSize.getValue();
         BankTemplateLayout formLayout = buildLayoutFromFormSize();
@@ -1616,7 +1583,9 @@ public class BankController {
         Bank bank = selectedBank;
         if (bank == null) {
             bank = new Bank(name, code, encodedSize, chkMicr.isSelected());
+            bank.setId(bankId);
         } else {
+            bank.setId(bankId);
             bank.setBankName(name);
             bank.setBankCode(code);
             bank.setChequeSize(encodedSize);
@@ -1624,9 +1593,9 @@ public class BankController {
         }
 
         final Bank finalBank = bank;
+        final Long targetBankId = bankId != null ? bankId.longValue() : 1L;
         final BankTemplateLayout layoutToSave = currentLayout != null ? currentLayout.copy() : formLayout.copy();
 
-        // Construct valid IFSC Code (11 alphanumeric characters matching ^[A-Z]{4}0[A-Z0-9]{6}$)
         String formattedIfsc = formatValidIfsc(code);
 
         setLoading(true);
@@ -1635,37 +1604,17 @@ public class BankController {
                 // 2. Call Bank Template Local/REST Service
                 bankService.save(finalBank, layoutToSave, layoutByBankCode);
 
-                // 3. Call POST API for Bank Account
-                BankAccount account = new BankAccount();
-                account.setBankName(finalBank.getBankName());
-                account.setAccountNumber(finalBank.getBankCode());
-                account.setAccountHolderName(finalBank.getBankName());
-                account.setIfsc(formattedIfsc);
-                account.setIfscCode(formattedIfsc);
-                account.setBranch("Main Branch");
-                account.setBranchName("Main Branch");
-                account.setBalance(java.math.BigDecimal.ZERO);
+                // 3. Save Template Fields to REST API automatically assigning target bank account ID
+                saveTemplateFieldsToApi(targetBankId);
 
-                try {
-                    apiService.saveBankAccount(account);
-                } catch (Exception apiEx) {
-                    System.err.println("API Bank Account Save Warning: " + apiEx.getMessage());
-                }
-
-                // 4. Save Template Fields to REST API (POST /api/template/fields)
-                Long templateId = finalBank.getId() != null ? finalBank.getId().longValue() : 1L;
-                saveTemplateFieldsToApi(templateId);
-
-                // 5. Show Success Alert & Refresh Table
+                // 4. Show Success Alert & Refresh Table
                 Platform.runLater(() -> {
-                    clearForm();
                     loadData();
                     loadBankAccounts();
-                    showAlert("Success", "Bank template & field positions saved successfully!", Alert.AlertType.INFORMATION);
+                    showAlert("Success", "Bank template & field positions saved successfully for account: " + name, Alert.AlertType.INFORMATION);
                 });
             } catch (Exception e) {
-                // 5. API / System Error Handling
-                Platform.runLater(() -> showAlert("Save Error", "Failed to save bank: " + e.getMessage(), Alert.AlertType.ERROR));
+                Platform.runLater(() -> showAlert("Save Error", "Failed to save bank template: " + e.getMessage(), Alert.AlertType.ERROR));
             } finally {
                 setLoading(false);
             }
@@ -1775,7 +1724,7 @@ public class BankController {
 
         isUpdatingForm = true;
         try {
-            fldBankName.setValue(bank);
+            // fldBankName removed: rely solely on cmbBankAccount
         } finally {
             isUpdatingForm = false;
         }
@@ -1829,18 +1778,17 @@ public class BankController {
         selectedBank = null;
         AppState.getInstance().setSelectedBank(null);
         AppState.getInstance().setSelectedTemplate(null);
-        lblFormTitle.setText("Add New Bank Template");
-        btnSave.setText("Save Template");
-        btnDelete.setDisable(true);
+        if (lblFormTitle != null) lblFormTitle.setText("Cheque Template Designer");
+        if (btnSave != null) btnSave.setText("💾 Save Template");
+        if (btnDelete != null) btnDelete.setDisable(true);
         if (btnNewBank != null) {
             btnNewBank.setVisible(false);
             btnNewBank.setManaged(false);
         }
         if (btnClear != null) {
-            btnClear.setText("Clear");
+            btnClear.setText("↻ Reset Coordinates");
             btnClear.setVisible(true);
             btnClear.setManaged(true);
-            // Ensure style class is btn-secondary
             btnClear.getStyleClass().remove("btn-primary");
             if (!btnClear.getStyleClass().contains("btn-secondary")) {
                 btnClear.getStyleClass().add("btn-secondary");
@@ -1849,16 +1797,19 @@ public class BankController {
         
         isUpdatingForm = true;
         try {
-            fldBankName.setValue(null);
-            fldBankName.getEditor().clear();
+            if (cmbBankAccount != null) {
+                cmbBankAccount.setValue(null);
+            }
         } finally {
             isUpdatingForm = false;
         }
-        fldBankCode.clear();
-        chkMicr.setSelected(true);
-        cmbChequeSize.setValue(ChequeSizePreset.STANDARD);
-        fldCustomWidth.clear();
-        fldCustomHeight.clear();
+        if (fldBankCode != null) {
+            fldBankCode.clear();
+        }
+        if (chkMicr != null) chkMicr.setSelected(true);
+        if (cmbChequeSize != null) cmbChequeSize.setValue(ChequeSizePreset.STANDARD);
+        if (fldCustomWidth != null) fldCustomWidth.clear();
+        if (fldCustomHeight != null) fldCustomHeight.clear();
 
         currentLayout = new BankTemplateLayout(ChequeSizePreset.STANDARD.getWidthInches(), ChequeSizePreset.STANDARD.getHeightInches());
         layoutPreviewPane();
@@ -1954,18 +1905,11 @@ public class BankController {
 
     private Bank buildDraftBank() {
         Bank bank = new Bank();
-        String name = "";
-        if (fldBankName.getValue() != null) {
-            name = fldBankName.getValue().getBankName();
-        }
-        if (name == null || name.trim().isEmpty()) {
-            name = fldBankName.getEditor().getText().trim();
-        } else {
-            name = name.trim();
-        }
+        BankAccount acc = cmbBankAccount != null ? cmbBankAccount.getValue() : null;
+        String name = acc != null && acc.getBankName() != null ? acc.getBankName().trim() : "Bank";
         bank.setBankName(name);
-        bank.setBankCode(fldBankCode.getText().trim().toUpperCase());
-        bank.setMicr(chkMicr.isSelected());
+        bank.setBankCode(fldBankCode != null && fldBankCode.getText() != null ? fldBankCode.getText().trim().toUpperCase() : "BANK");
+        bank.setMicr(chkMicr != null && chkMicr.isSelected());
         return bank;
     }
 
@@ -2062,7 +2006,7 @@ public class BankController {
             return;
         }
 
-        String code = selectedBank != null ? safeCode(selectedBank.getBankCode()) : safeCode(fldBankCode.getText());
+        String code = selectedBank != null ? safeCode(selectedBank.getBankCode()) : (fldBankCode != null ? safeCode(fldBankCode.getText()) : "BANK");
         if (code.isBlank()) {
             return;
         }
@@ -2449,14 +2393,19 @@ public class BankController {
     }
 
     public void saveTemplateFieldsToApi(Long templateId) {
+        BankAccount selectedAcc = cmbBankAccount != null ? cmbBankAccount.getValue() : null;
+        if (selectedAcc == null || selectedAcc.getId() == null) {
+            showAlert("No Bank Account Selected", "⚠️ Please select a valid Bank Account from the dropdown list before saving the cheque template layout.", Alert.AlertType.WARNING);
+            return;
+        }
+
         if (currentLayout != null && !currentLayout.isValidLayout()) {
             showAlert("Layout Validation Error", "Required fields (Payee, Date, Amount in Figures, Amount in Words) must have valid coordinates before saving.", Alert.AlertType.WARNING);
             return;
         }
 
-        if (templateId == null || templateId <= 0) {
-            templateId = 1L;
-        }
+        Long bankAccountId = selectedAcc.getId().longValue();
+        templateId = bankAccountId;
 
         List<Map<String, Object>> directPayload = new ArrayList<>();
         List<Map<String, Object>> fieldsPayload = new ArrayList<>();
@@ -2481,6 +2430,7 @@ public class BankController {
             directPayload.add(directItem);
 
             Map<String, Object> fieldMap = new HashMap<>();
+            fieldMap.put("bankAccountId", templateId);
             fieldMap.put("templateId", templateId);
             fieldMap.put("fieldName", mapFieldName(field));
             fieldMap.put("xPosition", node.getLayoutX());
@@ -2491,22 +2441,38 @@ public class BankController {
         }
 
         final Long targetTemplateId = templateId;
+        System.out.println("[Backend API Request] POST /api/template-fields for bankAccountId=" + targetTemplateId);
+        System.out.println("[Backend API Payload] " + fieldsPayload);
+
         new Thread(() -> {
             try {
                 // 3. Send API: POST /api/template-fields
                 boolean directSuccess = bankService.saveTemplateFieldsDirect(directPayload);
                 boolean fieldsSuccess = bankService.saveTemplateFields(fieldsPayload);
 
+                System.out.println("[Backend API Response] directSuccess=" + directSuccess + ", fieldsSuccess=" + fieldsSuccess);
+
                 if (directSuccess || fieldsSuccess) {
                     List<Map<String, Object>> reloadedFields = bankService.getTemplateFields(targetTemplateId);
+                    System.out.println("[Backend API Response] Reloaded " + (reloadedFields != null ? reloadedFields.size() : 0) + " template fields.");
+
                     Platform.runLater(() -> {
                         applyReloadedFields(reloadedFields);
-                        // 4. Show success message
-                        showAlert("Success", "Template fields updated successfully!", Alert.AlertType.INFORMATION);
+                        if (currentLayout != null) {
+                            bankTemplateMap.put(targetTemplateId, currentLayout.copy());
+                            AppState.getInstance().setSelectedTemplate(currentLayout.copy());
+                        }
+                        refreshPreview();
+                        showAlert("Template Saved", "✅ Cheque template coordinates successfully saved & reloaded from backend!", Alert.AlertType.INFORMATION);
                     });
+                } else {
+                    System.err.println("[Backend API Warning] Server returned false for template fields save.");
+                    Platform.runLater(() -> showAlert("Save Warning", "⚠️ Backend server received request but did not confirm template field save.", Alert.AlertType.WARNING));
                 }
             } catch (Exception ex) {
-                System.err.println("Failed to save/reload template fields from REST API: " + ex.getMessage());
+                System.err.println("[Backend API Error] Failed to save/reload template fields from REST API: " + ex.getMessage());
+                ex.printStackTrace();
+                Platform.runLater(() -> showAlert("Save Error", "❌ Failed to save template layout to server: " + ex.getMessage(), Alert.AlertType.ERROR));
             }
         }, "save-template-fields-api").start();
     }
@@ -2580,15 +2546,27 @@ public class BankController {
 
                 final Long targetBankId = bankId;
                 Platform.runLater(() -> {
-                    applyReloadedFields(fields);
+                    if (fields != null && !fields.isEmpty()) {
+                        applyReloadedFields(fields);
+                    } else {
+                        // If no template exists for selected bank, initialize standard default template
+                        currentLayout = new BankTemplateLayout();
+                        currentLayout.ensureAllFields();
+                        layoutPreviewPane();
+                    }
                     if (currentLayout != null) {
                         bankTemplateMap.put(targetBankId, currentLayout.copy());
                         AppState.getInstance().setSelectedTemplate(currentLayout);
                     }
                 });
             } catch (Exception e) {
-                System.err.println("Multi-bank template load warning: " + e.getMessage());
-                Platform.runLater(() -> ChequePreviewEngine.renderErrorState(previewPane, "Failed to load template from server: " + e.getMessage()));
+                System.err.println("Multi-bank template load fallback to default standard layout: " + e.getMessage());
+                Platform.runLater(() -> {
+                    currentLayout = new BankTemplateLayout();
+                    currentLayout.ensureAllFields();
+                    layoutPreviewPane();
+                    AppState.getInstance().setSelectedTemplate(currentLayout);
+                });
             }
         }, "load-new-template").start();
     }
