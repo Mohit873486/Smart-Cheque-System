@@ -214,11 +214,19 @@ public final class AppState {
         return selectedTemplate.get();
     }
 
+    public BankTemplateLayout getCurrentTemplate() {
+        return getSelectedTemplate();
+    }
+
     public void setSelectedTemplate(BankTemplateLayout template) {
         if (Objects.equals(this.selectedTemplate.get(), template)) {
             return; // Skip redundant state change
         }
         this.selectedTemplate.set(template);
+    }
+
+    public void setCurrentTemplate(BankTemplateLayout template) {
+        setSelectedTemplate(template);
     }
 
     // --- Current Active Cheque ---
