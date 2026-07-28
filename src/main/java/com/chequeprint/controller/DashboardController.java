@@ -11,6 +11,7 @@ import com.chequeprint.service.UserService;
 import com.chequeprint.util.AppState;
 import com.chequeprint.util.FxUtils;
 import com.chequeprint.util.SessionManager;
+import java.util.Objects;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -356,10 +357,24 @@ public class DashboardController {
         int printed = countCheques(Cheque.Status.Printed);
         int printedThisWeek = countPrintedThisWeek();
 
+        BigDecimal totalAmountSum = loadedCheques.stream()
+                .map(Cheque::getAmount)
+                .filter(amt -> amt != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        double pendingRatio = total > 0 ? (pending * 100.0 / total) : 0.0;
+        double printedRatio = total > 0 ? (printed * 100.0 / total) : 0.0;
+
         setCount(lblTotalCheques, total);
         setCount(lblPendingCheques, pending);
         setCount(lblPrintedCheques, printed);
         setCount(lblClearedCount, printedThisWeek);
+
+        if (lblSubtitle != null && data.error() == null) {
+            lblSubtitle.setText(String.format(Locale.ROOT,
+                "Operations running smoothly • Total Portfolio: ₹ %,.2f • Pending: %.1f%% • Printed: %.1f%%",
+                totalAmountSum, pendingRatio, printedRatio));
+        }
 
         applyChequeFilter(txtChequeSearch == null ? "" : txtChequeSearch.getText());
         if (tblRecentInvoices != null) {
