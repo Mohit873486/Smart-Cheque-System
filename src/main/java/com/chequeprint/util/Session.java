@@ -83,6 +83,8 @@ public class Session {
     public static void clear() {
         Session.token = null;
         Session.username = null;
+        Session.selectedBankId = null;
+        AppState.getInstance().clear();
         SessionManager.getInstance().clear();
     }
 }

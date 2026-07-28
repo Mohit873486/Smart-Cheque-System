@@ -4,9 +4,12 @@ import com.chequeprint.model.Bank;
 import com.chequeprint.model.Cheque;
 import com.chequeprint.model.User;
 import com.chequeprint.service.*;
+import com.chequeprint.util.AppState;
+import com.chequeprint.util.ChequePreviewEngine;
 import com.chequeprint.util.FxUtils;
 import com.chequeprint.util.SessionManager;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -79,72 +82,37 @@ public class ChequeDialogController {
     }
 
     private void setupRealTimePreview() {
-        // 1. Payee Name binding (fldPayee -> previewName)
-        if (fldPayee != null) {
-            fldPayee.textProperty().addListener((obs, oldVal, newVal) -> {
-                if (previewName != null) {
-                    if (newVal == null || newVal.isBlank()) {
-                        previewName.setText("PAYEE NAME");
-                    } else {
-                        previewName.setText(newVal.trim().toUpperCase());
-                    }
-                }
-            });
-        }
+        ChangeListener<Object> listener = (obs, oldVal, newVal) -> updatePreviewEngine();
+        if (fldPayee != null) fldPayee.textProperty().addListener(listener);
+        if (fldAmount != null) fldAmount.textProperty().addListener(listener);
+        if (cmbBank != null) cmbBank.valueProperty().addListener(listener);
+        if (datePicker != null) datePicker.valueProperty().addListener(listener);
+        AppState.getInstance().addStateChangeListener(this::updatePreviewEngine);
+        updatePreviewEngine();
+    }
 
-        // 2. Amount binding (fldAmount -> previewAmount & previewAmountWords)
-        if (fldAmount != null) {
-            fldAmount.textProperty().addListener((obs, oldVal, newVal) -> {
-                if (previewAmount != null) {
-                    if (newVal == null || newVal.isBlank()) {
-                        previewAmount.setText("0.00");
-                        if (previewAmountWords != null) {
-                            previewAmountWords.setText("Zero Rupees Only");
-                        }
-                    } else {
-                        try {
-                            BigDecimal val = new BigDecimal(newVal.trim());
-                            previewAmount.setText(String.format("%,.2f", val));
-                            if (previewAmountWords != null) {
-                                previewAmountWords.setText(com.chequeprint.util.NumberToWordsConverter.convert(val));
-                            }
-                        } catch (Exception ex) {
-                            previewAmount.setText(newVal);
-                        }
-                    }
-                }
-            });
+    private void updatePreviewEngine() {
+        if (chequePreviewCard != null) {
+            Cheque draft = getDraftChequeFromForm();
+            ChequePreviewEngine.renderPreview(chequePreviewCard, draft, AppState.getInstance().getSelectedBank(), AppState.getInstance().getSelectedTemplate());
         }
+    }
 
-        // 3. Bank binding (cmbBank -> previewBank)
-        if (cmbBank != null) {
-            cmbBank.valueProperty().addListener((obs, oldVal, newVal) -> {
-                if (previewBank != null) {
-                    if (newVal == null || newVal.isBlank()) {
-                        previewBank.setText("STATE BANK OF INDIA");
-                    } else {
-                        previewBank.setText(newVal.toUpperCase());
-                    }
-                }
-            });
+    private Cheque getDraftChequeFromForm() {
+        String payee = fldPayee != null ? fldPayee.getText() : "";
+        BigDecimal amt = BigDecimal.ZERO;
+        if (fldAmount != null && fldAmount.getText() != null && !fldAmount.getText().isBlank()) {
+            try {
+                amt = new BigDecimal(fldAmount.getText().trim());
+            } catch (Exception ignored) {}
         }
-
-        // 4. Date binding (datePicker -> previewDate)
-        if (datePicker != null) {
-            datePicker.valueProperty().addListener((obs, oldVal, newVal) -> {
-                if (previewDate != null) {
-                    if (newVal != null) {
-                        previewDate.setText(newVal.format(java.time.format.DateTimeFormatter.ofPattern("dd / MM / yyyy")));
-                    } else {
-                        previewDate.setText("DD / MM / YYYY");
-                    }
-                }
-            });
-        }
+        LocalDate date = datePicker != null && datePicker.getValue() != null ? datePicker.getValue() : LocalDate.now();
+        return new Cheque(null, payee, amt, 1, date);
     }
 
     public void initData(Cheque cheque) {
         this.selectedCheque = cheque;
+        AppState.getInstance().setCurrentCheque(cheque);
         
         loadBanksIntoCombo();
         
@@ -260,6 +228,7 @@ public class ChequeDialogController {
             if (selectedCheque == null) {
                 Cheque c = new Cheque(null, payee, amount, bankId, datePicker.getValue());
                 workflowService.createPending(c, actor);
+                AppState.getInstance().setCurrentCheque(c);
                 showAlert("Success", "Cheque created and submitted for approval.", Alert.AlertType.INFORMATION);
             } else {
                 selectedCheque.setPayeeName(payee);
@@ -269,6 +238,7 @@ public class ChequeDialogController {
                 if (!chequeService.update(selectedCheque)) {
                     throw new RuntimeException("Could not update cheque.");
                 }
+                AppState.getInstance().setCurrentCheque(selectedCheque);
                 showAlert("Success", "Cheque updated.", Alert.AlertType.INFORMATION);
             }
             saved = true;

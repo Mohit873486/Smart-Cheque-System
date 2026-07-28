@@ -40,6 +40,7 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\Voic
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\ApiClient.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\AIService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\preview\ChequeLayout.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\ChequePreviewEngine.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\ChequeAiActionExecutor.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\dao\AuditLogDAO.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\ModernDashboardController.java
@@ -55,6 +56,7 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\C
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\BankAccount.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\AuthService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\ForgotPasswordService.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\AppState.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\printpreview\PrintPreviewController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\ChequeReminderScheduler.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\ChequeLayout.java

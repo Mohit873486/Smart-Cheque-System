@@ -24,6 +24,8 @@ com\chequeprint\service\MultiAgentCoordinatorService$Intent.class
 com\chequeprint\service\PrintService.class
 com\chequeprint\controller\BankAccountDialogController.class
 com\chequeprint\dao\SettingDAO.class
+com\chequeprint\util\AppState.class
+com\chequeprint\util\ChequePreviewEngine$1.class
 com\chequeprint\controller\DashboardController$2.class
 com\chequeprint\service\AiSqlDatabaseService.class
 module-info.class
@@ -137,6 +139,7 @@ com\chequeprint\model\Invoice$Status.class
 com\chequeprint\service\AuditService.class
 com\chequeprint\preview\ChequePreviewPanel.class
 com\chequeprint\service\ChequeApiService.class
+com\chequeprint\util\ChequePreviewEngine.class
 com\chequeprint\controller\UserManagementController.class
 com\chequeprint\controller\BankController.class
 com\chequeprint\model\ChequeTemplate$FieldConfig.class
@@ -178,6 +181,7 @@ com\chequeprint\model\User.class
 com\chequeprint\service\ChequeWorkflowService.class
 com\chequeprint\util\ChequeSizePreset.class
 com\chequeprint\util\SignatureOverlayHelper.class
+com\chequeprint\util\AppState$StateChangeListener.class
 com\chequeprint\model\Bank.class
 com\chequeprint\config\AppConfig.class
 com\chequeprint\service\ChequeOcrResult.class

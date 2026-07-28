@@ -12,7 +12,9 @@ import com.chequeprint.service.PrintService;
 import com.chequeprint.service.AuditService;
 import com.chequeprint.model.AuditAction;
 import com.chequeprint.model.AuditLog;
+import com.chequeprint.util.AppState;
 import com.chequeprint.util.FxUtils;
+import com.chequeprint.util.Session;
 import com.chequeprint.util.SessionManager;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
@@ -195,6 +197,11 @@ public class ChequeController {
 
         chequeTable.getSelectionModel().selectedItemProperty()
                 .addListener((obs, old, sel) -> {
+                    selectedCheque = sel;
+                    AppState.getInstance().setCurrentCheque(sel);
+                    if (sel != null && sel.getBankId() != null) {
+                        Session.setSelectedBankId(sel.getBankId().longValue());
+                    }
                     updateButtonStates(sel);
                 });
 

@@ -179,15 +179,7 @@ public class ChequeSnapshotRenderer {
 
             switch (field) {
                 case DATE -> {
-                    // Draw static DATE text label
-                    Label staticDate = new Label("DATE");
-                    staticDate.setFont(Font.font("Arial", FontWeight.BOLD, 9));
-                    staticDate.setTextFill(Color.web("#475569"));
-                    staticDate.setLayoutX(x - 35);
-                    staticDate.setLayoutY(y + (h - 12) / 2);
-                    pane.getChildren().add(staticDate);
-
-                    // Draw 8 boxes (perfect squares centered vertically)
+                    // Draw 8 boxes for date at exact template coordinates x, y
                     double boxSize = w / 8.0;
                     double by = y + (h - boxSize) / 2.0;
                     String dateStr = "";
@@ -218,23 +210,13 @@ public class ChequeSnapshotRenderer {
                     }
                 }
                 case PAYEE -> {
-                    // Draw static PAY text exactly sitting on the line baseline
-                    Label staticPay = new Label("PAY");
-                    staticPay.setFont(Font.font("Arial", FontWeight.BOLD, 10));
-                    staticPay.setTextFill(Color.web("#334155"));
-                    staticPay.setLayoutX(x - 30);
-                    staticPay.setLayoutY(y + h - 16);
-                    staticPay.setPrefHeight(14);
-                    staticPay.setAlignment(Pos.BOTTOM_LEFT);
-                    pane.getChildren().add(staticPay);
-
-                    // Draw payee line exactly sitting on the baseline
+                    // Draw payee line at template coordinates x, y
                     javafx.scene.shape.Line payLine = new javafx.scene.shape.Line(x, y + h, x + w, y + h);
                     payLine.setStroke(Color.web("#475569"));
                     payLine.setStrokeWidth(1.0);
                     pane.getChildren().add(payLine);
 
-                    // Dynamic payee label sitting perfectly on the underline
+                    // Dynamic payee label at template coordinates
                     Label payeeLbl = new Label(cheque.getPayeeName() != null ? cheque.getPayeeName() : "");
                     payeeLbl.setFont(Font.font("Arial", FontWeight.BOLD, 12));
                     payeeLbl.setTextFill(Color.BLACK);
@@ -246,15 +228,7 @@ public class ChequeSnapshotRenderer {
                     pane.getChildren().add(payeeLbl);
                 }
                 case AMOUNT_NUMBER -> {
-                    // Draw static ₹ symbol
-                    Label staticSymbol = new Label("₹");
-                    staticSymbol.setFont(Font.font("Arial", FontWeight.BOLD, 18));
-                    staticSymbol.setTextFill(Color.web("#1e293b"));
-                    staticSymbol.setLayoutX(x - 22);
-                    staticSymbol.setLayoutY(y + (h - 24) / 2);
-                    pane.getChildren().add(staticSymbol);
-
-                    // Draw amount box double-border (like the image)
+                    // Draw amount box double-border at template coordinates
                     javafx.scene.shape.Rectangle outerBox = new javafx.scene.shape.Rectangle(x, y, w, h);
                     outerBox.setFill(Color.web("#fefce8", 0.4));
                     outerBox.setStroke(Color.web("#1e293b"));
@@ -267,7 +241,7 @@ public class ChequeSnapshotRenderer {
 
                     pane.getChildren().addAll(outerBox, innerBox);
 
-                    // Dynamic amount label in monospace style
+                    // Dynamic amount label at template coordinates
                     Label amountLbl = new Label(cheque.getAmount() != null ? cheque.getAmount().toPlainString() + "/-" : "");
                     amountLbl.setFont(Font.font("Consolas", FontWeight.BOLD, 15));
                     amountLbl.setTextFill(Color.BLACK);

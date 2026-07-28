@@ -8,6 +8,7 @@ import com.chequeprint.service.ChequeService;
 import com.chequeprint.service.InvoiceService;
 import com.chequeprint.service.Permission;
 import com.chequeprint.service.UserService;
+import com.chequeprint.util.AppState;
 import com.chequeprint.util.FxUtils;
 import com.chequeprint.util.SessionManager;
 import javafx.animation.Animation;
@@ -109,6 +110,9 @@ public class DashboardController {
         animateInitialView();
         reload();
         startAutoRefresh();
+
+        // Auto sync event system: Reload dashboard UI when bank, template, or cheque state changes
+        AppState.getInstance().addStateChangeListener(this::reload);
     }
 
     public void setMainController(MainController mainController) {

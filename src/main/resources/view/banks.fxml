@@ -133,15 +133,17 @@
                                     <Label text="Select Bank Account" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #0f172a;" />
                                     <Label fx:id="lblTemplateMappingDesigner" text="Template for: Select Account" style="-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: #2563eb;" />
                                 </VBox>
-                                <Region HBox.hgrow="ALWAYS" />
-                                <Button fx:id="btnNewBank" text="+ New" styleClass="btn-primary" onAction="#onClear" visible="false" managed="false" style="-fx-background-radius: 6;" />
                             </HBox>
                             <ComboBox fx:id="cmbBankAccount" promptText="-- Select Bank Account --" styleClass="form-combo" maxWidth="Infinity" />
                         </VBox>
 
                         <!-- SECTION 2: TEMPLATE EDITOR -->
                         <VBox spacing="12" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 16; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.02), 5, 0, 0, 2);">
-                            <Label fx:id="lblFormTitle" text="Template Editor" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #0f172a;" />
+                            <HBox alignment="CENTER_LEFT" spacing="6">
+                                <Label fx:id="lblFormTitle" text="Add New Bank Template" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #0f172a;" />
+                                <Region HBox.hgrow="ALWAYS" />
+                                <Button fx:id="btnNewBank" text="+ NEW BANK" styleClass="btn-primary" onAction="#onClear" visible="true" managed="true" style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px; -fx-padding: 5 10; -fx-background-radius: 6; -fx-cursor: hand;" />
+                            </HBox>
 
                             <GridPane hgap="8" vgap="10">
                                 <columnConstraints>

@@ -112,6 +112,22 @@ public class BankTemplateLayout implements Serializable {
         };
     }
 
+    /**
+     * Validates that all required fields (PAYEE, DATE, AMOUNT_NUMBER, AMOUNT_WORDS)
+     * have valid normalized coordinates and positive dimensions.
+     */
+    public boolean isValidLayout() {
+        LayoutField[] required = { LayoutField.PAYEE, LayoutField.DATE, LayoutField.AMOUNT_NUMBER, LayoutField.AMOUNT_WORDS };
+        for (LayoutField f : required) {
+            FieldPosition pos = fieldPositions.get(f);
+            if (pos == null) return false;
+            if (pos.getXRatio() < 0.0 || pos.getXRatio() > 1.0) return false;
+            if (pos.getYRatio() < 0.0 || pos.getYRatio() > 1.0) return false;
+            if (pos.getWidthRatio() <= 0.0 || pos.getHeightRatio() <= 0.0) return false;
+        }
+        return true;
+    }
+
     private static double clamp(double v) {
         return Math.max(0.0, Math.min(1.0, v));
     }
