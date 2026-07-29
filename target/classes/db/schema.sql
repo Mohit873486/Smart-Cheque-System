@@ -81,6 +81,18 @@ CREATE TABLE IF NOT EXISTS bank_templates (
     UNIQUE KEY uq_bank_code (bank_code)
 );
 
+-- CHEQUE TEMPLATES (Supports multiple templates per bank via template_name)
+CREATE TABLE IF NOT EXISTS cheque_template (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    bank_id BIGINT NOT NULL,
+    template_name VARCHAR(100) NOT NULL,
+    width DOUBLE NOT NULL DEFAULT 203.20,
+    height DOUBLE NOT NULL DEFAULT 92.00,
+    config_json LONGTEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_cheque_template_bank (bank_id, template_name)
+);
+
 -- ACCOUNTS
 CREATE TABLE IF NOT EXISTS accounts (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -308,6 +320,12 @@ VALUES
 ('INV-2025-001', 'Mehta & Sons', 45000.00, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY), 'Unpaid', 'Net 30 terms'),
 ('INV-2025-002', 'TechStart Solutions', 18500.00, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 15 DAY), 'Paid', 'Advance payment received'),
 ('INV-2025-003', 'Sunrise Enterprises', 32000.00, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 45 DAY), 'Partial', '50% paid on delivery');
+
+-- MIGRATION STATEMENTS FOR EXISTING DATABASES
+-- 1. Remove branch field from cheque_template table and add template_name field
+ALTER TABLE cheque_template 
+DROP COLUMN IF EXISTS branch,
+ADD COLUMN IF NOT EXISTS template_name VARCHAR(100) NOT NULL DEFAULT 'Default Template';
 
 INSERT INTO settings (id, app_name)
 VALUES (1, 'ChequePro')

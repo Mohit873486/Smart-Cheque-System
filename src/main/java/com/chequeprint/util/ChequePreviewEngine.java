@@ -54,25 +54,36 @@ public final class ChequePreviewEngine {
         if (signature.equals(targetPane.getUserData())) {
             return;
         }
+        System.out.println("[DEBUG PreviewEngine] Rendering cheque preview for bank=" + (bank != null ? bank.getBankName() : "default") + ", payee=" + (cheque != null ? cheque.getPayeeName() : "placeholder"));
         targetPane.setUserData(signature);
         targetPane.getChildren().clear();
 
         // Ensure all fields have template coordinates
         layout.ensureAllFields();
 
-        double paneW = targetPane.getWidth() > 0 ? targetPane.getWidth() : (targetPane.getPrefWidth() > 0 ? targetPane.getPrefWidth() : 720.0);
-        double paneH = targetPane.getHeight() > 0 ? targetPane.getHeight() : (targetPane.getPrefHeight() > 0 ? targetPane.getPrefHeight() : 300.0);
+        double paneW = layout.getWidthInches() > 0 ? layout.getWidthInches() * 90.0 : 720.0;
+        double paneH = layout.getHeightInches() > 0 ? layout.getHeightInches() * 82.0 : 300.0;
+
+        targetPane.setPrefSize(paneW, paneH);
+        targetPane.setMinSize(paneW, paneH);
+        targetPane.setMaxSize(paneW, paneH);
 
         String bankCode = bank != null && bank.getBankCode() != null ? bank.getBankCode().trim().toUpperCase() : "BANK";
+        String customLogo = bank != null ? bank.getLogoPath() : null;
 
-        // 1. Background & Border styling
-        String bgStyle = switch (bankCode) {
-            case "SBI" -> "-fx-background-color: linear-gradient(to bottom, #dbeafe, #bae6fd); -fx-border-color: #3b82f6; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
-            case "HDFC" -> "-fx-background-color: linear-gradient(to bottom, #e0f2fe, #f0f9ff); -fx-border-color: #0284c7; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
-            case "ICICI" -> "-fx-background-color: linear-gradient(to bottom, #ffedd5, #fed7aa); -fx-border-color: #ea580c; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
-            case "AXIS" -> "-fx-background-color: linear-gradient(to bottom, #fce7f3, #fbcfe8); -fx-border-color: #db2777; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
-            default -> "-fx-background-color: linear-gradient(to bottom, #ffffff, #f8fafc); -fx-border-color: #64748b; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
-        };
+        // 1. Background Cheque Image & Stylized Border
+        String bgStyle;
+        if (customLogo != null && !customLogo.isBlank() && (customLogo.startsWith("http") || customLogo.endsWith(".png") || customLogo.endsWith(".jpg"))) {
+            bgStyle = "-fx-background-image: url('" + customLogo + "'); -fx-background-size: cover; -fx-background-position: center; -fx-border-color: #64748b; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
+        } else {
+            bgStyle = switch (bankCode) {
+                case "SBI" -> "-fx-background-color: linear-gradient(to bottom, #dbeafe, #bae6fd); -fx-border-color: #3b82f6; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
+                case "HDFC" -> "-fx-background-color: linear-gradient(to bottom, #e0f2fe, #f0f9ff); -fx-border-color: #0284c7; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
+                case "ICICI" -> "-fx-background-color: linear-gradient(to bottom, #ffedd5, #fed7aa); -fx-border-color: #ea580c; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
+                case "AXIS" -> "-fx-background-color: linear-gradient(to bottom, #fce7f3, #fbcfe8); -fx-border-color: #db2777; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
+                default -> "-fx-background-color: linear-gradient(to bottom, #ffffff, #f8fafc); -fx-border-color: #64748b; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
+            };
+        }
         targetPane.setStyle(bgStyle);
 
         // 2. Subtle horizontal security lines

@@ -1,79 +1,122 @@
 package com.chequeprint.dao;
 
+import com.chequeprint.config.ApiConfig;
 import com.chequeprint.model.Bank;
-import com.chequeprint.service.BankService;
+import com.chequeprint.util.SessionManager;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.sql.SQLException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
- * BankDAO - Refactored to eliminate direct JDBC/DB connection logic
- * and delegate all data operations to the REST API via BankService.
+ * Data Access Object (DAO) for Bank & Template persistence operations.
+ * Isolates low-level REST API and database communications from business services.
  */
 public class BankDAO {
 
-    private final BankService bankService;
+    private static final String API_BANKS = ApiConfig.BASE_URL + "/api/banks";
+    private static final String API_TEMPLATES = ApiConfig.BASE_URL + "/api/templates";
+    private static final String API_TEMPLATE_FIELDS = ApiConfig.BASE_URL + "/api/template-fields";
+
+    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
 
     public BankDAO() {
-        this.bankService = new BankService();
+        this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
-    public BankDAO(BankService bankService) {
-        this.bankService = bankService;
-    }
-
-    public boolean insert(Bank b) throws SQLException {
-        try {
-            Bank created = bankService.createBank(b);
-            if (created != null && created.getId() != null) {
-                b.setId(created.getId());
-                return true;
-            }
-            return false;
-        } catch (Exception e) {
-            throw new SQLException("REST API Insert Error: " + e.getMessage(), e);
+    private void addAuthToken(HttpRequest.Builder builder) {
+        String authHeader = com.chequeprint.util.Session.getAuthorizationHeader();
+        if (authHeader != null && !authHeader.isBlank()) {
+            builder.header("Authorization", authHeader);
         }
     }
 
-    public boolean update(Bank b) throws SQLException {
-        try {
-            Bank updated = bankService.updateBank(b.getId(), b);
-            return updated != null;
-        } catch (Exception e) {
-            throw new SQLException("REST API Update Error: " + e.getMessage(), e);
+    public List<Bank> findAll() throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(API_BANKS))
+                .header("Accept", "application/json");
+
+        addAuthToken(builder);
+        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() >= 200 && response.statusCode() < 300) {
+            return objectMapper.readValue(response.body(), new TypeReference<List<Bank>>() {});
         }
+        return new ArrayList<>();
     }
 
-    public List<Bank> findAll() throws SQLException {
-        try {
-            return bankService.getAllBanks();
-        } catch (Exception e) {
-            throw new SQLException("REST API Fetch All Error: " + e.getMessage(), e);
+    public Bank findById(int id) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(API_BANKS + "/" + id))
+                .header("Accept", "application/json");
+
+        addAuthToken(builder);
+        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() >= 200 && response.statusCode() < 300) {
+            return objectMapper.readValue(response.body(), Bank.class);
         }
+        return null;
     }
 
-    public Bank findById(int id) throws SQLException {
-        try {
-            return bankService.getById(id);
-        } catch (Exception e) {
-            throw new SQLException("REST API Fetch by ID Error: " + e.getMessage(), e);
+    public List<Map<String, Object>> findTemplatesByBankId(Long bankId) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(API_TEMPLATES + "/bank/" + bankId))
+                .header("Accept", "application/json");
+
+        addAuthToken(builder);
+        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() >= 200 && response.statusCode() < 300) {
+            return objectMapper.readValue(response.body(), new TypeReference<List<Map<String, Object>>>() {});
         }
+        return new ArrayList<>();
     }
 
-    public boolean delete(int id) throws SQLException {
-        try {
-            bankService.deleteBank(id);
-            return true;
-        } catch (Exception e) {
-            throw new SQLException("REST API Delete Error: " + e.getMessage(), e);
+    public List<Map<String, Object>> findTemplateFields(Long templateId) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(API_TEMPLATE_FIELDS + "/" + templateId))
+                .header("Accept", "application/json");
+
+        addAuthToken(builder);
+        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() >= 200 && response.statusCode() < 300) {
+            return objectMapper.readValue(response.body(), new TypeReference<List<Map<String, Object>>>() {});
         }
+        return new ArrayList<>();
     }
 
-    public List<String> findAllNames() throws SQLException {
-        try {
-            return bankService.findAllNames();
-        } catch (Exception e) {
-            throw new SQLException("REST API Fetch Names Error: " + e.getMessage(), e);
-        }
+    public boolean saveTemplateFields(List<Map<String, Object>> fieldsPayload) throws Exception {
+        String jsonPayload = objectMapper.writeValueAsString(fieldsPayload);
+
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                .uri(URI.create(API_TEMPLATE_FIELDS))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json");
+
+        addAuthToken(builder);
+        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+
+        return response.statusCode() >= 200 && response.statusCode() < 300;
     }
 }

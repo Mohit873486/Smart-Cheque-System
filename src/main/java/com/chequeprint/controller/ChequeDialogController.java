@@ -6,6 +6,7 @@ import com.chequeprint.model.User;
 import com.chequeprint.service.*;
 import com.chequeprint.util.AppState;
 import com.chequeprint.util.ChequePreviewEngine;
+import com.chequeprint.util.PreviewEngine;
 import com.chequeprint.util.FxUtils;
 import com.chequeprint.util.SessionManager;
 import javafx.application.Platform;
@@ -91,10 +92,19 @@ public class ChequeDialogController {
         updatePreviewEngine();
     }
 
+    private boolean updatingPreview = false;
+
     private void updatePreviewEngine() {
-        if (chequePreviewCard != null) {
-            Cheque draft = getDraftChequeFromForm();
-            ChequePreviewEngine.renderPreview(chequePreviewCard, draft, AppState.getInstance().getSelectedBank(), AppState.getInstance().getSelectedTemplate());
+        if (updatingPreview) return;
+        updatingPreview = true;
+        try {
+            if (chequePreviewCard != null) {
+                Cheque draft = getDraftChequeFromForm();
+                chequePreviewCard.setUserData(null);
+                PreviewEngine.render(chequePreviewCard, draft, AppState.getInstance().getSelectedBank(), AppState.getInstance().getSelectedTemplate());
+            }
+        } finally {
+            updatingPreview = false;
         }
     }
 
@@ -323,6 +333,7 @@ public class ChequeDialogController {
     }
 
     private void closeStage() {
+        AppState.getInstance().removeStateChangeListener(this::updatePreviewEngine);
         Stage stage = (Stage) lblFormTitle.getScene().getWindow();
         stage.close();
     }

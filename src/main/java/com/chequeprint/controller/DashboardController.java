@@ -357,13 +357,9 @@ public class DashboardController {
         int printed = countCheques(Cheque.Status.Printed);
         int printedThisWeek = countPrintedThisWeek();
 
-        BigDecimal totalAmountSum = loadedCheques.stream()
-                .map(Cheque::getAmount)
-                .filter(amt -> amt != null)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        double pendingRatio = total > 0 ? (pending * 100.0 / total) : 0.0;
-        double printedRatio = total > 0 ? (printed * 100.0 / total) : 0.0;
+        BigDecimal totalAmountSum = chequeService.calculatePortfolioSum(loadedCheques);
+        double pendingRatio = chequeService.calculatePendingRatio(loadedCheques);
+        double printedRatio = chequeService.calculatePrintedRatio(loadedCheques);
 
         setCount(lblTotalCheques, total);
         setCount(lblPendingCheques, pending);

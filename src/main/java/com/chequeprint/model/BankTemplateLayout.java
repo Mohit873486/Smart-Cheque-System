@@ -131,4 +131,36 @@ public class BankTemplateLayout implements Serializable {
     private static double clamp(double v) {
         return Math.max(0.0, Math.min(1.0, v));
     }
+
+    public java.util.List<java.util.Map<String, Object>> toFieldPayloadList(Long bankAccountId, double canvasW, double canvasH, String fontFamily, int fontSize) {
+        if (canvasW <= 0) canvasW = 720.0;
+        if (canvasH <= 0) canvasH = 300.0;
+
+        java.util.List<java.util.Map<String, Object>> list = new java.util.ArrayList<>();
+        for (LayoutField field : LayoutField.values()) {
+            FieldPosition pos = get(field);
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("bankAccountId", bankAccountId);
+            map.put("templateId", bankAccountId);
+            map.put("fieldName", mapFieldName(field));
+            map.put("xPosition", pos.getXRatio() * canvasW);
+            map.put("yPosition", pos.getYRatio() * canvasH);
+            map.put("fontSize", fontSize);
+            map.put("fontFamily", fontFamily != null ? fontFamily : "Arial");
+            list.add(map);
+        }
+        return list;
+    }
+
+    private static String mapFieldName(LayoutField field) {
+        return switch (field) {
+            case PAYEE -> "name";
+            case AMOUNT_NUMBER -> "amount";
+            case AMOUNT_WORDS -> "amount_words";
+            case DATE -> "date";
+            case SIGNATURE -> "signature";
+            case BANK_LOGO -> "logo";
+            case MICR -> "micr";
+        };
+    }
 }

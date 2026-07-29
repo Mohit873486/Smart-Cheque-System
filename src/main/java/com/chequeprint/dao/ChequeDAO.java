@@ -1,152 +1,215 @@
 package com.chequeprint.dao;
 
+import com.chequeprint.config.ApiConfig;
 import com.chequeprint.model.Cheque;
-import com.chequeprint.util.ChequeApiClient;
+import com.chequeprint.util.Session;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 
-import java.math.BigDecimal;
-import java.sql.SQLException;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
-/** Data Access Object for the cheques table (rewritten to use Spring Boot REST API). */
+/**
+ * Data Access Object (DAO) for Cheque persistence operations.
+ * Isolates low-level REST API HTTP communications for cheque CRUD tasks.
+ */
 public class ChequeDAO {
 
-    private final ChequeApiClient client = new ChequeApiClient();
+    private static final String API_CHEQUES = ApiConfig.BASE_URL + "/api/cheques";
 
-    // ---- CREATE ----
-    public boolean insert(Cheque c) throws SQLException {
-        try {
-            Cheque created = client.createCheque(c);
-            c.setId(created.getId());
-            return true;
-        } catch (Exception e) {
-            throw new SQLException("Failed to insert cheque via REST API", e);
+    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
+
+    public ChequeDAO() {
+        this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(LocalDate.class, new JsonSerializer<>() {
+            @Override
+            public void serialize(LocalDate value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+                if (value != null) {
+                    gen.writeString(value.toString());
+                } else {
+                    gen.writeNull();
+                }
+            }
+        });
+        module.addDeserializer(LocalDate.class, new JsonDeserializer<>() {
+            @Override
+            public LocalDate deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+                String val = p.getValueAsString();
+                return (val == null || val.isBlank()) ? null : LocalDate.parse(val);
+            }
+        });
+        this.objectMapper.registerModule(module);
+    }
+
+    private void addAuthToken(HttpRequest.Builder builder) {
+        String authHeader = Session.getAuthorizationHeader();
+        if (authHeader != null && !authHeader.isBlank()) {
+            builder.header("Authorization", authHeader);
         }
     }
 
-    // ---- READ ALL ----
-    public List<Cheque> findAll() throws SQLException {
+    public List<Cheque> findAll() {
         try {
-            return client.getAllCheques();
-        } catch (Exception e) {
-            throw new SQLException("Failed to fetch cheques from REST API", e);
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .GET()
+                    .uri(URI.create(API_CHEQUES))
+                    .header("Accept", "application/json");
+
+            addAuthToken(builder);
+            HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                return objectMapper.readValue(response.body(), new TypeReference<List<Cheque>>() {});
+            }
+        } catch (Exception ex) {
+            System.err.println("ChequeDAO findAll error: " + ex.getMessage());
         }
+        return new ArrayList<>();
     }
 
-    // ---- READ BY ID ----
-    public Cheque findById(int id) throws SQLException {
+    public Cheque findById(int id) {
         try {
-            return client.getChequeById(id);
-        } catch (Exception e) {
-            throw new SQLException("Failed to find cheque from REST API", e);
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .GET()
+                    .uri(URI.create(API_CHEQUES + "/" + id))
+                    .header("Accept", "application/json");
+
+            addAuthToken(builder);
+            HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                return objectMapper.readValue(response.body(), Cheque.class);
+            }
+        } catch (Exception ex) {
+            System.err.println("ChequeDAO findById error: " + ex.getMessage());
         }
+        return null;
     }
 
-    // ---- UPDATE ----
-    public boolean update(Cheque c) throws SQLException {
+    public boolean insert(Cheque cheque) {
         try {
-            return client.updateCheque(c);
-        } catch (Exception e) {
-            throw new SQLException("Failed to update cheque via REST API", e);
-        }
-    }
+            String json = objectMapper.writeValueAsString(cheque);
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .POST(HttpRequest.BodyPublishers.ofString(json))
+                    .uri(URI.create(API_CHEQUES))
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json");
 
-    public boolean updateStatus(Cheque c, Cheque.Status status) throws SQLException {
-        if (c == null || status == null) {
+            addAuthToken(builder);
+            HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            return response.statusCode() >= 200 && response.statusCode() < 300;
+        } catch (Exception ex) {
+            System.err.println("ChequeDAO insert error: " + ex.getMessage());
             return false;
         }
-        c.setStatus(status);
-        return update(c);
     }
 
-    public boolean approveCheque(int id) throws SQLException {
+    public boolean update(Cheque cheque) {
+        if (cheque == null || cheque.getId() <= 0) return false;
         try {
-            return client.approveCheque(id);
-        } catch (Exception e) {
-            throw new SQLException("Failed to approve cheque via REST API", e);
+            String json = objectMapper.writeValueAsString(cheque);
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .PUT(HttpRequest.BodyPublishers.ofString(json))
+                    .uri(URI.create(API_CHEQUES + "/" + cheque.getId()))
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json");
+
+            addAuthToken(builder);
+            HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            return response.statusCode() >= 200 && response.statusCode() < 300;
+        } catch (Exception ex) {
+            System.err.println("ChequeDAO update error: " + ex.getMessage());
+            return false;
         }
     }
 
-    // ---- DELETE ----
-    public boolean delete(int id) throws SQLException {
+    public boolean delete(int id) {
         try {
-            return client.deleteCheque(id);
-        } catch (Exception e) {
-            throw new SQLException("Failed to delete cheque via REST API", e);
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .DELETE()
+                    .uri(URI.create(API_CHEQUES + "/" + id));
+
+            addAuthToken(builder);
+            HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            return response.statusCode() >= 200 && response.statusCode() < 300;
+        } catch (Exception ex) {
+            System.err.println("ChequeDAO delete error: " + ex.getMessage());
+            return false;
         }
     }
 
-    // Convenience API requested by product requirements
-    public boolean saveCheque(Cheque cheque) throws SQLException {
-        return insert(cheque);
+    public boolean updateStatus(Cheque cheque, Cheque.Status status) {
+        if (cheque == null) return false;
+        cheque.setStatus(status);
+        return update(cheque);
     }
 
-    public boolean updateChequeStatus(Cheque cheque, Cheque.Status status) throws SQLException {
-        return updateStatus(cheque, status);
+    public boolean approveCheque(int id) {
+        Cheque c = findById(id);
+        if (c == null) return false;
+        return updateStatus(c, Cheque.Status.Printed);
     }
 
-    public List<Cheque> getAllCheques() throws SQLException {
-        return findAll();
+    public boolean existsByChequeNo(String chequeNo, Integer excludeId) {
+        if (chequeNo == null || chequeNo.isBlank()) return false;
+        List<Cheque> all = findAll();
+        return all.stream().anyMatch(c -> chequeNo.equalsIgnoreCase(c.getChequeNo()) && (excludeId == null || !excludeId.equals(c.getId())));
     }
 
-    // ---- COUNTS (computed in memory) ----
-    public int countTotal() throws SQLException {
+    public int countTotal() {
         return findAll().size();
     }
 
-    public int countPrinted() throws SQLException {
-        return (int) findAll().stream()
-                .filter(c -> c.getStatus() == Cheque.Status.Printed)
-                .count();
+    public int countPrinted() {
+        return (int) findAll().stream().filter(c -> c.getStatus() == Cheque.Status.Printed).count();
     }
 
-    public int countPending() throws SQLException {
-        return (int) findAll().stream()
-                .filter(c -> c.getStatus() == Cheque.Status.Pending)
-                .count();
+    public int countPending() {
+        return (int) findAll().stream().filter(c -> c.getStatus() == Cheque.Status.Pending).count();
     }
 
-    public int countTodayEntries() throws SQLException {
-        return countByIssueDate(LocalDate.now());
+    public int countTodayEntries() {
+        LocalDate today = LocalDate.now();
+        return (int) findAll().stream().filter(c -> today.equals(c.getIssueDate())).count();
     }
 
-    public int countByIssueDate(LocalDate date) throws SQLException {
-        if (date == null) {
-            return 0;
-        }
-        return (int) findAll().stream()
-                .filter(c -> c.getIssueDate() != null && c.getIssueDate().equals(date))
-                .count();
-    }
-
-    public double sumThisMonth() throws SQLException {
-        LocalDate start = LocalDate.now().withDayOfMonth(1);
-        LocalDate end = start.plusMonths(1);
+    public double sumThisMonth() {
+        LocalDate now = LocalDate.now();
         return findAll().stream()
-                .filter(c -> c.getIssueDate() != null && !c.getIssueDate().isBefore(start) && c.getIssueDate().isBefore(end))
-                .map(c -> c.getAmount() != null ? c.getAmount() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .doubleValue();
+                .filter(c -> c.getIssueDate() != null && c.getIssueDate().getMonth() == now.getMonth() && c.getIssueDate().getYear() == now.getYear())
+                .mapToDouble(c -> c.getAmount() != null ? c.getAmount().doubleValue() : 0.0)
+                .sum();
     }
 
-    public boolean existsByChequeNo(String chequeNo, int excludeId) throws SQLException {
-        if (chequeNo == null || chequeNo.isBlank()) {
-            return false;
-        }
-
-        try {
-            return client.existsByChequeNo(chequeNo, excludeId);
-        } catch (Exception e) {
-            System.err.println("REST server unavailable while checking cheque number; continuing without duplicate validation: " + e.getMessage());
-            return false;
-        }
+    public int countByIssueDate(LocalDate date) {
+        if (date == null) return 0;
+        return (int) findAll().stream().filter(c -> date.equals(c.getIssueDate())).count();
     }
 
-    public List<Cheque> search(String query) throws SQLException {
-        try {
-            return client.searchCheques(query);
-        } catch (Exception e) {
-            throw new SQLException("Failed to search cheques via REST API", e);
-        }
+    public List<Cheque> search(String query) {
+        if (query == null || query.isBlank()) return findAll();
+        String needle = query.toLowerCase();
+        return findAll().stream()
+                .filter(c -> (c.getChequeNo() != null && c.getChequeNo().toLowerCase().contains(needle))
+                        || (c.getPayeeName() != null && c.getPayeeName().toLowerCase().contains(needle)))
+                .toList();
     }
 }

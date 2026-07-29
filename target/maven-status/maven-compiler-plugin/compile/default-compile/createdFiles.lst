@@ -3,6 +3,8 @@ com\chequeprint\model\AuditAction.class
 com\chequeprint\service\OpenAiSqlQueryService.class
 com\chequeprint\service\CommandDetectionService.class
 com\chequeprint\controller\DashboardController$1.class
+com\chequeprint\dao\BankDAO$1.class
+com\chequeprint\dao\ChequeDAO$1.class
 com\chequeprint\model\BankAccount.class
 com\chequeprint\controller\ModernDashboardController$4.class
 com\chequeprint\util\BankTemplatePdfExporter.class
@@ -34,7 +36,6 @@ com\chequeprint\controller\InvoiceController.class
 com\chequeprint\controller\BankController$Delta.class
 com\chequeprint\controller\LoginController$2.class
 com\chequeprint\controller\SettingsController$2.class
-com\chequeprint\service\BankService$1.class
 com\chequeprint\model\ChequeLayout.class
 com\chequeprint\service\CommandParser$CommandAction.class
 com\chequeprint\service\ChequeOcrService.class
@@ -62,6 +63,7 @@ com\chequeprint\service\BankAccountService.class
 com\chequeprint\util\RestApiClient.class
 com\chequeprint\controller\AiAssistantController$1.class
 com\chequeprint\model\ChequePrint.class
+com\chequeprint\dao\ChequeDAO$2.class
 com\chequeprint\preview\ChequeRenderer.class
 com\chequeprint\controller\ModernDashboardController$5.class
 com\chequeprint\util\NumberToWordsConverter.class
@@ -77,6 +79,7 @@ com\chequeprint\service\ChequeApiResponse.class
 com\chequeprint\service\ChequeAiCommand$Data.class
 com\chequeprint\model\AuditLog.class
 com\chequeprint\service\CommandDetectionService$1.class
+com\chequeprint\dao\ChequeDAO$3.class
 com\chequeprint\service\OpenAiChequeAssistantService.class
 com\chequeprint\util\DraggableLabelUtil.class
 com\chequeprint\service\MultiAgentCoordinatorService$1.class
@@ -145,10 +148,10 @@ com\chequeprint\model\ChequeTemplate$FieldConfig.class
 com\chequeprint\controller\SupportController.class
 com\chequeprint\model\Invoice.class
 com\chequeprint\service\ApiService$1.class
+com\chequeprint\dao\BankDAO$3.class
 com\chequeprint\controller\BankController$6.class
 com\chequeprint\controller\AiAssistantController.class
 com\chequeprint\preview\BankTemplate.class
-com\chequeprint\service\BankService$2.class
 com\chequeprint\preview\ChequeData.class
 com\chequeprint\service\BatchPrintException.class
 com\chequeprint\controller\BankController$5.class
@@ -165,6 +168,7 @@ com\chequeprint\controller\SignupController.class
 com\chequeprint\service\CommandParser.class
 com\chequeprint\controller\BankController$2.class
 com\chequeprint\controller\ChequeHistoryController$1.class
+com\chequeprint\dao\BankDAO$2.class
 com\chequeprint\model\ChequeTemplate.class
 com\chequeprint\controller\ChequeDialogController.class
 com\chequeprint\service\ChequeAiActionExecutor.class
@@ -184,9 +188,10 @@ com\chequeprint\util\AppState$StateChangeListener.class
 com\chequeprint\model\Bank.class
 com\chequeprint\config\AppConfig.class
 com\chequeprint\service\ChequeOcrResult.class
+com\chequeprint\util\PreviewEngine.class
 com\chequeprint\util\JasperPrintUtil.class
+com\chequeprint\service\TemplateService.class
 com\chequeprint\util\ChequeSnapshotRenderer$1.class
-com\chequeprint\service\BankService$3.class
 com\chequeprint\MainApp.class
 com\chequeprint\service\InvoiceService.class
 com\chequeprint\service\SmartSuggestionService$SuggestionInsight.class

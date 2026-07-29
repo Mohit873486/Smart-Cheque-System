@@ -140,4 +140,30 @@ public class ChequeService {
     public List<Cheque> search(String query) throws SQLException {
         return dao.search(query);
     }
+
+    public BigDecimal calculatePortfolioSum(List<Cheque> cheques) {
+        if (cheques == null || cheques.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        return cheques.stream()
+                .map(Cheque::getAmount)
+                .filter(amt -> amt != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public double calculatePendingRatio(List<Cheque> cheques) {
+        if (cheques == null || cheques.isEmpty()) {
+            return 0.0;
+        }
+        long pendingCount = cheques.stream().filter(c -> c.getStatus() == Cheque.Status.Pending).count();
+        return (pendingCount * 100.0) / cheques.size();
+    }
+
+    public double calculatePrintedRatio(List<Cheque> cheques) {
+        if (cheques == null || cheques.isEmpty()) {
+            return 0.0;
+        }
+        long printedCount = cheques.stream().filter(c -> c.getStatus() == Cheque.Status.Printed).count();
+        return (printedCount * 100.0) / cheques.size();
+    }
 }

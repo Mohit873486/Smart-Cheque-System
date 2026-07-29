@@ -222,6 +222,7 @@ public final class AppState {
         if (Objects.equals(this.selectedTemplate.get(), template)) {
             return; // Skip redundant state change
         }
+        System.out.println("[DEBUG AppState] selectedTemplate updated: " + (template != null ? "layout loaded (" + template.getWidthInches() + "x" + template.getHeightInches() + " in)" : "null"));
         this.selectedTemplate.set(template);
     }
 
@@ -242,6 +243,7 @@ public final class AppState {
         if (Objects.equals(this.currentCheque.get(), cheque)) {
             return; // Skip redundant state change
         }
+        System.out.println("[DEBUG AppState] currentCheque updated: " + (cheque != null ? ("payee='" + cheque.getPayeeName() + "', amount=" + cheque.getAmount()) : "null"));
         this.currentCheque.set(cheque);
     }
 

@@ -23,12 +23,16 @@ import java.util.stream.Collectors;
  * Service class for Bank REST API operations and template management in JavaFX.
  * Uses Java HttpClient to make REST API calls to the backend server.
  */
+import com.chequeprint.dao.BankDAO;
+
 public class BankService {
 
     private static final String API_URL = ApiConfig.BASE_URL + "/api/banks";
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final BankTemplateLayoutStore layoutStore;
+
+    private final BankDAO bankDao;
 
     public BankService() {
         this.httpClient = HttpClient.newBuilder()
@@ -38,10 +42,22 @@ public class BankService {
         this.objectMapper = new ObjectMapper();
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         this.layoutStore = new BankTemplateLayoutStore();
+        this.bankDao = new BankDAO();
+    }
+
+    public BankService(BankDAO bankDao) {
+        this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.layoutStore = new BankTemplateLayoutStore();
+        this.bankDao = bankDao;
     }
 
     /**
-     * GET bank list - Fetches all banks from REST API.
+     * GET bank list - Fetches all banks from REST API via DAO.
      * @return List of Bank objects
      */
     public List<Bank> getBanks() throws Exception {
@@ -56,27 +72,8 @@ public class BankService {
         return getAll();
     }
 
-    /**
-     * GET bank list - Fetches all banks from REST API.
-     * @return List of Bank objects
-     */
     public List<Bank> getAll() throws Exception {
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .GET()
-                .uri(URI.create(API_URL))
-                .header("Accept", "application/json");
-
-        addAuthToken(builder);
-
-        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-
-        if (response.statusCode() >= 200 && response.statusCode() < 300) {
-            return objectMapper.readValue(response.body(), new TypeReference<List<Bank>>() {});
-        } else if (response.statusCode() == 404 || response.statusCode() == 409) {
-            return new ArrayList<>();
-        } else {
-            throw new RuntimeException("Failed to fetch bank list. Status: " + response.statusCode() + " Body: " + response.body());
-        }
+        return bankDao.findAll();
     }
 
     /**
@@ -234,76 +231,28 @@ public class BankService {
         if (fieldList == null || fieldList.isEmpty()) {
             return false;
         }
-
-        String jsonPayload = objectMapper.writeValueAsString(fieldList);
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8081/api/template/fields"))
-                .header("Content-Type", "application/json")
-                .header("Accept", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload));
-
-        addAuthToken(builder);
-        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-        return response.statusCode() == 200 || response.statusCode() == 201;
+        return bankDao.saveTemplateFields(fieldList);
     }
 
-    /**
-     * Posts template fields directly to /api/template-fields as JSON array of [{ "key": "DATE", "x": 100, "y": 50 }].
-     */
     public boolean saveTemplateFieldsDirect(List<Map<String, Object>> fieldsPayload) throws Exception {
-        String jsonPayload = objectMapper.writeValueAsString(fieldsPayload);
-
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8081/api/template-fields"))
-                .header("Content-Type", "application/json")
-                .header("Accept", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload));
-
-        addAuthToken(builder);
-        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-        return response.statusCode() == 200 || response.statusCode() == 201;
+        if (fieldsPayload == null || fieldsPayload.isEmpty()) {
+            return false;
+        }
+        return bankDao.saveTemplateFields(fieldsPayload);
     }
 
-    /**
-     * Fetches template fields from Spring Boot REST API (GET /api/template/fields/{templateId}).
-     */
     public List<Map<String, Object>> getTemplateFields(Long templateId) throws Exception {
         if (templateId == null || templateId <= 0) {
             return List.of();
         }
-
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8081/api/template/fields/" + templateId))
-                .header("Accept", "application/json")
-                .GET();
-
-        addAuthToken(builder);
-        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() == 200) {
-            return objectMapper.readValue(response.body(), new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
-        }
-        return List.of();
+        return bankDao.findTemplateFields(templateId);
     }
 
-    /**
-     * Fetches templates by bankId from Spring Boot REST API (GET /api/template/{bankId}).
-     */
     public List<Map<String, Object>> getTemplatesByBankId(Long bankId) throws Exception {
         if (bankId == null || bankId <= 0) {
             return List.of();
         }
-
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8081/api/template/" + bankId))
-                .header("Accept", "application/json")
-                .GET();
-
-        addAuthToken(builder);
-        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() == 200) {
-            return objectMapper.readValue(response.body(), new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
-        }
-        return List.of();
+        return bankDao.findTemplatesByBankId(bankId);
     }
 
     public Map<String, BankTemplateLayout> loadAllLayouts() {
