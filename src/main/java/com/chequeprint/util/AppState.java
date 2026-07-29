@@ -140,51 +140,74 @@ public final class AppState {
      * Immediately clears current template (preventing stale preview rendering)
      * and fetches the updated cheque template from DB / API asynchronously.
      */
+    private final Map<String, BankTemplateLayout> templateMemoryCache = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public void invalidateTemplateCache(Long bankId) {
+        if (bankId != null) {
+            templateMemoryCache.remove("tpl_" + bankId);
+            templateMemoryCache.remove("acc_" + bankId);
+        } else {
+            templateMemoryCache.clear();
+        }
+    }
+
     private void fetchTemplateForBank(Long bankId, String bankCodeOrName) {
         // Prevent preview rendering until new template is loaded
         setSelectedTemplate(null);
 
+        Long targetTemplateId = (getSelectedBankAccount() != null && getSelectedBankAccount().getTemplateId() != null)
+                ? getSelectedBankAccount().getTemplateId()
+                : bankId;
+
+        String cacheKey = "tpl_" + targetTemplateId;
+        if (templateMemoryCache.containsKey(cacheKey)) {
+            setSelectedTemplate(templateMemoryCache.get(cacheKey));
+            return;
+        }
+
         new Thread(() -> {
             try {
-                // 1. Check local store cache first
+                // 1. If active bank account has a specific active template, load it first from API
+                if (targetTemplateId != null && targetTemplateId > 0) {
+                    List<Map<String, Object>> fields = bankService.getTemplateFields(targetTemplateId);
+                    if (fields != null && !fields.isEmpty()) {
+                        BankTemplateLayout layout = new BankTemplateLayout();
+                        for (Map<String, Object> map : fields) {
+                            String name = (String) map.get("fieldName");
+                            Object xObj = map.get("xPosition");
+                            Object yObj = map.get("yPosition");
+                            if (name != null && xObj instanceof Number && yObj instanceof Number) {
+                                double x = ((Number) xObj).doubleValue();
+                                double y = ((Number) yObj).doubleValue();
+                                LayoutField field = unmapField(name);
+                                if (field != null) {
+                                    layout.setFieldPosition(field, x / 720.0, y / 300.0);
+                                }
+                            }
+                        }
+                        layout.ensureAllFields();
+                        templateMemoryCache.put(cacheKey, layout);
+                        Platform.runLater(() -> setSelectedTemplate(layout));
+                        return;
+                    }
+                }
+
+                // 2. Check local store cache fallback
                 Map<String, BankTemplateLayout> allLayouts = bankService.loadAllLayouts();
                 String codeKey = bankCodeOrName != null ? bankCodeOrName.trim().toUpperCase() : "";
                 if (!codeKey.isEmpty() && allLayouts.containsKey(codeKey)) {
                     BankTemplateLayout cached = allLayouts.get(codeKey).copy();
+                    templateMemoryCache.put(cacheKey, cached);
                     Platform.runLater(() -> setSelectedTemplate(cached));
                     return;
                 }
 
-                // 2. Fetch template from REST API
-                List<Map<String, Object>> templates = bankService.getTemplatesByBankId(bankId);
-                Long targetTemplateId = bankId;
-                if (!templates.isEmpty() && templates.get(0).get("id") instanceof Number) {
-                    targetTemplateId = ((Number) templates.get(0).get("id")).longValue();
-                }
-
-                List<Map<String, Object>> fields = bankService.getTemplateFields(targetTemplateId);
-                BankTemplateLayout layout = new BankTemplateLayout();
-
-                if (fields != null && !fields.isEmpty()) {
-                    for (Map<String, Object> map : fields) {
-                        String name = (String) map.get("fieldName");
-                        Object xObj = map.get("xPosition");
-                        Object yObj = map.get("yPosition");
-                        if (name != null && xObj instanceof Number && yObj instanceof Number) {
-                            double x = ((Number) xObj).doubleValue();
-                            double y = ((Number) yObj).doubleValue();
-                            LayoutField field = unmapField(name);
-                            if (field != null) {
-                                layout.setFieldPosition(field, x / 720.0, y / 300.0);
-                            }
-                        }
-                    }
-                }
-                layout.ensureAllFields();
-                Platform.runLater(() -> setSelectedTemplate(layout));
+                BankTemplateLayout fallback = new BankTemplateLayout();
+                fallback.ensureAllFields();
+                templateMemoryCache.put(cacheKey, fallback);
+                Platform.runLater(() -> setSelectedTemplate(fallback));
             } catch (Exception ex) {
                 System.err.println("AppState template fetch warning: " + ex.getMessage());
-                // Fallback default layout
                 BankTemplateLayout fallback = new BankTemplateLayout();
                 fallback.ensureAllFields();
                 Platform.runLater(() -> setSelectedTemplate(fallback));

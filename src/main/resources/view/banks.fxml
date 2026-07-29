@@ -76,23 +76,38 @@
                         </HBox>
                     </VBox>
 
-                    <!-- ============== RIGHT: Cheque Preview Card ============== -->
-                    <VBox spacing="16" prefWidth="360" minWidth="360" maxWidth="360" styleClass="surface-card">
+                    <!-- ============== RIGHT: Cheque Preview & Template Management Card ============== -->
+                    <VBox spacing="14" prefWidth="380" minWidth="380" maxWidth="380" styleClass="surface-card">
 
                         <VBox spacing="4">
-                            <Label text="Cheque Preview" styleClass="card-title" style="-fx-font-size: 18px;" />
+                            <Label text="Cheque &amp; Template Manager" styleClass="card-title" style="-fx-font-size: 18px;" />
                             <Label fx:id="lblTemplateMapping" text="Select an account to view template mapping" styleClass="card-subtitle" style="-fx-font-weight: bold; -fx-text-fill: #2563eb;" />
                         </VBox>
 
                         <Separator />
 
+                        <!-- Account Template List Section -->
+                        <VBox spacing="8" style="-fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 12;">
+                            <HBox alignment="CENTER_LEFT" spacing="6">
+                                <Label text="📄 Available Templates" style="-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #1e293b;" HBox.hgrow="ALWAYS" />
+                                <Label fx:id="lblTemplateStatus" text="DEFAULT" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-background-color: #dbeafe; -fx-text-fill: #1d4ed8; -fx-padding: 2 6 2 6; -fx-background-radius: 4;" />
+                            </HBox>
+
+                            <ComboBox fx:id="cmbAccountTemplates" promptText="-- Select Template --" styleClass="form-combo" maxWidth="Infinity" />
+
+                            <HBox spacing="8" style="-fx-padding: 4 0 0 0;">
+                                <Button fx:id="btnSetAsDefault" text="⭐ Set as Default" styleClass="btn-primary" HBox.hgrow="ALWAYS" maxWidth="Infinity" disable="true" onAction="#onSetAsDefaultTemplate" style="-fx-font-size: 12px;" />
+                                <Button fx:id="btnPreviewTemplate" text="👁 Preview Template" styleClass="btn-secondary" HBox.hgrow="ALWAYS" maxWidth="Infinity" disable="true" onAction="#onPreviewSelectedTemplate" style="-fx-font-size: 12px;" />
+                            </HBox>
+                        </VBox>
+
                         <!-- Preview canvas -->
-                        <StackPane styleClass="preview-frame" minHeight="200">
+                        <StackPane styleClass="preview-frame" minHeight="190">
 
                             <!-- No selection state -->
                             <VBox fx:id="previewEmptyState" alignment="CENTER" spacing="8" visible="true" managed="true">
                                 <SVGPath content="M4 6h16v12H4V6zm2 2v8h12V8H6z" styleClass="empty-icon" scaleX="1.6" scaleY="1.6" />
-                                <Label text="Select an account" styleClass="empty-subtitle" wrapText="true" textAlignment="CENTER" />
+                                <Label text="Select an account &amp; template" styleClass="empty-subtitle" wrapText="true" textAlignment="CENTER" />
                             </VBox>
 
                             <!-- Cheque mock preview canvas (rendered dynamically) -->
@@ -104,7 +119,7 @@
                             </VBox>
                         </StackPane>
 
-                        <Button fx:id="btnEditTemplate" text="Edit Template →" styleClass="btn-secondary" maxWidth="Infinity" onAction="#onEditTemplate" disable="true" />
+                        <Button fx:id="btnEditTemplate" text="Edit Template Coordinates →" styleClass="btn-secondary" maxWidth="Infinity" onAction="#onEditTemplate" disable="true" />
 
                     </VBox>
 

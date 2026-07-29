@@ -68,6 +68,9 @@ public class BankAccount {
     public Long getTemplateId() { return templateId; }
     public void setTemplateId(Long templateId) { this.templateId = templateId; }
 
+    public Long getDefaultTemplateId() { return templateId; }
+    public void setDefaultTemplateId(Long defaultTemplateId) { this.templateId = defaultTemplateId; }
+
     @Override
     public String toString() {
         return bankName + " - " + accountNumber + " (" + (accountHolderName != null ? accountHolderName : bankName) + ")";

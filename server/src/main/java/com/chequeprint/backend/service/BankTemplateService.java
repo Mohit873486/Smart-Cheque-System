@@ -90,6 +90,30 @@ public class BankTemplateService {
         return chequeTemplateRepository.findByBankId(bankId);
     }
 
+    public List<ChequeTemplate> getTemplatesForAccount(Long accountId) {
+        if (accountId == null) return List.of();
+        return chequeTemplateRepository.findByAccountId(accountId);
+    }
+
+    public ChequeTemplate setTemplateAsDefaultForAccount(Long accountId, Long templateId) {
+        if (accountId == null || templateId == null) return null;
+        
+        // Reset default flag on all templates for this account
+        List<ChequeTemplate> templates = chequeTemplateRepository.findByAccountId(accountId);
+        for (ChequeTemplate t : templates) {
+            t.setIsDefault(t.getId().equals(templateId));
+            chequeTemplateRepository.save(t);
+        }
+
+        // Update BankAccount's primary templateId
+        bankAccountRepository.findById(accountId).ifPresent(acc -> {
+            acc.setDefaultTemplateId(templateId);
+            bankAccountRepository.save(acc);
+        });
+
+        return chequeTemplateRepository.findById(templateId).orElse(null);
+    }
+
     // 3. TemplateField Operations
     public List<TemplateField> saveTemplateFields(List<TemplateField> fields) {
         if (fields != null && !fields.isEmpty()) {

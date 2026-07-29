@@ -33,6 +33,23 @@ public class TemplateApiController {
         return ResponseEntity.ok(templates);
     }
 
+    // GET /api/template/account/{accountId} - Get default & optional templates for a bank account
+    @GetMapping("/account/{accountId}")
+    public ResponseEntity<List<ChequeTemplate>> getTemplatesForAccount(@PathVariable Long accountId) {
+        List<ChequeTemplate> templates = bankTemplateService.getTemplatesForAccount(accountId);
+        return ResponseEntity.ok(templates);
+    }
+
+    // PUT /api/template/account/{accountId}/default/{templateId} - Set template as the single default for an account
+    @PutMapping("/account/{accountId}/default/{templateId}")
+    public ResponseEntity<ChequeTemplate> setTemplateAsDefault(@PathVariable Long accountId, @PathVariable Long templateId) {
+        ChequeTemplate updated = bankTemplateService.setTemplateAsDefaultForAccount(accountId, templateId);
+        if (updated != null) {
+            return ResponseEntity.ok(updated);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
     // POST /api/template/fields - Create or update template fields (supports single object or JSON array)
     @PostMapping("/fields")
     public ResponseEntity<?> createTemplateFields(@RequestBody Object fieldsPayload) {

@@ -22,6 +22,12 @@ public class ChequeTemplate {
     @Column(name = "height", nullable = false)
     private Double height = 92.00;
 
+    @Column(name = "account_id")
+    private Long accountId;
+
+    @Column(name = "is_default", nullable = false)
+    private Boolean isDefault = false;
+
     @Column(name = "config_json", columnDefinition = "LONGTEXT")
     private String configJson;
 
@@ -82,5 +88,21 @@ public class ChequeTemplate {
 
     public void setConfigJson(String configJson) {
         this.configJson = configJson;
+    }
+
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
+
+    public Boolean getIsDefault() {
+        return isDefault != null ? isDefault : false;
+    }
+
+    public void setIsDefault(Boolean isDefault) {
+        this.isDefault = isDefault != null ? isDefault : false;
     }
 }

@@ -124,6 +124,14 @@ public class BankAccount {
         this.templateId = templateId;
     }
 
+    public Long getDefaultTemplateId() {
+        return templateId;
+    }
+
+    public void setDefaultTemplateId(Long defaultTemplateId) {
+        this.templateId = defaultTemplateId;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }

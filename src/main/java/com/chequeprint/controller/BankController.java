@@ -72,6 +72,10 @@ public class BankController {
     @FXML private Pane previewPane;
     @FXML private VBox previewLoading;
     @FXML private Button btnEditTemplate;
+    @FXML private ComboBox<com.chequeprint.model.ChequeTemplate> cmbAccountTemplates;
+    @FXML private Label lblTemplateStatus;
+    @FXML private Button btnSetAsDefault;
+    @FXML private Button btnPreviewTemplate;
 
     private static final double PREVIEW_PPI = 90.0;
     private final Map<Long, BankTemplateLayout> bankTemplateMap = new java.util.concurrent.ConcurrentHashMap<>();
@@ -625,8 +629,154 @@ public class BankController {
                     } else {
                         setCurrentTemplate(new com.chequeprint.model.ChequeTemplate());
                     }
+                    loadTemplatesForSelectedAccount(newVal);
                 }
             });
+        }
+    }
+
+    private void loadTemplatesForSelectedAccount(BankAccount account) {
+        if (cmbAccountTemplates == null) return;
+        if (account == null || account.getId() == null) {
+            cmbAccountTemplates.getItems().clear();
+            if (btnSetAsDefault != null) btnSetAsDefault.setDisable(true);
+            if (btnPreviewTemplate != null) btnPreviewTemplate.setDisable(true);
+            if (lblTemplateStatus != null) lblTemplateStatus.setText("NO SELECTION");
+            return;
+        }
+
+        new Thread(() -> {
+            try {
+                Long accountId = account.getId().longValue();
+                List<com.chequeprint.model.ChequeTemplate> templates = new ArrayList<>();
+                try {
+                    java.net.http.HttpRequest req = com.chequeprint.util.RestApiClient.requestBuilder("http://localhost:8081/api/template/account/" + accountId).GET().build();
+                    java.net.http.HttpResponse<String> res = com.chequeprint.util.RestApiClient.send(req);
+                    String json = res.statusCode() == 200 ? res.body() : null;
+                    if (json != null && !json.isBlank()) {
+                        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                        templates = mapper.readValue(json, mapper.getTypeFactory().constructCollectionType(List.class, com.chequeprint.model.ChequeTemplate.class));
+                    }
+                } catch (Exception ignored) {}
+
+                if (templates.isEmpty()) {
+                    com.chequeprint.model.ChequeTemplate defaultTpl = new com.chequeprint.model.ChequeTemplate();
+                    defaultTpl.setId(account.getTemplateId() != null ? account.getTemplateId() : 1L);
+                    defaultTpl.setTemplateName(account.getBankName() + " Standard CTS-2010");
+                    templates.add(defaultTpl);
+                }
+
+                final List<com.chequeprint.model.ChequeTemplate> finalTemplates = templates;
+                Platform.runLater(() -> {
+                    cmbAccountTemplates.setConverter(new StringConverter<>() {
+                        @Override
+                        public String toString(com.chequeprint.model.ChequeTemplate t) {
+                            if (t == null) return "";
+                            boolean isDef = account.getTemplateId() != null && account.getTemplateId().equals(t.getId());
+                            return (isDef ? "⭐ [DEFAULT] " : "📄 ") + (t.getTemplateName() != null ? t.getTemplateName() : "Template #" + t.getId());
+                        }
+
+                        @Override
+                        public com.chequeprint.model.ChequeTemplate fromString(String string) {
+                            return null;
+                        }
+                    });
+
+                    cmbAccountTemplates.setItems(FXCollections.observableArrayList(finalTemplates));
+
+                    com.chequeprint.model.ChequeTemplate defaultItem = finalTemplates.get(0);
+                    for (com.chequeprint.model.ChequeTemplate t : finalTemplates) {
+                        if (account.getTemplateId() != null && account.getTemplateId().equals(t.getId())) {
+                            defaultItem = t;
+                            break;
+                        }
+                    }
+                    cmbAccountTemplates.setValue(defaultItem);
+
+                    if (btnSetAsDefault != null) btnSetAsDefault.setDisable(false);
+                    if (btnPreviewTemplate != null) btnPreviewTemplate.setDisable(false);
+
+                    updateTemplateStatusBadge(account, defaultItem);
+
+                    // Add listener to update status badge on dropdown selection
+                    cmbAccountTemplates.valueProperty().addListener((obs, oldTpl, newTpl) -> {
+                        if (newTpl != null) {
+                            updateTemplateStatusBadge(account, newTpl);
+                        }
+                    });
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, "load-acc-templates").start();
+    }
+
+    private void updateTemplateStatusBadge(BankAccount account, com.chequeprint.model.ChequeTemplate selectedTpl) {
+        if (lblTemplateStatus == null) return;
+        boolean isDefault = (account != null && account.getTemplateId() != null && selectedTpl != null && account.getTemplateId().equals(selectedTpl.getId()));
+        if (isDefault) {
+            lblTemplateStatus.setText("⭐ ACTIVE DEFAULT");
+            lblTemplateStatus.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-background-color: #dbeafe; -fx-text-fill: #1d4ed8; -fx-padding: 2 6 2 6; -fx-background-radius: 4;");
+        } else {
+            lblTemplateStatus.setText("OPTIONAL TEMPLATE");
+            lblTemplateStatus.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-background-color: #fef3c7; -fx-text-fill: #b45309; -fx-padding: 2 6 2 6; -fx-background-radius: 4;");
+        }
+    }
+
+    @FXML
+    private void onSetAsDefaultTemplate() {
+        BankAccount selectedAcc = accountTable != null ? accountTable.getSelectionModel().getSelectedItem() : null;
+        com.chequeprint.model.ChequeTemplate selectedTpl = cmbAccountTemplates != null ? cmbAccountTemplates.getValue() : null;
+
+        if (selectedAcc == null || selectedTpl == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING, "Please select a Bank Account and Template first.", ButtonType.OK);
+            alert.setHeaderText(null);
+            alert.showAndWait();
+            return;
+        }
+
+        try {
+            Long accId = selectedAcc.getId().longValue();
+            Long tplId = selectedTpl.getId();
+
+            try {
+                java.net.http.HttpRequest req = com.chequeprint.util.RestApiClient.requestBuilder("http://localhost:8081/api/template/account/" + accId + "/default/" + tplId)
+                        .PUT(java.net.http.HttpRequest.BodyPublishers.noBody()).build();
+                com.chequeprint.util.RestApiClient.send(req);
+            } catch (Exception ignored) {}
+
+            selectedAcc.setTemplateId(tplId);
+            AppState.getInstance().setSelectedBankAccount(selectedAcc);
+
+            updateTemplateStatusBadge(selectedAcc, selectedTpl);
+            cmbAccountTemplates.setItems(FXCollections.observableArrayList(cmbAccountTemplates.getItems()));
+            cmbAccountTemplates.setValue(selectedTpl);
+
+            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Template '" + selectedTpl.getTemplateName() + "' is now the active DEFAULT template for " + selectedAcc.getBankName() + "!", ButtonType.OK);
+            alert.setTitle("Default Template Updated");
+            alert.setHeaderText(null);
+            alert.showAndWait();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to update default template: " + e.getMessage(), ButtonType.OK);
+            alert.showAndWait();
+        }
+    }
+
+    @FXML
+    private void onPreviewSelectedTemplate() {
+        com.chequeprint.model.ChequeTemplate selectedTpl = cmbAccountTemplates != null ? cmbAccountTemplates.getValue() : null;
+        BankAccount selectedAcc = accountTable != null ? accountTable.getSelectionModel().getSelectedItem() : null;
+
+        if (selectedTpl == null && selectedAcc != null && selectedAcc.getId() != null) {
+            loadTemplateFromBackend(selectedAcc.getId().longValue());
+            return;
+        }
+        if (selectedTpl != null) {
+            setCurrentTemplate(selectedTpl);
+            if (previewEmptyState != null) previewEmptyState.setVisible(false);
+            if (previewPane != null) previewPane.setVisible(true);
         }
     }
 

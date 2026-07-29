@@ -1,6 +1,7 @@
 package com.chequeprint.controller;
 
 import com.chequeprint.model.Bank;
+import com.chequeprint.model.BankTemplateLayout;
 import com.chequeprint.model.Cheque;
 import com.chequeprint.model.User;
 import com.chequeprint.service.*;
@@ -16,6 +17,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -54,7 +56,7 @@ public class ChequeDialogController {
     private final java.util.Map<String, Integer> bankNameToId = new java.util.LinkedHashMap<>();
 
     @FXML
-    private VBox chequePreviewCard;
+    private Pane chequePreviewCard;
     @FXML
     private Label previewName;
     @FXML
@@ -113,7 +115,8 @@ public class ChequeDialogController {
         BigDecimal amt = BigDecimal.ZERO;
         if (fldAmount != null && fldAmount.getText() != null && !fldAmount.getText().isBlank()) {
             try {
-                amt = new BigDecimal(fldAmount.getText().trim());
+                String cleanStr = fldAmount.getText().replaceAll(",", "").trim();
+                amt = new BigDecimal(cleanStr);
             } catch (Exception ignored) {}
         }
         LocalDate date = datePicker != null && datePicker.getValue() != null ? datePicker.getValue() : LocalDate.now();
@@ -292,9 +295,13 @@ public class ChequeDialogController {
                 return;
             }
 
-            // Print the Cheque Preview Node using native JavaFX PrinterJob
+            // 1. Get Active Template & 2. Get Current Cheque Data -> 3. Generate Print
+            Cheque draft = getDraftChequeFromForm();
+            Bank activeBank = AppState.getInstance().getSelectedBank();
+            BankTemplateLayout activeTemplate = AppState.getInstance().getSelectedTemplate();
             javafx.stage.Window window = btnSaveAndPrint.getScene() != null ? btnSaveAndPrint.getScene().getWindow() : null;
-            boolean printed = FxPrinterService.printNode(chequePreviewCard, window);
+
+            boolean printed = FxPrinterService.printCheque(draft, activeBank, activeTemplate, window);
 
             if (printed) {
                 String selectedBankName = cmbBank.getValue();

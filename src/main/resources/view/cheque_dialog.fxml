@@ -62,57 +62,9 @@
             <VBox spacing="10" HBox.hgrow="ALWAYS" alignment="TOP_CENTER">
                 <Label text="Real-Time Cheque Preview" style="-fx-font-size:13px; -fx-font-weight:bold; -fx-text-fill:#475569;" />
 
-                <VBox fx:id="chequePreviewCard" spacing="12"
+                <Pane fx:id="chequePreviewCard"
                       style="-fx-background-color: #f8fafc; -fx-border-color: #cbd5e1; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.06), 8, 0, 0, 2);"
-                      prefWidth="440" prefHeight="260" minHeight="250">
-                    <padding>
-                        <Insets top="16" right="20" bottom="16" left="20" />
-                    </padding>
-
-                    <!-- Top Header: Bank Name & Date -->
-                    <HBox alignment="CENTER_LEFT" spacing="10">
-                        <Label fx:id="previewBank" text="STATE BANK OF INDIA" style="-fx-font-size:14px; -fx-font-weight:bold; -fx-text-fill:#1e293b;" HBox.hgrow="ALWAYS" />
-                        <VBox alignment="TOP_RIGHT" spacing="2">
-                            <Label text="DATE:" style="-fx-font-size:9px; -fx-font-weight:bold; -fx-text-fill:#64748b;" />
-                            <Label fx:id="previewDate" text="DD / MM / YYYY" style="-fx-font-size:12px; -fx-font-weight:bold; -fx-text-fill:#0f172a; -fx-border-color: #cbd5e1; -fx-border-width: 1px; -fx-padding: 2 6 2 6;" />
-                        </VBox>
-                    </HBox>
-
-                    <Separator style="-fx-opacity: 0.5;" />
-
-                    <!-- Payee Row -->
-                    <HBox alignment="CENTER_LEFT" spacing="8">
-                        <Label text="PAY TO:" style="-fx-font-size:11px; -fx-font-weight:bold; -fx-text-fill:#475569;" />
-                        <Label fx:id="previewName" text="PAYEE NAME" style="-fx-font-size:13px; -fx-font-weight:bold; -fx-text-fill:#2563eb;" HBox.hgrow="ALWAYS" />
-                        <Label text="OR BEARER" style="-fx-font-size:10px; -fx-text-fill:#94a3b8;" />
-                    </HBox>
-
-                    <!-- Amount Words Row -->
-                    <VBox spacing="2">
-                        <Label text="RUPEES IN WORDS:" style="-fx-font-size:9px; -fx-font-weight:bold; -fx-text-fill:#64748b;" />
-                        <Label fx:id="previewAmountWords" text="Zero Rupees Only" style="-fx-font-size:11px; -fx-font-style:italic; -fx-text-fill:#334155;" wrapText="true" />
-                    </VBox>
-
-                    <Region VBox.vgrow="ALWAYS" />
-
-                    <!-- Amount Numeric Box & Signature Area -->
-                    <HBox alignment="BOTTOM_LEFT" spacing="12">
-                        <HBox alignment="CENTER_LEFT" style="-fx-background-color: #ffffff; -fx-border-color: #0284c7; -fx-border-width: 1.5px; -fx-border-radius: 4px; -fx-padding: 4 10 4 10;">
-                            <Label text="₹ " style="-fx-font-size:13px; -fx-font-weight:bold; -fx-text-fill:#0369a1;" />
-                            <Label fx:id="previewAmount" text="0.00" style="-fx-font-size:14px; -fx-font-weight:bold; -fx-text-fill:#0284c7;" />
-                        </HBox>
-                        <Region HBox.hgrow="ALWAYS" />
-                        <VBox alignment="BOTTOM_CENTER" spacing="2">
-                            <Label text="FOR CHEQUEPRINT INC." style="-fx-font-size:8px; -fx-font-weight:bold; -fx-text-fill:#94a3b8;" />
-                            <Label text="[ Authorized Signature ]" style="-fx-font-size:10px; -fx-text-fill:#64748b;" />
-                        </VBox>
-                    </HBox>
-
-                    <!-- MICR Band at bottom -->
-                    <HBox alignment="CENTER" style="-fx-background-color: #f1f5f9; -fx-padding: 4; -fx-border-color: #e2e8f0; -fx-border-width: 1px 0 0 0;">
-                        <Label text="⑈ 123456 ⑈  400240015 ⑈  000123 ⑈  10" style="-fx-font-family: 'Courier New', monospace; -fx-font-size:11px; -fx-font-weight:bold; -fx-text-fill:#475569;" />
-                    </HBox>
-                </VBox>
+                      prefWidth="440" prefHeight="260" minHeight="250" />
             </VBox>
         </HBox>
 

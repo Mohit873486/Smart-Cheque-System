@@ -32,6 +32,9 @@ public class BankAccountService {
         if (existingOpt.isPresent()) {
             return updateBankAccount(existingOpt.get().getId(), bankAccount);
         }
+        if (bankAccount.getTemplateId() == null) {
+            bankAccount.setTemplateId(1L);
+        }
         return bankAccountRepository.save(bankAccount);
     }
 

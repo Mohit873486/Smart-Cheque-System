@@ -15,6 +15,7 @@ import javafx.scene.shape.Line;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 
 /**
  * Single Dedicated Cheque Preview Engine for the entire application.
@@ -54,45 +55,62 @@ public final class ChequePreviewEngine {
         if (signature.equals(targetPane.getUserData())) {
             return;
         }
-        System.out.println("[DEBUG PreviewEngine] Rendering cheque preview for bank=" + (bank != null ? bank.getBankName() : "default") + ", payee=" + (cheque != null ? cheque.getPayeeName() : "placeholder"));
         targetPane.setUserData(signature);
-        targetPane.getChildren().clear();
 
         // Ensure all fields have template coordinates
         layout.ensureAllFields();
 
-        double paneW = layout.getWidthInches() > 0 ? layout.getWidthInches() * 90.0 : 720.0;
-        double paneH = layout.getHeightInches() > 0 ? layout.getHeightInches() * 82.0 : 300.0;
+        double targetW = targetPane.getPrefWidth() > 0 ? targetPane.getPrefWidth() : (targetPane.getWidth() > 0 ? targetPane.getWidth() : 720.0);
+        double targetH = targetPane.getPrefHeight() > 0 ? targetPane.getPrefHeight() : (targetPane.getHeight() > 0 ? targetPane.getHeight() : 300.0);
+
+        double paneW = targetW;
+        double paneH = targetH;
 
         targetPane.setPrefSize(paneW, paneH);
         targetPane.setMinSize(paneW, paneH);
         targetPane.setMaxSize(paneW, paneH);
 
+        // Strict clipping mask so text elements NEVER overflow outside the preview box
+        if (targetPane.getClip() == null) {
+            javafx.scene.shape.Rectangle clipMask = new javafx.scene.shape.Rectangle(paneW, paneH);
+            clipMask.setArcWidth(8);
+            clipMask.setArcHeight(8);
+            targetPane.setClip(clipMask);
+        }
+
         String bankCode = bank != null && bank.getBankCode() != null ? bank.getBankCode().trim().toUpperCase() : "BANK";
         String customLogo = bank != null ? bank.getLogoPath() : null;
 
         // 1. Background Cheque Image & Stylized Border
+        String patternOverlay = ", repeating-linear-gradient(to bottom, transparent, transparent 11px, rgba(203, 213, 225, 0.25) 11px, rgba(203, 213, 225, 0.25) 12px);";
         String bgStyle;
         if (customLogo != null && !customLogo.isBlank() && (customLogo.startsWith("http") || customLogo.endsWith(".png") || customLogo.endsWith(".jpg"))) {
             bgStyle = "-fx-background-image: url('" + customLogo + "'); -fx-background-size: cover; -fx-background-position: center; -fx-border-color: #64748b; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
         } else {
             bgStyle = switch (bankCode) {
-                case "SBI" -> "-fx-background-color: linear-gradient(to bottom, #dbeafe, #bae6fd); -fx-border-color: #3b82f6; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
-                case "HDFC" -> "-fx-background-color: linear-gradient(to bottom, #e0f2fe, #f0f9ff); -fx-border-color: #0284c7; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
-                case "ICICI" -> "-fx-background-color: linear-gradient(to bottom, #ffedd5, #fed7aa); -fx-border-color: #ea580c; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
-                case "AXIS" -> "-fx-background-color: linear-gradient(to bottom, #fce7f3, #fbcfe8); -fx-border-color: #db2777; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
-                default -> "-fx-background-color: linear-gradient(to bottom, #ffffff, #f8fafc); -fx-border-color: #64748b; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
+                case "SBI" -> "-fx-background-color: linear-gradient(to bottom, #dbeafe, #bae6fd)" + patternOverlay + " -fx-border-color: #3b82f6; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
+                case "HDFC" -> "-fx-background-color: linear-gradient(to bottom, #e0f2fe, #f0f9ff)" + patternOverlay + " -fx-border-color: #0284c7; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
+                case "ICICI" -> "-fx-background-color: linear-gradient(to bottom, #ffedd5, #fed7aa)" + patternOverlay + " -fx-border-color: #ea580c; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
+                case "AXIS" -> "-fx-background-color: linear-gradient(to bottom, #fce7f3, #fbcfe8)" + patternOverlay + " -fx-border-color: #db2777; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
+                default -> "-fx-background-color: linear-gradient(to bottom, #ffffff, #f8fafc)" + patternOverlay + " -fx-border-color: #64748b; -fx-border-width: 1.5px; -fx-border-radius: 8px; -fx-background-radius: 8px;";
             };
         }
         targetPane.setStyle(bgStyle);
 
-        // 2. Subtle horizontal security lines
-        for (double ly = 20; ly < paneH - 30; ly += 12) {
-            Line secLine = new Line(10, ly, paneW - 10, ly);
-            secLine.setStroke(Color.web("#cbd5e1", 0.35));
-            secLine.setStrokeWidth(0.5);
-            secLine.setMouseTransparent(true);
-            targetPane.getChildren().add(secLine);
+        // 2. Minimal UI Nodes Initialization (Only 7 Label text nodes, ZERO extra Line/Shape nodes)
+        @SuppressWarnings("unchecked")
+        Map<LayoutField, Label> labelCache = (Map<LayoutField, Label>) targetPane.getProperties().get("LABEL_CACHE");
+        if (labelCache == null) {
+            targetPane.getChildren().clear();
+
+            labelCache = new java.util.EnumMap<>(LayoutField.class);
+            for (LayoutField field : LayoutField.values()) {
+                Label lbl = new Label();
+                lbl.setMouseTransparent(true);
+                labelCache.put(field, lbl);
+                targetPane.getChildren().add(lbl);
+            }
+            targetPane.getProperties().put("LABEL_CACHE", labelCache);
         }
 
         // 3. Dynamic values to render
@@ -115,17 +133,24 @@ public final class ChequePreviewEngine {
 
         String chequeNoText = cheque != null && cheque.getChequeNo() != null ? cheque.getChequeNo() : "123456";
 
-        // 4. Render all fields dynamically strictly using template coordinates
+        // 4. Update cached nodes IN-PLACE with zero node recreation
+        double scale = Math.max(0.4, paneW / 720.0);
         for (LayoutField field : LayoutField.values()) {
             FieldPosition pos = layout.get(field);
-            if (pos == null) continue;
+            Label label = labelCache.get(field);
+            if (label == null) continue;
 
+            if (pos == null) {
+                label.setVisible(false);
+                continue;
+            }
+
+            label.setVisible(true);
             double x = pos.getXRatio() * paneW;
             double y = pos.getYRatio() * paneH;
-            double w = pos.getWidthRatio() * paneW;
-            double h = pos.getHeightRatio() * paneH;
+            double w = Math.max(30.0, pos.getWidthRatio() * paneW);
+            double h = Math.max(16.0, pos.getHeightRatio() * paneH);
 
-            Label label = new Label();
             label.setLayoutX(x);
             label.setLayoutY(y);
             label.setPrefSize(w, h);
@@ -133,35 +158,33 @@ public final class ChequePreviewEngine {
             switch (field) {
                 case BANK_LOGO -> {
                     label.setText(bankNameText);
-                    label.setStyle("-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #1e3a8a;");
+                    label.setStyle("-fx-font-weight: bold; -fx-font-size: " + Math.max(9, (int)(13 * scale)) + "px; -fx-text-fill: #1e3a8a; -fx-background-color: transparent;");
                 }
                 case DATE -> {
                     label.setText(dateText);
-                    label.setStyle("-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #0f172a; -fx-border-color: #cbd5e1; -fx-border-radius: 4px; -fx-padding: 2 6;");
+                    label.setStyle("-fx-font-weight: bold; -fx-font-size: " + Math.max(9, (int)(12 * scale)) + "px; -fx-text-fill: #0f172a; -fx-background-color: transparent;");
                 }
                 case PAYEE -> {
-                    label.setText("Pay: " + payeeText);
-                    label.setStyle("-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #1e293b;");
+                    label.setText(payeeText);
+                    label.setStyle("-fx-font-weight: bold; -fx-font-size: " + Math.max(9, (int)(12 * scale)) + "px; -fx-text-fill: #0f172a; -fx-background-color: transparent;");
                 }
                 case AMOUNT_WORDS -> {
-                    label.setText("Rupees: " + wordsText);
-                    label.setStyle("-fx-font-size: 11px; -fx-text-fill: #334155;");
+                    label.setText(wordsText);
+                    label.setStyle("-fx-font-weight: bold; -fx-font-size: " + Math.max(8, (int)(11 * scale)) + "px; -fx-text-fill: #1e293b; -fx-background-color: transparent;");
                 }
                 case AMOUNT_NUMBER -> {
                     label.setText(amountText);
-                    label.setStyle("-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #0f172a; -fx-background-color: #f8fafc; -fx-border-color: #cbd5e1; -fx-border-radius: 4px; -fx-padding: 2 6;");
+                    label.setStyle("-fx-font-weight: bold; -fx-font-size: " + Math.max(9, (int)(13 * scale)) + "px; -fx-text-fill: #0f172a; -fx-background-color: transparent;");
                 }
                 case SIGNATURE -> {
                     label.setText("Authorized Signatory");
-                    label.setStyle("-fx-font-size: 10px; -fx-text-fill: #64748b; -fx-border-color: #e2e8f0; -fx-border-style: dashed; -fx-padding: 4;");
+                    label.setStyle("-fx-font-size: " + Math.max(8, (int)(10 * scale)) + "px; -fx-text-fill: #475569; -fx-background-color: transparent;");
                 }
                 case MICR -> {
                     label.setText("⑈" + chequeNoText + "⑈ 000000000 ⑈00⑈");
-                    label.setStyle("-fx-font-family: 'Courier New', monospace; -fx-font-size: 11px; -fx-text-fill: #334155;");
+                    label.setStyle("-fx-font-family: 'Courier New', monospace; -fx-font-size: " + Math.max(8, (int)(11 * scale)) + "px; -fx-text-fill: #334155; -fx-background-color: transparent;");
                 }
             }
-
-            targetPane.getChildren().add(label);
         }
     }
 
