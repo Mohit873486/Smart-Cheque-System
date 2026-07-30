@@ -55,6 +55,7 @@ public class ChequeDialogController {
     private final PrintService printService = new PrintService();
     
     private final java.util.Map<String, Integer> bankNameToId = new java.util.LinkedHashMap<>();
+    private final java.util.Map<String, Bank> bankNameToBank = new java.util.LinkedHashMap<>();
 
     @FXML
     private Pane chequePreviewCard;
@@ -105,7 +106,22 @@ public class ChequeDialogController {
             if (chequePreviewCard != null) {
                 Cheque draft = getDraftChequeFromForm();
                 chequePreviewCard.setUserData(null);
-                PreviewEngine.render(chequePreviewCard, draft, AppState.getInstance().getSelectedBank(), AppState.getInstance().getSelectedTemplate());
+
+                String selectedBankName = cmbBank != null ? cmbBank.getValue() : null;
+                Bank activeBank = null;
+                if (selectedBankName != null && bankNameToBank.containsKey(selectedBankName)) {
+                    activeBank = bankNameToBank.get(selectedBankName);
+                } else if (selectedBankName != null && !selectedBankName.isBlank()) {
+                    activeBank = new Bank(selectedBankName, selectedBankName.toUpperCase(), "DEFAULT", true);
+                } else {
+                    activeBank = AppState.getInstance().getSelectedBank();
+                }
+
+                if (activeBank != null) {
+                    AppState.getInstance().setSelectedBank(activeBank);
+                }
+
+                PreviewEngine.render(chequePreviewCard, draft, activeBank, AppState.getInstance().getSelectedTemplate());
             }
         } finally {
             updatingPreview = false;
@@ -173,10 +189,12 @@ public class ChequeDialogController {
                 List<Bank> banks = bankService.getAll();
                 Platform.runLater(() -> {
                     bankNameToId.clear();
+                    bankNameToBank.clear();
                     ObservableList<String> names = FXCollections.observableArrayList();
                     for (Bank b : banks) {
                         names.add(b.getBankName());
                         bankNameToId.put(b.getBankName(), b.getId());
+                        bankNameToBank.put(b.getBankName(), b);
                     }
                     if (names.isEmpty()) {
                         names.addAll("SBI", "HDFC", "ICICI", "Axis Bank");
