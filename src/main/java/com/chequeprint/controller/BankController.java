@@ -22,7 +22,7 @@ import javafx.scene.Cursor;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ListCell;
-import javafx.print.PrinterJob;
+import com.chequeprint.service.PrintService;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -195,6 +195,7 @@ public class BankController {
     private Button layerMicr;
 
     private final BankService bankService = new BankService();
+    private final PrintService printService = new PrintService();
     private final ObservableList<Bank> bankList = FXCollections.observableArrayList();
     private final ObservableList<Bank> data = FXCollections.observableArrayList();
     private final ObservableList<BankAccount> accountData = FXCollections.observableArrayList();
@@ -862,47 +863,36 @@ public class BankController {
     private void onPrintCheque() {
         if (currentTemplate == null) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Print Warning");
-            alert.setHeaderText(null);
-            alert.setContentText("No cheque template loaded for printing.");
+            alert.setTitle("Print Precondition Failed");
+            alert.setHeaderText("No Template Loaded");
+            alert.setContentText("No cheque template loaded for printing. Please select a bank layout first.");
             alert.showAndWait();
             return;
         }
 
-        PrinterJob job = PrinterJob.createPrinterJob();
-        if (job == null) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Printer Error");
-            alert.setHeaderText(null);
-            alert.setContentText("Could not initialize printer job. Please check system printer configuration.");
-            alert.showAndWait();
-            return;
-        }
-
-        boolean proceed = previewPane != null && previewPane.getScene() != null ?
-                job.showPrintDialog(previewPane.getScene().getWindow()) : job.showPrintDialog(null);
-
-        if (proceed) {
-            // Render exact physical mm layout for printing
+        try {
             Pane printCanvas = new Pane();
             printCanvas.setPrefWidth(currentTemplate.getWidth() * 3.7795); // Convert mm to points
             printCanvas.setPrefHeight(currentTemplate.getHeight() * 3.7795);
-            
-            boolean printed = job.printPage(previewPane != null ? previewPane : printCanvas);
+
+            javafx.stage.Window ownerWindow = previewPane != null && previewPane.getScene() != null ?
+                    previewPane.getScene().getWindow() : null;
+
+            boolean printed = printService.printNode(previewPane != null ? previewPane : printCanvas, ownerWindow);
+
             if (printed) {
-                job.endJob();
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Print Completed");
                 alert.setHeaderText("Success!");
                 alert.setContentText("Cheque template sent to printer with precise field alignment.");
                 alert.showAndWait();
-            } else {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Print Error");
-                alert.setHeaderText("Printing Failed");
-                alert.setContentText("Failed to send page to target printer.");
-                alert.showAndWait();
             }
+        } catch (Exception e) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Printing Stopped");
+            alert.setHeaderText("Precondition Check Failed");
+            alert.setContentText(e.getMessage());
+            alert.showAndWait();
         }
     }
 
@@ -1926,8 +1916,6 @@ public class BankController {
 
     private void clearForm() {
         selectedBank = null;
-        AppState.getInstance().setSelectedBank(null);
-        AppState.getInstance().setSelectedTemplate(null);
         if (lblFormTitle != null) lblFormTitle.setText("Cheque Template Designer");
         if (btnSave != null) btnSave.setText("💾 Save Template");
         if (btnDelete != null) btnDelete.setDisable(true);

@@ -26,6 +26,7 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\S
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\ThemeManager.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\AiAssistantController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\ChequeAiCommand.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\PrinterUtils.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\controller\MainController.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\Cheque.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\PrintService.java
@@ -74,6 +75,7 @@ E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\Sett
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\model\ChequePrint.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\ChequeOcrService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\BankService.java
+E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\ChequePrintPipeline.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\util\PasswordUtil.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\FxPrinterService.java
 E:\JAVAFXProjects\Smart-Cheque-System\src\main\java\com\chequeprint\service\CommandParser.java

@@ -165,6 +165,16 @@
                     </VBox>
                 </HBox>
 
+                <HBox spacing="16">
+                    <VBox spacing="6" HBox.hgrow="ALWAYS">
+                        <Label text="DEFAULT SYSTEM PRINTER"
+                            style="-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #6b7280;" />
+                        <ComboBox fx:id="cbPrinter" prefWidth="400"
+                            style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-border-radius: 6; -fx-background-radius: 6; -fx-font-size: 13px;"
+                            promptText="Select physical printer..." />
+                    </VBox>
+                </HBox>
+
                 <HBox alignment="CENTER_LEFT" style="-fx-padding: 4 0 0 0;">
                     <VBox spacing="2" HBox.hgrow="ALWAYS">
                         <Label text="Auto-print cheques after saving"

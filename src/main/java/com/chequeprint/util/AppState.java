@@ -9,26 +9,25 @@ import com.chequeprint.service.BankService;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.print.Printer;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.prefs.Preferences;
 
-/**
- * Global Application State for Smart Cheque System.
- * Serves as a single source of truth and reactive event hub for the currently selected Bank,
- * its Cheque Template Layout, active BankAccount, and active Cheque data across all UI controllers.
- * Optimized with equality guards to eliminate unnecessary re-renders.
- */
 public final class AppState {
 
+    private static final Preferences PREFS = Preferences.userNodeForPackage(AppState.class);
+    private static final String PREF_PRINTER = "selected_printer";
     private static final AppState INSTANCE = new AppState();
 
     private final ObjectProperty<Bank> selectedBank = new SimpleObjectProperty<>();
     private final ObjectProperty<BankAccount> selectedBankAccount = new SimpleObjectProperty<>();
     private final ObjectProperty<BankTemplateLayout> selectedTemplate = new SimpleObjectProperty<>();
     private final ObjectProperty<Cheque> currentCheque = new SimpleObjectProperty<>();
+    private final ObjectProperty<Printer> selectedPrinter = new SimpleObjectProperty<>();
 
     private final BankService bankService = new BankService();
 
@@ -45,6 +44,20 @@ public final class AppState {
         selectedBankAccount.addListener((obs, o, n) -> notifyStateChangeListeners());
         selectedTemplate.addListener((obs, o, n) -> notifyStateChangeListeners());
         currentCheque.addListener((obs, o, n) -> notifyStateChangeListeners());
+        selectedPrinter.addListener((obs, o, n) -> notifyStateChangeListeners());
+
+        try {
+            // Restore saved printer from Preferences if available
+            String savedPrinter = PREFS != null ? PREFS.get(PREF_PRINTER, null) : null;
+            if (savedPrinter != null && !savedPrinter.isBlank()) {
+                Printer p = PrinterUtils.findPrinterByName(savedPrinter);
+                if (p != null) {
+                    this.selectedPrinter.set(p);
+                }
+            }
+        } catch (Throwable t) {
+            System.err.println("[AppState] Warning during printer initialization: " + t.getMessage());
+        }
     }
 
     public static AppState getInstance() {
@@ -270,6 +283,65 @@ public final class AppState {
         this.currentCheque.set(cheque);
     }
 
+    // --- Active Selected Printer ---
+    public ObjectProperty<Printer> selectedPrinterProperty() {
+        return selectedPrinter;
+    }
+
+    public Printer getSelectedPrinter() {
+        return selectedPrinter.get();
+    }
+
+    public void setSelectedPrinter(Printer printer) {
+        if (Objects.equals(this.selectedPrinter.get(), printer)) {
+            return;
+        }
+        System.out.println("[DEBUG AppState] selectedPrinter updated: " + (printer != null ? printer.getName() : "null"));
+        this.selectedPrinter.set(printer);
+        if (printer != null && printer.getName() != null) {
+            try {
+                if (PREFS != null) PREFS.put(PREF_PRINTER, printer.getName());
+            } catch (Throwable ignored) {}
+        }
+    }
+
+    public void setSelectedPrinterByName(String printerName) {
+        if (printerName != null && !printerName.isBlank()) {
+            try {
+                if (PREFS != null) PREFS.put(PREF_PRINTER, printerName);
+            } catch (Throwable ignored) {}
+            Printer p = PrinterUtils.findPrinterByName(printerName);
+            if (p != null) {
+                setSelectedPrinter(p);
+            }
+        }
+    }
+
+    /**
+     * Ensures Bank and Template are loaded in global AppState.
+     * Prevents empty state when new windows or dialogs open.
+     */
+    public void ensureBankAndTemplateLoaded() {
+        if (getSelectedBank() == null || getSelectedTemplate() == null) {
+            new Thread(() -> {
+                try {
+                    List<Bank> banks = bankService.getAll();
+                    if (!banks.isEmpty()) {
+                        Bank defaultBank = banks.get(0);
+                        if (getSelectedBank() == null) {
+                            Platform.runLater(() -> setSelectedBank(defaultBank));
+                        }
+                        if (getSelectedTemplate() == null && defaultBank.getId() != null) {
+                            fetchTemplateForBank(defaultBank.getId().longValue(), defaultBank.getBankCode());
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("[AppState] Fallback load error: " + e.getMessage());
+                }
+            }, "app-state-fallback-loader").start();
+        }
+    }
+
     /**
      * Clears global application state upon logout or session reset.
      */
@@ -278,5 +350,6 @@ public final class AppState {
         setSelectedBankAccount(null);
         setSelectedTemplate(null);
         setCurrentCheque(null);
+        setSelectedPrinter(null);
     }
 }

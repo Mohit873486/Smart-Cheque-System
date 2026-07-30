@@ -1,9 +1,10 @@
+
 package com.chequeprint.controller;
 
 import com.chequeprint.model.Invoice;
 import com.chequeprint.service.InvoiceService;
 import com.chequeprint.util.FxUtils;
-import com.chequeprint.util.JasperPrintUtil;
+import com.chequeprint.service.PrintService;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -57,6 +58,7 @@ public class InvoiceController {
 
     // ── State ────────────────────────────────────────────────────────
     private final InvoiceService service = new InvoiceService();
+    private final PrintService printService = new PrintService();
     private final ObservableList<Invoice> data = FXCollections.observableArrayList();
     private Invoice selectedInvoice;
 
@@ -274,7 +276,7 @@ public class InvoiceController {
         }
         try {
             String desktopPath = System.getProperty("user.home") + java.io.File.separator + "Desktop";
-            String savedPath = JasperPrintUtil.exportInvoicePdf(sel, desktopPath);
+            String savedPath = printService.exportInvoicePdf(sel, desktopPath);
             showAlert("PDF Exported", "Invoice saved to:\n" + savedPath, Alert.AlertType.INFORMATION);
         } catch (Exception e) {
             showAlert("Export Error", e.getMessage(), Alert.AlertType.ERROR);
@@ -289,7 +291,7 @@ public class InvoiceController {
             return;
         }
         try {
-            boolean printed = JasperPrintUtil.previewInvoice(sel);
+            boolean printed = printService.previewInvoice(sel);
             if (!printed) {
                 showAlert("Print Canceled", "Invoice printing was canceled.", Alert.AlertType.INFORMATION);
                 return;

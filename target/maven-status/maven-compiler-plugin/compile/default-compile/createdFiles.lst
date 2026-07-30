@@ -85,6 +85,7 @@ com\chequeprint\util\DraggableLabelUtil.class
 com\chequeprint\service\MultiAgentCoordinatorService$1.class
 com\chequeprint\util\ChequeApiClient$2.class
 com\chequeprint\printpreview\PrintPreviewDocument$PrintHandler.class
+com\chequeprint\service\ChequePrintPipeline.class
 com\chequeprint\service\SmartSuggestionService.class
 com\chequeprint\util\SessionManager.class
 com\chequeprint\service\OcrException.class
@@ -105,6 +106,7 @@ com\chequeprint\controller\ModernDashboardController.class
 com\chequeprint\printpreview\PrintPreviewController.class
 com\chequeprint\service\OpenAiChequeOcrService.class
 com\chequeprint\util\ChequeApiClient$1.class
+com\chequeprint\util\PrinterUtils.class
 com\chequeprint\service\FxPrinterService.class
 com\chequeprint\service\SettingService.class
 com\chequeprint\model\UserStatus.class

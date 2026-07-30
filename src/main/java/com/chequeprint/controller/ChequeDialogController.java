@@ -52,6 +52,7 @@ public class ChequeDialogController {
     private final ChequeService chequeService = new ChequeService();
     private final ChequeWorkflowService workflowService = new ChequeWorkflowService();
     private final BankService bankService = new BankService();
+    private final PrintService printService = new PrintService();
     
     private final java.util.Map<String, Integer> bankNameToId = new java.util.LinkedHashMap<>();
 
@@ -81,6 +82,7 @@ public class ChequeDialogController {
                 }
             });
         }
+        AppState.getInstance().ensureBankAndTemplateLoaded();
         setupRealTimePreview();
     }
 
@@ -181,8 +183,11 @@ public class ChequeDialogController {
                     }
                     cmbBank.setItems(names);
                     
+                    Bank appBank = AppState.getInstance().getSelectedBank();
                     if (selectedCheque != null && selectedCheque.getBankName() != null && names.contains(selectedCheque.getBankName())) {
                         cmbBank.setValue(selectedCheque.getBankName());
+                    } else if (appBank != null && appBank.getBankName() != null && names.contains(appBank.getBankName())) {
+                        cmbBank.setValue(appBank.getBankName());
                     } else if (!names.isEmpty()) {
                         cmbBank.setValue(names.get(0));
                     }
@@ -190,8 +195,11 @@ public class ChequeDialogController {
             } catch (Exception e) {
                 Platform.runLater(() -> {
                     cmbBank.setItems(FXCollections.observableArrayList("SBI", "HDFC", "ICICI", "Axis Bank"));
+                    Bank appBank = AppState.getInstance().getSelectedBank();
                     if (selectedCheque != null && selectedCheque.getBankName() != null) {
                         cmbBank.setValue(selectedCheque.getBankName());
+                    } else if (appBank != null && appBank.getBankName() != null) {
+                        cmbBank.setValue(appBank.getBankName());
                     } else {
                         cmbBank.setValue("SBI");
                     }
@@ -301,7 +309,7 @@ public class ChequeDialogController {
             BankTemplateLayout activeTemplate = AppState.getInstance().getSelectedTemplate();
             javafx.stage.Window window = btnSaveAndPrint.getScene() != null ? btnSaveAndPrint.getScene().getWindow() : null;
 
-            boolean printed = FxPrinterService.printCheque(draft, activeBank, activeTemplate, window);
+            boolean printed = printService.printCheque(draft, activeBank, activeTemplate, window);
 
             if (printed) {
                 String selectedBankName = cmbBank.getValue();

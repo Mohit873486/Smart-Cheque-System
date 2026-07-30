@@ -3,8 +3,15 @@ package com.chequeprint.service;
 import com.chequeprint.dao.BankDAO;
 import com.chequeprint.dao.ChequeDAO;
 import com.chequeprint.model.Bank;
+import com.chequeprint.model.BankTemplateLayout;
 import com.chequeprint.model.Cheque;
+import com.chequeprint.model.Invoice;
+import com.chequeprint.util.AppState;
 import com.chequeprint.util.JasperPrintUtil;
+import com.chequeprint.util.PrinterUtils;
+import javafx.print.Printer;
+import javafx.scene.Node;
+import javafx.stage.Window;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -34,9 +41,7 @@ public class PrintService {
     }
 
     public boolean printCheque(Cheque cheque) throws Exception {
-        if (cheque == null) {
-            throw new IllegalArgumentException("Cheque must not be null.");
-        }
+        validateBeforePrint(cheque, null);
         Bank bank = resolveBank(cheque);
         boolean printed = JasperPrintUtil.printCheque(cheque, bank);
         if (printed) {
@@ -50,9 +55,7 @@ public class PrintService {
     }
 
     public boolean previewCheque(Cheque cheque) throws Exception {
-        if (cheque == null) {
-            throw new IllegalArgumentException("Cheque must not be null.");
-        }
+        validateBeforePrint(cheque, null);
         Bank bank = resolveBank(cheque);
         boolean printed = false;
         try {
@@ -155,6 +158,80 @@ public class PrintService {
         chequeDAO.updateStatus(cheque, Cheque.Status.Printed);
 
         return pdfPath;
+    }
+
+    public boolean printCheque(Cheque cheque, Bank bank, BankTemplateLayout layout, Window ownerWindow) throws Exception {
+        return ChequePrintPipeline.execute(cheque, bank, layout, ownerWindow);
+    }
+
+    public boolean printNode(Node node, Window ownerWindow) {
+        ensurePrinterSelected();
+        return FxPrinterService.printNode(node, ownerWindow);
+    }
+
+    public boolean isPrinterSelected() {
+        Printer p = AppState.getInstance().getSelectedPrinter();
+        return p != null && PrinterUtils.isValidPrinter(p);
+    }
+
+    public void ensurePrinterSelected() throws IllegalStateException {
+        if (!isPrinterSelected()) {
+            throw new IllegalStateException("No valid physical printer selected. Please select a printer in Printer Settings before printing.");
+        }
+    }
+
+    /**
+     * Validates all pre-conditions before printing:
+     * 1. Printer is selected
+     * 2. Printer is not Fax or virtual
+     * 3. Template is loaded
+     * 4. Cheque data is valid
+     */
+    public void validateBeforePrint(Cheque cheque, BankTemplateLayout layout) throws IllegalStateException {
+        // Condition 1 & 2: Printer is selected and is a valid physical printer
+        Printer printer = AppState.getInstance().getSelectedPrinter();
+        if (printer == null) {
+            throw new IllegalStateException("No printer selected. Please select a valid printer in Printer Settings before printing.");
+        }
+
+        if (!PrinterUtils.isValidPrinter(printer)) {
+            String printerName = printer.getName() != null ? printer.getName() : "Unknown";
+            throw new IllegalStateException("Selected printer ('" + printerName + "') is invalid. Fax and virtual printers (PDF, XPS, OneNote) are not supported. Please select a physical printer.");
+        }
+
+        // Condition 3: Template is loaded
+        if (layout == null) {
+            layout = AppState.getInstance().getSelectedTemplate();
+        }
+        if (layout == null) {
+            throw new IllegalStateException("No cheque template layout loaded. Please select a bank account with a valid template layout before printing.");
+        }
+
+        // Condition 4: Cheque data is valid
+        if (cheque == null) {
+            throw new IllegalStateException("Invalid cheque data: Cheque object is null.");
+        }
+        if (cheque.getPayeeName() == null || cheque.getPayeeName().trim().isEmpty()) {
+            throw new IllegalStateException("Invalid cheque data: Payee name is required.");
+        }
+        if (cheque.getAmount() == null || cheque.getAmount().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new IllegalStateException("Invalid cheque data: Amount must be greater than zero.");
+        }
+        if (cheque.getIssueDate() == null) {
+            throw new IllegalStateException("Invalid cheque data: Issue date is required.");
+        }
+    }
+
+    public boolean previewInvoice(Invoice invoice) throws Exception {
+        return JasperPrintUtil.previewInvoice(invoice);
+    }
+
+    public boolean printInvoice(Invoice invoice, Printer printer) throws Exception {
+        return JasperPrintUtil.printInvoice(invoice, printer);
+    }
+
+    public String exportInvoicePdf(Invoice invoice, String outputDir) throws Exception {
+        return JasperPrintUtil.exportInvoicePdf(invoice, outputDir);
     }
 
     private Bank resolveBank(Cheque cheque) {

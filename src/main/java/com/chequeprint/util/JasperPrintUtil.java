@@ -69,11 +69,21 @@ public class JasperPrintUtil {
     }
 
     public static boolean printCheque(Cheque cheque, Bank bankTemplate) throws JRException {
-        return printCheque(cheque, bankTemplate, javafx.print.Printer.getDefaultPrinter());
+        javafx.print.Printer selected = AppState.getInstance().getSelectedPrinter();
+        if (selected == null) {
+            throw new IllegalStateException("No printer selected in AppState. Please select a printer in Printer Settings before printing.");
+        }
+        return printCheque(cheque, bankTemplate, selected);
     }
 
     public static boolean printCheque(Cheque cheque, Bank bankTemplate, javafx.print.Printer printer) throws JRException {
-        setLastUsedPrinterName(printer != null ? printer.getName() : "Default Printer");
+        if (printer == null) {
+            printer = AppState.getInstance().getSelectedPrinter();
+        }
+        if (printer == null) {
+            throw new IllegalStateException("No printer selected in AppState. Please select a printer in Printer Settings before printing.");
+        }
+        setLastUsedPrinterName(printer.getName());
         try {
             BankTemplateLayout layout = ChequeSnapshotRenderer.resolveLayout(bankTemplate);
             WritableImage snapshot = ChequeSnapshotRenderer.renderCheque(cheque, bankTemplate, layout, 3.0);
@@ -112,7 +122,11 @@ public class JasperPrintUtil {
     }
 
     public static boolean printInvoice(Invoice invoice) throws JRException {
-        return printInvoice(invoice, javafx.print.Printer.getDefaultPrinter());
+        javafx.print.Printer selected = AppState.getInstance().getSelectedPrinter();
+        if (selected == null) {
+            throw new IllegalStateException("No printer selected in AppState. Please select a printer in Printer Settings before printing.");
+        }
+        return printInvoice(invoice, selected);
     }
 
     public static boolean printInvoice(Invoice invoice, javafx.print.Printer printer) throws JRException {

@@ -45,6 +45,8 @@ public class SettingsController {
     private CheckBox cbAutoPrint;
     @FXML
     private CheckBox cbAmountConfirm;
+    @FXML
+    private ComboBox<String> cbPrinter;
 
     // ========================================
     // INVOICE SETTINGS FIELDS
@@ -151,6 +153,7 @@ public class SettingsController {
             initializeDateFormats();
             initializeLanguages();
             initializePaymentTerms();
+            initializePrinters();
 
             // Populate cbDefaultBank dropdown asynchronously
             javafx.concurrent.Task<java.util.List<com.chequeprint.model.Bank>> bankTask = new javafx.concurrent.Task<>() {
@@ -247,6 +250,25 @@ public class SettingsController {
                 "Net 60",
                 "Due on Receipt"));
         cbPaymentTerms.setValue("Net 30");
+    }
+
+    private void initializePrinters() {
+        if (cbPrinter == null) return;
+        var validPrinterNames = FXCollections.observableArrayList(com.chequeprint.util.PrinterUtils.getValidPrinterNames());
+        cbPrinter.setItems(validPrinterNames);
+        javafx.print.Printer selected = com.chequeprint.util.AppState.getInstance().getSelectedPrinter();
+        if (selected != null && validPrinterNames.contains(selected.getName())) {
+            cbPrinter.setValue(selected.getName());
+        } else if (!validPrinterNames.isEmpty()) {
+            cbPrinter.setValue(validPrinterNames.get(0));
+            com.chequeprint.util.AppState.getInstance().setSelectedPrinterByName(validPrinterNames.get(0));
+        }
+
+        cbPrinter.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                com.chequeprint.util.AppState.getInstance().setSelectedPrinterByName(newVal);
+            }
+        });
     }
 
     private void setControlsDisabled(boolean disabled) {
@@ -394,6 +416,10 @@ public class SettingsController {
                     language, chequePrefix, defaultBank,
                     autoPrint, amountConfirm, invoicePrefix,
                     paymentTerms, autoGST, theme);
+
+            if (cbPrinter != null && cbPrinter.getValue() != null) {
+                com.chequeprint.util.AppState.getInstance().setSelectedPrinterByName(cbPrinter.getValue());
+            }
 
             setControlsDisabled(true);
             btnSaveSettings.setText("Saving...");

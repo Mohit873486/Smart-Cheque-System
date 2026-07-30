@@ -3,7 +3,7 @@ package com.chequeprint.controller;
 import com.chequeprint.model.Invoice;
 import com.chequeprint.service.InvoiceService;
 import com.chequeprint.util.FxUtils;
-import com.chequeprint.util.JasperPrintUtil;
+import com.chequeprint.service.PrintService;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -41,6 +41,7 @@ public class InvoiceDialogController {
     private Button btnSaveAndPrint;
 
     private final InvoiceService service = new InvoiceService();
+    private final PrintService printService = new PrintService();
     private Invoice selectedInvoice;
     private boolean saved = false;
 
@@ -216,7 +217,7 @@ public class InvoiceDialogController {
     }
 
     private boolean openPrintPreview(Invoice invoice) throws Exception {
-        return JasperPrintUtil.previewInvoice(invoice);
+        return printService.previewInvoice(invoice);
     }
 
     private Invoice resolveLatestSavedInvoice(Invoice created) throws Exception {

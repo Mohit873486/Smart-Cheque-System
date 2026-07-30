@@ -5,6 +5,7 @@ import com.chequeprint.model.BankTemplateLayout;
 import com.chequeprint.model.Cheque;
 import com.chequeprint.util.AppState;
 import com.chequeprint.util.ChequePreviewEngine;
+import com.chequeprint.util.PrinterUtils;
 import javafx.print.PageLayout;
 import javafx.print.PageOrientation;
 import javafx.print.Paper;
@@ -90,14 +91,21 @@ public class FxPrinterService {
             return false;
         }
 
-        // 1. Create PrinterJob
-        PrinterJob job = PrinterJob.createPrinterJob();
+        // 1. Verify Selected Printer in AppState
+        Printer selectedPrinter = AppState.getInstance().getSelectedPrinter();
+        if (selectedPrinter == null || !PrinterUtils.isValidPrinter(selectedPrinter)) {
+            System.err.println("Cannot print: No valid printer selected in AppState.");
+            return false;
+        }
+
+        // 2. Create PrinterJob for selected printer
+        PrinterJob job = PrinterJob.createPrinterJob(selectedPrinter);
         if (job == null) {
             System.err.println("No printer services available or failed to create PrinterJob.");
             return false;
         }
 
-        // 2. Show native Print Dialog allowing user to select printer & options
+        // 3. Show native Print Dialog allowing user to select printer & options
         boolean proceed = job.showPrintDialog(ownerWindow);
         if (!proceed) {
             job.endJob();

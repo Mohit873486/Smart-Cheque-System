@@ -49,6 +49,7 @@
                     <children>
                         <Label text="Printer" styleClass="print-section-title" />
                         <ComboBox fx:id="cmbPrinter" maxWidth="Infinity" />
+                        <Button fx:id="btnSetDefaultPrinter" text="⭐ Set as Default Printer" onAction="#onSetDefaultPrinter" styleClass="btn-outline" maxWidth="Infinity" />
 
                         <Label text="Zoom" styleClass="print-section-title" />
                         <ComboBox fx:id="cmbZoom" maxWidth="Infinity" />
@@ -56,6 +57,7 @@
                         <Separator />
 
                         <Button fx:id="btnPrint" text="Print" onAction="#onPrint" styleClass="btn-primary" maxWidth="Infinity" />
+                        <Button fx:id="btnTestPrint" text="🧪 Test Print" onAction="#onTestPrint" styleClass="btn-secondary" maxWidth="Infinity" />
                         <Button fx:id="btnSavePdf" text="Save as PDF" onAction="#onSavePdf" styleClass="btn-secondary" maxWidth="Infinity" />
                         <Button text="Close" onAction="#onClose" styleClass="btn-outline" maxWidth="Infinity" />
 
