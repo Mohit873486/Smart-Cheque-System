@@ -160,13 +160,45 @@ public class PrintService {
         return pdfPath;
     }
 
+    public boolean executeProfessionalPrintFlow(Cheque cheque, Bank bank, BankTemplateLayout layout, Window ownerWindow) throws Exception {
+        // Stage 1: Validate Printer
+        validatePrinter();
+
+        // Stage 2: Load Template
+        BankTemplateLayout finalLayout = step1LoadTemplate(cheque, bank, layout);
+
+        // Stage 3: Load Cheque Data
+        Cheque finalCheque = step2LoadChequeData(cheque);
+
+        logPrePrintDiagnostics(finalCheque, finalLayout);
+
+        // Stage 4: Render Cheque
+        javafx.scene.layout.Pane canvas = new javafx.scene.layout.Pane();
+        canvas.setPrefSize(finalLayout.getWidthInches() * 72.0, finalLayout.getHeightInches() * 72.0);
+        com.chequeprint.engine.ChequeRenderEngine.renderCheque(canvas, finalCheque, bank, finalLayout);
+
+        // Stage 5: Show Preview Modal
+        com.chequeprint.printpreview.PrintPreviewService previewService = new com.chequeprint.printpreview.PrintPreviewService();
+        boolean approved = previewService.previewCheque(finalCheque, bank, finalLayout);
+        if (!approved) {
+            return false;
+        }
+
+        // Stage 6: Send to Selected Printer
+        return printRenderedCheque(canvas, ownerWindow);
+    }
+
     public boolean printCheque(Cheque cheque, Bank bank, BankTemplateLayout layout, Window ownerWindow) throws Exception {
-        return ChequePrintPipeline.execute(cheque, bank, layout, ownerWindow);
+        return executeProfessionalPrintFlow(cheque, bank, layout, ownerWindow);
+    }
+
+    public boolean printRenderedCheque(Node node, Window ownerWindow) {
+        validatePrinter();
+        return FxPrinterService.printNode(node, ownerWindow);
     }
 
     public boolean printNode(Node node, Window ownerWindow) {
-        ensurePrinterSelected();
-        return FxPrinterService.printNode(node, ownerWindow);
+        return printRenderedCheque(node, ownerWindow);
     }
 
     public boolean isPrinterSelected() {
@@ -174,52 +206,72 @@ public class PrintService {
         return p != null && PrinterUtils.isValidPrinter(p);
     }
 
-    public void ensurePrinterSelected() throws IllegalStateException {
-        if (!isPrinterSelected()) {
-            throw new IllegalStateException("No valid physical printer selected. Please select a printer in Printer Settings before printing.");
+    public void validatePrinter() throws IllegalStateException {
+        Printer p = AppState.getInstance().getSelectedPrinter();
+        if (p == null) {
+            throw new IllegalStateException("No printer selected. Please select a printer in Printer Settings before printing.");
+        }
+        if (!PrinterUtils.isValidPrinter(p)) {
+            String name = p.getName() != null ? p.getName() : "Unknown";
+            throw new IllegalStateException("Selected printer ('" + name + "') is invalid. Fax and virtual printers (PDF, XPS, OneNote) are not supported.");
         }
     }
 
-    /**
-     * Validates all pre-conditions before printing:
-     * 1. Printer is selected
-     * 2. Printer is not Fax or virtual
-     * 3. Template is loaded
-     * 4. Cheque data is valid
-     */
     public void validateBeforePrint(Cheque cheque, BankTemplateLayout layout) throws IllegalStateException {
-        // Condition 1 & 2: Printer is selected and is a valid physical printer
+        step1LoadTemplate(cheque, null, layout);
+        step2LoadChequeData(cheque);
+        validatePrinter();
+    }
+
+    public void ensurePrinterSelected() throws IllegalStateException {
+        validatePrinter();
+    }
+
+    public BankTemplateLayout step1LoadTemplate(Cheque cheque, Bank bank, BankTemplateLayout layout) {
+        if (layout != null) {
+            return layout;
+        }
+        Bank activeBank = bank != null ? bank : AppState.getInstance().getSelectedBank();
+        TemplateService templateService = new TemplateService();
+        BankTemplateLayout resolved = templateService.getTemplateForBank(activeBank);
+        if (resolved == null) {
+            resolved = AppState.getInstance().getSelectedTemplate();
+        }
+        if (resolved == null) {
+            throw new IllegalStateException("No cheque template layout loaded. Please select a bank layout before printing.");
+        }
+        return resolved;
+    }
+
+    public Cheque step2LoadChequeData(Cheque cheque) {
+        Cheque activeCheque = cheque != null ? cheque : AppState.getInstance().getCurrentCheque();
+        ChequeService chequeService = new ChequeService();
+        return chequeService.validateChequeData(activeCheque);
+    }
+
+    public void logPrePrintDiagnostics(Cheque cheque, BankTemplateLayout layout) {
         Printer printer = AppState.getInstance().getSelectedPrinter();
-        if (printer == null) {
-            throw new IllegalStateException("No printer selected. Please select a valid printer in Printer Settings before printing.");
-        }
+        String printerName = printer != null ? printer.getName() : "None / Not Selected";
 
-        if (!PrinterUtils.isValidPrinter(printer)) {
-            String printerName = printer.getName() != null ? printer.getName() : "Unknown";
-            throw new IllegalStateException("Selected printer ('" + printerName + "') is invalid. Fax and virtual printers (PDF, XPS, OneNote) are not supported. Please select a physical printer.");
-        }
+        boolean templateLoaded = (layout != null);
+        String templateInfo = templateLoaded
+                ? "Yes (Dimensions: " + layout.getWidthInches() + "\" x " + layout.getHeightInches() + "\")"
+                : "No (Missing layout)";
 
-        // Condition 3: Template is loaded
-        if (layout == null) {
-            layout = AppState.getInstance().getSelectedTemplate();
-        }
-        if (layout == null) {
-            throw new IllegalStateException("No cheque template layout loaded. Please select a bank account with a valid template layout before printing.");
-        }
+        boolean validCheque = (cheque != null
+                && cheque.getPayeeName() != null && !cheque.getPayeeName().trim().isEmpty()
+                && cheque.getAmount() != null && cheque.getAmount().compareTo(java.math.BigDecimal.ZERO) > 0
+                && cheque.getIssueDate() != null);
+        String chequeStatus = validCheque
+                ? "Valid (Payee='" + cheque.getPayeeName() + "', Amount=" + cheque.getAmount() + ", Date=" + cheque.getIssueDate() + ")"
+                : "Invalid / Incomplete";
 
-        // Condition 4: Cheque data is valid
-        if (cheque == null) {
-            throw new IllegalStateException("Invalid cheque data: Cheque object is null.");
-        }
-        if (cheque.getPayeeName() == null || cheque.getPayeeName().trim().isEmpty()) {
-            throw new IllegalStateException("Invalid cheque data: Payee name is required.");
-        }
-        if (cheque.getAmount() == null || cheque.getAmount().compareTo(java.math.BigDecimal.ZERO) <= 0) {
-            throw new IllegalStateException("Invalid cheque data: Amount must be greater than zero.");
-        }
-        if (cheque.getIssueDate() == null) {
-            throw new IllegalStateException("Invalid cheque data: Issue date is required.");
-        }
+        System.out.println("==========================================================");
+        System.out.println("[PRINT DIAGNOSTICS LOG]");
+        System.out.println("• Selected Printer Name : " + printerName);
+        System.out.println("• Template Loaded       : " + templateInfo);
+        System.out.println("• Cheque Data Status    : " + chequeStatus);
+        System.out.println("==========================================================");
     }
 
     public boolean previewInvoice(Invoice invoice) throws Exception {

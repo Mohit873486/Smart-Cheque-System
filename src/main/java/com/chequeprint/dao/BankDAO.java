@@ -119,4 +119,18 @@ public class BankDAO {
 
         return response.statusCode() >= 200 && response.statusCode() < 300;
     }
+
+    public boolean update(Bank bank) throws Exception {
+        if (bank == null || bank.getId() == null) return false;
+        String jsonPayload = objectMapper.writeValueAsString(bank);
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .PUT(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                .uri(URI.create(API_BANKS + "/" + bank.getId()))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json");
+
+        addAuthToken(builder);
+        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        return response.statusCode() >= 200 && response.statusCode() < 300;
+    }
 }

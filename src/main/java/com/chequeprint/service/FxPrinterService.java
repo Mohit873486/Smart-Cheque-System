@@ -5,6 +5,7 @@ import com.chequeprint.model.BankTemplateLayout;
 import com.chequeprint.model.Cheque;
 import com.chequeprint.util.AppState;
 import com.chequeprint.util.ChequePreviewEngine;
+import com.chequeprint.util.ChequeRenderEngine;
 import com.chequeprint.util.PrinterUtils;
 import javafx.print.PageLayout;
 import javafx.print.PageOrientation;
@@ -53,8 +54,8 @@ public class FxPrinterService {
         printPane.setMinSize(widthPx, heightPx);
         printPane.setMaxSize(widthPx, heightPx);
 
-        // Render using the EXACT SAME preview engine to eliminate any visual mismatch
-        ChequePreviewEngine.renderPreview(printPane, cheque, bank, layout);
+        // Render using unified ChequeRenderEngine guaranteeing preview output equals print output
+        ChequeRenderEngine.renderCheque(printPane, cheque, bank, layout);
 
         return printNode(printPane, ownerWindow);
     }

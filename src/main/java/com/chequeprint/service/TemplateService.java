@@ -1,85 +1,77 @@
 package com.chequeprint.service;
 
 import com.chequeprint.dao.BankDAO;
+import com.chequeprint.model.Bank;
 import com.chequeprint.model.BankTemplateLayout;
-import com.chequeprint.model.LayoutField;
-import com.chequeprint.util.AppState;
+import com.chequeprint.util.BankTemplateLayoutStore;
+import com.chequeprint.util.ChequeSizeCodec;
 
-import java.util.HashMap;
+import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 
 /**
- * Business Service for Cheque Template processing, ratio coordinate mapping, and persistence.
- * Centralizes layout coordinate logic ($X/Y$ ratios, field mapping) between UI Controllers and DAOs.
+ * Dedicated Template Service handling bank cheque layout templates.
+ * Single Responsibility: Layout loading, coordinate decoding/encoding, and template persistence.
  */
 public class TemplateService {
 
-    private final BankDAO bankDao;
+    private final BankDAO bankDAO;
+    private final BankTemplateLayoutStore layoutStore;
 
     public TemplateService() {
-        this.bankDao = new BankDAO();
+        this.bankDAO = new BankDAO();
+        this.layoutStore = new BankTemplateLayoutStore();
     }
 
-    public TemplateService(BankDAO bankDao) {
-        this.bankDao = bankDao;
+    public TemplateService(BankDAO bankDAO) {
+        this.bankDAO = bankDAO;
+        this.layoutStore = new BankTemplateLayoutStore();
     }
 
-    /**
-     * Fetches template field records from DAO and constructs a normalized BankTemplateLayout.
-     */
-    public BankTemplateLayout loadTemplateLayout(Long bankId) throws Exception {
-        List<Map<String, Object>> templates = bankDao.findTemplatesByBankId(bankId);
-        Long targetTemplateId = bankId;
-        if (!templates.isEmpty() && templates.get(0).get("id") instanceof Number) {
-            targetTemplateId = ((Number) templates.get(0).get("id")).longValue();
+    public BankTemplateLayout getTemplateForBank(Bank bank) {
+        if (bank == null) {
+            return getDefaultLayout();
         }
 
-        List<Map<String, Object>> fields = bankDao.findTemplateFields(targetTemplateId);
-        BankTemplateLayout layout = new BankTemplateLayout();
-
-        if (fields != null && !fields.isEmpty()) {
-            for (Map<String, Object> map : fields) {
-                String name = (String) map.get("fieldName");
-                Object xObj = map.get("xPosition");
-                Object yObj = map.get("yPosition");
-                if (name != null && xObj instanceof Number && yObj instanceof Number) {
-                    double x = ((Number) xObj).doubleValue();
-                    double y = ((Number) yObj).doubleValue();
-                    LayoutField field = unmapFieldName(name);
-                    if (field != null) {
-                        layout.setFieldPosition(field, x / 720.0, y / 300.0);
-                    }
-                }
+        if (bank.getBankCode() != null && !bank.getBankCode().isBlank()) {
+            BankTemplateLayout stored = layoutStore.loadAll().get(bank.getBankCode());
+            if (stored != null) {
+                stored.ensureAllFields();
+                return stored;
             }
         }
-        layout.ensureAllFields();
-        return layout;
+
+        BankTemplateLayout decoded = ChequeSizeCodec.decodeLayout(bank.getChequeSize());
+        decoded.ensureAllFields();
+        return decoded;
     }
 
-    /**
-     * Converts layout coordinates into field map payloads and persists via DAO.
-     */
-    public boolean saveTemplateLayout(Long bankAccountId, BankTemplateLayout layout, double canvasW, double canvasH, String fontFamily, int fontSize) throws Exception {
-        if (layout == null || !layout.isValidLayout()) {
-            return false;
+    public BankTemplateLayout getTemplateForBankId(int bankId) throws Exception {
+        Bank bank = bankDAO.findById(bankId);
+        return getTemplateForBank(bank);
+    }
+
+    public boolean saveTemplate(Bank bank, BankTemplateLayout layout) throws Exception {
+        if (bank == null || layout == null) {
+            throw new IllegalArgumentException("Bank and layout must not be null.");
         }
 
-        List<Map<String, Object>> fieldsPayload = layout.toFieldPayloadList(bankAccountId, canvasW, canvasH, fontFamily, fontSize);
-        return bankDao.saveTemplateFields(fieldsPayload);
+        layout.ensureAllFields();
+        String json = ChequeSizeCodec.encodeLayout(layout);
+        bank.setChequeSize(json);
+
+        boolean updated = bankDAO.update(bank);
+        if (updated && bank.getBankCode() != null && !bank.getBankCode().isBlank()) {
+            var all = layoutStore.loadAll();
+            all.put(bank.getBankCode(), layout);
+            layoutStore.saveAll(all);
+        }
+        return updated;
     }
 
-    public LayoutField unmapFieldName(String name) {
-        if (name == null) return null;
-        return switch (name.toLowerCase(java.util.Locale.ROOT)) {
-            case "name", "payee" -> LayoutField.PAYEE;
-            case "amount", "amount_number" -> LayoutField.AMOUNT_NUMBER;
-            case "amount_words" -> LayoutField.AMOUNT_WORDS;
-            case "date" -> LayoutField.DATE;
-            case "signature" -> LayoutField.SIGNATURE;
-            case "logo" -> LayoutField.BANK_LOGO;
-            case "micr" -> LayoutField.MICR;
-            default -> null;
-        };
+    public BankTemplateLayout getDefaultLayout() {
+        BankTemplateLayout layout = new BankTemplateLayout(8.0, 3.66);
+        layout.ensureAllFields();
+        return layout;
     }
 }

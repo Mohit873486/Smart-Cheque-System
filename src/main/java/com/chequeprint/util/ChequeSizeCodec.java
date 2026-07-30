@@ -14,6 +14,13 @@ public final class ChequeSizeCodec {
         return preset.getValue();
     }
 
+    public static String encodeLayout(BankTemplateLayout layout) {
+        if (layout == null) {
+            return "STANDARD";
+        }
+        return String.format("CUSTOM:%.3fx%.3f", layout.getWidthInches(), layout.getHeightInches());
+    }
+
     public static BankTemplateLayout decodeLayout(String rawSize) {
         ChequeSizePreset preset = ChequeSizePreset.fromValue(rawSize);
         if (preset != ChequeSizePreset.CUSTOM) {

@@ -33,13 +33,17 @@ public class PrintPreviewService {
     private final BankTemplateLayoutStore layoutStore = new BankTemplateLayoutStore();
 
     public boolean previewCheque(Cheque cheque, Bank bankTemplate) throws Exception {
+        return previewCheque(cheque, bankTemplate, null);
+    }
+
+    public boolean previewCheque(Cheque cheque, Bank bankTemplate, BankTemplateLayout layout) throws Exception {
         if (cheque == null) {
             throw new IllegalArgumentException("Cheque must not be null.");
         }
 
-        BankTemplateLayout layout = ChequeSnapshotRenderer.resolveLayout(bankTemplate);
-        double widthMm = layout.getWidthInches() * 25.4;
-        double heightMm = layout.getHeightInches() * 25.4;
+        BankTemplateLayout finalLayout = layout != null ? layout : ChequeSnapshotRenderer.resolveLayout(bankTemplate);
+        double widthMm = finalLayout.getWidthInches() * 25.4;
+        double heightMm = finalLayout.getHeightInches() * 25.4;
 
         // Render high resolution snapshot of cheque based on layout designer
         WritableImage snapshot = ChequeSnapshotRenderer.renderCheque(cheque, bankTemplate, layout, 2.5);

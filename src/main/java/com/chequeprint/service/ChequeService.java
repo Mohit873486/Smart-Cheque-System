@@ -41,6 +41,22 @@ public class ChequeService {
         return dao.insert(c);
     }
 
+    public Cheque validateChequeData(Cheque cheque) {
+        if (cheque == null) {
+            throw new IllegalStateException("Cheque data is null. Cannot proceed with printing.");
+        }
+        if (cheque.getPayeeName() == null || cheque.getPayeeName().isBlank()) {
+            throw new IllegalStateException("Payee Name is required for printing.");
+        }
+        if (cheque.getAmount() == null || cheque.getAmount().doubleValue() <= 0) {
+            throw new IllegalStateException("Cheque Amount must be greater than zero.");
+        }
+        if (cheque.getIssueDate() == null) {
+            throw new IllegalStateException("Issue Date is required for printing.");
+        }
+        return cheque;
+    }
+
     public boolean update(Cheque c) throws SQLException {
         validateCheque(c);
         c.setAmountWords(convertAmountToWords(c.getAmount()));

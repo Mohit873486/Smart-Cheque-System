@@ -971,7 +971,7 @@ public class BankController {
 
     public void renderPreview(com.chequeprint.model.ChequeTemplate template) {
         if (previewPane == null) return;
-        ChequePreviewEngine.renderPreview(previewPane, AppState.getInstance().getCurrentCheque(), selectedBank, AppState.getInstance().getSelectedTemplate());
+        com.chequeprint.util.ChequeRenderEngine.renderCheque(previewPane, AppState.getInstance().getCurrentCheque(), selectedBank, AppState.getInstance().getSelectedTemplate());
     }
 
     private String selectedFieldName = null;

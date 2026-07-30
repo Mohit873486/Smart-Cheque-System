@@ -1,34 +1,29 @@
 package com.chequeprint.preview;
 
-import javax.swing.JOptionPane;
-import java.awt.print.PageFormat;
-import java.awt.print.Paper;
-import java.awt.print.PrinterException;
-import java.awt.print.PrinterJob;
+import com.chequeprint.service.PrintService;
 
+/**
+ * @deprecated Merged into single {@link PrintService}. Use PrintService directly.
+ */
+@Deprecated
 public class ChequePrintService {
+
+  private final PrintService printService = new PrintService();
 
   public void testPrint(ChequePreviewPanel previewPanel) {
     try {
-      PrinterJob job = PrinterJob.getPrinterJob();
-      job.setJobName("Cheque Print");
-
-      PageFormat format = createChequePageFormat(job);
-      job.setPrintable(previewPanel, format);
-
-      // Print directly to the default printer without showing the dialog.
-      job.print();
-    } catch (PrinterException ex) {
-      JOptionPane.showMessageDialog(previewPanel,
+      printService.validatePrinter();
+    } catch (Exception ex) {
+      javax.swing.JOptionPane.showMessageDialog(previewPanel,
           "Printing failed: " + ex.getMessage(),
           "Print Error",
-          JOptionPane.ERROR_MESSAGE);
+          javax.swing.JOptionPane.ERROR_MESSAGE);
     }
   }
 
-  public PageFormat createChequePageFormat(PrinterJob job) {
-    PageFormat base = job.defaultPage();
-    Paper paper = new Paper();
+  public java.awt.print.PageFormat createChequePageFormat(java.awt.print.PrinterJob job) {
+    java.awt.print.PageFormat base = job.defaultPage();
+    java.awt.print.Paper paper = new java.awt.print.Paper();
 
     double widthPt = ChequeLayout.WIDTH_INCH * 72.0;
     double heightPt = ChequeLayout.HEIGHT_INCH * 72.0;
@@ -40,7 +35,7 @@ public class ChequePrintService {
         widthPt - marginPt * 2.0,
         heightPt - marginPt * 2.0);
 
-    base.setOrientation(PageFormat.PORTRAIT);
+    base.setOrientation(java.awt.print.PageFormat.PORTRAIT);
     base.setPaper(paper);
     return base;
   }
