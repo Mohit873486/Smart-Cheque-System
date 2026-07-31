@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping({"/api/cheque", "/api/cheques"})
+@RequestMapping("/api/cheques")
 public class ChequeApiController {
 
     private final ChequeService service;

@@ -31,7 +31,10 @@ public class ChequeService {
 
     public boolean createCheque(Cheque c) throws SQLException {
         if (c.getChequeNo() == null || c.getChequeNo().isBlank()) {
-            c.setChequeNo("CHQ-" + System.currentTimeMillis());
+            c.setChequeNo(generateChequeNo());
+            while (dao.existsByChequeNo(c.getChequeNo(), c.getId())) {
+                c.setChequeNo(generateChequeNo());
+            }
         }
         validateCheque(c);
         c.setAmountWords(convertAmountToWords(c.getAmount()));
