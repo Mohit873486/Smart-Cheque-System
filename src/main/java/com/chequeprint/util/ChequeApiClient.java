@@ -1,5 +1,6 @@
 package com.chequeprint.util;
 
+import com.chequeprint.config.ApiConfig;
 import com.chequeprint.model.Cheque;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -14,7 +15,7 @@ import java.util.List;
 
 public class ChequeApiClient {
 
-    private static final String BASE_URL = "http://localhost:8081/api/cheques";
+    private static final String BASE_URL = ApiConfig.BASE_URL + "/api/cheques";
     private final ObjectMapper objectMapper;
 
     public ChequeApiClient() {

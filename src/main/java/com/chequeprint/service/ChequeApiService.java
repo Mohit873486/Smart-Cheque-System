@@ -1,5 +1,6 @@
 package com.chequeprint.service;
 
+import com.chequeprint.config.ApiConfig;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -18,7 +19,7 @@ import java.util.Map;
  */
 public class ChequeApiService {
 
-    private static final String API_BASE_URL = "http://localhost:8081/api/cheque";
+    private static final String API_BASE_URL = ApiConfig.BASE_URL + "/api/cheque";
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 

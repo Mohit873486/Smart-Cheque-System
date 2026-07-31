@@ -1,5 +1,6 @@
 package com.chequeprint.service;
 
+import com.chequeprint.config.ApiConfig;
 import com.chequeprint.model.User;
 import com.chequeprint.model.UserRole;
 import com.chequeprint.dao.UserDAO;
@@ -17,7 +18,7 @@ import com.chequeprint.util.RestApiClient;
 
 public class UserService {
 
-    private static final String BASE_URL = "http://localhost:8081/api/users";
+    private static final String BASE_URL = ApiConfig.BASE_URL + "/api/users";
     private final ObjectMapper objectMapper;
 
     public UserService() {

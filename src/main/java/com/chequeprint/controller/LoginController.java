@@ -89,7 +89,7 @@ public class LoginController {
     setLoading(false);
 
     new Thread(() -> {
-      String status = "REST Server Connected (Port 8081)";
+      String status = "REST Server Connected (" + com.chequeprint.config.ApiConfig.BASE_URL + ")";
       Platform.runLater(() -> lblDbStatus.setText(status));
     }, "login-api-status").start();
 

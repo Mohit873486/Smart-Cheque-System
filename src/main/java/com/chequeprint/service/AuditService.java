@@ -1,5 +1,6 @@
 package com.chequeprint.service;
 
+import com.chequeprint.config.ApiConfig;
 import com.chequeprint.model.AuditAction;
 import com.chequeprint.model.AuditLog;
 import com.chequeprint.model.User;
@@ -16,13 +17,14 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class AuditService {
 
-  private static final String BASE_URL = "http://localhost:8081/api/audit";
+  private static final String BASE_URL = ApiConfig.BASE_URL + "/api/audit";
   private final HttpClient httpClient = HttpClient.newBuilder().build();
   private final ObjectMapper objectMapper;
 
@@ -107,10 +109,12 @@ public class AuditService {
         return objectMapper.readValue(response.body(),
                 objectMapper.getTypeFactory().constructCollectionType(List.class, AuditLog.class));
       } else {
-        throw new IOException("Failed to fetch recent audit logs. HTTP: " + response.statusCode());
+        System.err.println("Failed to fetch recent audit logs. HTTP: " + response.statusCode());
+        return Collections.emptyList();
       }
     } catch (Exception e) {
-      throw new SQLException("Failed to fetch recent logs from REST API", e);
+      System.err.println("REST API audit log fetch warning: " + e.getMessage());
+      return Collections.emptyList();
     }
   }
 }

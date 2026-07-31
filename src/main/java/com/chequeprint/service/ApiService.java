@@ -1,5 +1,6 @@
 package com.chequeprint.service;
 
+import com.chequeprint.config.ApiConfig;
 import com.chequeprint.model.BankAccount;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -15,7 +16,7 @@ import java.util.List;
 
 public class ApiService {
 
-    private static final String API_URL = "http://localhost:8081/api/bank/account";
+    private static final String API_URL = ApiConfig.BASE_URL + "/api/bank/account";
     private final ObjectMapper mapper;
 
     public ApiService() {

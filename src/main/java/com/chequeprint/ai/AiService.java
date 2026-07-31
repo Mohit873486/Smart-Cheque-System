@@ -1,5 +1,6 @@
 package com.chequeprint.ai;
 
+import com.chequeprint.config.ApiConfig;
 import com.chequeprint.util.Session;
 import com.chequeprint.util.SessionManager;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -19,7 +20,7 @@ import java.util.logging.Logger;
 public class AiService {
 
     private static final Logger LOGGER = Logger.getLogger(AiService.class.getName());
-    private static final String BACKEND_AI_URL = "http://localhost:8081/api/ai/ask";
+    private static final String BACKEND_AI_URL = ApiConfig.BASE_URL + "/api/ai/ask";
     private static final AiService INSTANCE = new AiService();
 
     private final HttpClient httpClient = HttpClient.newBuilder()

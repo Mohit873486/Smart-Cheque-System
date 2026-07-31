@@ -44,7 +44,7 @@ public class GlobalErrorHandler {
         Throwable cause = getRootCause(throwable);
 
         if (isNetworkError(cause, message)) {
-            showNetworkError("Could not connect to backend REST server. Please check your network connection or verify that port 8081 is running.\n\nDetails: " + message);
+            showNetworkError("Could not connect to backend REST server (" + com.chequeprint.config.ApiConfig.BASE_URL + "). Please check your network connection or verify that the server is running.\n\nDetails: " + message);
         } else if (isValidationError(cause, message)) {
             showValidationError(message);
         } else if (isApiError(cause, message)) {

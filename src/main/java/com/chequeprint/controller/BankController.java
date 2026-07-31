@@ -658,7 +658,7 @@ public class BankController {
                 Long accountId = account.getId().longValue();
                 List<com.chequeprint.model.ChequeTemplate> templates = new ArrayList<>();
                 try {
-                    java.net.http.HttpRequest req = com.chequeprint.util.RestApiClient.requestBuilder("http://localhost:8081/api/template/account/" + accountId).GET().build();
+                    java.net.http.HttpRequest req = com.chequeprint.util.RestApiClient.requestBuilder(com.chequeprint.config.ApiConfig.BASE_URL + "/api/template/account/" + accountId).GET().build();
                     java.net.http.HttpResponse<String> res = com.chequeprint.util.RestApiClient.send(req);
                     String json = res.statusCode() == 200 ? res.body() : null;
                     if (json != null && !json.isBlank()) {
@@ -748,7 +748,7 @@ public class BankController {
             Long tplId = selectedTpl.getId();
 
             try {
-                java.net.http.HttpRequest req = com.chequeprint.util.RestApiClient.requestBuilder("http://localhost:8081/api/template/account/" + accId + "/default/" + tplId)
+                java.net.http.HttpRequest req = com.chequeprint.util.RestApiClient.requestBuilder(com.chequeprint.config.ApiConfig.BASE_URL + "/api/template/account/" + accId + "/default/" + tplId)
                         .PUT(java.net.http.HttpRequest.BodyPublishers.noBody()).build();
                 com.chequeprint.util.RestApiClient.send(req);
             } catch (Exception ignored) {}

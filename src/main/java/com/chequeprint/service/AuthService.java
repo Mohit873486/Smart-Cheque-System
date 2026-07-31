@@ -1,5 +1,6 @@
 package com.chequeprint.service;
 
+import com.chequeprint.config.ApiConfig;
 import com.chequeprint.model.User;
 import com.chequeprint.util.SessionManager;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -41,7 +42,7 @@ public class AuthService {
 
       // 2. Build HTTP POST request
       HttpRequest request = HttpRequest.newBuilder()
-              .uri(URI.create("http://localhost:8081/api/auth/login"))
+              .uri(URI.create(ApiConfig.BASE_URL + "/api/auth/login"))
               .header("Content-Type", "application/json")
               .POST(HttpRequest.BodyPublishers.ofString(requestBodyJson))
               .build();

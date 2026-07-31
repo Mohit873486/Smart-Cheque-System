@@ -363,7 +363,7 @@ public class SettingsController {
             btnSaveSettings.setText("Save Settings");
             showStatusMessage("Connection offline. Loaded local defaults.", true);
             showAlert(Alert.AlertType.ERROR, "Connection Error",
-                    "Failed to retrieve settings from REST server (http://localhost:8081/api/settings).\n" +
+                    "Failed to retrieve settings from REST server (" + com.chequeprint.config.ApiConfig.BASE_URL + "/api/settings).\n" +
                     "Details: " + details + "\nLocal fallback defaults have been loaded.");
         });
 

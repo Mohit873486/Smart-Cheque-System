@@ -1,5 +1,6 @@
 package com.chequeprint.dao;
 
+import com.chequeprint.config.ApiConfig;
 import com.chequeprint.model.Settings;
 import com.chequeprint.util.RestApiClient;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -21,7 +22,7 @@ public class SettingDAO {
 
     public Settings getSettings() throws SQLException {
         try {
-            HttpRequest request = RestApiClient.requestBuilder("http://localhost:8081/api/settings")
+            HttpRequest request = RestApiClient.requestBuilder(ApiConfig.BASE_URL + "/api/settings")
                     .GET()
                     .build();
             HttpResponse<String> response = RestApiClient.send(request);
@@ -38,7 +39,7 @@ public class SettingDAO {
     public void saveSettings(Settings s) throws SQLException {
         try {
             String json = objectMapper.writeValueAsString(s);
-            HttpRequest request = RestApiClient.requestBuilder("http://localhost:8081/api/settings")
+            HttpRequest request = RestApiClient.requestBuilder(ApiConfig.BASE_URL + "/api/settings")
                     .header("Content-Type", "application/json")
                     .PUT(HttpRequest.BodyPublishers.ofString(json))
                     .build();
