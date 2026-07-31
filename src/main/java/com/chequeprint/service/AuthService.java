@@ -99,7 +99,7 @@ public class AuthService {
 
     } catch (Exception e) {
       String msg = (e.getMessage() != null && !e.getMessage().isBlank()) ? e.getMessage() : e.getClass().getSimpleName();
-      return AuthenticationResult.failure("REST server unavailable (" + msg + "). Check if backend is running on http://localhost:8081.");
+      return AuthenticationResult.failure("REST server unavailable (" + msg + "). Check if backend is running on " + ApiConfig.BASE_URL + ".");
     }
   }
 

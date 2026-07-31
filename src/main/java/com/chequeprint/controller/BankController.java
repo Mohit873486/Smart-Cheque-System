@@ -610,34 +610,40 @@ public class BankController {
                 accountTable.getColumns().get(4).setCellValueFactory(new PropertyValueFactory<>("branchName"));
             }
             accountTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-                boolean hasSelection = (newVal != null);
-                if (btnEditAccountAction != null) btnEditAccountAction.setDisable(!hasSelection);
-                if (btnDeleteAccountAction != null) btnDeleteAccountAction.setDisable(!hasSelection);
-                updateTemplateMappingLabel(newVal);
+                if (isUpdatingForm) return;
+                try {
+                    isUpdatingForm = true;
+                    boolean hasSelection = (newVal != null);
+                    if (btnEditAccountAction != null) btnEditAccountAction.setDisable(!hasSelection);
+                    if (btnDeleteAccountAction != null) btnDeleteAccountAction.setDisable(!hasSelection);
+                    updateTemplateMappingLabel(newVal);
 
-                if (newVal == null) {
-                    if (previewEmptyState != null) previewEmptyState.setVisible(true);
-                    if (previewPane != null) {
-                        previewPane.setVisible(false);
-                        previewPane.getChildren().clear();
-                    }
-                    if (btnEditTemplate != null) btnEditTemplate.setDisable(true);
-                } else {
-                    if (previewEmptyState != null) previewEmptyState.setVisible(false);
-                    if (previewPane != null) previewPane.setVisible(true);
-                    if (btnEditTemplate != null) btnEditTemplate.setDisable(false);
-
-                    if (cmbBankAccount != null) {
-                        cmbBankAccount.setValue(newVal);
-                    }
-                    if (newVal.getId() != null) {
-                        Long bankId = newVal.getId().longValue();
-                        Session.setSelectedBankId(bankId);
-                        loadTemplateFromBackend(bankId);
+                    if (newVal == null) {
+                        if (previewEmptyState != null) previewEmptyState.setVisible(true);
+                        if (previewPane != null) {
+                            previewPane.setVisible(false);
+                            previewPane.getChildren().clear();
+                        }
+                        if (btnEditTemplate != null) btnEditTemplate.setDisable(true);
                     } else {
-                        setCurrentTemplate(new com.chequeprint.model.ChequeTemplate());
+                        if (previewEmptyState != null) previewEmptyState.setVisible(false);
+                        if (previewPane != null) previewPane.setVisible(true);
+                        if (btnEditTemplate != null) btnEditTemplate.setDisable(false);
+
+                        if (cmbBankAccount != null && cmbBankAccount.getValue() != newVal) {
+                            cmbBankAccount.setValue(newVal);
+                        }
+                        if (newVal.getId() != null) {
+                            Long bankId = newVal.getId().longValue();
+                            Session.setSelectedBankId(bankId);
+                            loadTemplateFromBackend(bankId);
+                        } else {
+                            setCurrentTemplate(new com.chequeprint.model.ChequeTemplate());
+                        }
+                        loadTemplatesForSelectedAccount(newVal);
                     }
-                    loadTemplatesForSelectedAccount(newVal);
+                } finally {
+                    isUpdatingForm = false;
                 }
             });
         }
@@ -1101,18 +1107,25 @@ public class BankController {
         if (cmbBankAccount != null) {
             cmbBankAccount.setItems(accountData);
             cmbBankAccount.valueProperty().addListener((obs, oldVal, newVal) -> {
-                updateTemplateMappingLabel(newVal);
-                if (newVal != null && newVal.getId() != null) {
-                    Long bankId = newVal.getId().longValue();
-                    Session.setSelectedBankId(bankId);
-                    AppState.getInstance().setSelectedBankAccount(newVal);
+                if (isUpdatingForm) return;
+                try {
+                    isUpdatingForm = true;
+                    updateTemplateMappingLabel(newVal);
+                    if (newVal != null && newVal.getId() != null) {
+                        Long bankId = newVal.getId().longValue();
+                        Session.setSelectedBankId(bankId);
+                        AppState.getInstance().setSelectedBankAccount(newVal);
 
-                    if (fldBankCode != null && newVal.getBankName() != null) {
-                        fldBankCode.setText(newVal.getBankName());
+                        if (fldBankCode != null && newVal.getBankName() != null) {
+                            fldBankCode.setText(newVal.getBankName());
+                        }
+                        if (accountTable != null && accountTable.getSelectionModel().getSelectedItem() != newVal) {
+                            accountTable.getSelectionModel().select(newVal);
+                        }
+                        loadTemplateFromBackend(bankId);
                     }
-                    Bank b = new Bank(newVal.getBankName(), newVal.getBankName(), "STANDARD", true);
-                    b.setId(newVal.getId());
-                    loadNewTemplate(bankId, b);
+                } finally {
+                    isUpdatingForm = false;
                 }
             });
         }

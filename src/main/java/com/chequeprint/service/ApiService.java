@@ -68,7 +68,7 @@ public class ApiService {
     public BankAccount saveBankAccount(BankAccount account) throws Exception {
         HttpURLConnection connection = null;
         try {
-            URL url = new URL("http://localhost:8081/api/bank/account");
+            URL url = new URL(ApiConfig.BASE_URL + "/api/bank/account");
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/json");
@@ -114,7 +114,7 @@ public class ApiService {
     public BankAccount updateBankAccount(Integer id, BankAccount account) throws Exception {
         HttpURLConnection connection = null;
         try {
-            URL url = new URL("http://localhost:8081/api/bank/account/" + id);
+            URL url = new URL(ApiConfig.BASE_URL + "/api/bank/account/" + id);
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("PUT");
             connection.setRequestProperty("Content-Type", "application/json");
@@ -160,7 +160,7 @@ public class ApiService {
     public void deleteBankAccount(Integer id) throws Exception {
         HttpURLConnection connection = null;
         try {
-            URL url = new URL("http://localhost:8081/api/bank/account/" + id);
+            URL url = new URL(ApiConfig.BASE_URL + "/api/bank/account/" + id);
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("DELETE");
             
@@ -186,7 +186,7 @@ public class ApiService {
     public com.chequeprint.model.ChequeTemplate getChequeTemplateByBankId(Long bankId) throws Exception {
         HttpURLConnection connection = null;
         try {
-            URL url = new URL("http://localhost:8081/api/template/bank/" + bankId);
+            URL url = new URL(ApiConfig.BASE_URL + "/api/template/bank/" + bankId);
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Accept", "application/json");
@@ -222,7 +222,7 @@ public class ApiService {
     public com.chequeprint.model.ChequeTemplate saveChequeTemplate(com.chequeprint.model.ChequeTemplate template) throws Exception {
         HttpURLConnection connection = null;
         try {
-            URL url = new URL("http://localhost:8081/api/template/save");
+            URL url = new URL(ApiConfig.BASE_URL + "/api/template/save");
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/json");

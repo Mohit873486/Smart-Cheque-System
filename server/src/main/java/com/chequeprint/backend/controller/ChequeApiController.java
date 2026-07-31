@@ -148,7 +148,7 @@ public class ChequeApiController {
             response.put("chequeNo", updated.getChequeNo());
             response.put("status", updated.getStatus().name());
             response.put("printedAt", java.time.LocalDateTime.now().toString());
-            response.put("pdfDownloadUrl", "http://localhost:8081/api/cheques/" + id + "/pdf");
+            response.put("pdfDownloadUrl", "http://localhost:8082/api/cheques/" + id + "/pdf");
             return ResponseEntity.ok(response);
         } catch (Exception ex) {
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).build();
