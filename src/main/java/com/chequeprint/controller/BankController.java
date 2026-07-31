@@ -53,6 +53,8 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.chequeprint.service.ApiService;
 import com.chequeprint.model.BankAccount;
@@ -209,6 +211,11 @@ public class BankController {
     private BankTemplateLayout currentLayout;
 
     private boolean isUpdatingForm = false;
+    private boolean initialized = false;
+    private boolean loadingBankAccounts = false;
+    private boolean accountTemplateListenerRegistered = false;
+    private final Set<String> templateLoadsInFlight = ConcurrentHashMap.newKeySet();
+    private final Set<Long> layoutLoadsInFlight = ConcurrentHashMap.newKeySet();
 
     @FXML
     private void onAddAccount() {
@@ -514,6 +521,11 @@ public class BankController {
 
     @FXML
     public void initialize() {
+        if (initialized) {
+            return;
+        }
+        initialized = true;
+
         setupForm();
         setupPreview();
         setupAdjustmentPanel();
@@ -524,9 +536,7 @@ public class BankController {
         clearForm(); // Ensures default layout coordinates are applied at startup
         FxUtils.animateIn(previewViewport, 0);
 
-        // Auto sync event system: Refresh preview whenever bank, template, or cheque data changes
-        AppState.getInstance().addStateChangeListener(() -> {
-            BankTemplateLayout latestTemplate = AppState.getInstance().getSelectedTemplate();
+        AppState.getInstance().selectedTemplateProperty().addListener((obs, oldTemplate, latestTemplate) -> {
             if (latestTemplate != null) {
                 this.currentLayout = latestTemplate;
                 refreshPreview();
@@ -712,12 +722,15 @@ public class BankController {
 
                     updateTemplateStatusBadge(account, defaultItem);
 
-                    // Add listener to update status badge on dropdown selection
-                    cmbAccountTemplates.valueProperty().addListener((obs, oldTpl, newTpl) -> {
-                        if (newTpl != null) {
-                            updateTemplateStatusBadge(account, newTpl);
-                        }
-                    });
+                    if (!accountTemplateListenerRegistered) {
+                        accountTemplateListenerRegistered = true;
+                        cmbAccountTemplates.valueProperty().addListener((obs, oldTpl, newTpl) -> {
+                            BankAccount selectedAccount = cmbBankAccount != null ? cmbBankAccount.getValue() : null;
+                            if (newTpl != null) {
+                                updateTemplateStatusBadge(selectedAccount, newTpl);
+                            }
+                        });
+                    }
                 });
             } catch (Exception e) {
                 e.printStackTrace();
@@ -916,8 +929,13 @@ public class BankController {
             return;
         }
 
+        if (!templateLoadsInFlight.add(cacheKey)) {
+            return;
+        }
+
         if (previewLoading != null) {
             previewLoading.setVisible(true);
+            previewLoading.setManaged(true);
         }
 
         Task<com.chequeprint.model.ChequeTemplate> task = new Task<>() {
@@ -928,7 +946,11 @@ public class BankController {
         };
 
         task.setOnSucceeded(e -> {
-            if (previewLoading != null) previewLoading.setVisible(false);
+            templateLoadsInFlight.remove(cacheKey);
+            if (previewLoading != null) {
+                previewLoading.setVisible(false);
+                previewLoading.setManaged(false);
+            }
             com.chequeprint.model.ChequeTemplate template = task.getValue();
             if (template == null) {
                 template = new com.chequeprint.model.ChequeTemplate(bankId, "Default Bank Template");
@@ -944,7 +966,11 @@ public class BankController {
         });
 
         task.setOnFailed(e -> {
-            if (previewLoading != null) previewLoading.setVisible(false);
+            templateLoadsInFlight.remove(cacheKey);
+            if (previewLoading != null) {
+                previewLoading.setVisible(false);
+                previewLoading.setManaged(false);
+            }
             System.err.println("Failed to fetch template for bankId " + bankId + ": " + task.getException().getMessage());
             com.chequeprint.model.ChequeTemplate defaultTemplate = new com.chequeprint.model.ChequeTemplate(bankId, "Default Bank Template");
             templateCache.put(cacheKey, defaultTemplate);
@@ -1596,6 +1622,10 @@ public class BankController {
     }
 
     private void loadBankAccounts() {
+        if (loadingBankAccounts) {
+            return;
+        }
+        loadingBankAccounts = true;
         if (loadingSpinner != null) {
             loadingSpinner.setVisible(true);
             loadingSpinner.setManaged(true);
@@ -1614,6 +1644,7 @@ public class BankController {
 
         task.setOnSucceeded(e -> {
             List<BankAccount> accounts = task.getValue();
+            BankAccount selectedBeforeReload = cmbBankAccount != null ? cmbBankAccount.getValue() : null;
             accountData.setAll(accounts);
             if (accountTable != null) {
                 accountTable.setItems(accountData);
@@ -1631,11 +1662,18 @@ public class BankController {
                         }
                     }
                 }
-                if (targetAcc == null && !accounts.isEmpty()) {
-                    targetAcc = accounts.get(0);
+                if (targetAcc == null && selectedBeforeReload != null && selectedBeforeReload.getId() != null) {
+                    for (BankAccount acc : accounts) {
+                        if (acc.getId() != null && acc.getId().equals(selectedBeforeReload.getId())) {
+                            targetAcc = acc;
+                            break;
+                        }
+                    }
                 }
                 if (targetAcc != null) {
-                    cmbBankAccount.setValue(targetAcc);
+                    if (cmbBankAccount.getValue() == null || !targetAcc.getId().equals(cmbBankAccount.getValue().getId())) {
+                        cmbBankAccount.setValue(targetAcc);
+                    }
                     AppState.getInstance().setSelectedBankAccount(targetAcc);
                     if (targetAcc.getId() != null) {
                         loadNewTemplate(targetAcc.getId().longValue(), new Bank(targetAcc.getBankName(), targetAcc.getBankName(), "STANDARD", true));
@@ -1651,6 +1689,7 @@ public class BankController {
                 emptyState.setVisible(isEmpty);
                 emptyState.setManaged(isEmpty);
             }
+            loadingBankAccounts = false;
         });
 
         task.setOnFailed(e -> {
@@ -1660,6 +1699,7 @@ public class BankController {
                 loadingSpinner.setManaged(false);
             }
             showAlert("API Error", "Failed to load bank accounts: " + ex.getMessage(), Alert.AlertType.ERROR);
+            loadingBankAccounts = false;
         });
 
         Thread thread = new Thread(task, "load-accounts-task");
@@ -2667,9 +2707,12 @@ public class BankController {
             return;
         }
 
+        if (!layoutLoadsInFlight.add(bankId)) {
+            return;
+        }
+
         // Clear old template and UI selection immediately when bank changes to avoid mixing layouts
         clearOldUI();
-        AppState.getInstance().setSelectedTemplate(null);
         this.currentLayout = new BankTemplateLayout();
 
         // Check Map<BankId, Template> cache first
@@ -2678,6 +2721,7 @@ public class BankController {
             AppState.getInstance().setSelectedTemplate(currentLayout);
             layoutPreviewPane();
             refreshPreview();
+            layoutLoadsInFlight.remove(bankId);
             return;
         }
 
@@ -2698,26 +2742,34 @@ public class BankController {
 
                 final Long targetBankId = bankId;
                 Platform.runLater(() -> {
-                    if (fields != null && !fields.isEmpty()) {
-                        applyReloadedFields(fields);
-                    } else {
-                        // If no template exists for selected bank, initialize standard default template
-                        currentLayout = new BankTemplateLayout();
-                        currentLayout.ensureAllFields();
-                        layoutPreviewPane();
-                    }
-                    if (currentLayout != null) {
-                        bankTemplateMap.put(targetBankId, currentLayout.copy());
-                        AppState.getInstance().setSelectedTemplate(currentLayout);
+                    try {
+                        if (fields != null && !fields.isEmpty()) {
+                            applyReloadedFields(fields);
+                        } else {
+                            // If no template exists for selected bank, initialize standard default template
+                            currentLayout = new BankTemplateLayout();
+                            currentLayout.ensureAllFields();
+                            layoutPreviewPane();
+                        }
+                        if (currentLayout != null) {
+                            bankTemplateMap.put(targetBankId, currentLayout.copy());
+                            AppState.getInstance().setSelectedTemplate(currentLayout);
+                        }
+                    } finally {
+                        layoutLoadsInFlight.remove(targetBankId);
                     }
                 });
             } catch (Exception e) {
                 System.err.println("Multi-bank template load fallback to default standard layout: " + e.getMessage());
                 Platform.runLater(() -> {
-                    currentLayout = new BankTemplateLayout();
-                    currentLayout.ensureAllFields();
-                    layoutPreviewPane();
-                    AppState.getInstance().setSelectedTemplate(currentLayout);
+                    try {
+                        currentLayout = new BankTemplateLayout();
+                        currentLayout.ensureAllFields();
+                        layoutPreviewPane();
+                        AppState.getInstance().setSelectedTemplate(currentLayout);
+                    } finally {
+                        layoutLoadsInFlight.remove(bankId);
+                    }
                 });
             }
         }, "load-new-template").start();

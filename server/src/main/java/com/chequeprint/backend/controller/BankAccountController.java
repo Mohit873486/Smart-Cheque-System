@@ -1,5 +1,6 @@
 package com.chequeprint.backend.controller;
 
+import com.chequeprint.backend.dto.BankAccountResponse;
 import com.chequeprint.backend.entity.BankAccount;
 import com.chequeprint.backend.service.BankAccountService;
 import jakarta.validation.Valid;
@@ -23,8 +24,8 @@ public class BankAccountController {
     }
 
     @GetMapping
-    public ResponseEntity<List<BankAccount>> getAllBankAccounts() {
-        List<BankAccount> accounts = bankAccountService.getAllBankAccounts();
+    public ResponseEntity<List<BankAccountResponse>> getAllBankAccounts() {
+        List<BankAccountResponse> accounts = bankAccountService.getAllBankAccounts();
         return ResponseEntity.ok(accounts);
     }
 

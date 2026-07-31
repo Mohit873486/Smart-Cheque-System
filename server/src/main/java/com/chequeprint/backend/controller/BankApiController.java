@@ -25,6 +25,14 @@ public class BankApiController {
         return ResponseEntity.ok(banks);
     }
 
+    // GET /api/banks/{id} - Get one bank account/template owner by id
+    @GetMapping("/{id}")
+    public ResponseEntity<BankAccount> getBankById(@PathVariable Long id) {
+        return bankTemplateService.getBankAccountById(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     // POST /api/bank - Create a new bank account
     @PostMapping
     public ResponseEntity<BankAccount> createBank(@Valid @RequestBody BankAccount bankAccount) {

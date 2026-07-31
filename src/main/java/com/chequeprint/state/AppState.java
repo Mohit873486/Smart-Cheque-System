@@ -17,6 +17,8 @@ import javafx.print.Printer;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.prefs.Preferences;
 
@@ -34,6 +36,7 @@ public final class AppState {
     private final ObjectProperty<User> loggedInUser = new SimpleObjectProperty<>();
 
     private final BankService bankService = new BankService();
+    private final Set<Long> templateLoadsInFlight = ConcurrentHashMap.newKeySet();
 
     @FunctionalInterface
     public interface StateChangeListener {
@@ -217,6 +220,9 @@ public final class AppState {
 
     public void fetchTemplateForBank(Long bankId, String bankCode) {
         if (bankId == null) return;
+        if (!templateLoadsInFlight.add(bankId)) {
+            return;
+        }
         new Thread(() -> {
             try {
                 Bank b = bankService.getById(bankId.intValue());
@@ -227,6 +233,8 @@ public final class AppState {
                 }
             } catch (Exception e) {
                 System.err.println("[AppState] Failed to fetch template for bankId=" + bankId + ": " + e.getMessage());
+            } finally {
+                templateLoadsInFlight.remove(bankId);
             }
         }, "app-state-template-loader").start();
     }

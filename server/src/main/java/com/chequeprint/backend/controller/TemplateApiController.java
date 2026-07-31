@@ -33,6 +33,16 @@ public class TemplateApiController {
         return ResponseEntity.ok(templates);
     }
 
+    // GET /api/template/bank/{bankId} - JavaFX compatibility endpoint
+    @GetMapping("/bank/{bankId}")
+    public ResponseEntity<ChequeTemplate> getPrimaryTemplateByBankId(@PathVariable Long bankId) {
+        List<ChequeTemplate> templates = bankTemplateService.getTemplatesByBankId(bankId);
+        if (templates.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(templates.get(0));
+    }
+
     // GET /api/template/account/{accountId} - Get default & optional templates for a bank account
     @GetMapping("/account/{accountId}")
     public ResponseEntity<List<ChequeTemplate>> getTemplatesForAccount(@PathVariable Long accountId) {

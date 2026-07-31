@@ -1,10 +1,12 @@
 package com.chequeprint.backend.service;
 
+import com.chequeprint.backend.dto.BankAccountResponse;
 import com.chequeprint.backend.entity.BankAccount;
 import com.chequeprint.backend.exception.ResourceNotFoundException;
 import com.chequeprint.backend.repository.BankAccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -18,17 +20,24 @@ public class BankAccountService {
         this.bankAccountRepository = bankAccountRepository;
     }
 
-    public List<BankAccount> getAllBankAccounts() {
-        return bankAccountRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<BankAccountResponse> getAllBankAccounts() {
+        return bankAccountRepository.findAllByOrderByIdAsc()
+                .stream()
+                .map(BankAccountResponse::from)
+                .toList();
     }
 
+    @Transactional(readOnly = true)
     public BankAccount getBankAccountById(Long id) {
         return bankAccountRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Bank Account not found with id: " + id));
     }
 
+    @Transactional
     public BankAccount createBankAccount(BankAccount bankAccount) {
-        if (bankAccount.getAccountNumber() != null && bankAccountRepository.findByAccountNumber(bankAccount.getAccountNumber().trim()).isPresent()) {
+        normalize(bankAccount);
+        if (bankAccount.getAccountNumber() != null && bankAccountRepository.findByAccountNumber(bankAccount.getAccountNumber()).isPresent()) {
             throw new IllegalArgumentException("Bank account with account number '" + bankAccount.getAccountNumber() + "' already exists.");
         }
         if (bankAccount.getTemplateId() == null) {
@@ -37,7 +46,9 @@ public class BankAccountService {
         return bankAccountRepository.save(bankAccount);
     }
 
+    @Transactional
     public BankAccount updateBankAccount(Long id, BankAccount updatedBankAccount) {
+        normalize(updatedBankAccount);
         BankAccount existingAccount = bankAccountRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Bank Account not found with id: " + id));
 
@@ -59,10 +70,24 @@ public class BankAccountService {
         return bankAccountRepository.save(existingAccount);
     }
 
+    @Transactional
     public void deleteBankAccount(Long id) {
         if (!bankAccountRepository.existsById(id)) {
             throw new ResourceNotFoundException("Bank Account not found with id: " + id);
         }
         bankAccountRepository.deleteById(id);
+    }
+
+    private void normalize(BankAccount bankAccount) {
+        bankAccount.setBankName(trim(bankAccount.getBankName()));
+        bankAccount.setAccountNumber(trim(bankAccount.getAccountNumber()));
+        bankAccount.setAccountHolderName(trim(bankAccount.getAccountHolderName()));
+        bankAccount.setIfsc(trim(bankAccount.getIfsc()));
+        bankAccount.setBranch(trim(bankAccount.getBranch()));
+        bankAccount.setSignaturePath(trim(bankAccount.getSignaturePath()));
+    }
+
+    private String trim(String value) {
+        return value == null ? null : value.trim();
     }
 }

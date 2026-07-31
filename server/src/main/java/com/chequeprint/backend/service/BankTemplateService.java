@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -28,10 +29,12 @@ public class BankTemplateService {
     @Autowired
     private com.chequeprint.backend.repository.BankTemplateRepository bankTemplateRepository;
 
+    @Transactional(readOnly = true)
     public List<com.chequeprint.backend.entity.BankTemplate> getAllTemplates() {
         return bankTemplateRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public java.util.Optional<com.chequeprint.backend.entity.BankTemplate> getTemplateById(int id) {
         return bankTemplateRepository.findById(id);
     }
@@ -50,8 +53,14 @@ public class BankTemplateService {
     }
 
     // 1. BankAccount Operations
+    @Transactional(readOnly = true)
     public List<BankAccount> getAllBankAccounts() {
-        return bankAccountRepository.findAll();
+        return bankAccountRepository.findAllByOrderByIdAsc();
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<BankAccount> getBankAccountById(Long id) {
+        return bankAccountRepository.findById(id);
     }
 
     public BankAccount createBankAccount(BankAccount bankAccount) {
@@ -92,10 +101,12 @@ public class BankTemplateService {
         if (template.getConfigJson() != null) existing.setConfigJson(template.getConfigJson());
     }
 
+    @Transactional(readOnly = true)
     public List<ChequeTemplate> getTemplatesByBankId(Long bankId) {
         return chequeTemplateRepository.findByBankId(bankId);
     }
 
+    @Transactional(readOnly = true)
     public List<ChequeTemplate> getTemplatesForAccount(Long accountId) {
         if (accountId == null) return List.of();
         return chequeTemplateRepository.findByAccountId(accountId);
@@ -136,6 +147,7 @@ public class BankTemplateService {
         return templateFieldRepository.save(field);
     }
 
+    @Transactional(readOnly = true)
     public List<TemplateField> getFieldsByTemplateId(Long templateId) {
         return templateFieldRepository.findByTemplateId(templateId);
     }

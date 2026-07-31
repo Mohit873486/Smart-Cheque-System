@@ -11,6 +11,7 @@ import com.chequeprint.util.SessionManager;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.List;
 
@@ -56,8 +57,10 @@ public class ApiService {
                 // Return empty list gracefully instead of throwing exception for no data
                 return java.util.Collections.emptyList();
             } else {
-                throw new Exception("Failed to load data. HTTP Status: " + status);
+                throw new Exception("Failed to load data. HTTP Status: " + status + " - " + readError(connection));
             }
+        } catch (SocketTimeoutException ex) {
+            throw new SocketTimeoutException("Bank account API timed out: " + API_URL);
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -102,7 +105,7 @@ public class ApiService {
                 
                 return mapper.readValue(response.toString(), BankAccount.class);
             } else {
-                throw new Exception("Failed to save data. HTTP Status: " + status);
+                throw new Exception("Failed to save data. HTTP Status: " + status + " - " + readError(connection));
             }
         } finally {
             if (connection != null) {
@@ -148,7 +151,7 @@ public class ApiService {
                 
                 return mapper.readValue(response.toString(), BankAccount.class);
             } else {
-                throw new Exception("Failed to update data. HTTP Status: " + status);
+                throw new Exception("Failed to update data. HTTP Status: " + status + " - " + readError(connection));
             }
         } finally {
             if (connection != null) {
@@ -174,7 +177,7 @@ public class ApiService {
 
             int status = connection.getResponseCode();
             if (status != 204 && status != 200) {
-                throw new Exception("Failed to delete account. HTTP Status: " + status);
+                throw new Exception("Failed to delete account. HTTP Status: " + status + " - " + readError(connection));
             }
         } finally {
             if (connection != null) {
@@ -261,6 +264,24 @@ public class ApiService {
             if (connection != null) {
                 connection.disconnect();
             }
+        }
+    }
+
+    private String readError(HttpURLConnection connection) {
+        try {
+            if (connection.getErrorStream() == null) {
+                return "";
+            }
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getErrorStream()))) {
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+                return response.toString();
+            }
+        } catch (Exception ignored) {
+            return "";
         }
     }
 }
