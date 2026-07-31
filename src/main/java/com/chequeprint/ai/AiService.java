@@ -1,23 +1,34 @@
 package com.chequeprint.ai;
 
-import com.chequeprint.service.GeminiApiClient;
+import com.chequeprint.util.Session;
+import com.chequeprint.util.SessionManager;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * Service for interacting with the AI and Google Gemini API.
+ * Client service routing AI requests through Spring Boot Backend REST API (/api/ai/ask).
  */
 public class AiService {
 
     private static final Logger LOGGER = Logger.getLogger(AiService.class.getName());
-    private static final String MODEL = "gemini-pro";
-    private static final int MAX_OUTPUT_TOKENS = 512;
+    private static final String BACKEND_AI_URL = "http://localhost:8081/api/ai/ask";
     private static final AiService INSTANCE = new AiService();
 
-    private final GeminiApiClient geminiClient;
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(15))
+            .build();
 
-    public AiService() {
-        this.geminiClient = new GeminiApiClient();
-    }
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public AiService() {}
 
     public static AiService getInstance() {
         return INSTANCE;
@@ -29,14 +40,38 @@ public class AiService {
         }
 
         try {
-            return geminiClient.generateText(MODEL, prompt, MAX_OUTPUT_TOKENS);
-        } catch (Exception e) {
-            LOGGER.severe("AI API Error: " + e.getMessage());
-            String message = e.getMessage();
-            if (message != null && message.contains("GEMINI_API_KEY")) {
-                return "Error: GEMINI_API_KEY environment variable is not set. Please configure it to use AI features.";
+            String jsonBody = objectMapper.writeValueAsString(Map.of("prompt", prompt));
+
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .uri(URI.create(BACKEND_AI_URL))
+                    .header("Content-Type", "application/json")
+                    .timeout(Duration.ofSeconds(25))
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody));
+
+            String token = SessionManager.getInstance().getToken();
+            if (token != null && !token.isBlank()) {
+                builder.header("Authorization", "Bearer " + token);
             }
-            return "Error communicating with AI service: " + (message != null ? message : "Unknown error");
+
+            HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                JsonNode root = objectMapper.readTree(response.body());
+                if (root.path("success").asBoolean(true)) {
+                    return root.path("response").asText();
+                } else {
+                    return "⚠️ " + root.path("error").asText("Unknown backend error");
+                }
+            } else {
+                return "⚠️ Unable to connect to AI Service (HTTP " + response.statusCode() + "). Please check your server connection.";
+            }
+        } catch (java.net.http.HttpTimeoutException e) {
+            return "⚠️ Request Timed Out. Please check your internet connection and try again.";
+        } catch (java.net.ConnectException e) {
+            return "⚠️ Unable to connect to the backend server. Please make sure the REST API service is running.";
+        } catch (Exception e) {
+            LOGGER.severe("Backend AI API Communication Error: " + e.getMessage());
+            return "⚠️ AI Error: " + (e.getMessage() != null ? e.getMessage() : "Connection failed.");
         }
     }
 

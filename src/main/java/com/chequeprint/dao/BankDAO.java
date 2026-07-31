@@ -55,8 +55,30 @@ public class BankDAO {
         HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() >= 200 && response.statusCode() < 300) {
-            return objectMapper.readValue(response.body(), new TypeReference<List<Bank>>() {});
+            List<Bank> banks = objectMapper.readValue(response.body(), new TypeReference<List<Bank>>() {});
+            if (!banks.isEmpty()) {
+                return banks;
+            }
         }
+
+        // Secondary API Fallback to /api/bank/account if /api/banks is empty
+        try {
+            List<com.chequeprint.model.BankAccount> accounts = new com.chequeprint.service.ApiService().getBankAccounts();
+            if (accounts != null && !accounts.isEmpty()) {
+                List<Bank> mapped = new ArrayList<>();
+                for (com.chequeprint.model.BankAccount acc : accounts) {
+                    Bank b = new Bank();
+                    b.setId(acc.getId() != null ? acc.getId().intValue() : 0);
+                    b.setBankName(acc.getBankName());
+                    b.setBankCode(acc.getBankName() != null ? acc.getBankName().toUpperCase().replaceAll("\\s+", "_") : "BANK");
+                    b.setChequeSize("STANDARD");
+                    b.setMicr(true);
+                    mapped.add(b);
+                }
+                return mapped;
+            }
+        } catch (Exception ignored) {}
+
         return new ArrayList<>();
     }
 

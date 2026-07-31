@@ -51,7 +51,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> handleDataIntegrityViolationException(DataIntegrityViolationException ex, WebRequest request) {
-        return buildResponse(HttpStatus.CONFLICT, "Data Integrity Violation", "Database constraint violation occurred: " + ex.getMostSpecificCause().getMessage(), request);
+        String message = "Database constraint violation occurred.";
+        if (ex.getMostSpecificCause() != null && ex.getMostSpecificCause().getMessage() != null) {
+            String causeMsg = ex.getMostSpecificCause().getMessage();
+            if (causeMsg.toLowerCase().contains("duplicate")) {
+                message = "A record with this account number already exists.";
+            } else {
+                message = causeMsg;
+            }
+        }
+        return buildResponse(HttpStatus.CONFLICT, "Duplicate Entry", message, request);
     }
 
     @ExceptionHandler(AccessDeniedException.class)

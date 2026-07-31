@@ -23,6 +23,7 @@ import javafx.stage.Stage;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ChequeDialogController {
@@ -185,44 +186,62 @@ public class ChequeDialogController {
 
     private void loadBanksIntoCombo() {
         new Thread(() -> {
+            List<Bank> banks = new ArrayList<>();
             try {
-                List<Bank> banks = bankService.getAll();
-                Platform.runLater(() -> {
-                    bankNameToId.clear();
-                    bankNameToBank.clear();
-                    ObservableList<String> names = FXCollections.observableArrayList();
-                    for (Bank b : banks) {
-                        names.add(b.getBankName());
-                        bankNameToId.put(b.getBankName(), b.getId());
-                        bankNameToBank.put(b.getBankName(), b);
+                banks = bankService.getAll();
+            } catch (Exception ignored) {}
+
+            if (banks == null || banks.isEmpty()) {
+                try {
+                    List<com.chequeprint.model.BankAccount> accs = new com.chequeprint.service.BankAccountService().fetchAccounts();
+                    if (accs != null && !accs.isEmpty()) {
+                        banks = new ArrayList<>();
+                        for (com.chequeprint.model.BankAccount acc : accs) {
+                            if (acc.getBankName() != null && !acc.getBankName().isBlank()) {
+                                Bank b = new Bank(acc.getBankName(), acc.getBankName().toUpperCase(), "DEFAULT", true);
+                                if (acc.getId() != null) b.setId(acc.getId().intValue());
+                                banks.add(b);
+                            }
+                        }
                     }
-                    if (names.isEmpty()) {
-                        names.addAll("SBI", "HDFC", "ICICI", "Axis Bank");
-                    }
-                    cmbBank.setItems(names);
-                    
-                    Bank appBank = AppState.getInstance().getSelectedBank();
-                    if (selectedCheque != null && selectedCheque.getBankName() != null && names.contains(selectedCheque.getBankName())) {
-                        cmbBank.setValue(selectedCheque.getBankName());
-                    } else if (appBank != null && appBank.getBankName() != null && names.contains(appBank.getBankName())) {
-                        cmbBank.setValue(appBank.getBankName());
-                    } else if (!names.isEmpty()) {
-                        cmbBank.setValue(names.get(0));
-                    }
-                });
-            } catch (Exception e) {
-                Platform.runLater(() -> {
-                    cmbBank.setItems(FXCollections.observableArrayList("SBI", "HDFC", "ICICI", "Axis Bank"));
-                    Bank appBank = AppState.getInstance().getSelectedBank();
-                    if (selectedCheque != null && selectedCheque.getBankName() != null) {
-                        cmbBank.setValue(selectedCheque.getBankName());
-                    } else if (appBank != null && appBank.getBankName() != null) {
-                        cmbBank.setValue(appBank.getBankName());
-                    } else {
-                        cmbBank.setValue("SBI");
-                    }
-                });
+                } catch (Exception ignored) {}
             }
+
+            if (banks == null || banks.isEmpty()) {
+                banks = List.of(
+                    new Bank("State Bank of India", "SBI", "DEFAULT", true),
+                    new Bank("HDFC Bank", "HDFC", "DEFAULT", true),
+                    new Bank("ICICI Bank", "ICICI", "DEFAULT", true),
+                    new Bank("Axis Bank", "AXIS", "DEFAULT", true),
+                    new Bank("Bank of Baroda", "BOB", "DEFAULT", true)
+                );
+            }
+
+            final List<Bank> finalBanks = banks;
+            Platform.runLater(() -> {
+                bankNameToId.clear();
+                bankNameToBank.clear();
+                ObservableList<String> names = FXCollections.observableArrayList();
+                int idx = 1;
+                for (Bank b : finalBanks) {
+                    names.add(b.getBankName());
+                    int id = b.getId() != null ? b.getId() : idx++;
+                    bankNameToId.put(b.getBankName(), id);
+                    bankNameToBank.put(b.getBankName(), b);
+                }
+
+                cmbBank.setDisable(false);
+                cmbBank.setItems(names);
+
+                Bank appBank = AppState.getInstance().getSelectedBank();
+                if (selectedCheque != null && selectedCheque.getBankName() != null && names.contains(selectedCheque.getBankName())) {
+                    cmbBank.setValue(selectedCheque.getBankName());
+                } else if (appBank != null && appBank.getBankName() != null && names.contains(appBank.getBankName())) {
+                    cmbBank.setValue(appBank.getBankName());
+                } else if (!names.isEmpty()) {
+                    cmbBank.setValue(names.get(0));
+                }
+            });
         }, "load-banks-dialog").start();
     }
 
@@ -261,23 +280,32 @@ public class ChequeDialogController {
             }
 
             String selectedBankName = cmbBank.getValue();
-            int bankId = bankNameToId.getOrDefault(selectedBankName,
-                    Math.max(1, cmbBank.getSelectionModel().getSelectedIndex() + 1));
+            Bank activeBank = bankNameToBank.get(selectedBankName);
+            int bankId;
+            if (activeBank != null && activeBank.getId() != null) {
+                bankId = activeBank.getId();
+            } else {
+                bankId = bankNameToId.getOrDefault(selectedBankName, 1);
+            }
 
             if (selectedCheque == null) {
                 Cheque c = new Cheque(null, payee, amount, bankId, datePicker.getValue());
+                c.setBankName(selectedBankName);
                 workflowService.createPending(c, actor);
                 AppState.getInstance().setCurrentCheque(c);
+                AppState.getInstance().setCurrentChequeData(c);
                 showAlert("Success", "Cheque created and submitted for approval.", Alert.AlertType.INFORMATION);
             } else {
                 selectedCheque.setPayeeName(payee);
                 selectedCheque.setAmount(amount);
                 selectedCheque.setBankId(bankId);
+                selectedCheque.setBankName(selectedBankName);
                 selectedCheque.setIssueDate(datePicker.getValue());
                 if (!chequeService.update(selectedCheque)) {
                     throw new RuntimeException("Could not update cheque.");
                 }
                 AppState.getInstance().setCurrentCheque(selectedCheque);
+                AppState.getInstance().setCurrentChequeData(selectedCheque);
                 showAlert("Success", "Cheque updated.", Alert.AlertType.INFORMATION);
             }
             saved = true;

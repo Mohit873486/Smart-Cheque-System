@@ -182,11 +182,18 @@ public final class ChequeRenderEngine {
         double w = (layout != null ? layout.getWidthInches() : 8.0) * 72.0;
         double h = (layout != null ? layout.getHeightInches() : 3.66) * 72.0;
         canvas.setPrefSize(w, h);
+        canvas.setMinSize(w, h);
+        canvas.setMaxSize(w, h);
+        canvas.resize(w, h);
 
         renderCheque(canvas, cheque, bank, layout);
 
+        javafx.scene.Scene dummyScene = new javafx.scene.Scene(canvas, w, h);
+        canvas.applyCss();
+        canvas.layout();
+
         SnapshotParameters params = new SnapshotParameters();
-        params.setFill(Color.TRANSPARENT);
+        params.setFill(Color.WHITE);
         params.setTransform(javafx.scene.transform.Transform.scale(scale, scale));
         return canvas.snapshot(params, null);
     }

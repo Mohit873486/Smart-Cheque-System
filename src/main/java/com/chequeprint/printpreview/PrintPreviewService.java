@@ -46,15 +46,23 @@ public class PrintPreviewService {
         double heightMm = finalLayout.getHeightInches() * 25.4;
 
         // Render high resolution snapshot of cheque based on layout designer
-        WritableImage snapshot = ChequeSnapshotRenderer.renderCheque(cheque, bankTemplate, layout, 2.5);
-        BufferedImage img = SwingFXUtils.fromFXImage(snapshot, null);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(img, "png", baos);
-        String base64Image = Base64.getEncoder().encodeToString(baos.toByteArray());
+        WritableImage snapshot = ChequeSnapshotRenderer.renderCheque(cheque, bankTemplate, finalLayout, 2.5);
+        
+        String html = null;
+        try {
+            html = htmlTemplateService.buildChequeHtml(cheque, bankTemplate, finalLayout);
+        } catch (Exception ignored) {}
 
-        String html = "<html><body style='margin:0;padding:0;background:#f8fafc;display:flex;justify-content:center;align-items:center;height:100vh;'>" +
-                "<img src='data:image/png;base64," + base64Image + "' style='max-width:100%;max-height:100%;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);border:1px solid #e2e8f0;background:white;' />" +
-                "</body></html>";
+        if (html == null || html.isBlank()) {
+            BufferedImage img = SwingFXUtils.fromFXImage(snapshot, null);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(img, "png", baos);
+            String base64Image = Base64.getEncoder().encodeToString(baos.toByteArray());
+
+            html = "<html><body style='margin:0;padding:0;background:#f8fafc;display:flex;justify-content:center;align-items:center;height:100vh;'>" +
+                    "<img src='data:image/png;base64," + base64Image + "' style='max-width:100%;max-height:100%;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);border:1px solid #e2e8f0;background:white;' />" +
+                    "</body></html>";
+        }
 
         String docJobName = "Cheque-" + safe(cheque.getChequeNo(), "Draft");
 

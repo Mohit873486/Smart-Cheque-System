@@ -55,6 +55,12 @@ public class BankTemplateService {
     }
 
     public BankAccount createBankAccount(BankAccount bankAccount) {
+        if (bankAccount.getAccountNumber() != null && bankAccountRepository.findByAccountNumber(bankAccount.getAccountNumber().trim()).isPresent()) {
+            throw new IllegalArgumentException("Bank account with account number '" + bankAccount.getAccountNumber() + "' already exists.");
+        }
+        if (bankAccount.getTemplateId() == null) {
+            bankAccount.setTemplateId(1L);
+        }
         return bankAccountRepository.save(bankAccount);
     }
 

@@ -295,8 +295,11 @@ public class BankController {
                         accountData.add(finalObj);
                     }
 
+                    // Reload fresh bank list and account list from REST API
+                    loadBankAccounts();
+                    loadData();
+
                     if (accountTable != null) {
-                        accountTable.setItems(accountData);
                         accountTable.refresh();
                     }
                     if (emptyState != null) {
@@ -305,7 +308,7 @@ public class BankController {
                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                     alert.setTitle(exists ? "Account Exists" : "Success");
                     alert.setHeaderText(null);
-                    alert.setContentText(exists ? "Account already exists! Details updated successfully." : "Saved successfully!");
+                    alert.setContentText(exists ? "Account already exists! Details updated successfully." : "Bank account saved successfully to database!");
                     alert.showAndWait();
                 });
                 saveTask.setOnFailed(ev -> {
@@ -393,6 +396,8 @@ public class BankController {
                     if (idx >= 0) {
                         accountData.set(idx, result != null ? result : updatedAccount);
                     }
+                    loadBankAccounts();
+                    loadData();
                     if (accountTable != null) {
                         accountTable.refresh();
                     }
@@ -445,6 +450,8 @@ public class BankController {
                 };
                 deleteTask.setOnSucceeded(ev -> {
                     accountData.remove(selected);
+                    loadBankAccounts();
+                    loadData();
                     if (accountTable != null) {
                         accountTable.refresh();
                     }
@@ -820,19 +827,13 @@ public class BankController {
             }
             com.chequeprint.model.ChequeTemplate saved = saveTask.getValue();
             if (saved != null) {
-                saved.parseConfigJsonIfPresent();
+                // Reload fresh template from REST API and refresh preview
                 if (saved.getBankId() != null) {
-                    templateCache.put(String.valueOf(saved.getBankId()), saved);
+                    templateCache.remove(String.valueOf(saved.getBankId()));
+                    loadTemplateFromBackend(saved.getBankId());
+                } else {
+                    setCurrentTemplate(saved);
                 }
-                currentTemplate = saved;
-
-                BankAccount selectedAccObj = accountTable != null ? accountTable.getSelectionModel().getSelectedItem() : null;
-                if (selectedAccObj != null && saved.getId() != null) {
-                    selectedAccObj.setTemplateId(saved.getId());
-                }
-
-                // Instant reload of live preview after save
-                setCurrentTemplate(saved);
             }
 
             // Success message

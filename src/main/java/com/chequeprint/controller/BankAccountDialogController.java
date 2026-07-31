@@ -51,11 +51,16 @@ public class BankAccountDialogController {
         String ifscCode = fldIfscCode.getText() != null ? fldIfscCode.getText().trim() : "";
         String branchName = fldBranchName != null && fldBranchName.getText() != null ? fldBranchName.getText().trim() : "";
 
-        if (bankName.isEmpty() || accountNumber.isEmpty() || holderName.isEmpty()) {
+        if (bankName.isEmpty() || accountNumber.isEmpty() || holderName.isEmpty() || ifscCode.isEmpty()) {
+            if (bankName.isEmpty()) com.chequeprint.util.FxUtils.shake(fldBankName);
+            if (accountNumber.isEmpty()) com.chequeprint.util.FxUtils.shake(fldAccountNumber);
+            if (holderName.isEmpty()) com.chequeprint.util.FxUtils.shake(fldHolderName);
+            if (ifscCode.isEmpty()) com.chequeprint.util.FxUtils.shake(fldIfscCode);
+
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Validation Error");
             alert.setHeaderText(null);
-            alert.setContentText("Bank Name, Account Number, and Account Holder Name are required.");
+            alert.setContentText("Bank Name, Account Number, Account Holder Name, and IFSC Code are required.");
             alert.showAndWait();
             return;
         }

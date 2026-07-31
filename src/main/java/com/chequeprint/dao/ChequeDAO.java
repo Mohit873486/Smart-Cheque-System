@@ -26,6 +26,7 @@ import java.util.List;
 public class ChequeDAO {
 
     private static final String API_CHEQUES = ApiConfig.BASE_URL + "/api/cheques";
+    private static volatile long lastErrorLogTime = 0;
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -80,7 +81,11 @@ public class ChequeDAO {
                 return objectMapper.readValue(response.body(), new TypeReference<List<Cheque>>() {});
             }
         } catch (Exception ex) {
-            System.err.println("ChequeDAO findAll error: " + ex.getMessage());
+            long now = System.currentTimeMillis();
+            if (now - lastErrorLogTime > 5000) {
+                lastErrorLogTime = now;
+                System.err.println("ChequeDAO findAll error: " + ex.getMessage());
+            }
         }
         return new ArrayList<>();
     }

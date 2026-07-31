@@ -28,9 +28,8 @@ public class BankAccountService {
     }
 
     public BankAccount createBankAccount(BankAccount bankAccount) {
-        java.util.Optional<BankAccount> existingOpt = bankAccountRepository.findByAccountNumber(bankAccount.getAccountNumber());
-        if (existingOpt.isPresent()) {
-            return updateBankAccount(existingOpt.get().getId(), bankAccount);
+        if (bankAccount.getAccountNumber() != null && bankAccountRepository.findByAccountNumber(bankAccount.getAccountNumber().trim()).isPresent()) {
+            throw new IllegalArgumentException("Bank account with account number '" + bankAccount.getAccountNumber() + "' already exists.");
         }
         if (bankAccount.getTemplateId() == null) {
             bankAccount.setTemplateId(1L);

@@ -44,16 +44,18 @@ public final class AppState {
 
     private AppState() {
         selectedBank.addListener((obs, oldBank, newBank) -> {
-            notifyStateChangeListeners();
-            if (newBank != null && newBank.getId() != null) {
-                fetchTemplateForBank(newBank.getId().longValue(), newBank.getBankCode());
+            if (!Objects.equals(oldBank, newBank)) {
+                notifyStateChangeListeners();
+                if (newBank != null && newBank.getId() != null) {
+                    fetchTemplateForBank(newBank.getId().longValue(), newBank.getBankCode());
+                }
             }
         });
 
-        selectedBankAccount.addListener((obs, o, n) -> notifyStateChangeListeners());
-        selectedTemplate.addListener((obs, o, n) -> notifyStateChangeListeners());
-        currentCheque.addListener((obs, o, n) -> notifyStateChangeListeners());
-        selectedPrinter.addListener((obs, o, n) -> notifyStateChangeListeners());
+        selectedBankAccount.addListener((obs, o, n) -> { if (!Objects.equals(o, n)) notifyStateChangeListeners(); });
+        selectedTemplate.addListener((obs, o, n) -> { if (!Objects.equals(o, n)) notifyStateChangeListeners(); });
+        currentCheque.addListener((obs, o, n) -> { if (!Objects.equals(o, n)) notifyStateChangeListeners(); });
+        selectedPrinter.addListener((obs, o, n) -> { if (!Objects.equals(o, n)) notifyStateChangeListeners(); });
 
         try {
             String savedPrinter = PREFS != null ? PREFS.get(PREF_PRINTER, null) : null;
@@ -117,6 +119,18 @@ public final class AppState {
     }
 
     public void setCurrentCheque(Cheque cheque) {
+        this.currentCheque.set(cheque);
+    }
+
+    public ObjectProperty<Cheque> currentChequeDataProperty() {
+        return currentCheque;
+    }
+
+    public Cheque getCurrentChequeData() {
+        return currentCheque.get();
+    }
+
+    public void setCurrentChequeData(Cheque cheque) {
         this.currentCheque.set(cheque);
     }
 

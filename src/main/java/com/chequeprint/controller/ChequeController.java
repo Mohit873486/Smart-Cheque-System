@@ -254,14 +254,14 @@ public class ChequeController {
                         }
                     }
                     if (bankNames.size() == 1) {
-                        bankNames.addAll("SBI", "HDFC", "ICICI", "Axis Bank");
+                        bankNames.addAll("State Bank of India", "HDFC Bank", "ICICI Bank", "Axis Bank", "Bank of Baroda");
                     }
                     filterBank.setItems(bankNames);
                     filterBank.setValue("Bank Name");
                 });
             } catch (Exception e) {
                 Platform.runLater(() -> {
-                    filterBank.setItems(FXCollections.observableArrayList("Bank Name", "SBI", "HDFC", "ICICI", "Axis Bank"));
+                    filterBank.setItems(FXCollections.observableArrayList("Bank Name", "State Bank of India", "HDFC Bank", "ICICI Bank", "Axis Bank", "Bank of Baroda"));
                     filterBank.setValue("Bank Name");
                 });
             }

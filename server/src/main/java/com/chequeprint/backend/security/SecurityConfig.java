@@ -43,8 +43,9 @@ public class SecurityConfig {
                 // Allow login and registration endpoint publicly
                 .requestMatchers("/api/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
-                .requestMatchers("/api/bank/**").permitAll()
-                .requestMatchers("/api/template/**").permitAll()
+                .requestMatchers("/api/bank/**", "/api/banks/**").permitAll()
+                .requestMatchers("/api/template/**", "/api/templates/**").permitAll()
+                .requestMatchers("/api/ai/**").permitAll()
                 
                 // Allow settings management only for Admins
                 .requestMatchers("/api/settings/**").hasRole("Admin")
@@ -61,13 +62,13 @@ public class SecurityConfig {
                 // 4. ADMIN only can delete cheques
                 .requestMatchers(HttpMethod.DELETE, "/api/cheques/*").hasRole("Admin")
 
-                // 5. ACCOUNTS & BANKS GET requests are allowed for all authenticated users
-                .requestMatchers(HttpMethod.GET, "/api/accounts/**", "/api/banks/**").authenticated()
+                // 5. ACCOUNTS GET requests are allowed for all authenticated users
+                .requestMatchers(HttpMethod.GET, "/api/accounts/**").authenticated()
 
-                // 6. ACCOUNTS & BANKS writing/modifying requires Admin or Manager
-                .requestMatchers(HttpMethod.POST, "/api/accounts/**", "/api/banks/**").hasAnyRole("Admin", "Manager")
-                .requestMatchers(HttpMethod.PUT, "/api/accounts/**", "/api/banks/**").hasAnyRole("Admin", "Manager")
-                .requestMatchers(HttpMethod.DELETE, "/api/accounts/**", "/api/banks/**").hasAnyRole("Admin", "Manager")
+                // 6. ACCOUNTS writing/modifying requires Admin or Manager
+                .requestMatchers(HttpMethod.POST, "/api/accounts/**").hasAnyRole("Admin", "Manager")
+                .requestMatchers(HttpMethod.PUT, "/api/accounts/**").hasAnyRole("Admin", "Manager")
+                .requestMatchers(HttpMethod.DELETE, "/api/accounts/**").hasAnyRole("Admin", "Manager")
                 
                 // All other endpoints require authentication
                 .anyRequest().authenticated()

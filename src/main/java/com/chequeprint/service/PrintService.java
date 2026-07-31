@@ -160,36 +160,37 @@ public class PrintService {
         return pdfPath;
     }
 
-    public boolean executeProfessionalPrintFlow(Cheque cheque, Bank bank, BankTemplateLayout layout, Window ownerWindow) throws Exception {
-        // Stage 1: Validate Printer
-        validatePrinter();
+    public boolean executeInteractivePrintWorkflow(Cheque cheque, Bank bank, BankTemplateLayout layout, Window ownerWindow) throws Exception {
+        // Step 1: Validate Data
+        Cheque validCheque = step2LoadChequeData(cheque);
+        Bank activeBank = bank != null ? bank : AppState.getInstance().getSelectedBank();
+        BankTemplateLayout validLayout = step1LoadTemplate(validCheque, activeBank, layout);
 
-        // Stage 2: Load Template
-        BankTemplateLayout finalLayout = step1LoadTemplate(cheque, bank, layout);
+        logPrePrintDiagnostics(validCheque, validLayout);
 
-        // Stage 3: Load Cheque Data
-        Cheque finalCheque = step2LoadChequeData(cheque);
-
-        logPrePrintDiagnostics(finalCheque, finalLayout);
-
-        // Stage 4: Render Cheque
+        // Step 2: Generate Preview
         javafx.scene.layout.Pane canvas = new javafx.scene.layout.Pane();
-        canvas.setPrefSize(finalLayout.getWidthInches() * 72.0, finalLayout.getHeightInches() * 72.0);
-        com.chequeprint.engine.ChequeRenderEngine.renderCheque(canvas, finalCheque, bank, finalLayout);
+        canvas.setPrefSize(validLayout.getWidthInches() * 72.0, validLayout.getHeightInches() * 72.0);
+        com.chequeprint.engine.ChequeRenderEngine.renderCheque(canvas, validCheque, activeBank, validLayout);
 
-        // Stage 5: Show Preview Modal
+        // Step 3 & 4: Show Preview Window & User Confirmation
         com.chequeprint.printpreview.PrintPreviewService previewService = new com.chequeprint.printpreview.PrintPreviewService();
-        boolean approved = previewService.previewCheque(finalCheque, bank, finalLayout);
-        if (!approved) {
+        boolean userConfirmed = previewService.previewCheque(validCheque, activeBank, validLayout);
+        if (!userConfirmed) {
             return false;
         }
 
-        // Stage 6: Send to Selected Printer
+        // Step 5 & 6: Validate Printer & Send to Printer
+        validatePrinter();
         return printRenderedCheque(canvas, ownerWindow);
     }
 
+    public boolean executeProfessionalPrintFlow(Cheque cheque, Bank bank, BankTemplateLayout layout, Window ownerWindow) throws Exception {
+        return executeInteractivePrintWorkflow(cheque, bank, layout, ownerWindow);
+    }
+
     public boolean printCheque(Cheque cheque, Bank bank, BankTemplateLayout layout, Window ownerWindow) throws Exception {
-        return executeProfessionalPrintFlow(cheque, bank, layout, ownerWindow);
+        return executeInteractivePrintWorkflow(cheque, bank, layout, ownerWindow);
     }
 
     public boolean printRenderedCheque(Node node, Window ownerWindow) {
