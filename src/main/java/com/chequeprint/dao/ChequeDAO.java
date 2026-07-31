@@ -111,6 +111,7 @@ public class ChequeDAO {
 
     public boolean insert(Cheque cheque) {
         try {
+            System.out.println("[DEBUG] ChequeDAO insert -> Calling API URL: " + API_CHEQUES);
             String json = objectMapper.writeValueAsString(cheque);
             HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .POST(HttpRequest.BodyPublishers.ofString(json))

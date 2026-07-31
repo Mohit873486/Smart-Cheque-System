@@ -45,6 +45,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                 .requestMatchers("/api/bank/**", "/api/banks/**").permitAll()
                 .requestMatchers("/api/template/**", "/api/templates/**").permitAll()
+                .requestMatchers("/api/cheque/**", "/api/cheques/**").permitAll()
                 .requestMatchers("/api/ai/**").permitAll()
                 
                 // Allow settings management only for Admins

@@ -247,12 +247,14 @@ public class ChequeDialogController {
 
     @FXML
     private void onSave() {
+        System.out.println("[DEBUG] Save Clicked");
         User actor = SessionManager.getInstance().currentUser().orElse(null);
         if (!AccessControl.can(actor, selectedCheque == null ? Permission.CREATE_CHEQUE : Permission.UPDATE_CHEQUE)) {
             showAlert("Permission Denied", "You do not have permission to save cheques.", Alert.AlertType.ERROR);
             return;
         }
         try {
+            System.out.println("[DEBUG] Calling API to save cheque...");
             String payee = fldPayee.getText().trim();
             String amtStr = fldAmount.getText().trim();
 
@@ -288,29 +290,46 @@ public class ChequeDialogController {
                 bankId = bankNameToId.getOrDefault(selectedBankName, 1);
             }
 
-            if (selectedCheque == null) {
-                Cheque c = new Cheque(null, payee, amount, bankId, datePicker.getValue());
-                c.setBankName(selectedBankName);
-                workflowService.createPending(c, actor);
-                AppState.getInstance().setCurrentCheque(c);
-                AppState.getInstance().setCurrentChequeData(c);
-                showAlert("Success", "Cheque created and submitted for approval.", Alert.AlertType.INFORMATION);
-            } else {
-                selectedCheque.setPayeeName(payee);
-                selectedCheque.setAmount(amount);
-                selectedCheque.setBankId(bankId);
-                selectedCheque.setBankName(selectedBankName);
-                selectedCheque.setIssueDate(datePicker.getValue());
-                if (!chequeService.update(selectedCheque)) {
-                    throw new RuntimeException("Could not update cheque.");
+            if (btnSave != null) btnSave.setDisable(true);
+            new Thread(() -> {
+                try {
+                    if (selectedCheque == null) {
+                        Cheque c = new Cheque(null, payee, amount, bankId, datePicker.getValue());
+                        c.setBankName(selectedBankName);
+                        workflowService.createPending(c, actor);
+                        Platform.runLater(() -> {
+                            AppState.getInstance().setCurrentCheque(c);
+                            AppState.getInstance().setCurrentChequeData(c);
+                            showAlert("Success", "Cheque created and submitted for approval.", Alert.AlertType.INFORMATION);
+                            saved = true;
+                            closeStage();
+                        });
+                    } else {
+                        selectedCheque.setPayeeName(payee);
+                        selectedCheque.setAmount(amount);
+                        selectedCheque.setBankId(bankId);
+                        selectedCheque.setBankName(selectedBankName);
+                        selectedCheque.setIssueDate(datePicker.getValue());
+                        if (!chequeService.update(selectedCheque)) {
+                            throw new RuntimeException("Could not update cheque.");
+                        }
+                        Platform.runLater(() -> {
+                            AppState.getInstance().setCurrentCheque(selectedCheque);
+                            AppState.getInstance().setCurrentChequeData(selectedCheque);
+                            showAlert("Success", "Cheque updated.", Alert.AlertType.INFORMATION);
+                            saved = true;
+                            closeStage();
+                        });
+                    }
+                } catch (Exception e) {
+                    Platform.runLater(() -> {
+                        if (btnSave != null) btnSave.setDisable(false);
+                        showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
+                    });
                 }
-                AppState.getInstance().setCurrentCheque(selectedCheque);
-                AppState.getInstance().setCurrentChequeData(selectedCheque);
-                showAlert("Success", "Cheque updated.", Alert.AlertType.INFORMATION);
-            }
-            saved = true;
-            closeStage();
+            }, "api-save-cheque").start();
         } catch (Exception e) {
+            if (btnSave != null) btnSave.setDisable(false);
             showAlert("Error", e.getMessage(), Alert.AlertType.ERROR);
         }
     }
