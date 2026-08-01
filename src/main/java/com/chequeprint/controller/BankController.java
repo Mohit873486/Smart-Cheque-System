@@ -813,6 +813,114 @@ public class BankController {
     }
 
     private final Map<String, com.chequeprint.model.ChequeTemplate> templateCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Set<Long> failedBankIds = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private Long currentlyLoadedBankId = null;
+    private javafx.animation.PauseTransition templateDebounceTimer = null;
+
+    private void loadTemplateFromBackend(Long bankId) {
+        if (bankId == null) {
+            currentlyLoadedBankId = null;
+            setCurrentTemplate(new com.chequeprint.model.ChequeTemplate());
+            return;
+        }
+
+        // 1. Check: If same bankId already loaded → DO NOT call API again
+        if (java.util.Objects.equals(currentlyLoadedBankId, bankId) && currentTemplate != null) {
+            LOGGER.info("[BankController] Bank ID " + bankId + " is already loaded. Skipping API call.");
+            return;
+        }
+
+        String cacheKey = String.valueOf(bankId);
+
+        // 2. Check in-memory cache
+        if (templateCache.containsKey(cacheKey)) {
+            LOGGER.info("[BankController] Serving cached template for Bank ID " + bankId);
+            currentlyLoadedBankId = bankId;
+            setCurrentTemplate(templateCache.get(cacheKey));
+            return;
+        }
+
+        // 3. Condition: Prevent repeated calls if previous request failed
+        if (failedBankIds.contains(bankId)) {
+            LOGGER.warning("[BankController] Previous request for Bank ID " + bankId + " failed. Serving cached fallback template without calling API.");
+            com.chequeprint.model.ChequeTemplate fallback = new com.chequeprint.model.ChequeTemplate(bankId, "Default Bank Template");
+            templateCache.put(cacheKey, fallback);
+            currentlyLoadedBankId = bankId;
+            setCurrentTemplate(fallback);
+            return;
+        }
+
+        // 4. In-flight request deduplication
+        if (!templateLoadsInFlight.add(cacheKey)) {
+            return;
+        }
+
+        // 5. Add Debounce (300ms delay)
+        if (templateDebounceTimer != null) {
+            templateDebounceTimer.stop();
+        }
+
+        templateDebounceTimer = new javafx.animation.PauseTransition(javafx.util.Duration.millis(300));
+        templateDebounceTimer.setOnFinished(evt -> executeTemplateFetchTask(bankId, cacheKey));
+        templateDebounceTimer.play();
+    }
+
+
+    public void renderPreview(com.chequeprint.model.ChequeTemplate template) {
+        if (previewPane == null) return;
+        com.chequeprint.util.ChequeRenderEngine.renderCheque(previewPane, AppState.getInstance().getCurrentCheque(), selectedBank, AppState.getInstance().getSelectedTemplate());
+    }
+
+    private void executeTemplateFetchTask(Long bankId, String cacheKey) {
+        if (previewLoading != null) {
+            previewLoading.setVisible(true);
+            previewLoading.setManaged(true);
+        }
+
+        Task<com.chequeprint.model.ChequeTemplate> task = new Task<>() {
+            @Override
+            protected com.chequeprint.model.ChequeTemplate call() throws Exception {
+                return apiService.getChequeTemplateByBankId(bankId);
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            templateLoadsInFlight.remove(cacheKey);
+            if (previewLoading != null) {
+                previewLoading.setVisible(false);
+                previewLoading.setManaged(false);
+            }
+            com.chequeprint.model.ChequeTemplate template = task.getValue();
+            if (template == null) {
+                template = new com.chequeprint.model.ChequeTemplate(bankId, "Default Bank Template");
+            }
+            if (template.getId() != null) {
+                BankAccount sel = accountTable != null ? accountTable.getSelectionModel().getSelectedItem() : null;
+                if (sel != null) {
+                    sel.setTemplateId(template.getId());
+                }
+            }
+            currentlyLoadedBankId = bankId;
+            templateCache.put(cacheKey, template);
+            setCurrentTemplate(template);
+        });
+
+        task.setOnFailed(e -> {
+            templateLoadsInFlight.remove(cacheKey);
+            failedBankIds.add(bankId); // Track failure to prevent continuous retry hammering
+            if (previewLoading != null) {
+                previewLoading.setVisible(false);
+                previewLoading.setManaged(false);
+            }
+            LOGGER.severe("Failed to fetch template for bankId " + bankId + ": " + task.getException().getMessage());
+            com.chequeprint.model.ChequeTemplate defaultTemplate = new com.chequeprint.model.ChequeTemplate(bankId, "Default Bank Template");
+            templateCache.put(cacheKey, defaultTemplate);
+            currentlyLoadedBankId = bankId;
+            setCurrentTemplate(defaultTemplate);
+        });
+
+        new Thread(task, "fetch-template-bank-" + bankId).start();
+    }
 
     @FXML
     private void onSaveTemplate() {
@@ -952,97 +1060,6 @@ public class BankController {
         });
 
         new Thread(printTask).start();
-    }
-
-    private void loadTemplateFromBackend(Long bankId) {
-        if (bankId == null) {
-            setCurrentTemplate(new com.chequeprint.model.ChequeTemplate());
-            return;
-        }
-
-        String cacheKey = String.valueOf(bankId);
-        if (templateCache.containsKey(cacheKey)) {
-            // Serve directly from in-memory cache, skipping redundant REST API calls
-            setCurrentTemplate(templateCache.get(cacheKey));
-            return;
-        }
-
-        if (!templateLoadsInFlight.add(cacheKey)) {
-            return;
-        }
-
-        if (previewLoading != null) {
-            previewLoading.setVisible(true);
-            previewLoading.setManaged(true);
-        }
-
-        Task<com.chequeprint.model.ChequeTemplate> task = new Task<>() {
-            @Override
-            protected com.chequeprint.model.ChequeTemplate call() throws Exception {
-                return apiService.getChequeTemplateByBankId(bankId);
-            }
-        };
-
-        task.setOnSucceeded(e -> {
-            templateLoadsInFlight.remove(cacheKey);
-            if (previewLoading != null) {
-                previewLoading.setVisible(false);
-                previewLoading.setManaged(false);
-            }
-            com.chequeprint.model.ChequeTemplate template = task.getValue();
-            if (template == null) {
-                template = new com.chequeprint.model.ChequeTemplate(bankId, "Default Bank Template");
-            }
-            if (template.getId() != null) {
-                BankAccount sel = accountTable != null ? accountTable.getSelectionModel().getSelectedItem() : null;
-                if (sel != null) {
-                    sel.setTemplateId(template.getId());
-                }
-            }
-            templateCache.put(cacheKey, template);
-            setCurrentTemplate(template);
-        });
-
-        task.setOnFailed(e -> {
-            templateLoadsInFlight.remove(cacheKey);
-            if (previewLoading != null) {
-                previewLoading.setVisible(false);
-                previewLoading.setManaged(false);
-            }
-            System.err.println("Failed to fetch template for bankId " + bankId + ": " + task.getException().getMessage());
-            com.chequeprint.model.ChequeTemplate defaultTemplate = new com.chequeprint.model.ChequeTemplate(bankId, "Default Bank Template");
-            templateCache.put(cacheKey, defaultTemplate);
-            setCurrentTemplate(defaultTemplate);
-        });
-
-        new Thread(task).start();
-    }
-
-    private void renderGridOverlay(Pane pane, double spacing) {
-        if (pane == null) return;
-        double w = pane.getWidth() > 0 ? pane.getWidth() : (pane.getPrefWidth() > 0 ? pane.getPrefWidth() : 300.0);
-        double h = pane.getHeight() > 0 ? pane.getHeight() : (pane.getPrefHeight() > 0 ? pane.getPrefHeight() : 170.0);
-
-        for (double x = spacing; x < w; x += spacing) {
-            javafx.scene.shape.Line line = new javafx.scene.shape.Line(x, 0, x, h);
-            line.setStroke(javafx.scene.paint.Color.web("#cbd5e1", 0.45));
-            line.getStrokeDashArray().addAll(2.0, 2.0);
-            line.setMouseTransparent(true);
-            pane.getChildren().add(line);
-        }
-
-        for (double y = spacing; y < h; y += spacing) {
-            javafx.scene.shape.Line line = new javafx.scene.shape.Line(0, y, w, y);
-            line.setStroke(javafx.scene.paint.Color.web("#cbd5e1", 0.45));
-            line.getStrokeDashArray().addAll(2.0, 2.0);
-            line.setMouseTransparent(true);
-            pane.getChildren().add(line);
-        }
-    }
-
-    public void renderPreview(com.chequeprint.model.ChequeTemplate template) {
-        if (previewPane == null) return;
-        com.chequeprint.util.ChequeRenderEngine.renderCheque(previewPane, AppState.getInstance().getCurrentCheque(), selectedBank, AppState.getInstance().getSelectedTemplate());
     }
 
     private String selectedFieldName = null;

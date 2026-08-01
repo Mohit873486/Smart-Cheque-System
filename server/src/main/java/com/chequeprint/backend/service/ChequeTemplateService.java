@@ -14,9 +14,30 @@ public class ChequeTemplateService {
     @Autowired
     private ChequeTemplateRepository chequeTemplateRepository;
 
-    public Optional<ChequeTemplate> getTemplateByBankId(Long bankId) {
+    public ChequeTemplate getTemplateByBankId(Long bankId) {
+        if (bankId == null || bankId <= 0) {
+            throw new com.chequeprint.backend.exception.ResourceNotFoundException("Invalid or missing Bank ID: " + bankId);
+        }
+
         List<ChequeTemplate> list = chequeTemplateRepository.findByBankId(bankId);
-        return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
+        if (!list.isEmpty()) {
+            return list.get(0);
+        }
+
+        // Return a valid default template with standard cheque dimensions (200mm x 93mm)
+        ChequeTemplate defaultTemplate = new ChequeTemplate();
+        defaultTemplate.setBankId(bankId);
+        defaultTemplate.setTemplateName("Default Bank Layout");
+        defaultTemplate.setWidth(200.0);
+        defaultTemplate.setHeight(93.0);
+        defaultTemplate.setConfigJson("{}");
+        
+        try {
+            return chequeTemplateRepository.save(defaultTemplate);
+        } catch (Exception e) {
+            // Fallback if save fails (e.g. read-only DB)
+            return defaultTemplate;
+        }
     }
 
     public ChequeTemplate saveOrUpdateTemplate(ChequeTemplate template) {

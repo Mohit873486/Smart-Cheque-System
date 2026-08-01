@@ -16,9 +16,8 @@ public class ChequeTemplateController {
 
     @GetMapping({"/{bankId}", "/bank/{bankId}"})
     public ResponseEntity<ChequeTemplate> getTemplateByBankId(@PathVariable Long bankId) {
-        return chequeTemplateService.getTemplateByBankId(bankId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        ChequeTemplate template = chequeTemplateService.getTemplateByBankId(bankId);
+        return ResponseEntity.ok(template);
     }
 
     @PostMapping("/save")

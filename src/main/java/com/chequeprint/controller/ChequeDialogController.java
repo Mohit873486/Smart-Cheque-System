@@ -147,19 +147,27 @@ public class ChequeDialogController {
         this.selectedCheque = cheque;
         AppState.getInstance().setCurrentCheque(cheque);
         
-        loadBanksIntoCombo();
-        
         if (cheque != null) {
             lblFormTitle.setText("Edit Cheque");
             fldPayee.setText(cheque.getPayeeName());
             fldAmount.setText(cheque.getAmount() != null ? cheque.getAmount().toPlainString() : "");
             datePicker.setValue(cheque.getIssueDate() != null ? cheque.getIssueDate() : LocalDate.now());
+            if (cheque.getBankName() != null && !cheque.getBankName().isBlank()) {
+                String chqBankName = cheque.getBankName().trim();
+                cmbBank.setValue(chqBankName);
+                Bank b = new Bank(chqBankName, chqBankName.toUpperCase(), "DEFAULT", true);
+                if (cheque.getBankId() != null) b.setId(cheque.getBankId());
+                bankNameToBank.put(chqBankName, b);
+                AppState.getInstance().setSelectedBank(b);
+            }
         } else {
             lblFormTitle.setText("New Cheque");
             fldPayee.clear();
             fldAmount.clear();
             datePicker.setValue(LocalDate.now());
         }
+
+        loadBanksIntoCombo();
         applyPermissions();
     }
 
@@ -231,17 +239,56 @@ public class ChequeDialogController {
                     bankNameToBank.put(b.getBankName(), b);
                 }
 
-                cmbBank.setDisable(false);
-                cmbBank.setItems(names);
+                String targetBankName = selectedCheque != null ? selectedCheque.getBankName() : null;
 
-                Bank appBank = AppState.getInstance().getSelectedBank();
-                if (selectedCheque != null && selectedCheque.getBankName() != null && names.contains(selectedCheque.getBankName())) {
-                    cmbBank.setValue(selectedCheque.getBankName());
-                } else if (appBank != null && appBank.getBankName() != null && names.contains(appBank.getBankName())) {
-                    cmbBank.setValue(appBank.getBankName());
-                } else if (!names.isEmpty()) {
-                    cmbBank.setValue(names.get(0));
+                if (targetBankName != null && !targetBankName.isBlank()) {
+                    String cleanTarget = targetBankName.trim();
+                    String matchedName = null;
+
+                    // 1. Check exact match
+                    if (names.contains(cleanTarget)) {
+                        matchedName = cleanTarget;
+                    } else {
+                        // 2. Check case-insensitive or fuzzy match (e.g. "Bank Of Broda" vs "Bank of Baroda")
+                        for (String name : names) {
+                            if (name.equalsIgnoreCase(cleanTarget) ||
+                                name.toLowerCase().contains(cleanTarget.toLowerCase()) ||
+                                cleanTarget.toLowerCase().contains(name.toLowerCase())) {
+                                matchedName = name;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (matchedName != null) {
+                        cmbBank.setItems(names);
+                        cmbBank.setValue(matchedName);
+                        if (bankNameToBank.containsKey(matchedName)) {
+                            AppState.getInstance().setSelectedBank(bankNameToBank.get(matchedName));
+                        }
+                    } else {
+                        // 3. Custom/unlisted bank name in cheque record -> Add to names & select it
+                        names.add(0, cleanTarget);
+                        Bank customBank = new Bank(cleanTarget, cleanTarget.toUpperCase(), "DEFAULT", true);
+                        if (selectedCheque.getBankId() != null) customBank.setId(selectedCheque.getBankId());
+                        bankNameToBank.put(cleanTarget, customBank);
+                        bankNameToId.put(cleanTarget, selectedCheque.getBankId() != null ? selectedCheque.getBankId() : 1);
+                        cmbBank.setItems(names);
+                        cmbBank.setValue(cleanTarget);
+                        AppState.getInstance().setSelectedBank(customBank);
+                    }
+                } else {
+                    cmbBank.setItems(names);
+                    Bank appBank = AppState.getInstance().getSelectedBank();
+                    if (appBank != null && appBank.getBankName() != null && names.contains(appBank.getBankName())) {
+                        cmbBank.setValue(appBank.getBankName());
+                    } else if (!names.isEmpty()) {
+                        cmbBank.setValue(names.get(0));
+                    }
                 }
+
+                cmbBank.setDisable(false);
+                updatePreviewEngine();
             });
         }, "load-banks-dialog").start();
     }

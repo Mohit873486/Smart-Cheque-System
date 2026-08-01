@@ -57,19 +57,29 @@ CREATE TABLE template_field (
 -- SAMPLE DATA INSERTION
 -- ============================================================
 
--- Insert Sample Bank Accounts
+-- Insert Sample Bank Accounts (IDs: 1-4, 6, 7, 8, 9, 11)
 INSERT INTO bank_account (id, bank_name, account_number, account_holder_name, ifsc, branch) VALUES
 (1, 'State Bank of India', '123456789012', 'Acme Corp Operating Account', 'SBIN0000123', 'Mumbai Main Branch'),
 (2, 'HDFC Bank', '987654321098', 'Acme Corp Payroll Account', 'HDFC0000456', 'Delhi Connaught Place Branch'),
 (3, 'ICICI Bank', '556677889900', 'Acme Corp Reserve Account', 'ICIC0000789', 'Bandra West Branch'),
-(4, 'Axis Bank', '112233445566', 'Acme Corp Vendor Account', 'UTIB0000112', 'MG Road Branch');
+(4, 'Axis Bank', '112233445566', 'Acme Corp Vendor Account', 'UTIB0000112', 'MG Road Branch'),
+(6, 'Kotak Mahindra Bank', '667788990011', 'Acme Corp Tax Account', 'KKBK0000667', 'Nariman Point Branch'),
+(7, 'Punjab National Bank', '778899001122', 'Acme Corp Treasury Account', 'PUNB0000778', 'Connaught Place Branch'),
+(8, 'Bank of Baroda', '889900112233', 'Acme Corp Escrow Account', 'BARB0000889', 'Alkapuri Branch'),
+(9, 'Canara Bank', '990011223344', 'Acme Corp Dividend Account', 'CNRB0000990', 'Town Hall Branch'),
+(11, 'IndusInd Bank', '110022334455', 'Acme Corp Operations Account', 'INDB0000111', 'Cyber City Branch');
 
--- Insert Sample Cheque Templates
+-- Insert Sample Cheque Templates linked to Bank IDs
 INSERT INTO cheque_template (id, bank_id, template_name, width, height) VALUES
 (1, 1, 'SBI CTS-2010 Standard Cheque', 203.20, 92.00),
 (2, 2, 'HDFC Corporate Premium Cheque', 203.20, 92.00),
 (3, 3, 'ICICI Commercial Cheque', 203.20, 92.00),
-(4, 4, 'Axis Bank Business Cheque', 203.20, 92.00);
+(4, 4, 'Axis Bank Business Cheque', 203.20, 92.00),
+(6, 6, 'Kotak Corporate Cheque Template', 203.20, 92.00),
+(7, 7, 'PNB Standard Cheque Template', 203.20, 92.00),
+(8, 8, 'BOB Business Cheque Template', 203.20, 92.00),
+(9, 9, 'Canara Bank Cheque Template', 203.20, 92.00),
+(11, 11, 'IndusInd Commercial Template', 203.20, 92.00);
 
 -- Insert Sample Template Fields
 INSERT INTO template_field (template_id, field_name, x_position, y_position, font_size, font_family) VALUES
@@ -80,23 +90,37 @@ INSERT INTO template_field (template_id, field_name, x_position, y_position, fon
 (1, 'amount', 150.00, 45.00, 14, 'Consolas'),
 (1, 'signature', 145.00, 72.00, 10, 'Arial'),
 
--- HDFC Template Fields (template_id = 2)
-(2, 'date', 158.00, 12.00, 12, 'Courier New'),
-(2, 'name', 32.00, 26.00, 13, 'Arial'),
-(2, 'amount_words', 36.00, 40.00, 11, 'Arial'),
-(2, 'amount', 152.00, 44.00, 14, 'Consolas'),
-(2, 'signature', 148.00, 70.00, 10, 'Arial'),
+-- Kotak Template Fields (template_id = 6)
+(6, 'date', 155.00, 14.00, 12, 'Courier New'),
+(6, 'name', 30.00, 28.00, 13, 'Arial'),
+(6, 'amount_words', 35.00, 42.00, 11, 'Arial'),
+(6, 'amount', 150.00, 45.00, 14, 'Consolas'),
+(6, 'signature', 145.00, 72.00, 10, 'Arial'),
 
--- ICICI Template Fields (template_id = 3)
-(3, 'date', 154.00, 15.00, 12, 'Courier New'),
-(3, 'name', 28.00, 30.00, 13, 'Arial'),
-(3, 'amount_words', 33.00, 43.00, 11, 'Arial'),
-(3, 'amount', 148.00, 46.00, 14, 'Consolas'),
-(3, 'signature', 142.00, 74.00, 10, 'Arial'),
+-- PNB Template Fields (template_id = 7)
+(7, 'date', 155.00, 14.00, 12, 'Courier New'),
+(7, 'name', 30.00, 28.00, 13, 'Arial'),
+(7, 'amount_words', 35.00, 42.00, 11, 'Arial'),
+(7, 'amount', 150.00, 45.00, 14, 'Consolas'),
+(7, 'signature', 145.00, 72.00, 10, 'Arial'),
 
--- Axis Template Fields (template_id = 4)
-(4, 'date', 156.00, 13.00, 12, 'Courier New'),
-(4, 'name', 31.00, 27.00, 13, 'Arial'),
-(4, 'amount_words', 35.00, 41.00, 11, 'Arial'),
-(4, 'amount', 151.00, 45.00, 14, 'Consolas'),
-(4, 'signature', 146.00, 71.00, 10, 'Arial');
+-- BOB Template Fields (template_id = 8)
+(8, 'date', 155.00, 14.00, 12, 'Courier New'),
+(8, 'name', 30.00, 28.00, 13, 'Arial'),
+(8, 'amount_words', 35.00, 42.00, 11, 'Arial'),
+(8, 'amount', 150.00, 45.00, 14, 'Consolas'),
+(8, 'signature', 145.00, 72.00, 10, 'Arial'),
+
+-- Canara Template Fields (template_id = 9)
+(9, 'date', 155.00, 14.00, 12, 'Courier New'),
+(9, 'name', 30.00, 28.00, 13, 'Arial'),
+(9, 'amount_words', 35.00, 42.00, 11, 'Arial'),
+(9, 'amount', 150.00, 45.00, 14, 'Consolas'),
+(9, 'signature', 145.00, 72.00, 10, 'Arial'),
+
+-- IndusInd Template Fields (template_id = 11)
+(11, 'date', 155.00, 14.00, 12, 'Courier New'),
+(11, 'name', 30.00, 28.00, 13, 'Arial'),
+(11, 'amount_words', 35.00, 42.00, 11, 'Arial'),
+(11, 'amount', 150.00, 45.00, 14, 'Consolas'),
+(11, 'signature', 145.00, 72.00, 10, 'Arial');
