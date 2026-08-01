@@ -55,13 +55,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.chequeprint.service.ApiService;
 import com.chequeprint.model.BankAccount;
+import javafx.scene.Node;
 import javafx.scene.control.TableView;
+import javafx.stage.Window;
 
 public class BankController {
 
+    private static final Logger LOGGER = Logger.getLogger(BankController.class.getName());
     private final ApiService apiService = new ApiService();
     @FXML private TableView<Bank> bankTable;
     @FXML private TableView<BankAccount> accountTable;
@@ -879,6 +884,8 @@ public class BankController {
         new Thread(saveTask).start();
     }
 
+
+
     @FXML
     private void onPrintCheque() {
         if (currentTemplate == null) {
@@ -890,15 +897,36 @@ public class BankController {
             return;
         }
 
-        try {
-            Pane printCanvas = new Pane();
-            printCanvas.setPrefWidth(currentTemplate.getWidth() * 3.7795); // Convert mm to points
-            printCanvas.setPrefHeight(currentTemplate.getHeight() * 3.7795);
+        LOGGER.info("[BankController] Initiating background cheque printing job...");
 
-            javafx.stage.Window ownerWindow = previewPane != null && previewPane.getScene() != null ?
-                    previewPane.getScene().getWindow() : null;
+        if (previewLoading != null) {
+            previewLoading.setVisible(true);
+        }
 
-            boolean printed = printService.printNode(previewPane != null ? previewPane : printCanvas, ownerWindow);
+        Pane printCanvas = new Pane();
+        printCanvas.setPrefWidth(currentTemplate.getWidth() * 3.7795); // Convert mm to points
+        printCanvas.setPrefHeight(currentTemplate.getHeight() * 3.7795);
+
+        javafx.scene.Node printableNode = previewPane != null ? previewPane : printCanvas;
+        javafx.stage.Window ownerWindow = previewPane != null && previewPane.getScene() != null ?
+                previewPane.getScene().getWindow() : null;
+
+        Task<Boolean> printTask = new Task<>() {
+            @Override
+            protected Boolean call() throws Exception {
+                LOGGER.info("[BankController] Starting background printing task on thread: " + Thread.currentThread().getName());
+                boolean printed = printService.printNode(printableNode, ownerWindow);
+                LOGGER.info("[BankController] Background printing task completed with result: " + printed);
+                return printed;
+            }
+        };
+
+        printTask.setOnSucceeded(e -> {
+            if (previewLoading != null) {
+                previewLoading.setVisible(false);
+            }
+            boolean printed = printTask.getValue();
+            LOGGER.info("[BankController] Print task succeeded callback executed on FX thread. Printed: " + printed);
 
             if (printed) {
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -907,13 +935,23 @@ public class BankController {
                 alert.setContentText("Cheque template sent to printer with precise field alignment.");
                 alert.showAndWait();
             }
-        } catch (Exception e) {
+        });
+
+        printTask.setOnFailed(e -> {
+            if (previewLoading != null) {
+                previewLoading.setVisible(false);
+            }
+            Throwable ex = printTask.getException();
+            LOGGER.log(java.util.logging.Level.SEVERE, "[BankController] Print task failed on background thread", ex);
+
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Printing Stopped");
             alert.setHeaderText("Precondition Check Failed");
-            alert.setContentText(e.getMessage());
+            alert.setContentText(ex != null ? ex.getMessage() : "An error occurred during printing.");
             alert.showAndWait();
-        }
+        });
+
+        new Thread(printTask).start();
     }
 
     private void loadTemplateFromBackend(Long bankId) {

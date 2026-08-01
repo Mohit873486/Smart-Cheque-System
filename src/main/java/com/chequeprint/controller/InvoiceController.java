@@ -8,6 +8,7 @@ import com.chequeprint.service.PrintService;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import javafx.concurrent.Task;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -274,13 +275,28 @@ public class InvoiceController {
             showAlert("No Selection", "Please select an invoice to export.", Alert.AlertType.WARNING);
             return;
         }
-        try {
-            String desktopPath = System.getProperty("user.home") + java.io.File.separator + "Desktop";
-            String savedPath = printService.exportInvoicePdf(sel, desktopPath);
+
+        String desktopPath = System.getProperty("user.home") + java.io.File.separator + "Desktop";
+        Task<String> exportTask = new Task<>() {
+            @Override
+            protected String call() throws Exception {
+                return printService.exportInvoicePdf(sel, desktopPath);
+            }
+        };
+
+        exportTask.setOnSucceeded(evt -> {
+            String savedPath = exportTask.getValue();
             showAlert("PDF Exported", "Invoice saved to:\n" + savedPath, Alert.AlertType.INFORMATION);
-        } catch (Exception e) {
-            showAlert("Export Error", e.getMessage(), Alert.AlertType.ERROR);
-        }
+        });
+
+        exportTask.setOnFailed(evt -> {
+            Throwable ex = exportTask.getException();
+            showAlert("Export Error", ex != null ? ex.getMessage() : "Failed to export PDF.", Alert.AlertType.ERROR);
+        });
+
+        Thread t = new Thread(exportTask, "invoice-export-pdf");
+        t.setDaemon(true);
+        t.start();
     }
 
     @FXML
@@ -290,8 +306,16 @@ public class InvoiceController {
             showAlert("No Selection", "Please select an invoice to print.", Alert.AlertType.WARNING);
             return;
         }
-        try {
-            boolean printed = printService.previewInvoice(sel);
+
+        Task<Boolean> printTask = new Task<>() {
+            @Override
+            protected Boolean call() throws Exception {
+                return printService.previewInvoice(sel);
+            }
+        };
+
+        printTask.setOnSucceeded(evt -> {
+            boolean printed = printTask.getValue();
             if (!printed) {
                 showAlert("Print Canceled", "Invoice printing was canceled.", Alert.AlertType.INFORMATION);
                 return;
@@ -304,9 +328,16 @@ public class InvoiceController {
                 }
             }
             showAlert("Print Successful", "Invoice printed successfully.", Alert.AlertType.INFORMATION);
-        } catch (Exception e) {
-            showAlert("Print Error", e.getMessage(), Alert.AlertType.ERROR);
-        }
+        });
+
+        printTask.setOnFailed(evt -> {
+            Throwable ex = printTask.getException();
+            showAlert("Print Error", ex != null ? ex.getMessage() : "Invoice print error.", Alert.AlertType.ERROR);
+        });
+
+        Thread t = new Thread(printTask, "invoice-print");
+        t.setDaemon(true);
+        t.start();
     }
 
     @FXML

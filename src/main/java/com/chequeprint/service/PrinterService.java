@@ -39,18 +39,22 @@ public class PrinterService {
         this.appState = appState;
     }
 
-    public List<Printer> fetchAvailablePrinters() {
-        Map<String, Printer> printersByName = new LinkedHashMap<>();
+    public List<Printer> getAllPrinters() {
+        List<Printer> printerList = new ArrayList<>();
         try {
             for (Printer printer : Printer.getAllPrinters()) {
-                if (isUsablePrinter(printer)) {
-                    printersByName.putIfAbsent(printer.getName(), printer);
+                if (printer != null && isUsablePrinter(printer)) {
+                    printerList.add(printer);
                 }
             }
         } catch (Throwable t) {
             System.err.println("[PrinterService] Failed to query JavaFX printers: " + t.getMessage());
         }
-        return new ArrayList<>(printersByName.values());
+        return printerList;
+    }
+
+    public List<Printer> fetchAvailablePrinters() {
+        return getAllPrinters();
     }
 
     public ObservableList<Printer> refreshPrinters() {
@@ -138,6 +142,14 @@ public class PrinterService {
         return findByName(appState.getAvailablePrinters(), printer.getName());
     }
 
+    public PrinterService setOfficePrinter(String printerName) {
+        return configurePrinterType(PrinterType.OFFICE, printerName);
+    }
+
+    public PrinterService setDefaultPrinter(String printerName) {
+        return configurePrinterType(PrinterType.DEFAULT, printerName);
+    }
+
     public PrinterService configurePrinterType(PrinterType type, String printerName) {
         if (type == null) {
             throw new IllegalArgumentException("Printer type must not be null.");
@@ -170,13 +182,18 @@ public class PrinterService {
         refreshPrinters();
 
         if (mode == PrinterRoutingMode.BULK) {
-            return getConfiguredPrinter(PrinterType.OFFICE)
-                    .or(() -> getDefaultPrinter())
-                    .or(() -> resolveSelectedOrDefaultPrinter());
+            Optional<Printer> officePrinter = getConfiguredPrinter(PrinterType.OFFICE)
+                    .or(this::getDefaultPrinter)
+                    .or(this::resolveSelectedOrDefaultPrinter);
+            officePrinter.ifPresent(p -> System.out.println("[SmartRouting] Bulk mode -> Routed to Office Printer: " + p.getName()));
+            return officePrinter;
         }
 
-        return getDefaultPrinter()
-                .or(() -> resolveSelectedOrDefaultPrinter());
+        // Single cheque printing -> use Default Printer
+        Optional<Printer> defaultPrinter = getDefaultPrinter()
+                .or(this::resolveSelectedOrDefaultPrinter);
+        defaultPrinter.ifPresent(p -> System.out.println("[SmartRouting] Single mode -> Routed to Default Printer: " + p.getName()));
+        return defaultPrinter;
     }
 
     public static String routePrinterName(

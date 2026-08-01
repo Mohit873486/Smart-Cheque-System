@@ -27,16 +27,19 @@ public final class PrinterErrorHandler {
     private PrinterErrorHandler() {
     }
 
+    /**
+     * Classifies a printing failure into a specific FailureType enum.
+     */
     public static FailureType classify(Printer printer, Throwable cause) {
         return classify(printer, cause, false);
     }
 
-    public static FailureType classify(Printer printer, Throwable cause, boolean jobFailed) {
-        if (!PrinterUtils.isValidPrinter(printer)) {
+    public static FailureType classify(Printer printer, Throwable cause, boolean isJobFailed) {
+        if (printer == null || !PrinterUtils.isValidPrinter(printer)) {
             return FailureType.PRINTER_NOT_FOUND;
         }
 
-        if (jobFailed) {
+        if (isJobFailed) {
             return FailureType.JOB_FAILED;
         }
 
@@ -48,40 +51,49 @@ public final class PrinterErrorHandler {
         return FailureType.UNKNOWN;
     }
 
+    /**
+     * Generates a user-friendly error message with clear recovery guidance.
+     */
     public static String buildUserMessage(Printer printer, String action, Throwable cause) {
         return buildUserMessage(printer, action, cause, false);
     }
 
-    public static String buildUserMessage(Printer printer, String action, Throwable cause, boolean jobFailed) {
-        FailureType type = classify(printer, cause, jobFailed);
-        String printerName = printer != null ? printer.getName() : "<unknown>";
+    public static String buildUserMessage(Printer printer, String action, Throwable cause, boolean isJobFailed) {
+        FailureType type = classify(printer, cause, isJobFailed);
+        String printerName = printer != null ? printer.getName() : "<Unknown Printer>";
 
         String message = switch (type) {
             case PRINTER_NOT_FOUND ->
-                    "Printer '" + printerName + "' was not found on the system. Please select a valid printer and try again.";
+                    "❌ Printer Not Found: Printer '" + printerName + "' is not installed or detected on your system. Please select a valid printer in Printer Settings.";
             case PRINTER_OFFLINE ->
-                    "Printer '" + printerName + "' appears to be offline or unavailable. Check the printer connection and retry.";
+                    "🔌 Printer Offline: Printer '" + printerName + "' appears to be offline. Please verify printer power, USB/Network connection, and paper tray.";
             case JOB_FAILED ->
-                    "The print job for printer '" + printerName + "' failed to start or complete. Please retry or choose another printer.";
+                    "⚠️ Print Job Failed: The print job sent to '" + printerName + "' failed to spool or complete. Please retry or restart your printer spooler service.";
             default ->
-                    "Unable to " + action + " on printer '" + printerName + "'. " + safeErrorText(cause);
+                    "⚠️ Printing Error: Unable to perform '" + action + "' on printer '" + printerName + "'. Details: " + safeErrorText(cause);
         };
 
+        // Log error automatically for debugging
         logFailure(type, printerName, action, cause);
         return message;
-    }
+        }
 
+    /**
+     * Logs detailed failure diagnostics to system logger for troubleshooting.
+     */
     public static void logFailure(FailureType type, String printerName, String action, Throwable cause) {
-        String message = "[PrinterErrorHandler] " + action + " failed for printer '" + printerName + "' with type=" + type;
-        if (cause != null && cause.getMessage() != null) {
-            LOGGER.log(Level.SEVERE, message + ". Cause: " + cause.getMessage(), cause);
+        String logHeader = String.format("[PrinterErrorHandler] Action: '%s' | Target Printer: '%s' | Classification: %s",
+                action, printerName, type);
+        
+        if (cause != null) {
+            LOGGER.log(Level.SEVERE, logHeader + " | Exception: " + cause.getMessage(), cause);
         } else {
-            LOGGER.log(Level.SEVERE, message);
+            LOGGER.log(Level.SEVERE, logHeader);
         }
     }
 
     private static boolean isOfflineSignal(String message) {
-        if (message == null) {
+        if (message == null || message.isBlank()) {
             return false;
         }
         List<String> offlineKeywords = Arrays.asList(
@@ -90,7 +102,9 @@ public final class PrinterErrorHandler {
                 "disconnected",
                 "unavailable",
                 "not available",
-                "printer is offline"
+                "paper jam",
+                "out of paper",
+                "spooler error"
         );
         String lowered = message.toLowerCase();
         return offlineKeywords.stream().anyMatch(lowered::contains);
@@ -98,7 +112,7 @@ public final class PrinterErrorHandler {
 
     private static String safeErrorText(Throwable cause) {
         if (cause == null) {
-            return "No additional details were provided.";
+            return "No detailed exception was reported.";
         }
         String message = cause.getMessage();
         return message != null && !message.isBlank() ? message : cause.getClass().getSimpleName();

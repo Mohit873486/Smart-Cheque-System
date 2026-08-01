@@ -185,8 +185,23 @@ public class PrintPreviewController {
                 return;
             }
             attemptedPrinterName = printer.getName();
+
+            // 1. Show pre-print confirmation dialog
+            Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmAlert.setTitle("Confirm Print");
+            confirmAlert.setHeaderText("Send Cheque to Printer?");
+            confirmAlert.setContentText("Target Printer: " + attemptedPrinterName + "\n\nDo you want to proceed with printing?");
+            java.util.Optional<ButtonType> confirmResult = confirmAlert.showAndWait();
+
+            if (confirmResult.isEmpty() || confirmResult.get() != ButtonType.OK) {
+                return; // Cancel printing
+            }
+
             printerSelectionService.selectPrinter(printer);
+
+            // 2. Disable print button while printing
             setPrinting(true);
+
             printRenderedPreviewNode(printer, attemptedPrinterName);
         } catch (Exception ex) {
             setPrinting(false);
@@ -437,10 +452,12 @@ public class PrintPreviewController {
     // =========================================================
 
     private void printRenderedPreviewNode(Printer printer, String attemptedPrinterName) {
+        // Ensure preview node is fully rendered and CSS pulse complete before submitting to PrinterJob
         runAfterPreviewRenderPulse(() -> {
             boolean ok = false;
             boolean errorShown = false;
             try {
+                // Do NOT create a separate print node. Use the SAME JavaFX Node for preview and printing.
                 ok = FxPrinterService.printCheque(previewWebView, printer);
             } catch (RuntimeException ex) {
                 errorShown = true;
@@ -454,17 +471,23 @@ public class PrintPreviewController {
 
             if (ok) {
                 printed = true;
+                showAlert("Print Success", "Cheque sent to printer successfully!", Alert.AlertType.INFORMATION);
                 closeWindow();
             } else if (!errorShown) {
                 showAlert(
-                        "Print",
+                        "Print Failed",
                         PrinterErrorHandler.buildUserMessage(printer, "print", null, true),
-                        Alert.AlertType.WARNING);
+                        Alert.AlertType.ERROR);
             }
         });
     }
 
     private void runAfterPreviewRenderPulse(Runnable action) {
+        if (previewWebView == null) {
+            return;
+        }
+
+        // Force CSS pass and layout compute on the preview Node
         previewWebView.applyCss();
         if (previewWebView.getParent() != null) {
             previewWebView.getParent().applyCss();
@@ -472,6 +495,7 @@ public class PrintPreviewController {
         }
         previewWebView.layout();
 
+        // Wait for FX pulse to guarantee zero preview-print layout mismatch
         Platform.runLater(() -> {
             previewWebView.applyCss();
             previewWebView.layout();

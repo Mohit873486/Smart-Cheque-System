@@ -10,6 +10,7 @@ import com.chequeprint.util.SessionManager;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
@@ -111,28 +112,42 @@ public class UserManagementController {
             return;
         }
 
-        try {
-            if (selectedUser == null) {
-                userService.createUser(actor,
-                        fldUsername.getText(),
-                        fldName.getText(),
-                        fldEmail.getText(),
-                        fldPassword.getText(),
-                        cmbRole.getValue());
-                showAlert("Success", "User created successfully.", Alert.AlertType.INFORMATION);
-            } else {
-                selectedUser.setUsername(fldUsername.getText());
-                selectedUser.setName(fldName.getText());
-                selectedUser.setEmail(fldEmail.getText());
-                selectedUser.setRole(cmbRole.getValue().label());
-                userService.updateUser(actor, selectedUser, fldPassword.getText());
-                showAlert("Success", "User updated successfully.", Alert.AlertType.INFORMATION);
+        String username = fldUsername.getText();
+        String name = fldName.getText();
+        String email = fldEmail.getText();
+        String pwd = fldPassword.getText();
+        UserRole role = cmbRole.getValue();
+
+        Task<Void> saveTask = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                if (selectedUser == null) {
+                    userService.createUser(actor, username, name, email, pwd, role);
+                } else {
+                    selectedUser.setUsername(username);
+                    selectedUser.setName(name);
+                    selectedUser.setEmail(email);
+                    selectedUser.setRole(role.label());
+                    userService.updateUser(actor, selectedUser, pwd);
+                }
+                return null;
             }
+        };
+
+        saveTask.setOnSucceeded(evt -> {
+            showAlert("Success", selectedUser == null ? "User created successfully." : "User updated successfully.", Alert.AlertType.INFORMATION);
             clearForm();
             loadUsers();
-        } catch (Exception e) {
-            showAlert("User Error", e.getMessage(), Alert.AlertType.ERROR);
-        }
+        });
+
+        saveTask.setOnFailed(evt -> {
+            Throwable ex = saveTask.getException();
+            showAlert("User Error", ex != null ? ex.getMessage() : "User operation failed.", Alert.AlertType.ERROR);
+        });
+
+        Thread t = new Thread(saveTask, "user-save");
+        t.setDaemon(true);
+        t.start();
     }
 
     @FXML
@@ -156,13 +171,27 @@ public class UserManagementController {
         confirm.setHeaderText(null);
         confirm.showAndWait().ifPresent(button -> {
             if (button == ButtonType.YES) {
-                try {
-                    userService.deleteUser(actor, user.getId());
+                Task<Void> deleteTask = new Task<>() {
+                    @Override
+                    protected Void call() throws Exception {
+                        userService.deleteUser(actor, user.getId());
+                        return null;
+                    }
+                };
+
+                deleteTask.setOnSucceeded(evt -> {
                     clearForm();
                     loadUsers();
-                } catch (Exception e) {
-                    showAlert("Delete Error", e.getMessage(), Alert.AlertType.ERROR);
-                }
+                });
+
+                deleteTask.setOnFailed(evt -> {
+                    Throwable ex = deleteTask.getException();
+                    showAlert("Delete Error", ex != null ? ex.getMessage() : "Delete failed.", Alert.AlertType.ERROR);
+                });
+
+                Thread t = new Thread(deleteTask, "user-delete");
+                t.setDaemon(true);
+                t.start();
             }
         });
     }

@@ -21,6 +21,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -28,6 +29,8 @@ import javafx.scene.layout.VBox;
 
 import java.math.BigDecimal;
 import java.nio.file.Files;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
@@ -91,6 +94,7 @@ public class ChequeController {
     private VBox rootPane;
 
     // ── State ──
+    private static final Logger LOGGER = Logger.getLogger(ChequeController.class.getName());
     MainController mainController;
 
     ChequeService chequeService = new ChequeService();
@@ -546,8 +550,20 @@ public class ChequeController {
             return;
         }
 
-        try {
-            workflowService.print(sel.getId(), actor);
+        LOGGER.info("[ChequeController] Initiating background printing job for cheque ID: " + sel.getId());
+
+        Task<Boolean> printTask = new Task<>() {
+            @Override
+            protected Boolean call() throws Exception {
+                LOGGER.info("[ChequeController] Starting background printing task on thread: " + Thread.currentThread().getName());
+                workflowService.print(sel.getId(), actor);
+                LOGGER.info("[ChequeController] Background printing task completed for cheque ID: " + sel.getId());
+                return true;
+            }
+        };
+
+        printTask.setOnSucceeded(e -> {
+            LOGGER.info("[ChequeController] Print task succeeded callback executed on FX thread.");
             loadData();
             clearForm();
             if (mainController != null) {
@@ -556,14 +572,18 @@ public class ChequeController {
                     ((DashboardController) dc).reload();
                 }
             }
-
             showAlert("Print Successful",
                     "Cheque printed successfully.",
                     Alert.AlertType.INFORMATION);
+        });
 
-        } catch (Exception e) {
-            showAlert("Print Error", e.getMessage(), Alert.AlertType.ERROR);
-        }
+        printTask.setOnFailed(e -> {
+            Throwable ex = printTask.getException();
+            LOGGER.log(Level.SEVERE, "[ChequeController] Print task failed on background thread", ex);
+            showAlert("Print Error", ex != null ? ex.getMessage() : "Print task failed", Alert.AlertType.ERROR);
+        });
+
+        new Thread(printTask).start();
     }
 
     // ── Approve ──────────────────────────────────────────────────────

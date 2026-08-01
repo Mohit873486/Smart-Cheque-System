@@ -7,6 +7,7 @@ import com.chequeprint.service.UserService;
 import com.chequeprint.util.FxUtils;
 import com.chequeprint.util.SessionManager;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -314,19 +315,34 @@ public class ProfileController {
             user.setCompany(get(tfCompany, fldCompany));
             user.setAddress(get(taAddress, fldAddress));
 
-            userService.saveProfile(user);
-
-            if (mainController != null) {
-                Object dc = mainController.getController("dashboard");
-                if (dc instanceof DashboardController dashboardController) {
-                    dashboardController.reload();
+            Task<Void> task = new Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    userService.saveProfile(user);
+                    return null;
                 }
-            }
+            };
 
-            updateUIAfterSave();
-            disableEditingMode();
+            task.setOnSucceeded(evt -> {
+                if (mainController != null) {
+                    Object dc = mainController.getController("dashboard");
+                    if (dc instanceof DashboardController dashboardController) {
+                        dashboardController.reload();
+                    }
+                }
+                updateUIAfterSave();
+                disableEditingMode();
+                new Alert(Alert.AlertType.INFORMATION, "Profile saved successfully.").show();
+            });
 
-            new Alert(Alert.AlertType.INFORMATION, "Profile saved successfully.").show();
+            task.setOnFailed(evt -> {
+                Throwable ex = task.getException();
+                new Alert(Alert.AlertType.ERROR, "Save failed: " + (ex != null ? ex.getMessage() : "Unknown error")).show();
+            });
+
+            Thread t = new Thread(task, "profile-save");
+            t.setDaemon(true);
+            t.start();
 
         } catch (IllegalArgumentException iae) {
             FxUtils.shake(rootPane);
@@ -354,18 +370,33 @@ public class ProfileController {
             user.setAddress(addr);
             user.setGstNumber(gst);
 
-            userService.saveProfile(user);
-
-            if (mainController != null) {
-                Object dc = mainController.getController("dashboard");
-                if (dc instanceof DashboardController dashboardController) {
-                    dashboardController.reload();
+            Task<Void> task = new Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    userService.saveProfile(user);
+                    return null;
                 }
-            }
+            };
 
-            updateUIAfterSave();
+            task.setOnSucceeded(evt -> {
+                if (mainController != null) {
+                    Object dc = mainController.getController("dashboard");
+                    if (dc instanceof DashboardController dashboardController) {
+                        dashboardController.reload();
+                    }
+                }
+                updateUIAfterSave();
+                new Alert(Alert.AlertType.INFORMATION, "Business details updated.").show();
+            });
 
-            new Alert(Alert.AlertType.INFORMATION, "Business details updated.").show();
+            task.setOnFailed(evt -> {
+                Throwable ex = task.getException();
+                new Alert(Alert.AlertType.ERROR, ex != null ? ex.getMessage() : "Update failed.").show();
+            });
+
+            Thread t = new Thread(task, "business-profile-save");
+            t.setDaemon(true);
+            t.start();
 
         } catch (Exception e) {
             new Alert(Alert.AlertType.ERROR, e.getMessage()).show();
@@ -394,16 +425,30 @@ public class ProfileController {
                 throw new IllegalArgumentException("Passwords do not match");
             }
 
-            userService.changePassword(user.getId(), current, newPass);
+            int userId = user.getId();
+            Task<Void> task = new Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    userService.changePassword(userId, current, newPass);
+                    return null;
+                }
+            };
 
-            if (pfCurrentPassword != null)
-                pfCurrentPassword.clear();
-            if (pfNewPassword != null)
-                pfNewPassword.clear();
-            if (pfConfirmPassword != null)
-                pfConfirmPassword.clear();
+            task.setOnSucceeded(evt -> {
+                if (pfCurrentPassword != null) pfCurrentPassword.clear();
+                if (pfNewPassword != null) pfNewPassword.clear();
+                if (pfConfirmPassword != null) pfConfirmPassword.clear();
+                new Alert(Alert.AlertType.INFORMATION, "Password changed successfully").show();
+            });
 
-            new Alert(Alert.AlertType.INFORMATION, "Password changed successfully").show();
+            task.setOnFailed(evt -> {
+                Throwable ex = task.getException();
+                new Alert(Alert.AlertType.ERROR, ex != null ? ex.getMessage() : "Password change failed.").show();
+            });
+
+            Thread t = new Thread(task, "password-change");
+            t.setDaemon(true);
+            t.start();
 
         } catch (Exception e) {
             new Alert(Alert.AlertType.ERROR, e.getMessage()).show();

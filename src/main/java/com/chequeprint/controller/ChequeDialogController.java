@@ -14,6 +14,7 @@ import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
@@ -355,28 +356,47 @@ public class ChequeDialogController {
             BankTemplateLayout activeTemplate = AppState.getInstance().getSelectedTemplate();
             javafx.stage.Window window = btnSaveAndPrint.getScene() != null ? btnSaveAndPrint.getScene().getWindow() : null;
 
-            boolean printed = printService.printCheque(draft, activeBank, activeTemplate, window);
+            String selectedBankName = cmbBank.getValue();
+            int bankId = bankNameToId.getOrDefault(selectedBankName,
+                    Math.max(1, cmbBank.getSelectionModel().getSelectedIndex() + 1));
+            LocalDate issueDate = datePicker.getValue();
 
-            if (printed) {
-                String selectedBankName = cmbBank.getValue();
-                int bankId = bankNameToId.getOrDefault(selectedBankName,
-                        Math.max(1, cmbBank.getSelectionModel().getSelectedIndex() + 1));
-
-                if (selectedCheque == null) {
-                    Cheque newCheque = new Cheque(null, payee, amount, bankId, datePicker.getValue());
-                    workflowService.createPending(newCheque, actor);
-                } else {
-                    selectedCheque.setPayeeName(payee);
-                    selectedCheque.setAmount(amount);
-                    selectedCheque.setBankId(bankId);
-                    selectedCheque.setIssueDate(datePicker.getValue());
-                    chequeService.update(selectedCheque);
-                    workflowService.print(selectedCheque.getId(), actor);
+            Task<Boolean> printTask = new Task<>() {
+                @Override
+                protected Boolean call() throws Exception {
+                    boolean printed = printService.printCheque(draft, activeBank, activeTemplate, window);
+                    if (printed) {
+                        if (selectedCheque == null) {
+                            Cheque newCheque = new Cheque(null, payee, amount, bankId, issueDate);
+                            workflowService.createPending(newCheque, actor);
+                        } else {
+                            selectedCheque.setPayeeName(payee);
+                            selectedCheque.setAmount(amount);
+                            selectedCheque.setBankId(bankId);
+                            selectedCheque.setIssueDate(issueDate);
+                            chequeService.update(selectedCheque);
+                            workflowService.print(selectedCheque.getId(), actor);
+                        }
+                    }
+                    return printed;
                 }
-                showAlert("Success", "Cheque sent to printer successfully!", Alert.AlertType.INFORMATION);
-                saved = true;
-                closeStage();
-            }
+            };
+
+            printTask.setOnSucceeded(evt -> {
+                boolean printed = printTask.getValue();
+                if (printed) {
+                    showAlert("Success", "Cheque sent to printer successfully!", Alert.AlertType.INFORMATION);
+                    saved = true;
+                    closeStage();
+                }
+            });
+
+            printTask.setOnFailed(evt -> {
+                Throwable ex = printTask.getException();
+                showAlert("Print Error", ex != null ? ex.getMessage() : "Printing failed.", Alert.AlertType.ERROR);
+            });
+
+            new Thread(printTask, "cheque-dialog-save-and-print").start();
         } catch (Exception e) {
             showAlert("Print Error", e.getMessage(), Alert.AlertType.ERROR);
         }
