@@ -87,70 +87,68 @@ public class FxPrinterService {
      * @return true if successfully printed, false if cancelled or failed.
      */
     public static boolean printNode(Node node, Window ownerWindow) {
+        return printNode(node, ownerWindow, AppState.getInstance().getSelectedPrinter());
+    }
+
+    public static boolean printNode(Node node, Window ownerWindow, Printer selectedPrinter) {
         if (node == null) {
             System.err.println("Cannot print: Node is null.");
             return false;
         }
 
-        // 1. Verify Selected Printer in AppState
-        Printer selectedPrinter = AppState.getInstance().getSelectedPrinter();
         if (selectedPrinter == null || !PrinterUtils.isValidPrinter(selectedPrinter)) {
             System.err.println("Cannot print: No valid printer selected in AppState.");
             return false;
         }
 
-        // 2. Create PrinterJob for selected printer
         PrinterJob job = PrinterJob.createPrinterJob(selectedPrinter);
         if (job == null) {
             System.err.println("No printer services available or failed to create PrinterJob.");
             return false;
         }
 
-        // 3. Show native Print Dialog allowing user to select printer & options
-        boolean proceed = job.showPrintDialog(ownerWindow);
-        if (!proceed) {
+        Scale scale = null;
+        try {
+            Printer printer = job.getPrinter();
+            PageLayout pageLayout = printer.createPageLayout(
+                    Paper.NA_LETTER,
+                    PageOrientation.LANDSCAPE,
+                    Printer.MarginType.HARDWARE_MINIMUM
+            );
+
+            double printableWidth = pageLayout.getPrintableWidth();
+            double printableHeight = pageLayout.getPrintableHeight();
+
+            double nodeWidth = node.getBoundsInLocal().getWidth();
+            double nodeHeight = node.getBoundsInLocal().getHeight();
+
+            if (nodeWidth <= 0) nodeWidth = node.prefWidth(-1);
+            if (nodeHeight <= 0) nodeHeight = node.prefHeight(-1);
+            if (nodeWidth <= 0) nodeWidth = 720;
+            if (nodeHeight <= 0) nodeHeight = 300;
+
+            double scaleX = printableWidth / nodeWidth;
+            double scaleY = printableHeight / nodeHeight;
+            double scaleFactor = Math.min(scaleX, scaleY);
+
+            scale = new Scale(scaleFactor, scaleFactor);
+            node.getTransforms().add(scale);
+
+            boolean success = job.printPage(pageLayout, node);
+            if (success) {
+                System.out.println("[Print] Submitted job to printer: " + selectedPrinter.getName());
+            } else {
+                System.err.println("[Print] PrinterJob.printPage returned false for printer: " + selectedPrinter.getName());
+            }
+            return success;
+        } catch (Exception e) {
+            System.err.println("[Print] Failed on printer '" + selectedPrinter.getName() + "': " + e.getMessage());
+            return false;
+        } finally {
+            if (scale != null) {
+                node.getTransforms().remove(scale);
+            }
             job.endJob();
-            return false; // User cancelled print dialog
         }
-
-        // 3. Configure landscape PageLayout for cheque dimensions
-        Printer printer = job.getPrinter();
-        PageLayout pageLayout = printer.createPageLayout(
-                Paper.NA_LETTER,
-                PageOrientation.LANDSCAPE,
-                Printer.MarginType.HARDWARE_MINIMUM
-        );
-
-        // 4. Calculate scaling factors
-        double printableWidth = pageLayout.getPrintableWidth();
-        double printableHeight = pageLayout.getPrintableHeight();
-
-        double nodeWidth = node.getBoundsInParent().getWidth();
-        double nodeHeight = node.getBoundsInParent().getHeight();
-
-        if (nodeWidth <= 0) nodeWidth = 720;
-        if (nodeHeight <= 0) nodeHeight = 300;
-
-        double scaleX = printableWidth / nodeWidth;
-        double scaleY = printableHeight / nodeHeight;
-        double scaleFactor = Math.min(scaleX, scaleY);
-
-        // 5. Apply scale transformation for accurate paper alignment
-        Scale scale = new Scale(scaleFactor, scaleFactor);
-        node.getTransforms().add(scale);
-
-        // 6. Print the node
-        boolean success = job.printPage(pageLayout, node);
-
-        // Clean up scale transform
-        node.getTransforms().remove(scale);
-
-        if (success) {
-            job.endJob();
-        } else {
-            job.endJob();
-        }
-
-        return success;
     }
 }

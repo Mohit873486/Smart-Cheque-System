@@ -2,6 +2,8 @@ package com.chequeprint.printpreview;
 
 import com.chequeprint.util.AppState;
 import com.chequeprint.util.PrinterUtils;
+import com.chequeprint.service.PrintService;
+import com.chequeprint.service.PrinterSelectionService;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.print.PageLayout;
@@ -18,6 +20,7 @@ import javafx.scene.web.WebView;
 import javafx.concurrent.Worker;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
 import com.lowagie.text.Document;
 import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.PdfWriter;
@@ -43,7 +46,7 @@ public class PrintPreviewController {
     private ComboBox<String> cmbZoom;
 
     @FXML
-    private ComboBox<String> cmbPrinter;
+    private ComboBox<Printer> cmbPrinter;
 
     @FXML
     private WebView previewWebView;
@@ -61,8 +64,11 @@ public class PrintPreviewController {
     private Button btnTestPrint;
 
     private PrintPreviewDocument document;
+    private final PrintService printService = new PrintService();
+    private final PrinterSelectionService printerSelectionService = new PrinterSelectionService();
     private boolean printed;
     private boolean contentReady;
+    private boolean printersAvailable;
     private double basePreviewWidthPx;
     private double basePreviewHeightPx;
     private static Path lastSaveDirectory;
@@ -105,7 +111,7 @@ public class PrintPreviewController {
 
                 contentReady = true;
 
-                setButtonsEnabled(true, canSave);
+                setButtonsEnabled(printersAvailable, canSave);
 
             } else if (newState == Worker.State.FAILED) {
 
@@ -138,9 +144,14 @@ public class PrintPreviewController {
             return;
         }
 
-        String attemptedPrinterName = cmbPrinter.getValue() != null ? cmbPrinter.getValue() : "Default Printer";
+        Printer printer = cmbPrinter != null ? cmbPrinter.getValue() : null;
+        String attemptedPrinterName = printer != null ? printer.getName() : "None";
         try {
-            Printer printer = selectPrinter(attemptedPrinterName);
+            if (printer == null) {
+                showAlert("Printer Required", "Please select a printer before printing.", Alert.AlertType.WARNING);
+                return;
+            }
+            printerSelectionService.selectPrinter(printer);
             boolean ok = document.getPrintHandler().print(printer);
             if (ok) {
                 printed = true;
@@ -161,15 +172,15 @@ public class PrintPreviewController {
 
     @FXML
     private void onSetDefaultPrinter() {
-        String selectedName = cmbPrinter != null ? cmbPrinter.getValue() : null;
-        if (selectedName == null || selectedName.isBlank()) {
+        Printer selectedPrinter = cmbPrinter != null ? cmbPrinter.getValue() : null;
+        if (selectedPrinter == null) {
             showAlert("Printer Selection", "Please select a printer from the dropdown list first.", Alert.AlertType.WARNING);
             return;
         }
 
         try {
-            AppState.getInstance().setSelectedPrinterByName(selectedName);
-            showAlert("Default Printer Set", "Default printer updated to '" + selectedName + "' successfully!\nThis choice will be remembered permanently.", Alert.AlertType.INFORMATION);
+            printerSelectionService.selectPrinter(selectedPrinter);
+            showAlert("Default Printer Set", "Default printer updated to '" + selectedPrinter.getName() + "' successfully.\nThis choice will be remembered permanently.", Alert.AlertType.INFORMATION);
         } catch (Exception e) {
             showAlert("Error Setting Printer", "Failed to save default printer: " + e.getMessage(), Alert.AlertType.ERROR);
         }
@@ -177,31 +188,21 @@ public class PrintPreviewController {
 
     @FXML
     private void onTestPrint() {
-        String attemptedPrinterName = cmbPrinter != null ? cmbPrinter.getValue() : null;
-        if (attemptedPrinterName == null || attemptedPrinterName.isBlank()) {
+        Printer printer = cmbPrinter != null ? cmbPrinter.getValue() : null;
+        if (printer == null) {
             showAlert("Test Print", "Please select a printer to run a test print.", Alert.AlertType.WARNING);
             return;
         }
 
         try {
-            Printer printer = selectPrinter(attemptedPrinterName);
-            if (printer == null) {
-                showAlert("Test Print Failed", "Printer '" + attemptedPrinterName + "' was not found or is invalid.", Alert.AlertType.ERROR);
-                return;
-            }
-
-            if (document != null && document.getPrintHandler() != null) {
-                boolean ok = document.getPrintHandler().print(printer);
-                if (ok) {
-                    showAlert("Test Print Success", "Test page submitted successfully to printer: " + printer.getName(), Alert.AlertType.INFORMATION);
-                } else {
-                    showAlert("Test Print Cancelled", "Test print job was cancelled or failed on printer: " + printer.getName(), Alert.AlertType.WARNING);
-                }
+            boolean ok = printService.testPrint(previewWebView != null && previewWebView.getScene() != null ? previewWebView.getScene().getWindow() : null, printer);
+            if (ok) {
+                showAlert("Test Print Success", "Test page submitted successfully to printer: " + printer.getName(), Alert.AlertType.INFORMATION);
             } else {
-                showAlert("Test Print", "Test print handler is not available for this document.", Alert.AlertType.WARNING);
+                showAlert("Test Print Failed", "Test print job failed or was cancelled on printer: " + printer.getName(), Alert.AlertType.WARNING);
             }
         } catch (Exception ex) {
-            showAlert("Test Print Error", "Test print failed on printer '" + attemptedPrinterName + "':\n" + ex.getMessage(), Alert.AlertType.ERROR);
+            showAlert("Test Print Error", "Test print failed on printer '" + printer.getName() + "':\n" + ex.getMessage(), Alert.AlertType.ERROR);
         }
     }
 
@@ -343,20 +344,48 @@ public class PrintPreviewController {
     // =========================================================
 
     private void setupPrinters() {
-        var validPrinterNames = FXCollections.observableArrayList(PrinterUtils.getValidPrinterNames());
-        cmbPrinter.setItems(validPrinterNames);
+        printerSelectionService.refreshAvailablePrinters();
+        var printers = FXCollections.observableArrayList(AppState.getInstance().getAvailablePrinters());
+        cmbPrinter.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(Printer printer) {
+                return printer != null ? printer.getName() : "";
+            }
 
-        Printer activePrinter = AppState.getInstance().getSelectedPrinter();
-        if (activePrinter != null && validPrinterNames.contains(activePrinter.getName())) {
-            cmbPrinter.setValue(activePrinter.getName());
-        } else if (!validPrinterNames.isEmpty()) {
-            cmbPrinter.setValue(validPrinterNames.get(0));
-            AppState.getInstance().setSelectedPrinterByName(validPrinterNames.get(0));
+            @Override
+            public Printer fromString(String string) {
+                return PrinterUtils.findPrinterByName(string);
+            }
+        });
+        cmbPrinter.setItems(printers);
+
+        if (printers.isEmpty()) {
+            printersAvailable = false;
+            btnPrint.setDisable(true);
+            btnTestPrint.setDisable(true);
+            btnSetDefaultPrinter.setDisable(true);
+            showAlert("Printers Not Found", "No printers are installed or visible to JavaFX.", Alert.AlertType.WARNING);
+            return;
+        }
+        printersAvailable = true;
+
+        Printer activePrinter = printerSelectionService.initializeDefaultPrinter();
+        if (activePrinter != null) {
+            for (Printer printer : printers) {
+                if (printer.getName().equalsIgnoreCase(activePrinter.getName())) {
+                    cmbPrinter.setValue(printer);
+                    break;
+                }
+            }
+        }
+        if (cmbPrinter.getValue() == null) {
+            cmbPrinter.setValue(printers.get(0));
+            printerSelectionService.selectPrinter(printers.get(0));
         }
 
         cmbPrinter.valueProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
-                AppState.getInstance().setSelectedPrinterByName(newVal);
+                printerSelectionService.selectPrinter(newVal);
             }
         });
     }
@@ -364,17 +393,6 @@ public class PrintPreviewController {
     // =========================================================
     // BUTTON ENABLE/DISABLE
     // =========================================================
-
-    private Printer selectPrinter(String printerName) {
-        if (printerName != null && !printerName.isBlank() && !printerName.equals("Default Printer")) {
-            for (Printer printer : Printer.getAllPrinters()) {
-                if (printerName.equalsIgnoreCase(printer.getName())) {
-                    return printer;
-                }
-            }
-        }
-        return AppState.getInstance().getSelectedPrinter();
-    }
 
     private Paper choosePaper(Printer printer, PageOrientation orientation) {
         Paper target = Paper.A4;

@@ -254,19 +254,20 @@ public class SettingsController {
 
     private void initializePrinters() {
         if (cbPrinter == null) return;
+        com.chequeprint.state.AppState.getInstance().refreshAvailablePrinters();
         var validPrinterNames = FXCollections.observableArrayList(com.chequeprint.util.PrinterUtils.getValidPrinterNames());
         cbPrinter.setItems(validPrinterNames);
-        javafx.print.Printer selected = com.chequeprint.util.AppState.getInstance().getSelectedPrinter();
+        javafx.print.Printer selected = com.chequeprint.state.AppState.getInstance().getSelectedPrinter();
         if (selected != null && validPrinterNames.contains(selected.getName())) {
             cbPrinter.setValue(selected.getName());
         } else if (!validPrinterNames.isEmpty()) {
             cbPrinter.setValue(validPrinterNames.get(0));
-            com.chequeprint.util.AppState.getInstance().setSelectedPrinterByName(validPrinterNames.get(0));
+            com.chequeprint.state.AppState.getInstance().setSelectedPrinterByName(validPrinterNames.get(0));
         }
 
         cbPrinter.valueProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
-                com.chequeprint.util.AppState.getInstance().setSelectedPrinterByName(newVal);
+                com.chequeprint.state.AppState.getInstance().setSelectedPrinterByName(newVal);
             }
         });
     }

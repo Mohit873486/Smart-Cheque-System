@@ -11,13 +11,21 @@ import com.chequeprint.util.JasperPrintUtil;
 import com.chequeprint.util.PrinterUtils;
 import javafx.print.Printer;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 import javafx.stage.Window;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class PrintService {
+
+    private static final Logger LOGGER = Logger.getLogger(PrintService.class.getName());
 
     private final ChequeDAO chequeDAO;
     private final BankDAO bankDAO;
@@ -195,11 +203,24 @@ public class PrintService {
 
     public boolean printRenderedCheque(Node node, Window ownerWindow) {
         validatePrinter();
-        return FxPrinterService.printNode(node, ownerWindow);
+        Printer printer = AppState.getInstance().getSelectedPrinter();
+        return printNode(node, ownerWindow, printer);
     }
 
     public boolean printNode(Node node, Window ownerWindow) {
         return printRenderedCheque(node, ownerWindow);
+    }
+
+    public boolean printNode(Node node, Window ownerWindow, Printer printer) {
+        Objects.requireNonNull(node, "Printable node must not be null.");
+        validatePrinter(printer);
+        AppState.getInstance().setSelectedPrinter(printer);
+        LOGGER.info(() -> "Starting print job on printer: " + printer.getName());
+        boolean printed = FxPrinterService.printNode(node, ownerWindow, printer);
+        if (!printed) {
+            LOGGER.warning("Print job failed or was cancelled on printer: " + printer.getName());
+        }
+        return printed;
     }
 
     public boolean isPrinterSelected() {
@@ -214,7 +235,17 @@ public class PrintService {
         }
         if (!PrinterUtils.isValidPrinter(p)) {
             String name = p.getName() != null ? p.getName() : "Unknown";
-            throw new IllegalStateException("Selected printer ('" + name + "') is invalid. Fax and virtual printers (PDF, XPS, OneNote) are not supported.");
+            throw new IllegalStateException("Selected printer ('" + name + "') is not available.");
+        }
+    }
+
+    public void validatePrinter(Printer printer) throws IllegalStateException {
+        if (printer == null) {
+            throw new IllegalStateException("No printer selected. Please select a printer before printing.");
+        }
+        if (!PrinterUtils.isValidPrinter(printer)) {
+            String name = printer.getName() != null ? printer.getName() : "Unknown";
+            throw new IllegalStateException("Selected printer ('" + name + "') is not available.");
         }
     }
 
@@ -226,6 +257,69 @@ public class PrintService {
 
     public void ensurePrinterSelected() throws IllegalStateException {
         validatePrinter();
+    }
+
+    public List<Printer> getAvailablePrinters() {
+        return PrinterUtils.getAllAvailablePrinters();
+    }
+
+    public List<String> getAvailablePrinterNames() {
+        return PrinterUtils.getValidPrinterNames();
+    }
+
+    public Optional<Printer> getSelectedPrinter() {
+        Printer printer = AppState.getInstance().getSelectedPrinter();
+        return PrinterUtils.isValidPrinter(printer) ? Optional.of(printer) : Optional.empty();
+    }
+
+    public Printer selectPrinter(Printer printer) {
+        validatePrinter(printer);
+        AppState.getInstance().setSelectedPrinter(printer);
+        LOGGER.info(() -> "Selected printer: " + printer.getName());
+        return printer;
+    }
+
+    public Printer selectPrinterByName(String printerName) {
+        Printer printer = PrinterUtils.findPrinterByName(printerName);
+        if (printer == null) {
+            throw new IllegalStateException("Printer not found: " + printerName);
+        }
+        return selectPrinter(printer);
+    }
+
+    public Printer initializeDefaultPrinter() {
+        AppState.getInstance().initializeDefaultPrinter();
+        return AppState.getInstance().getSelectedPrinter();
+    }
+
+    public void setAsDefaultPrinter(Printer printer) {
+        selectPrinter(printer);
+    }
+
+    public boolean testPrint(Window ownerWindow, Printer printer) {
+        validatePrinter(printer);
+
+        VBox page = new VBox(8);
+        page.setPrefSize(420, 220);
+        page.setStyle("-fx-padding: 24; -fx-background-color: white; -fx-border-color: #111827; -fx-border-width: 1;");
+
+        Label title = new Label("Smart Cheque System - Test Print");
+        title.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #111827;");
+
+        Label printerLabel = new Label("Printer: " + printer.getName());
+        printerLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #374151;");
+
+        Label status = new Label("If you can read this page, JavaFX printing is configured correctly.");
+        status.setStyle("-fx-font-size: 12px; -fx-text-fill: #374151;");
+
+        page.getChildren().addAll(title, printerLabel, status);
+
+        try {
+            return printNode(page, ownerWindow, printer);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Test print failed on printer: " + printer.getName(), e);
+            return false;
+        }
     }
 
     public BankTemplateLayout step1LoadTemplate(Cheque cheque, Bank bank, BankTemplateLayout layout) {

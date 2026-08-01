@@ -47,7 +47,7 @@ public class ChequeSnapshotRenderer {
         double h = layout != null ? layout.getHeightInches() * 72.0 : 263.0;
         Pane pane = new Pane(imageView);
         pane.setPrefSize(w, h);
-        return FxPrinterService.printNode(pane, null);
+        return FxPrinterService.printNode(pane, null, printer);
     }
 
     public static String exportSnapshotPdf(WritableImage snapshot, String jobName, BankTemplateLayout layout) {

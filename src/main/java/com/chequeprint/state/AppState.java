@@ -12,6 +12,8 @@ import com.chequeprint.util.PrinterUtils;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.print.Printer;
 
 import java.util.List;
@@ -33,6 +35,7 @@ public final class AppState {
     private final ObjectProperty<BankTemplateLayout> selectedTemplate = new SimpleObjectProperty<>();
     private final ObjectProperty<Cheque> currentCheque = new SimpleObjectProperty<>();
     private final ObjectProperty<Printer> selectedPrinter = new SimpleObjectProperty<>();
+    private final ObservableList<Printer> availablePrinters = FXCollections.observableArrayList();
     private final ObjectProperty<User> loggedInUser = new SimpleObjectProperty<>();
 
     private final BankService bankService = new BankService();
@@ -60,17 +63,8 @@ public final class AppState {
         currentCheque.addListener((obs, o, n) -> { if (!Objects.equals(o, n)) notifyStateChangeListeners(); });
         selectedPrinter.addListener((obs, o, n) -> { if (!Objects.equals(o, n)) notifyStateChangeListeners(); });
 
-        try {
-            String savedPrinter = PREFS != null ? PREFS.get(PREF_PRINTER, null) : null;
-            if (savedPrinter != null && !savedPrinter.isBlank()) {
-                Printer p = PrinterUtils.findPrinterByName(savedPrinter);
-                if (p != null) {
-                    this.selectedPrinter.set(p);
-                }
-            }
-        } catch (Throwable t) {
-            System.err.println("[AppState] Warning during printer initialization: " + t.getMessage());
-        }
+        refreshAvailablePrinters();
+        initializeDefaultPrinter();
     }
 
     public static AppState getInstance() {
@@ -141,11 +135,28 @@ public final class AppState {
         return selectedPrinter;
     }
 
+    public ObservableList<Printer> getAvailablePrinters() {
+        return availablePrinters;
+    }
+
+    public void refreshAvailablePrinters() {
+        List<Printer> printers = PrinterUtils.getAllAvailablePrinters();
+        availablePrinters.setAll(printers);
+
+        Printer currentPrinter = selectedPrinter.get();
+        if (currentPrinter != null && !PrinterUtils.isValidPrinter(currentPrinter)) {
+            selectedPrinter.set(null);
+        }
+    }
+
     public Printer getSelectedPrinter() {
         return selectedPrinter.get();
     }
 
     public void setSelectedPrinter(Printer printer) {
+        if (printer != null && !PrinterUtils.isValidPrinter(printer)) {
+            throw new IllegalArgumentException("Selected printer is invalid or unavailable.");
+        }
         this.selectedPrinter.set(printer);
         if (PREFS != null) {
             try {
@@ -183,6 +194,37 @@ public final class AppState {
             setSelectedPrinter(p);
         } else {
             System.err.println("[AppState] Printer not found on system: " + printerName);
+        }
+    }
+
+    public String getSelectedPrinterName() {
+        Printer printer = getSelectedPrinter();
+        return printer != null ? printer.getName() : null;
+    }
+
+    public void initializeDefaultPrinter() {
+        try {
+            refreshAvailablePrinters();
+            Printer printer = null;
+            String savedPrinter = PREFS != null ? PREFS.get(PREF_PRINTER, null) : null;
+            if (savedPrinter != null && !savedPrinter.isBlank()) {
+                printer = PrinterUtils.findPrinterByName(savedPrinter);
+            }
+            if (printer == null) {
+                printer = PrinterUtils.getDefaultValidPrinter();
+            }
+            if (printer != null) {
+                selectedPrinter.set(printer);
+                if (PREFS != null && printer.getName() != null) {
+                    PREFS.put(PREF_PRINTER, printer.getName());
+                    PREFS.flush();
+                }
+                System.out.println("[AppState] Selected printer initialized: " + printer.getName());
+            } else {
+                System.err.println("[AppState] No printers are installed or visible to JavaFX.");
+            }
+        } catch (Throwable t) {
+            System.err.println("[AppState] Warning during printer initialization: " + t.getMessage());
         }
     }
 
