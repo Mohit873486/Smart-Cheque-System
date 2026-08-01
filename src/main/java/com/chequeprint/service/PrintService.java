@@ -29,6 +29,7 @@ public class PrintService {
 
     private final ChequeDAO chequeDAO;
     private final BankDAO bankDAO;
+    private final PrinterService printerService = new PrinterService();
 
     public PrintService() {
         this.chequeDAO = new ChequeDAO();
@@ -50,8 +51,10 @@ public class PrintService {
 
     public boolean printCheque(Cheque cheque) throws Exception {
         validateBeforePrint(cheque, null);
+        Printer selectedPrinter = printerService.resolvePrinterForMode(PrinterService.PrinterRoutingMode.SINGLE)
+                .orElseThrow(() -> new IllegalStateException("No default printer available for single cheque printing."));
         Bank bank = resolveBank(cheque);
-        boolean printed = JasperPrintUtil.printCheque(cheque, bank);
+        boolean printed = JasperPrintUtil.printCheque(cheque, bank, selectedPrinter);
         if (printed) {
             try {
                 chequeDAO.updateStatus(cheque, Cheque.Status.Printed);
@@ -90,10 +93,13 @@ public class PrintService {
         java.util.ArrayList<Cheque> successes = new java.util.ArrayList<>();
         java.util.ArrayList<String> failures = new java.util.ArrayList<>();
 
+        Printer bulkPrinter = printerService.resolvePrinterForMode(PrinterService.PrinterRoutingMode.BULK)
+                .orElseThrow(() -> new IllegalStateException("No office printer available for bulk cheque printing."));
+
         for (Cheque c : pending) {
             try {
                 Bank bank = resolveBank(c);
-                boolean printed = JasperPrintUtil.printCheque(c, bank);
+                boolean printed = JasperPrintUtil.printCheque(c, bank, bulkPrinter);
                 if (printed) {
                     try {
                         chequeDAO.updateStatus(c, Cheque.Status.Printed);
@@ -202,8 +208,7 @@ public class PrintService {
     }
 
     public boolean printRenderedCheque(Node node, Window ownerWindow) {
-        validatePrinter();
-        Printer printer = AppState.getInstance().getSelectedPrinter();
+        Printer printer = resolvePrinterForPrint();
         return printNode(node, ownerWindow, printer);
     }
 
@@ -224,14 +229,14 @@ public class PrintService {
     }
 
     public boolean isPrinterSelected() {
-        Printer p = AppState.getInstance().getSelectedPrinter();
+        Printer p = printerService.resolveSelectedOrDefaultPrinter().orElse(null);
         return p != null && PrinterUtils.isValidPrinter(p);
     }
 
     public void validatePrinter() throws IllegalStateException {
-        Printer p = AppState.getInstance().getSelectedPrinter();
+        Printer p = printerService.resolveSelectedOrDefaultPrinter().orElse(null);
         if (p == null) {
-            throw new IllegalStateException("No printer selected. Please select a printer in Printer Settings before printing.");
+            throw new IllegalStateException("No printer selected and no default printer is available. Please select a printer in Printer Settings before printing.");
         }
         if (!PrinterUtils.isValidPrinter(p)) {
             String name = p.getName() != null ? p.getName() : "Unknown";
@@ -268,32 +273,29 @@ public class PrintService {
     }
 
     public Optional<Printer> getSelectedPrinter() {
-        Printer printer = AppState.getInstance().getSelectedPrinter();
+        Printer printer = printerService.resolveSelectedOrDefaultPrinter().orElse(null);
         return PrinterUtils.isValidPrinter(printer) ? Optional.of(printer) : Optional.empty();
     }
 
     public Printer selectPrinter(Printer printer) {
         validatePrinter(printer);
-        AppState.getInstance().setSelectedPrinter(printer);
+        printerService.selectPrinter(printer);
         LOGGER.info(() -> "Selected printer: " + printer.getName());
         return printer;
     }
 
     public Printer selectPrinterByName(String printerName) {
-        Printer printer = PrinterUtils.findPrinterByName(printerName);
-        if (printer == null) {
-            throw new IllegalStateException("Printer not found: " + printerName);
-        }
-        return selectPrinter(printer);
+        return printerService.selectPrinterByName(printerName)
+                .orElseThrow(() -> new IllegalStateException("Printer not found: " + printerName));
     }
 
     public Printer initializeDefaultPrinter() {
-        AppState.getInstance().initializeDefaultPrinter();
-        return AppState.getInstance().getSelectedPrinter();
+        LOGGER.info("Printer initialization requested; restoring saved default printer.");
+        return printerService.initializeSelectedPrinter().orElse(null);
     }
 
     public void setAsDefaultPrinter(Printer printer) {
-        selectPrinter(printer);
+        printerService.saveDefaultPrinter(printer);
     }
 
     public boolean testPrint(Window ownerWindow, Printer printer) {
@@ -390,5 +392,11 @@ public class PrintService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private Printer resolvePrinterForPrint() {
+        Printer printer = printerService.resolveSelectedOrDefaultPrinter().orElse(null);
+        validatePrinter(printer);
+        return printer;
     }
 }

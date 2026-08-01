@@ -224,6 +224,8 @@
                     <compilerArgs>
                         <arg>--add-reads</arg>
                         <arg>com.chequeprint=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>javafx.graphics/com.sun.javafx.print=ALL-UNNAMED</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>
@@ -245,6 +247,7 @@
                         <option>--add-opens=java.base/java.io=ALL-UNNAMED</option>
                         <option>--add-opens=java.desktop/java.awt=ALL-UNNAMED</option>
                         <option>--add-opens=java.desktop/sun.awt=ALL-UNNAMED</option>
+                        <option>--add-exports=javafx.graphics/com.sun.javafx.print=ALL-UNNAMED</option>
                     </options>
                 </configuration>
             </plugin>

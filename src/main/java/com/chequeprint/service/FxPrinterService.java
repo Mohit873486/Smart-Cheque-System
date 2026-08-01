@@ -4,7 +4,6 @@ import com.chequeprint.model.Bank;
 import com.chequeprint.model.BankTemplateLayout;
 import com.chequeprint.model.Cheque;
 import com.chequeprint.util.AppState;
-import com.chequeprint.util.ChequePreviewEngine;
 import com.chequeprint.util.ChequeRenderEngine;
 import com.chequeprint.util.PrinterUtils;
 import javafx.print.PageLayout;
@@ -12,6 +11,7 @@ import javafx.print.PageOrientation;
 import javafx.print.Paper;
 import javafx.print.Printer;
 import javafx.print.PrinterJob;
+import javafx.print.Printer.MarginType;
 import javafx.scene.Node;
 import javafx.scene.layout.Pane;
 import javafx.scene.transform.Scale;
@@ -21,6 +21,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Service class for JavaFX native printing using PrinterJob.
@@ -28,6 +30,11 @@ import java.util.Map;
  * to ensure 100% output consistency with ZERO preview-print mismatch.
  */
 public class FxPrinterService {
+
+    private static final Logger LOGGER = Logger.getLogger(FxPrinterService.class.getName());
+    private static final double DEFAULT_CHEQUE_WIDTH_INCHES = 8.0;
+    private static final double DEFAULT_CHEQUE_HEIGHT_INCHES = 3.66;
+    private static final double POINTS_PER_INCH = 72.0;
 
     /**
      * Prints a cheque using the single unified ChequePreviewEngine.
@@ -43,8 +50,8 @@ public class FxPrinterService {
             cheque = AppState.getInstance().getCurrentCheque();
         }
 
-        double widthInches = layout != null ? layout.getWidthInches() : 8.0;
-        double heightInches = layout != null ? layout.getHeightInches() : 3.66;
+        double widthInches = layout != null ? layout.getWidthInches() : DEFAULT_CHEQUE_WIDTH_INCHES;
+        double heightInches = layout != null ? layout.getHeightInches() : DEFAULT_CHEQUE_HEIGHT_INCHES;
 
         double widthPx = widthInches * 96.0;
         double heightPx = heightInches * 96.0;
@@ -87,68 +94,170 @@ public class FxPrinterService {
      * @return true if successfully printed, false if cancelled or failed.
      */
     public static boolean printNode(Node node, Window ownerWindow) {
-        return printNode(node, ownerWindow, AppState.getInstance().getSelectedPrinter());
+        return printCheque(node);
     }
 
     public static boolean printNode(Node node, Window ownerWindow, Printer selectedPrinter) {
+        return printCheque(node, selectedPrinter);
+    }
+
+    public static boolean printCheque(Node node) {
+        return printCheque(node, new PrinterService().resolveSelectedOrDefaultPrinter().orElse(null));
+    }
+
+    public static boolean printCheque(Node node, Printer selectedPrinter) {
         if (node == null) {
-            System.err.println("Cannot print: Node is null.");
+            LOGGER.warning("[Print] Cannot print: printable node is null.");
             return false;
         }
 
-        if (selectedPrinter == null || !PrinterUtils.isValidPrinter(selectedPrinter)) {
-            System.err.println("Cannot print: No valid printer selected in AppState.");
+        final Printer targetPrinter = selectedPrinter != null
+                ? selectedPrinter
+                : new PrinterService().resolveSelectedOrDefaultPrinter().orElse(null);
+
+        if (targetPrinter == null || !PrinterUtils.isValidPrinter(targetPrinter)) {
+            LOGGER.warning("[Print] Cannot print: no selected or default printer is available.");
+            PrinterErrorHandler.logFailure(
+                    PrinterErrorHandler.FailureType.PRINTER_NOT_FOUND,
+                    targetPrinter != null ? targetPrinter.getName() : "<unknown>",
+                    "print",
+                    null);
             return false;
         }
 
-        PrinterJob job = PrinterJob.createPrinterJob(selectedPrinter);
+        final String printerName = targetPrinter.getName();
+        PrinterJob job = PrinterJob.createPrinterJob(targetPrinter);
         if (job == null) {
-            System.err.println("No printer services available or failed to create PrinterJob.");
+            LOGGER.warning("[Print] Failed to create PrinterJob for selected printer: " + printerName);
             return false;
         }
 
-        Scale scale = null;
+        LOGGER.info(() -> "[Print] Created job for selected printer '" + printerName
+                + "' with initial status: " + job.getJobStatus());
+
+        Scale printScale = null;
         try {
-            Printer printer = job.getPrinter();
-            PageLayout pageLayout = printer.createPageLayout(
-                    Paper.NA_LETTER,
-                    PageOrientation.LANDSCAPE,
-                    Printer.MarginType.HARDWARE_MINIMUM
-            );
+            PageLayout pageLayout = createChequePageLayout(targetPrinter, node);
+            printScale = fitNodeInsidePrintableArea(node, pageLayout);
 
-            double printableWidth = pageLayout.getPrintableWidth();
-            double printableHeight = pageLayout.getPrintableHeight();
+            LOGGER.info(() -> "[Print] Using page layout for '" + printerName
+                    + "': paper=" + pageLayout.getPaper().getName()
+                    + ", printable=" + pageLayout.getPrintableWidth() + "x" + pageLayout.getPrintableHeight()
+                    + ", margins L/R/T/B=" + pageLayout.getLeftMargin() + "/"
+                    + pageLayout.getRightMargin() + "/" + pageLayout.getTopMargin() + "/"
+                    + pageLayout.getBottomMargin());
 
-            double nodeWidth = node.getBoundsInLocal().getWidth();
-            double nodeHeight = node.getBoundsInLocal().getHeight();
+            boolean pageQueued = job.printPage(pageLayout, node);
+            LOGGER.info(() -> "[Print] printPage result for '" + printerName
+                    + "': " + pageQueued + ", status: " + job.getJobStatus());
 
-            if (nodeWidth <= 0) nodeWidth = node.prefWidth(-1);
-            if (nodeHeight <= 0) nodeHeight = node.prefHeight(-1);
-            if (nodeWidth <= 0) nodeWidth = 720;
-            if (nodeHeight <= 0) nodeHeight = 300;
-
-            double scaleX = printableWidth / nodeWidth;
-            double scaleY = printableHeight / nodeHeight;
-            double scaleFactor = Math.min(scaleX, scaleY);
-
-            scale = new Scale(scaleFactor, scaleFactor);
-            node.getTransforms().add(scale);
-
-            boolean success = job.printPage(pageLayout, node);
-            if (success) {
-                System.out.println("[Print] Submitted job to printer: " + selectedPrinter.getName());
-            } else {
-                System.err.println("[Print] PrinterJob.printPage returned false for printer: " + selectedPrinter.getName());
+            if (!pageQueued) {
+                PrinterErrorHandler.logFailure(
+                        PrinterErrorHandler.FailureType.JOB_FAILED,
+                        printerName,
+                        "print",
+                        null);
+                LOGGER.warning("[Print] Print page was rejected or cancelled for printer: " + printerName);
+                return false;
             }
-            return success;
-        } catch (Exception e) {
-            System.err.println("[Print] Failed on printer '" + selectedPrinter.getName() + "': " + e.getMessage());
+
+            boolean ended = job.endJob();
+            LOGGER.info(() -> "[Print] endJob result for '" + printerName
+                    + "': " + ended + ", final status: " + job.getJobStatus());
+
+            if (!ended) {
+                PrinterErrorHandler.logFailure(
+                        PrinterErrorHandler.FailureType.JOB_FAILED,
+                        printerName,
+                        "print",
+                        null);
+                LOGGER.warning("[Print] PrinterJob failed while ending job for printer: " + printerName);
+            }
+            return ended;
+        } catch (RuntimeException ex) {
+            PrinterErrorHandler.logFailure(
+                    PrinterErrorHandler.classify(targetPrinter, ex),
+                    printerName,
+                    "print",
+                    ex);
+            LOGGER.log(Level.SEVERE, "[Print] Failed on selected printer '" + printerName
+                    + "'. Status: " + job.getJobStatus(), ex);
             return false;
         } finally {
-            if (scale != null) {
-                node.getTransforms().remove(scale);
+            if (printScale != null) {
+                node.getTransforms().remove(printScale);
             }
-            job.endJob();
         }
+    }
+
+    private static PageLayout createChequePageLayout(Printer printer, Node node) {
+        double widthPoints = resolveNodeWidth(node);
+        double heightPoints = resolveNodeHeight(node);
+
+        Paper chequePaper = Paper.A4;
+
+        PageOrientation orientation = PageOrientation.PORTRAIT;
+
+        PageLayout zeroMarginLayout = printer.createPageLayout(
+                chequePaper,
+                orientation,
+                0,
+                0,
+                0,
+                0);
+
+        if (fitsInsidePrintableArea(node, zeroMarginLayout)) {
+            return zeroMarginLayout;
+        }
+
+        LOGGER.warning("[Print] Printer driver did not accept a full zero-margin cheque layout; using hardware-minimum margins.");
+        return printer.createPageLayout(chequePaper, orientation, MarginType.HARDWARE_MINIMUM);
+    }
+
+    private static Scale fitNodeInsidePrintableArea(Node node, PageLayout pageLayout) {
+        double nodeWidth = resolveNodeWidth(node);
+        double nodeHeight = resolveNodeHeight(node);
+        double printableWidth = pageLayout.getPrintableWidth();
+        double printableHeight = pageLayout.getPrintableHeight();
+
+        if (nodeWidth <= 0 || nodeHeight <= 0 || printableWidth <= 0 || printableHeight <= 0) {
+            return null;
+        }
+
+        double scaleFactor = Math.min(printableWidth / nodeWidth, printableHeight / nodeHeight);
+        if (scaleFactor > 0 && scaleFactor < 1.0) {
+            Scale scale = new Scale(scaleFactor, scaleFactor, 0, 0);
+            node.getTransforms().add(scale);
+            LOGGER.info(() -> "[Print] Scaled cheque node to fit printable area: " + scaleFactor);
+            return scale;
+        }
+        return null;
+    }
+
+    private static boolean fitsInsidePrintableArea(Node node, PageLayout pageLayout) {
+        return resolveNodeWidth(node) <= pageLayout.getPrintableWidth()
+                && resolveNodeHeight(node) <= pageLayout.getPrintableHeight();
+    }
+
+    private static double resolveNodeWidth(Node node) {
+        double width = node.getBoundsInLocal().getWidth();
+        if (width <= 0) {
+            width = node.prefWidth(-1);
+        }
+        if (width <= 0) {
+            width = DEFAULT_CHEQUE_WIDTH_INCHES * POINTS_PER_INCH;
+        }
+        return width;
+    }
+
+    private static double resolveNodeHeight(Node node) {
+        double height = node.getBoundsInLocal().getHeight();
+        if (height <= 0) {
+            height = node.prefHeight(-1);
+        }
+        if (height <= 0) {
+            height = DEFAULT_CHEQUE_HEIGHT_INCHES * POINTS_PER_INCH;
+        }
+        return height;
     }
 }

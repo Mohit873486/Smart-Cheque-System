@@ -1,8 +1,10 @@
 package com.chequeprint.controller;
 
 import com.chequeprint.service.SettingService;
+import com.chequeprint.service.PrinterService;
 import com.chequeprint.model.Settings;
 import com.chequeprint.util.FxUtils;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -47,6 +49,8 @@ public class SettingsController {
     private CheckBox cbAmountConfirm;
     @FXML
     private ComboBox<String> cbPrinter;
+    @FXML
+    private Button btnRefreshPrinters;
 
     // ========================================
     // INVOICE SETTINGS FIELDS
@@ -101,6 +105,8 @@ public class SettingsController {
 
     private MainController mainController;
     private final SettingService settingService = new SettingService();
+    private final PrinterService printerService = new PrinterService();
+    private ChangeListener<String> printerSelectionListener;
 
     private void showStatusMessage(String message, boolean isError) {
         if (lblStatusMessage == null) return;
@@ -254,22 +260,44 @@ public class SettingsController {
 
     private void initializePrinters() {
         if (cbPrinter == null) return;
-        com.chequeprint.state.AppState.getInstance().refreshAvailablePrinters();
-        var validPrinterNames = FXCollections.observableArrayList(com.chequeprint.util.PrinterUtils.getValidPrinterNames());
-        cbPrinter.setItems(validPrinterNames);
-        javafx.print.Printer selected = com.chequeprint.state.AppState.getInstance().getSelectedPrinter();
-        if (selected != null && validPrinterNames.contains(selected.getName())) {
-            cbPrinter.setValue(selected.getName());
-        } else if (!validPrinterNames.isEmpty()) {
-            cbPrinter.setValue(validPrinterNames.get(0));
-            com.chequeprint.state.AppState.getInstance().setSelectedPrinterByName(validPrinterNames.get(0));
+        if (printerSelectionListener != null) {
+            cbPrinter.valueProperty().removeListener(printerSelectionListener);
         }
 
-        cbPrinter.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null) {
-                com.chequeprint.state.AppState.getInstance().setSelectedPrinterByName(newVal);
+        var printerNames = printerService.refreshPrinterNames();
+        cbPrinter.setItems(printerNames);
+
+        if (printerNames.isEmpty()) {
+            cbPrinter.setValue(null);
+            cbPrinter.setPromptText("No printers found");
+            cbPrinter.setDisable(true);
+            com.chequeprint.state.AppState.getInstance().setSelectedPrinter(null);
+            showStatusMessage("No printers found. Check printer power, connection, or driver installation.", true);
+        } else {
+            cbPrinter.setDisable(false);
+            cbPrinter.setPromptText("Select physical printer...");
+            javafx.print.Printer selected = printerService.initializeSelectedPrinter().orElse(null);
+            if (selected != null && printerNames.contains(selected.getName())) {
+                cbPrinter.setValue(selected.getName());
+            } else {
+                cbPrinter.setValue(null);
             }
-        });
+        }
+
+        printerSelectionListener = (obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                printerService.selectPrinterByName(newVal);
+            }
+        };
+        cbPrinter.valueProperty().addListener(printerSelectionListener);
+    }
+
+    @FXML
+    private void onRefreshPrinters() {
+        initializePrinters();
+        if (cbPrinter != null && cbPrinter.getItems() != null && !cbPrinter.getItems().isEmpty()) {
+            showStatusMessage("Printer list refreshed.", false);
+        }
     }
 
     private void setControlsDisabled(boolean disabled) {
@@ -281,6 +309,10 @@ public class SettingsController {
         cbDefaultBank.setDisable(disabled);
         cbAutoPrint.setDisable(disabled);
         cbAmountConfirm.setDisable(disabled);
+        if (cbPrinter != null) {
+            boolean noPrinters = cbPrinter.getItems() == null || cbPrinter.getItems().isEmpty();
+            cbPrinter.setDisable(disabled || noPrinters);
+        }
         tfInvoicePrefix.setDisable(disabled);
         cbPaymentTerms.setDisable(disabled);
         cbAutoGST.setDisable(disabled);
@@ -288,6 +320,7 @@ public class SettingsController {
         if (rbDark != null) rbDark.setDisable(disabled);
         btnSaveSettings.setDisable(disabled);
         btnResetSettings.setDisable(disabled);
+        if (btnRefreshPrinters != null) btnRefreshPrinters.setDisable(disabled);
         if (btnUploadSignature != null) btnUploadSignature.setDisable(disabled);
         if (btnRemoveSignature != null) btnRemoveSignature.setDisable(disabled);
         if (cbAutoSignature != null) cbAutoSignature.setDisable(disabled);
@@ -419,7 +452,7 @@ public class SettingsController {
                     paymentTerms, autoGST, theme);
 
             if (cbPrinter != null && cbPrinter.getValue() != null) {
-                com.chequeprint.util.AppState.getInstance().setSelectedPrinterByName(cbPrinter.getValue());
+                printerService.saveDefaultPrinterByName(cbPrinter.getValue());
             }
 
             setControlsDisabled(true);

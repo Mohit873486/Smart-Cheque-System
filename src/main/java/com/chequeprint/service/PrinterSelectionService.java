@@ -1,7 +1,6 @@
 package com.chequeprint.service;
 
 import com.chequeprint.state.AppState;
-import com.chequeprint.util.PrinterUtils;
 import javafx.print.Printer;
 
 import java.util.List;
@@ -17,47 +16,42 @@ import java.util.Optional;
 public class PrinterSelectionService {
 
     private final AppState appState = AppState.getInstance();
+    private final PrinterService printerService = new PrinterService();
 
     public List<Printer> listAvailablePrinters() {
-        return appState.getAvailablePrinters();
+        return printerService.getAvailablePrinters();
     }
 
     public void refreshAvailablePrinters() {
-        appState.refreshAvailablePrinters();
+        printerService.refreshPrinters();
     }
 
     public Optional<Printer> findPrinter(String printerName) {
-        if (printerName == null || printerName.isBlank()) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(PrinterUtils.findPrinterByName(printerName));
+        return printerService.findPrinterByName(printerName);
     }
 
     public Printer selectPrinter(Printer printer) {
-        if (printer == null) {
-            throw new IllegalArgumentException("Printer must not be null.");
-        }
-        if (!PrinterUtils.isValidPrinter(printer)) {
-            throw new IllegalArgumentException("Selected printer is invalid or unavailable.");
-        }
-        appState.setSelectedPrinter(printer);
-        return printer;
+        return printerService.selectPrinter(printer);
     }
 
     public Printer selectPrinter(String printerName) {
-        Printer printer = PrinterUtils.findPrinterByName(printerName);
-        if (printer == null) {
-            throw new IllegalArgumentException("Printer not found: " + printerName);
-        }
-        return selectPrinter(printer);
+        return printerService.selectPrinterByName(printerName)
+                .orElseThrow(() -> new IllegalArgumentException("Printer not found: " + printerName));
     }
 
     public Printer initializeDefaultPrinter() {
-        appState.initializeDefaultPrinter();
-        return appState.getSelectedPrinter();
+        return printerService.initializeSelectedPrinter().orElse(null);
     }
 
     public Printer getDefaultPrinter() {
-        return appState.getSelectedPrinter();
+        return printerService.getDefaultPrinter().orElse(null);
+    }
+
+    public Printer setDefaultPrinter(Printer printer) {
+        return printerService.saveDefaultPrinter(printer);
+    }
+
+    public Printer resolveSelectedOrDefaultPrinter() {
+        return printerService.resolveSelectedOrDefaultPrinter().orElse(null);
     }
 }

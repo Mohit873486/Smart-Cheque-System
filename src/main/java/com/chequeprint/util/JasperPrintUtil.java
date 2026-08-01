@@ -4,6 +4,7 @@ import com.chequeprint.model.Bank;
 import com.chequeprint.model.Cheque;
 import com.chequeprint.model.Invoice;
 import com.chequeprint.printpreview.PrintPreviewService;
+import com.chequeprint.service.FxPrinterService;
 import net.sf.jasperreports.engine.JREmptyDataSource;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperCompileManager;
@@ -61,7 +62,7 @@ public class JasperPrintUtil {
     }
 
     public static void setLastUsedPrinterName(String printerName) {
-        lastUsedPrinterName = printerName != null ? printerName : "Default Printer";
+        lastUsedPrinterName = printerName != null ? printerName : "No Printer Selected";
     }
 
     public static boolean printCheque(Cheque cheque) throws JRException {
@@ -130,7 +131,10 @@ public class JasperPrintUtil {
     }
 
     public static boolean printInvoice(Invoice invoice, javafx.print.Printer printer) throws JRException {
-        setLastUsedPrinterName(printer != null ? printer.getName() : "Default Printer");
+        if (printer == null) {
+            throw new IllegalStateException("No printer selected in AppState. Please select a printer in Printer Settings before printing.");
+        }
+        setLastUsedPrinterName(printer.getName());
         InputStream template = JasperPrintUtil.class
                 .getResourceAsStream("/reports/invoice_report.jrxml");
 
@@ -184,18 +188,7 @@ public class JasperPrintUtil {
     }
 
     private static boolean executePrinterJob(javafx.scene.Node node, javafx.print.Printer printer) {
-        javafx.print.PrinterJob job = javafx.print.PrinterJob.createPrinterJob();
-        if (job == null) {
-            return false;
-        }
-        if (printer != null) {
-            job.setPrinter(printer);
-        }
-        boolean success = job.printPage(node);
-        if (success) {
-            return job.endJob();
-        }
-        return false;
+        return FxPrinterService.printCheque(node, printer);
     }
 
     public static String exportChequePdf(Cheque cheque, String outputDir) throws JRException {

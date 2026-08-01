@@ -28,6 +28,7 @@ public final class AppState {
 
     private static final Preferences PREFS = Preferences.userNodeForPackage(AppState.class);
     private static final String PREF_PRINTER = "selected_printer";
+    private static final String PREF_DEFAULT_PRINTER = "default_printer";
     private static final AppState INSTANCE = new AppState();
 
     private final ObjectProperty<Bank> selectedBank = new SimpleObjectProperty<>();
@@ -172,6 +173,40 @@ public final class AppState {
         }
     }
 
+    public String getDefaultPrinterName() {
+        if (PREFS == null) {
+            return null;
+        }
+        String defaultPrinter = PREFS.get(PREF_DEFAULT_PRINTER, null);
+        if (defaultPrinter == null || defaultPrinter.isBlank()) {
+            defaultPrinter = PREFS.get(PREF_PRINTER, null);
+        }
+        return defaultPrinter;
+    }
+
+    public Printer getDefaultPrinter() {
+        String defaultPrinterName = getDefaultPrinterName();
+        return defaultPrinterName != null ? PrinterUtils.findPrinterByName(defaultPrinterName) : null;
+    }
+
+    public void setDefaultPrinter(Printer printer) {
+        if (printer != null && !PrinterUtils.isValidPrinter(printer)) {
+            throw new IllegalArgumentException("Default printer is invalid or unavailable.");
+        }
+        try {
+            if (printer != null && printer.getName() != null) {
+                PREFS.put(PREF_DEFAULT_PRINTER, printer.getName());
+                PREFS.put(PREF_PRINTER, printer.getName());
+                selectedPrinter.set(printer);
+            } else {
+                PREFS.remove(PREF_DEFAULT_PRINTER);
+            }
+            PREFS.flush();
+        } catch (Exception e) {
+            System.err.println("[AppState] Failed to persist default printer preference: " + e.getMessage());
+        }
+    }
+
     public ObjectProperty<User> loggedInUserProperty() {
         return loggedInUser;
     }
@@ -197,31 +232,58 @@ public final class AppState {
         }
     }
 
+    public void setDefaultPrinterByName(String printerName) {
+        if (printerName == null || printerName.isBlank() || printerName.equalsIgnoreCase("None")) {
+            setDefaultPrinter(null);
+            return;
+        }
+        Printer p = PrinterUtils.findPrinterByName(printerName);
+        if (p != null) {
+            setDefaultPrinter(p);
+        } else {
+            System.err.println("[AppState] Default printer not found on system: " + printerName);
+        }
+    }
+
     public String getSelectedPrinterName() {
         Printer printer = getSelectedPrinter();
         return printer != null ? printer.getName() : null;
     }
 
+    public Printer resolveSelectedOrDefaultPrinter() {
+        Printer printer = getSelectedPrinter();
+        if (PrinterUtils.isValidPrinter(printer)) {
+            return printer;
+        }
+        printer = getDefaultPrinter();
+        if (PrinterUtils.isValidPrinter(printer)) {
+            selectedPrinter.set(printer);
+            return printer;
+        }
+        return null;
+    }
+
     public void initializeDefaultPrinter() {
         try {
             refreshAvailablePrinters();
-            Printer printer = null;
-            String savedPrinter = PREFS != null ? PREFS.get(PREF_PRINTER, null) : null;
-            if (savedPrinter != null && !savedPrinter.isBlank()) {
-                printer = PrinterUtils.findPrinterByName(savedPrinter);
-            }
+            Printer printer = getDefaultPrinter();
             if (printer == null) {
-                printer = PrinterUtils.getDefaultValidPrinter();
+                String savedPrinter = PREFS != null ? PREFS.get(PREF_PRINTER, null) : null;
+                if (savedPrinter != null && !savedPrinter.isBlank()) {
+                    printer = PrinterUtils.findPrinterByName(savedPrinter);
+                }
             }
             if (printer != null) {
                 selectedPrinter.set(printer);
                 if (PREFS != null && printer.getName() != null) {
+                    PREFS.put(PREF_DEFAULT_PRINTER, printer.getName());
                     PREFS.put(PREF_PRINTER, printer.getName());
                     PREFS.flush();
                 }
-                System.out.println("[AppState] Selected printer initialized: " + printer.getName());
+                System.out.println("[AppState] Default printer initialized: " + printer.getName());
             } else {
-                System.err.println("[AppState] No printers are installed or visible to JavaFX.");
+                selectedPrinter.set(null);
+                System.err.println("[AppState] No default printer selected or saved printer is unavailable.");
             }
         } catch (Throwable t) {
             System.err.println("[AppState] Warning during printer initialization: " + t.getMessage());

@@ -2,8 +2,11 @@ package com.chequeprint.printpreview;
 
 import com.chequeprint.util.AppState;
 import com.chequeprint.util.PrinterUtils;
+import com.chequeprint.service.FxPrinterService;
 import com.chequeprint.service.PrintService;
+import com.chequeprint.service.PrinterErrorHandler;
 import com.chequeprint.service.PrinterSelectionService;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.print.PageLayout;
@@ -14,6 +17,8 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
 import javafx.scene.image.WritableImage;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
@@ -35,6 +40,9 @@ import java.util.Locale;
 import javax.imageio.ImageIO;
 
 public class PrintPreviewController {
+
+    @FXML
+    private BorderPane rootPane;
 
     @FXML
     private Label lblDocTitle;
@@ -63,12 +71,19 @@ public class PrintPreviewController {
     @FXML
     private Button btnTestPrint;
 
+    @FXML
+    private Button btnClose;
+
+    @FXML
+    private VBox controlsPane;
+
     private PrintPreviewDocument document;
     private final PrintService printService = new PrintService();
     private final PrinterSelectionService printerSelectionService = new PrinterSelectionService();
     private boolean printed;
     private boolean contentReady;
     private boolean printersAvailable;
+    private boolean printing;
     private double basePreviewWidthPx;
     private double basePreviewHeightPx;
     private static Path lastSaveDirectory;
@@ -111,7 +126,7 @@ public class PrintPreviewController {
 
                 contentReady = true;
 
-                setButtonsEnabled(printersAvailable, canSave);
+                setButtonsEnabled(printersAvailable && cmbPrinter != null && cmbPrinter.getValue() != null, canSave);
 
             } else if (newState == Worker.State.FAILED) {
 
@@ -136,42 +151,58 @@ public class PrintPreviewController {
 
     @FXML
     private void onPrint() {
-        if (document == null || document.getPrintHandler() == null) {
+        if (printing) {
+            return;
+        }
+
+        if (document == null) {
             showAlert(
                     "Print",
-                    "Unable to print: no print handler configured.",
+                    "Unable to print: no preview document loaded.",
                     Alert.AlertType.ERROR);
             return;
         }
 
+        if (!contentReady) {
+            showAlert("Print", "Preview is still rendering. Please try again in a moment.", Alert.AlertType.WARNING);
+            return;
+        }
+
         Printer printer = cmbPrinter != null ? cmbPrinter.getValue() : null;
-        String attemptedPrinterName = printer != null ? printer.getName() : "None";
+        String attemptedPrinterName = null;
         try {
             if (printer == null) {
-                showAlert("Printer Required", "Please select a printer before printing.", Alert.AlertType.WARNING);
+                printer = printerSelectionService.resolveSelectedOrDefaultPrinter();
+                if (printer != null && cmbPrinter != null) {
+                    cmbPrinter.setValue(printer);
+                }
+            }
+            if (printer == null) {
+                showAlert(
+                        "Printer Required",
+                        PrinterErrorHandler.buildUserMessage(null, "select", null),
+                        Alert.AlertType.WARNING);
                 return;
             }
+            attemptedPrinterName = printer.getName();
             printerSelectionService.selectPrinter(printer);
-            boolean ok = document.getPrintHandler().print(printer);
-            if (ok) {
-                printed = true;
-                closeWindow();
-            } else {
-                showAlert(
-                        "Print",
-                        "Print job failed or was cancelled on printer: " + attemptedPrinterName,
-                        Alert.AlertType.INFORMATION);
-            }
+            setPrinting(true);
+            printRenderedPreviewNode(printer, attemptedPrinterName);
         } catch (Exception ex) {
+            setPrinting(false);
             showAlert(
                     "Print Error",
-                    "Failed to print document on printer '" + attemptedPrinterName + "': " + ex.getMessage(),
+                    PrinterErrorHandler.buildUserMessage(printer, "print", ex),
                     Alert.AlertType.ERROR);
         }
     }
 
     @FXML
     private void onSetDefaultPrinter() {
+        if (printing) {
+            return;
+        }
+
         Printer selectedPrinter = cmbPrinter != null ? cmbPrinter.getValue() : null;
         if (selectedPrinter == null) {
             showAlert("Printer Selection", "Please select a printer from the dropdown list first.", Alert.AlertType.WARNING);
@@ -179,7 +210,7 @@ public class PrintPreviewController {
         }
 
         try {
-            printerSelectionService.selectPrinter(selectedPrinter);
+            printerSelectionService.setDefaultPrinter(selectedPrinter);
             showAlert("Default Printer Set", "Default printer updated to '" + selectedPrinter.getName() + "' successfully.\nThis choice will be remembered permanently.", Alert.AlertType.INFORMATION);
         } catch (Exception e) {
             showAlert("Error Setting Printer", "Failed to save default printer: " + e.getMessage(), Alert.AlertType.ERROR);
@@ -188,6 +219,10 @@ public class PrintPreviewController {
 
     @FXML
     private void onTestPrint() {
+        if (printing) {
+            return;
+        }
+
         Printer printer = cmbPrinter != null ? cmbPrinter.getValue() : null;
         if (printer == null) {
             showAlert("Test Print", "Please select a printer to run a test print.", Alert.AlertType.WARNING);
@@ -212,6 +247,9 @@ public class PrintPreviewController {
 
     @FXML
     private void onSavePdf() {
+        if (printing) {
+            return;
+        }
 
         if (document == null) {
 
@@ -288,6 +326,9 @@ public class PrintPreviewController {
 
     @FXML
     private void onClose() {
+        if (printing) {
+            return;
+        }
 
         Stage stage = (Stage) previewWebView.getScene().getWindow();
 
@@ -315,6 +356,9 @@ public class PrintPreviewController {
     }
 
     private void applyZoom(String zoomLabel) {
+        if (printing) {
+            return;
+        }
 
         if (zoomLabel == null) {
 
@@ -378,21 +422,82 @@ public class PrintPreviewController {
                 }
             }
         }
-        if (cmbPrinter.getValue() == null) {
-            cmbPrinter.setValue(printers.get(0));
-            printerSelectionService.selectPrinter(printers.get(0));
-        }
+        setButtonsEnabled(contentReady && cmbPrinter.getValue() != null, document != null && document.getPdfSaveHandler() != null);
 
         cmbPrinter.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null) {
+            if (!printing && newVal != null) {
                 printerSelectionService.selectPrinter(newVal);
             }
+            setButtonsEnabled(contentReady && newVal != null, document != null && document.getPdfSaveHandler() != null);
         });
     }
 
     // =========================================================
     // BUTTON ENABLE/DISABLE
     // =========================================================
+
+    private void printRenderedPreviewNode(Printer printer, String attemptedPrinterName) {
+        runAfterPreviewRenderPulse(() -> {
+            boolean ok = false;
+            boolean errorShown = false;
+            try {
+                ok = FxPrinterService.printCheque(previewWebView, printer);
+            } catch (RuntimeException ex) {
+                errorShown = true;
+                showAlert(
+                        "Print Error",
+                        PrinterErrorHandler.buildUserMessage(printer, "print", ex, true),
+                        Alert.AlertType.ERROR);
+            } finally {
+                setPrinting(false);
+            }
+
+            if (ok) {
+                printed = true;
+                closeWindow();
+            } else if (!errorShown) {
+                showAlert(
+                        "Print",
+                        PrinterErrorHandler.buildUserMessage(printer, "print", null, true),
+                        Alert.AlertType.WARNING);
+            }
+        });
+    }
+
+    private void runAfterPreviewRenderPulse(Runnable action) {
+        previewWebView.applyCss();
+        if (previewWebView.getParent() != null) {
+            previewWebView.getParent().applyCss();
+            previewWebView.getParent().layout();
+        }
+        previewWebView.layout();
+
+        Platform.runLater(() -> {
+            previewWebView.applyCss();
+            previewWebView.layout();
+            Platform.runLater(action);
+        });
+    }
+
+    private void setPrinting(boolean printing) {
+        this.printing = printing;
+        if (controlsPane != null) {
+            controlsPane.setDisable(printing);
+        }
+        if (btnPrint != null) {
+            btnPrint.setDisable(printing || !printersAvailable || !contentReady);
+            btnPrint.setText(printing ? "Printing..." : "Print");
+        }
+        if (btnSavePdf != null) {
+            btnSavePdf.setDisable(printing || document == null || document.getPdfSaveHandler() == null);
+        }
+        if (btnClose != null) {
+            btnClose.setDisable(printing);
+        }
+        if (previewWebView != null) {
+            previewWebView.setMouseTransparent(printing);
+        }
+    }
 
     private Paper choosePaper(Printer printer, PageOrientation orientation) {
         Paper target = Paper.A4;
@@ -416,9 +521,9 @@ public class PrintPreviewController {
             boolean printEnabled,
             boolean saveEnabled) {
 
-        btnPrint.setDisable(!printEnabled);
+        btnPrint.setDisable(printing || !printEnabled);
 
-        btnSavePdf.setDisable(!saveEnabled);
+        btnSavePdf.setDisable(printing || !saveEnabled);
     }
 
     private void resizePreviewWebView(double zoomFactor) {

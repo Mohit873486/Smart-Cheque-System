@@ -45,15 +45,13 @@ public class PrintPreviewService {
         double widthMm = finalLayout.getWidthInches() * 25.4;
         double heightMm = finalLayout.getHeightInches() * 25.4;
 
-        // Render high resolution snapshot of cheque based on layout designer
-        WritableImage snapshot = ChequeSnapshotRenderer.renderCheque(cheque, bankTemplate, finalLayout, 2.5);
-        
         String html = null;
         try {
             html = htmlTemplateService.buildChequeHtml(cheque, bankTemplate, finalLayout);
         } catch (Exception ignored) {}
 
         if (html == null || html.isBlank()) {
+            WritableImage snapshot = ChequeSnapshotRenderer.renderCheque(cheque, bankTemplate, finalLayout, 2.5);
             BufferedImage img = SwingFXUtils.fromFXImage(snapshot, null);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ImageIO.write(img, "png", baos);
@@ -73,8 +71,11 @@ public class PrintPreviewService {
                 html,
                 widthMm,
                 heightMm,
-                (printer) -> ChequeSnapshotRenderer.printSnapshot(snapshot, printer, docJobName, layout),
-                () -> ChequeSnapshotRenderer.exportSnapshotPdf(snapshot, docJobName, layout));
+                null,
+                () -> {
+                    WritableImage pdfSnapshot = ChequeSnapshotRenderer.renderCheque(cheque, bankTemplate, finalLayout, 2.5);
+                    return ChequeSnapshotRenderer.exportSnapshotPdf(pdfSnapshot, docJobName, finalLayout);
+                });
 
         return showPreview(doc);
     }
