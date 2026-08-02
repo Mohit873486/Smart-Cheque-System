@@ -56,7 +56,7 @@
                             styleClass="table-placeholder" />
                     </placeholder>
                     <columns>
-                        <TableColumn fx:id="colChequeNo" text="Cheque" prefWidth="110" minWidth="80" />
+                        <TableColumn fx:id="colChequeNo" text="Cheque No" prefWidth="120" minWidth="90" />
                         <TableColumn fx:id="colPayee" text="Payee" prefWidth="160" minWidth="100" />
                         <TableColumn fx:id="colAmount" text="Amount" prefWidth="110" minWidth="80" />
                         <TableColumn fx:id="colBank" text="Bank" prefWidth="130" minWidth="100" />

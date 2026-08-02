@@ -27,8 +27,8 @@ public class Cheque {
     @Column(name = "bank_id", nullable = true)
     private Integer bankId;
 
-    @Column(name = "account_id", nullable = false)
-    private int accountId;
+    @Column(name = "account_id", nullable = true)
+    private Integer accountId;
 
     @Column(name = "issue_date", nullable = false)
     private LocalDate issueDate;
@@ -86,8 +86,8 @@ public class Cheque {
     public Integer getBankId() { return bankId; }
     public void setBankId(Integer bankId) { this.bankId = bankId; }
 
-    public int getAccountId() { return accountId; }
-    public void setAccountId(int accountId) { this.accountId = accountId; }
+    public Integer getAccountId() { return accountId; }
+    public void setAccountId(Integer accountId) { this.accountId = accountId; }
 
     public LocalDate getIssueDate() { return issueDate; }
     public void setIssueDate(LocalDate issueDate) { this.issueDate = issueDate; }

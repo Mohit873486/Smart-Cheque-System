@@ -11,5 +11,8 @@ public enum AuditAction {
   REJECT,
   RESET_PASSWORD,
   LOCK,
-  UNLOCK
+  UNLOCK,
+  CLEARED,
+  DEPOSITED,
+  BOUNCED
 }
