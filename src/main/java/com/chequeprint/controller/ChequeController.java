@@ -120,9 +120,24 @@ public class ChequeController {
         setupTable();
         setupFilters();
         applyPermissions();
-        loadData();
+        onPageLoad();
         updateButtonStates(null);
         FxUtils.animateIn(rootPane, 0);
+    }
+
+    @Override
+    public void onPageLoad() {
+        if (alreadyLoaded) {
+            System.out.println("[ChequeController] Data already loaded; skipping redundant API fetch.");
+            return;
+        }
+        loadData();
+        alreadyLoaded = true;
+    }
+
+    @Override
+    public void cleanup() {
+        isLoading.set(false);
     }
 
     private void applyPermissions() {

@@ -81,83 +81,112 @@ public class ApiClient {
         return execute(urlStr, "DELETE", null);
     }
 
+    private static final int MAX_RETRIES = 3;
+    private static final long RETRY_DELAY_MS = 600;
+
+    private static final java.util.concurrent.atomic.AtomicLong legacyCallCounter = new java.util.concurrent.atomic.AtomicLong(0);
+
     private static String execute(String urlStr, String method, String jsonBody) throws Exception {
-        HttpURLConnection connection = null;
-        try {
-            URL url = new URL(urlStr);
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod(method);
-            connection.setConnectTimeout(10000);
-            connection.setReadTimeout(10000);
+        long count = legacyCallCounter.incrementAndGet();
+        String caller = getCallerMethodInfo();
+        System.out.println(String.format("🌐 [ApiClient Call #%d] %s %s | Triggered by: %s",
+                count, method, urlStr, caller));
 
-            // Add Authorization header: Authorization: Bearer <token>
-            String authHeader = Session.getAuthorizationHeader();
-            if (!authHeader.isBlank()) {
-                connection.setRequestProperty("Authorization", authHeader);
-            }
+        int attempts = 0;
+        while (true) {
+            attempts++;
+            HttpURLConnection connection = null;
+            try {
+                URL url = new URL(urlStr);
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod(method);
+                connection.setConnectTimeout(10000);
+                connection.setReadTimeout(10000);
 
-            if (jsonBody != null && (method.equals("POST") || method.equals("PUT"))) {
-                connection.setRequestProperty("Content-Type", "application/json");
-                connection.setDoOutput(true);
-                try (OutputStream os = connection.getOutputStream()) {
-                    byte[] input = jsonBody.getBytes("utf-8");
-                    os.write(input, 0, input.length);
+                // Add Authorization header: Authorization: Bearer <token>
+                String authHeader = Session.getAuthorizationHeader();
+                if (!authHeader.isBlank()) {
+                    connection.setRequestProperty("Authorization", authHeader);
                 }
-            }
 
-            int responseCode = connection.getResponseCode();
-
-            // Handle 401 Unauthorized
-            if (responseCode == HttpURLConnection.HTTP_UNAUTHORIZED) {
-                SessionManager.getInstance().clear();
-                
-                // Redirect on FX thread
-                Platform.runLater(() -> {
-                    try {
-                        Stage stage = null;
-                        for (Window window : Window.getWindows()) {
-                            if (window instanceof Stage s && s.isShowing()) {
-                                stage = s;
-                                break;
-                            }
-                        }
-                        if (stage != null) {
-                            stage.setMaximized(false);
-                            FXMLLoader loader = new FXMLLoader(ApiClient.class.getResource("/view/login.fxml"));
-                            Parent root = loader.load();
-                            Scene scene = new Scene(root, 900, 620);
-                            var stylesheet = ApiClient.class.getResource("/css/style.css");
-                            if (stylesheet != null) {
-                                scene.getStylesheets().add(stylesheet.toExternalForm());
-                            }
-                            stage.setScene(scene);
-                            stage.setTitle("Smart Cheque Management System - Sign In");
-                            stage.centerOnScreen();
-
-                            Alert alert = new Alert(Alert.AlertType.WARNING, "Session expired");
-                            alert.setTitle("Session Expired");
-                            alert.setHeaderText(null);
-                            alert.show();
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                if (jsonBody != null && (method.equals("POST") || method.equals("PUT"))) {
+                    connection.setRequestProperty("Content-Type", "application/json");
+                    connection.setDoOutput(true);
+                    try (OutputStream os = connection.getOutputStream()) {
+                        byte[] input = jsonBody.getBytes("utf-8");
+                        os.write(input, 0, input.length);
                     }
-                });
-                throw new AccessDeniedException("Unauthorized: 401 returned from server.");
-            }
+                }
 
-            if (responseCode >= 200 && responseCode < 300) {
-                InputStream is = connection.getInputStream();
-                return readStream(is);
-            } else {
-                InputStream es = connection.getErrorStream();
-                String errorMsg = es != null ? readStream(es) : "";
-                throw new RuntimeException("HTTP Request Failed: " + responseCode + " - " + errorMsg);
-            }
+                int responseCode = connection.getResponseCode();
 
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
+                // Retry on HTTP 503 (Server restarting)
+                if (responseCode == HttpURLConnection.HTTP_UNAVAILABLE && attempts < MAX_RETRIES) {
+                    System.out.println("🔄 [ApiClient] Backend restarting (HTTP 503). Retrying attempt " + attempts + "/" + MAX_RETRIES + "...");
+                    Thread.sleep(RETRY_DELAY_MS);
+                    continue;
+                }
+
+                // Handle 401 Unauthorized
+                if (responseCode == HttpURLConnection.HTTP_UNAUTHORIZED) {
+                    SessionManager.getInstance().clear();
+                    
+                    // Redirect on FX thread
+                    Platform.runLater(() -> {
+                        try {
+                            Stage stage = null;
+                            for (Window window : Window.getWindows()) {
+                                if (window instanceof Stage s && s.isShowing()) {
+                                    stage = s;
+                                    break;
+                                }
+                            }
+                            if (stage != null) {
+                                stage.setMaximized(false);
+                                FXMLLoader loader = new FXMLLoader(ApiClient.class.getResource("/view/login.fxml"));
+                                Parent root = loader.load();
+                                Scene scene = new Scene(root, 900, 620);
+                                var stylesheet = ApiClient.class.getResource("/css/style.css");
+                                if (stylesheet != null) {
+                                    scene.getStylesheets().add(stylesheet.toExternalForm());
+                                }
+                                stage.setScene(scene);
+                                stage.setTitle("Smart Cheque Management System - Sign In");
+                                stage.centerOnScreen();
+
+                                Alert alert = new Alert(Alert.AlertType.WARNING, "Session expired");
+                                alert.setTitle("Session Expired");
+                                alert.setHeaderText(null);
+                                alert.show();
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    });
+                    throw new AccessDeniedException("Unauthorized: 401 returned from server.");
+                }
+
+                if (responseCode >= 200 && responseCode < 300) {
+                    InputStream is = connection.getInputStream();
+                    return readStream(is);
+                } else {
+                    InputStream es = connection.getErrorStream();
+                    String errorMsg = es != null ? readStream(es) : "";
+                    throw new RuntimeException("HTTP Request Failed: " + responseCode + " - " + errorMsg);
+                }
+
+            } catch (java.net.SocketException ex) {
+                if (attempts < MAX_RETRIES) {
+                    System.out.println("🔄 [ApiClient] Backend connection lost (restarting). Retrying attempt " 
+                            + attempts + "/" + MAX_RETRIES + " in " + RETRY_DELAY_MS + "ms...");
+                    Thread.sleep(RETRY_DELAY_MS);
+                } else {
+                    throw new RuntimeException("Backend service is currently restarting or offline: " + ex.getMessage(), ex);
+                }
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
+                }
             }
         }
     }
@@ -171,5 +200,16 @@ public class ApiClient {
             }
         }
         return result.toString().trim();
+    }
+
+    private static String getCallerMethodInfo() {
+        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+        for (int i = 2; i < stack.length; i++) {
+            String className = stack[i].getClassName();
+            if (!className.contains("ApiClient") && !className.contains("java.lang.Thread")) {
+                return stack[i].getFileName() + ":" + stack[i].getLineNumber() + " (" + stack[i].getMethodName() + ")";
+            }
+        }
+        return "UnknownCaller";
     }
 }

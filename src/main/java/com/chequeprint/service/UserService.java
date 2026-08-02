@@ -31,6 +31,7 @@ public class UserService {
     public User loadProfile() throws SQLException {
         try {
             int userId = SessionManager.getInstance().requireUser().getId();
+            System.out.println("🔍 [UserService] Calling GET /api/users/" + userId + " (loadProfile)");
             HttpRequest request = RestApiClient.requestBuilder(BASE_URL + "/" + userId)
                     .GET()
                     .build();

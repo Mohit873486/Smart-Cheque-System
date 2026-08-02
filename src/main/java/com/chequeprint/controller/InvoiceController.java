@@ -62,14 +62,31 @@ public class InvoiceController {
     private final PrintService printService = new PrintService();
     private final ObservableList<Invoice> data = FXCollections.observableArrayList();
     private Invoice selectedInvoice;
+    private final java.util.concurrent.atomic.AtomicBoolean isLoading = new java.util.concurrent.atomic.AtomicBoolean(false);
+    private boolean alreadyLoaded = false;
 
     // ─────────────────────────────────────────────────────────────────
     @FXML
     public void initialize() {
         setupTable();
-        loadData();
+        onPageLoad();
         setupSearchFilter();
         FxUtils.animateIn(rootPane, 0);
+    }
+
+    @Override
+    public void onPageLoad() {
+        if (alreadyLoaded) {
+            System.out.println("[InvoiceController] Data already loaded; skipping redundant API fetch.");
+            return;
+        }
+        loadData();
+        alreadyLoaded = true;
+    }
+
+    @Override
+    public void cleanup() {
+        isLoading.set(false);
     }
 
     // ── Table setup ──────────────────────────────────────────────────

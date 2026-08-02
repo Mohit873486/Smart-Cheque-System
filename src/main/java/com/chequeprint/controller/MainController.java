@@ -23,11 +23,15 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.scene.input.InputEvent;
 
+import javafx.scene.Scene;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MainController {
+
+  private String currentPage = "dashboard";
+
 
   @FXML
   private VBox sidebar;
@@ -133,7 +137,8 @@ public class MainController {
       mainSearchField.textProperty().addListener((obs, oldValue, newValue) -> handleMainSearch(newValue));
     }
 
-    // The landing page is selected after the authenticated user is injected.
+    // Start Dev Hot Reload Service for dynamic FXML and CSS reloading
+    com.chequeprint.dev.DevHotReloadService.getInstance().start(this);
   }
 
   // ================= NAVIGATION METHODS =================
@@ -229,7 +234,7 @@ public class MainController {
     startSessionTimeoutCheck();
 
     // Load and apply the theme asynchronously on startup
-    Thread themeLoaderThread = new Thread(() -> {
+    com.chequeprint.util.AppExecutors.runAsync(() -> {
         try {
             com.chequeprint.service.SettingService service = new com.chequeprint.service.SettingService();
             com.chequeprint.model.Settings settings = service.getSettings();
@@ -247,8 +252,6 @@ public class MainController {
             System.err.println("[MainController] Error applying theme: " + ex.getMessage());
         }
     });
-    themeLoaderThread.setDaemon(true);
-    themeLoaderThread.start();
   }
 
   public void updateSidebarLogo(String appName) {
@@ -461,13 +464,19 @@ public class MainController {
     return controllerMap.get(page);
   }
 
-  // ================= MAIN NAVIGATION (ADVANCED) =================
+  public Scene getScene() {
+    return contentPane != null ? contentPane.getScene() : null;
+  }
+
+  // ================= MAIN NAVIGATION & HOT RELOAD =================
 
   public void navigate(String page) {
     if (SessionManager.getInstance().isExpired()) {
       handleAutoLogout();
       return;
     }
+
+    this.currentPage = page;
 
     if (!isPageAllowed(page)) {
       headerTitle.setText("Access Denied");
@@ -501,6 +510,10 @@ public class MainController {
 
       // Inject controller
       Object ctrl = loader.getController();
+      if (ctrl != null) {
+        controllerMap.put(page, ctrl);
+      }
+
       if (ctrl instanceof DashboardController dc)
         dc.setMainController(this);
       if (ctrl instanceof ChequeController cc)
@@ -515,6 +528,10 @@ public class MainController {
         sc.setMainController(this);
       if (ctrl instanceof SupportController sc)
         sc.setMainController(this);
+
+      if (ctrl instanceof ReloadableController rc) {
+        rc.onPageLoad();
+      }
 
       Node current = contentPane.getChildren().isEmpty()
           ? null
@@ -563,6 +580,93 @@ public class MainController {
       error.getStyleClass().add("empty-label");
       contentPane.getChildren().setAll(error);
       headerTitle.setText("Load Error");
+    }
+  }
+
+  /**
+   * Dynamically hot-reloads the current active view when an FXML file changes on disk.
+   * Captures state snapshot before reload and restores state after controller re-binding.
+   *
+   * @param fxmlFileName Modified FXML file name
+   */
+  public void reloadCurrentView(String fxmlFileName) {
+    if (currentPage == null || currentPage.isBlank()) {
+      return;
+    }
+
+    String currentPath = fxmlMap.get(currentPage);
+    if (fxmlFileName != null && currentPath != null && !currentPath.endsWith(fxmlFileName)) {
+      // The changed FXML is not the active visible view; evict it from cache if cached
+      for (Map.Entry<String, String> entry : fxmlMap.entrySet()) {
+        if (entry.getValue().endsWith(fxmlFileName)) {
+          pageCache.remove(entry.getKey());
+          Object oldCtrl = controllerMap.remove(entry.getKey());
+          if (oldCtrl instanceof ReloadableController rc) {
+            rc.cleanup();
+          }
+          System.out.println("[HotReload] Evicted background view cache for: " + entry.getKey());
+        }
+      }
+      return;
+    }
+
+    Object oldController = controllerMap.get(currentPage);
+    Object stateSnapshot = null;
+
+    if (oldController instanceof ReloadableController rc) {
+      try {
+        stateSnapshot = rc.saveState();
+        rc.cleanup();
+      } catch (Exception ex) {
+        System.err.println("[HotReload] State save warning: " + ex.getMessage());
+      }
+    }
+
+    pageCache.remove(currentPage);
+    controllerMap.remove(currentPage);
+
+    try {
+      String path = fxmlMap.get(currentPage);
+      java.net.URL resourceUrl = getClass().getResource(path);
+      if (resourceUrl == null) {
+        String relativePath = path.startsWith("/") ? path.substring(1) : path;
+        resourceUrl = Thread.currentThread().getContextClassLoader().getResource(relativePath);
+      }
+
+      // Fresh FXML load directly from resource URL
+      FXMLLoader loader = new FXMLLoader(resourceUrl);
+      Node view = loader.load();
+      Object ctrl = loader.getController();
+
+      if (ctrl != null) {
+        controllerMap.put(currentPage, ctrl);
+      }
+
+      if (ctrl instanceof DashboardController dc) dc.setMainController(this);
+      if (ctrl instanceof ChequeController cc) cc.setMainController(this);
+      if (ctrl instanceof InvoiceController ic) ic.setMainController(this);
+      if (ctrl instanceof AiAssistantController ac) ac.setMainController(this);
+      if (ctrl instanceof ProfileController pc) pc.setMainController(this);
+      if (ctrl instanceof SettingsController sc) sc.setMainController(this);
+      if (ctrl instanceof SupportController sc) sc.setMainController(this);
+
+      if (ctrl instanceof ReloadableController rc) {
+        if (stateSnapshot != null) {
+          try {
+            rc.restoreState(stateSnapshot);
+          } catch (Exception ex) {
+            System.err.println("[HotReload] State restore warning: " + ex.getMessage());
+          }
+        }
+        rc.onPageLoad();
+      }
+
+      contentPane.getChildren().setAll(view);
+      System.out.println("⚡ [MainController] Hot-reloaded active view '" + currentPage + "' successfully.");
+
+    } catch (Exception e) {
+      System.err.println("[HotReload] Error reloading current view: " + e.getMessage());
+      e.printStackTrace();
     }
   }
   // ================= SIMPLE LOADER (EXTRA SUPPORT) =================

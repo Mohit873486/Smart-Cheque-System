@@ -18,7 +18,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Collections;
 
-public class ProfileController {
+public class ProfileController implements ReloadableController {
+
+    private final java.util.concurrent.atomic.AtomicBoolean isLoading = new java.util.concurrent.atomic.AtomicBoolean(false);
+    private boolean alreadyLoaded = false;
+
 
     // =========================
     // OLD PROFILE FIELDS
@@ -96,7 +100,7 @@ public class ProfileController {
         disableEditingMode();
         setupActivityTable();
         setupRecentChequesTable();
-        loadProfile();
+        onPageLoad();
 
         if (tfPhone != null) {
             tfPhone.setTextFormatter(new TextFormatter<String>(change -> {
@@ -109,11 +113,32 @@ public class ProfileController {
         }
     }
 
+    @Override
+    public void onPageLoad() {
+        if (alreadyLoaded) {
+            System.out.println("[ProfileController] Page already loaded; skipping redundant API fetch.");
+            return;
+        }
+        loadProfile(false);
+    }
+
+    public void loadProfile() {
+        loadProfile(false);
+    }
+
     // =========================
     // LOAD PROFILE DATA
     // =========================
-    private void loadProfile() {
-        new Thread(() -> {
+    private void loadProfile(boolean force) {
+        if (!force && alreadyLoaded) {
+            System.out.println("[ProfileController] Skip loadProfile: profile data already fetched.");
+            return;
+        }
+        if (!isLoading.compareAndSet(false, true)) {
+            System.out.println("[ProfileController] Profile load already in progress; skipping duplicate call.");
+            return;
+        }
+        com.chequeprint.util.AppExecutors.runAsync(() -> {
             try {
                 try {
                     user = userService.loadProfile();
@@ -226,14 +251,22 @@ public class ProfileController {
                         }
 
                         updateAvatarImage();
+                        alreadyLoaded = true;
                     });
                 }
 
             } catch (Exception e) {
                 Platform.runLater(() -> new Alert(Alert.AlertType.ERROR,
                         "Could not load profile: " + e.getMessage()).show());
+            } finally {
+                isLoading.set(false);
             }
-        }, "load-profile").start();
+        });
+    }
+
+    @Override
+    public void cleanup() {
+        isLoading.set(false);
     }
 
     private void setupActivityTable() {

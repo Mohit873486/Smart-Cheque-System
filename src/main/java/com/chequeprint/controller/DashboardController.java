@@ -8,7 +8,7 @@ import com.chequeprint.service.ChequeService;
 import com.chequeprint.service.InvoiceService;
 import com.chequeprint.service.Permission;
 import com.chequeprint.service.UserService;
-import com.chequeprint.util.AppState;
+import com.chequeprint.state.AppState;
 import com.chequeprint.util.FxUtils;
 import com.chequeprint.util.SessionManager;
 import java.util.Objects;
@@ -45,7 +45,11 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class DashboardController {
+public class DashboardController implements ReloadableController {
+
+    private final java.util.concurrent.atomic.AtomicBoolean isLoading = new java.util.concurrent.atomic.AtomicBoolean(false);
+    private final AppState.StateChangeListener stateChangeListener = () -> reload(true);
+    private boolean alreadyLoaded = false;
 
     @FXML private BorderPane dashboardRoot;
     @FXML private Label lblWelcome;
@@ -109,11 +113,11 @@ public class DashboardController {
         applyPermissions();
         showEmptyDashboard();
         animateInitialView();
-        reload();
+        onPageLoad();
         startAutoRefresh();
 
         // Auto sync event system: Reload dashboard UI when bank, template, or cheque state changes
-        AppState.getInstance().addStateChangeListener(this::reload);
+        AppState.getInstance().addStateChangeListener(stateChangeListener);
     }
 
     public void setMainController(MainController mainController) {
@@ -121,18 +125,44 @@ public class DashboardController {
         applyPermissions();
     }
 
+    @Override
+    public void onPageLoad() {
+        if (alreadyLoaded) {
+            System.out.println("[DashboardController] Page already loaded; skipping redundant API fetch.");
+            return;
+        }
+        reload(false);
+    }
+
     public void reload() {
-        Thread worker = new Thread(() -> {
-            DashboardData data = loadDashboardData();
-            Platform.runLater(() -> applyDashboardData(data));
-        }, "dashboard-reload");
-        worker.setDaemon(true);
-        worker.start();
+        reload(false);
+    }
+
+    public void reload(boolean force) {
+        if (!force && alreadyLoaded) {
+            System.out.println("[DashboardController] Skip reload: data already loaded.");
+            return;
+        }
+        if (!isLoading.compareAndSet(false, true)) {
+            System.out.println("[DashboardController] Skip duplicate reload: fetch already in progress.");
+            return;
+        }
+        com.chequeprint.util.AppExecutors.runAsync(() -> {
+            try {
+                DashboardData data = loadDashboardData();
+                Platform.runLater(() -> {
+                    applyDashboardData(data);
+                    alreadyLoaded = true;
+                });
+            } finally {
+                isLoading.set(false);
+            }
+        });
     }
 
     @FXML
     private void onRefreshDashboard() {
-        reload();
+        reload(true);
     }
 
     @FXML
@@ -705,9 +735,25 @@ public class DashboardController {
         autoRefreshTimeline.play();
     }
 
+    @Override
     public void cleanup() {
         if (autoRefreshTimeline != null) {
             autoRefreshTimeline.stop();
+            autoRefreshTimeline = null;
+        }
+        AppState.getInstance().removeStateChangeListener(stateChangeListener);
+        isLoading.set(false);
+    }
+
+    @Override
+    public Object saveState() {
+        return txtChequeSearch != null ? txtChequeSearch.getText() : "";
+    }
+
+    @Override
+    public void restoreState(Object state) {
+        if (state instanceof String query && txtChequeSearch != null) {
+            txtChequeSearch.setText(query);
         }
     }
 
