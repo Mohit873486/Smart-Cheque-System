@@ -8,13 +8,8 @@ import com.chequeprint.service.ChequeService;
 import com.chequeprint.service.InvoiceService;
 import com.chequeprint.service.Permission;
 import com.chequeprint.service.UserService;
-import com.chequeprint.state.AppState;
 import com.chequeprint.util.FxUtils;
 import com.chequeprint.util.SessionManager;
-import java.util.Objects;
-import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -33,7 +28,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Pane;
-import javafx.util.Duration;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -42,13 +36,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class DashboardController implements ReloadableController {
 
-    private final java.util.concurrent.atomic.AtomicBoolean isLoading = new java.util.concurrent.atomic.AtomicBoolean(false);
-    private final AppState.StateChangeListener stateChangeListener = () -> reload(true);
+    private final java.util.concurrent.atomic.AtomicBoolean dashboardFetchInFlight = new java.util.concurrent.atomic.AtomicBoolean(false);
     private boolean alreadyLoaded = false;
 
     @FXML private BorderPane dashboardRoot;
@@ -100,7 +92,6 @@ public class DashboardController implements ReloadableController {
     private final UserService userService = new UserService();
 
     private MainController mainController;
-    private Timeline autoRefreshTimeline;
     private List<Cheque> loadedCheques = Collections.emptyList();
     private List<Invoice> loadedInvoices = Collections.emptyList();
 
@@ -114,10 +105,6 @@ public class DashboardController implements ReloadableController {
         showEmptyDashboard();
         animateInitialView();
         onPageLoad();
-        startAutoRefresh();
-
-        // Auto sync event system: Reload dashboard UI when bank, template, or cheque state changes
-        AppState.getInstance().addStateChangeListener(stateChangeListener);
     }
 
     public void setMainController(MainController mainController) {
@@ -143,7 +130,7 @@ public class DashboardController implements ReloadableController {
             System.out.println("[DashboardController] Skip reload: data already loaded.");
             return;
         }
-        if (!isLoading.compareAndSet(false, true)) {
+        if (!dashboardFetchInFlight.compareAndSet(false, true)) {
             System.out.println("[DashboardController] Skip duplicate reload: fetch already in progress.");
             return;
         }
@@ -155,7 +142,7 @@ public class DashboardController implements ReloadableController {
                     alreadyLoaded = true;
                 });
             } finally {
-                isLoading.set(false);
+                dashboardFetchInFlight.set(false);
             }
         });
     }
@@ -726,23 +713,9 @@ public class DashboardController implements ReloadableController {
         return badge;
     }
 
-    private void startAutoRefresh() {
-        if (autoRefreshTimeline != null) {
-            autoRefreshTimeline.stop();
-        }
-        autoRefreshTimeline = new Timeline(new KeyFrame(Duration.seconds(30), e -> reload()));
-        autoRefreshTimeline.setCycleCount(Animation.INDEFINITE);
-        autoRefreshTimeline.play();
-    }
-
     @Override
     public void cleanup() {
-        if (autoRefreshTimeline != null) {
-            autoRefreshTimeline.stop();
-            autoRefreshTimeline = null;
-        }
-        AppState.getInstance().removeStateChangeListener(stateChangeListener);
-        isLoading.set(false);
+        dashboardFetchInFlight.set(false);
     }
 
     @Override

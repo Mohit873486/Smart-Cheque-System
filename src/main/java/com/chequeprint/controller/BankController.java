@@ -2,6 +2,7 @@ package com.chequeprint.controller;
 
 import com.chequeprint.model.Bank;
 import com.chequeprint.model.BankTemplateLayout;
+import com.chequeprint.model.ChequeTemplate;
 import com.chequeprint.model.FieldPosition;
 import com.chequeprint.model.LayoutField;
 import com.chequeprint.service.BankService;
@@ -328,24 +329,22 @@ public class BankController {
                     protected BankAccount call() throws Exception {
                         if (exists && match.getId() != null) {
                             return apiService.updateBankAccount(match.getId(), account);
-                        } else {
-                            return apiService.saveBankAccount(account);
                         }
+                        return apiService.saveBankAccount(account);
                     }
                 };
                 saveTask.setOnSucceeded(ev -> {
                     BankAccount saved = saveTask.getValue();
-                    BankAccount finalObj = saved != null ? saved : account;
 
                     if (exists && match != null) {
                         int idx = accountData.indexOf(match);
                         if (idx >= 0) {
-                            accountData.set(idx, finalObj);
+                            accountData.set(idx, saved);
                         } else {
-                            accountData.add(finalObj);
+                            accountData.add(saved);
                         }
                     } else {
-                        accountData.add(finalObj);
+                        accountData.add(saved);
                     }
 
                     // Reload fresh bank list and account list from REST API
@@ -440,16 +439,15 @@ public class BankController {
                     protected BankAccount call() throws Exception {
                         if (selected.getId() != null) {
                             return apiService.updateBankAccount(selected.getId(), updatedAccount);
-                        } else {
-                            return apiService.saveBankAccount(updatedAccount);
                         }
+                        return apiService.saveBankAccount(updatedAccount);
                     }
                 };
                 updateTask.setOnSucceeded(ev -> {
                     BankAccount result = updateTask.getValue();
                     int idx = accountData.indexOf(selected);
                     if (idx >= 0) {
-                        accountData.set(idx, result != null ? result : updatedAccount);
+                        accountData.set(idx, result);
                     }
                     loadBankAccounts();
                     loadData();
@@ -739,34 +737,25 @@ public class BankController {
         new Thread(() -> {
             try {
                 Long accountId = account.getId().longValue();
-                List<com.chequeprint.model.ChequeTemplate> templates = new ArrayList<>();
+                List<ChequeTemplate> templates = new ArrayList<>();
                 try {
-                    java.net.http.HttpRequest req = com.chequeprint.util.RestApiClient
-                            .requestBuilder(
-                                    com.chequeprint.config.ApiConfig.BASE_URL + "/api/template/account/" + accountId)
-                            .GET().build();
-                    java.net.http.HttpResponse<String> res = com.chequeprint.util.RestApiClient.send(req);
-                    String json = res.statusCode() == 200 ? res.body() : null;
-                    if (json != null && !json.isBlank()) {
-                        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                        templates = mapper.readValue(json, mapper.getTypeFactory().constructCollectionType(List.class,
-                                com.chequeprint.model.ChequeTemplate.class));
-                    }
-                } catch (Exception ignored) {
+                    templates = apiService.getTemplatesByAccountId(accountId);
+                } catch (Exception ex) {
+                    LOGGER.log(Level.WARNING, "Unable to load account templates for accountId " + accountId, ex);
                 }
 
                 if (templates.isEmpty()) {
-                    com.chequeprint.model.ChequeTemplate defaultTpl = new com.chequeprint.model.ChequeTemplate();
+                    ChequeTemplate defaultTpl = new ChequeTemplate();
                     defaultTpl.setId(account.getTemplateId() != null ? account.getTemplateId() : 1L);
                     defaultTpl.setTemplateName(account.getBankName() + " Standard CTS-2010");
                     templates.add(defaultTpl);
                 }
 
-                final List<com.chequeprint.model.ChequeTemplate> finalTemplates = templates;
+                final List<ChequeTemplate> finalTemplates = templates;
                 Platform.runLater(() -> {
                     cmbAccountTemplates.setConverter(new StringConverter<>() {
                         @Override
-                        public String toString(com.chequeprint.model.ChequeTemplate t) {
+                        public String toString(ChequeTemplate t) {
                             if (t == null)
                                 return "";
                             boolean isDef = account.getTemplateId() != null
@@ -776,15 +765,15 @@ public class BankController {
                         }
 
                         @Override
-                        public com.chequeprint.model.ChequeTemplate fromString(String string) {
+                        public ChequeTemplate fromString(String string) {
                             return null;
                         }
                     });
 
                     cmbAccountTemplates.setItems(FXCollections.observableArrayList(finalTemplates));
 
-                    com.chequeprint.model.ChequeTemplate defaultItem = finalTemplates.get(0);
-                    for (com.chequeprint.model.ChequeTemplate t : finalTemplates) {
+                    ChequeTemplate defaultItem = finalTemplates.get(0);
+                    for (ChequeTemplate t : finalTemplates) {
                         if (account.getTemplateId() != null && account.getTemplateId().equals(t.getId())) {
                             defaultItem = t;
                             break;
@@ -815,7 +804,7 @@ public class BankController {
         }, "load-acc-templates").start();
     }
 
-    private void updateTemplateStatusBadge(BankAccount account, com.chequeprint.model.ChequeTemplate selectedTpl) {
+    private void updateTemplateStatusBadge(BankAccount account, ChequeTemplate selectedTpl) {
         if (lblTemplateStatus == null)
             return;
         boolean isDefault = (account != null && account.getTemplateId() != null && selectedTpl != null
@@ -834,7 +823,7 @@ public class BankController {
     @FXML
     private void onSetAsDefaultTemplate() {
         BankAccount selectedAcc = accountTable != null ? accountTable.getSelectionModel().getSelectedItem() : null;
-        com.chequeprint.model.ChequeTemplate selectedTpl = cmbAccountTemplates != null ? cmbAccountTemplates.getValue()
+        ChequeTemplate selectedTpl = cmbAccountTemplates != null ? cmbAccountTemplates.getValue()
                 : null;
 
         if (selectedAcc == null || selectedTpl == null) {
@@ -849,14 +838,7 @@ public class BankController {
             Long accId = selectedAcc.getId().longValue();
             Long tplId = selectedTpl.getId();
 
-            try {
-                java.net.http.HttpRequest req = com.chequeprint.util.RestApiClient
-                        .requestBuilder(com.chequeprint.config.ApiConfig.BASE_URL + "/api/template/account/" + accId
-                                + "/default/" + tplId)
-                        .PUT(java.net.http.HttpRequest.BodyPublishers.noBody()).build();
-                com.chequeprint.util.RestApiClient.send(req);
-            } catch (Exception ignored) {
-            }
+            apiService.setDefaultTemplate(accId, tplId);
 
             selectedAcc.setTemplateId(tplId);
             AppState.getInstance().setSelectedBankAccount(selectedAcc);
@@ -1015,10 +997,11 @@ public class BankController {
             previewLoading.setManaged(true);
         }
 
-        Task<com.chequeprint.model.ChequeTemplate> task = new Task<>() {
+        Task<ChequeTemplate> task = new Task<>() {
             @Override
-            protected com.chequeprint.model.ChequeTemplate call() throws Exception {
-                return apiService.getChequeTemplateByBankId(bankId);
+            protected ChequeTemplate call() throws Exception {
+                return apiService.findChequeTemplateByBankId(bankId)
+                        .orElseGet(() -> new ChequeTemplate(bankId, "Default Bank Template"));
             }
         };
 
@@ -1028,10 +1011,7 @@ public class BankController {
                 previewLoading.setVisible(false);
                 previewLoading.setManaged(false);
             }
-            com.chequeprint.model.ChequeTemplate template = task.getValue();
-            if (template == null) {
-                template = new com.chequeprint.model.ChequeTemplate(bankId, "Default Bank Template");
-            }
+            ChequeTemplate template = task.getValue();
             if (template.getId() != null) {
                 BankAccount sel = accountTable != null ? accountTable.getSelectionModel().getSelectedItem() : null;
                 if (sel != null) {
@@ -1086,9 +1066,9 @@ public class BankController {
 
         setLoading(true);
 
-        Task<com.chequeprint.model.ChequeTemplate> saveTask = new Task<>() {
+        Task<ChequeTemplate> saveTask = new Task<>() {
             @Override
-            protected com.chequeprint.model.ChequeTemplate call() throws Exception {
+            protected ChequeTemplate call() throws Exception {
                 currentTemplate.updateConfigJson();
                 return apiService.saveChequeTemplate(currentTemplate);
             }
@@ -1098,14 +1078,12 @@ public class BankController {
             setLoading(false);
             isProcessing.set(false);
 
-            com.chequeprint.model.ChequeTemplate saved = saveTask.getValue();
-            if (saved != null) {
-                if (saved.getBankId() != null) {
-                    templateCache.remove(String.valueOf(saved.getBankId()));
-                    loadTemplateFromBackend(saved.getBankId());
-                } else {
-                    setCurrentTemplate(saved);
-                }
+            ChequeTemplate saved = saveTask.getValue();
+            if (saved.getBankId() != null) {
+                templateCache.remove(String.valueOf(saved.getBankId()));
+                loadTemplateFromBackend(saved.getBankId());
+            } else {
+                setCurrentTemplate(saved);
             }
 
             Alert alert = new Alert(Alert.AlertType.INFORMATION);

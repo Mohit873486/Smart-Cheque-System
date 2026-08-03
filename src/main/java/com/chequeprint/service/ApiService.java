@@ -1,287 +1,101 @@
 package com.chequeprint.service;
 
+import com.chequeprint.api.ApiGateway;
+import com.chequeprint.api.ApiResponse;
 import com.chequeprint.config.ApiConfig;
 import com.chequeprint.model.BankAccount;
+import com.chequeprint.model.ChequeTemplate;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.chequeprint.util.SessionManager;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
-import java.net.URL;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 public class ApiService {
 
-    private static final String API_URL = ApiConfig.BASE_URL + "/api/bank/account";
-    private final ObjectMapper mapper;
+    private static final String BANK_ACCOUNT_URL = ApiConfig.BASE_URL + "/api/bank/account";
+    private static final String TEMPLATE_URL = ApiConfig.BASE_URL + "/api/template";
+
+    private final ApiGateway apiGateway;
 
     public ApiService() {
-        this.mapper = new ObjectMapper();
-        this.mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this(new ApiGateway());
+    }
+
+    public ApiService(ApiGateway apiGateway) {
+        this.apiGateway = apiGateway;
     }
 
     public List<BankAccount> getBankAccounts() throws Exception {
-        HttpURLConnection connection = null;
         try {
-            URL url = new URL(API_URL);
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setRequestProperty("Accept", "application/json");
-            
-            String authHeader = com.chequeprint.util.Session.getAuthorizationHeader();
-            if (!authHeader.isBlank()) {
-                connection.setRequestProperty("Authorization", authHeader);
-            }
-            
-            connection.setConnectTimeout(5000);
-            connection.setReadTimeout(5000);
+            ApiResponse<List<BankAccount>> response = apiGateway.get(
+                    BANK_ACCOUNT_URL,
+                    new TypeReference<List<BankAccount>>() {});
 
-            int status = connection.getResponseCode();
-            if (status >= 200 && status < 300) {
-                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                StringBuilder response = new StringBuilder();
-                String inputLine;
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-                }
-                in.close();
-                
-                // Parse JSON response
-                return mapper.readValue(response.toString(), new TypeReference<List<BankAccount>>() {});
-            } else if (status == 409 || status == 404) {
-                // Return empty list gracefully instead of throwing exception for no data
-                return java.util.Collections.emptyList();
-            } else {
-                throw new Exception("Failed to load data. HTTP Status: " + status + " - " + readError(connection));
+            if (response.getStatusCode() == 404 || response.getStatusCode() == 409) {
+                return Collections.emptyList();
             }
+            response.throwIfFailed("Load bank accounts");
+            return response.getBody().orElseGet(Collections::emptyList);
         } catch (SocketTimeoutException ex) {
-            throw new SocketTimeoutException("Bank account API timed out: " + API_URL);
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
+            throw new SocketTimeoutException("Bank account API timed out: " + BANK_ACCOUNT_URL);
         }
     }
 
     public BankAccount saveBankAccount(BankAccount account) throws Exception {
-        HttpURLConnection connection = null;
-        try {
-            URL url = new URL(ApiConfig.BASE_URL + "/api/bank/account");
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("Accept", "application/json");
-            
-            String authHeader = com.chequeprint.util.Session.getAuthorizationHeader();
-            if (!authHeader.isBlank()) {
-                connection.setRequestProperty("Authorization", authHeader);
-            }
-            
-            connection.setConnectTimeout(5000);
-            connection.setReadTimeout(5000);
-            connection.setDoOutput(true);
-
-            String jsonPayload = mapper.writeValueAsString(account);
-
-            try (java.io.OutputStream os = connection.getOutputStream()) {
-                byte[] input = jsonPayload.getBytes("utf-8");
-                os.write(input, 0, input.length);
-            }
-
-            int status = connection.getResponseCode();
-            if (status >= 200 && status < 300) {
-                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                StringBuilder response = new StringBuilder();
-                String inputLine;
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-                }
-                in.close();
-                
-                return mapper.readValue(response.toString(), BankAccount.class);
-            } else {
-                throw new Exception("Failed to save data. HTTP Status: " + status + " - " + readError(connection));
-            }
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
-        }
+        ApiResponse<BankAccount> response = apiGateway.post(BANK_ACCOUNT_URL, account, BankAccount.class);
+        response.throwIfFailed("Save bank account");
+        return response.requireBody("Save bank account returned an empty response.");
     }
 
     public BankAccount updateBankAccount(Integer id, BankAccount account) throws Exception {
-        HttpURLConnection connection = null;
-        try {
-            URL url = new URL(ApiConfig.BASE_URL + "/api/bank/account/" + id);
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("PUT");
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("Accept", "application/json");
-            
-            String authHeader = com.chequeprint.util.Session.getAuthorizationHeader();
-            if (!authHeader.isBlank()) {
-                connection.setRequestProperty("Authorization", authHeader);
-            }
-            
-            connection.setConnectTimeout(5000);
-            connection.setReadTimeout(5000);
-            connection.setDoOutput(true);
-
-            String jsonPayload = mapper.writeValueAsString(account);
-
-            try (java.io.OutputStream os = connection.getOutputStream()) {
-                byte[] input = jsonPayload.getBytes("utf-8");
-                os.write(input, 0, input.length);
-            }
-
-            int status = connection.getResponseCode();
-            if (status >= 200 && status < 300) {
-                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                StringBuilder response = new StringBuilder();
-                String inputLine;
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-                }
-                in.close();
-                
-                return mapper.readValue(response.toString(), BankAccount.class);
-            } else {
-                throw new Exception("Failed to update data. HTTP Status: " + status + " - " + readError(connection));
-            }
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
-        }
+        ApiResponse<BankAccount> response = apiGateway.put(BANK_ACCOUNT_URL + "/" + id, account, BankAccount.class);
+        response.throwIfFailed("Update bank account");
+        return response.requireBody("Update bank account returned an empty response.");
     }
 
     public void deleteBankAccount(Integer id) throws Exception {
-        HttpURLConnection connection = null;
-        try {
-            URL url = new URL(ApiConfig.BASE_URL + "/api/bank/account/" + id);
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("DELETE");
-            
-            String authHeader = com.chequeprint.util.Session.getAuthorizationHeader();
-            if (!authHeader.isBlank()) {
-                connection.setRequestProperty("Authorization", authHeader);
-            }
-            
-            connection.setConnectTimeout(5000);
-            connection.setReadTimeout(5000);
-
-            int status = connection.getResponseCode();
-            if (status != 204 && status != 200) {
-                throw new Exception("Failed to delete account. HTTP Status: " + status + " - " + readError(connection));
-            }
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
-        }
+        ApiResponse<Void> response = apiGateway.delete(BANK_ACCOUNT_URL + "/" + id);
+        response.throwIfFailed("Delete bank account");
     }
 
-    public com.chequeprint.model.ChequeTemplate getChequeTemplateByBankId(Long bankId) throws Exception {
-        HttpURLConnection connection = null;
-        try {
-            URL url = new URL(ApiConfig.BASE_URL + "/api/template/bank/" + bankId);
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setRequestProperty("Accept", "application/json");
-            
-            String authHeader = com.chequeprint.util.Session.getAuthorizationHeader();
-            if (!authHeader.isBlank()) {
-                connection.setRequestProperty("Authorization", authHeader);
-            }
-            
-            connection.setConnectTimeout(5000);
-            connection.setReadTimeout(5000);
-
-            int status = connection.getResponseCode();
-            if (status >= 200 && status < 300) {
-                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                StringBuilder response = new StringBuilder();
-                String inputLine;
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-                }
-                in.close();
-                return mapper.readValue(response.toString(), com.chequeprint.model.ChequeTemplate.class);
-            } else {
-                return null;
-            }
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
+    public Optional<ChequeTemplate> findChequeTemplateByBankId(Long bankId) throws Exception {
+        if (bankId == null || bankId <= 0) {
+            return Optional.empty();
         }
+        ApiResponse<ChequeTemplate> response = apiGateway.get(TEMPLATE_URL + "/bank/" + bankId, ChequeTemplate.class);
+        if (response.getStatusCode() == 404) {
+            return Optional.empty();
+        }
+        response.throwIfFailed("Load cheque template");
+        return response.getBody();
     }
 
-    public com.chequeprint.model.ChequeTemplate saveChequeTemplate(com.chequeprint.model.ChequeTemplate template) throws Exception {
-        HttpURLConnection connection = null;
-        try {
-            URL url = new URL(ApiConfig.BASE_URL + "/api/template/save");
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("Accept", "application/json");
-            
-            String authHeader = com.chequeprint.util.Session.getAuthorizationHeader();
-            if (!authHeader.isBlank()) {
-                connection.setRequestProperty("Authorization", authHeader);
-            }
-            
-            connection.setConnectTimeout(5000);
-            connection.setReadTimeout(5000);
-            connection.setDoOutput(true);
-
-            String jsonPayload = mapper.writeValueAsString(template);
-
-            try (java.io.OutputStream os = connection.getOutputStream()) {
-                byte[] input = jsonPayload.getBytes("utf-8");
-                os.write(input, 0, input.length);
-            }
-
-            int status = connection.getResponseCode();
-            if (status >= 200 && status < 300) {
-                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                StringBuilder response = new StringBuilder();
-                String inputLine;
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-                }
-                in.close();
-                return mapper.readValue(response.toString(), com.chequeprint.model.ChequeTemplate.class);
-            } else {
-                throw new Exception("Failed to save cheque template. HTTP Status: " + status);
-            }
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
-        }
+    public ChequeTemplate saveChequeTemplate(ChequeTemplate template) throws Exception {
+        ApiResponse<ChequeTemplate> response = apiGateway.post(TEMPLATE_URL + "/save", template, ChequeTemplate.class);
+        response.throwIfFailed("Save cheque template");
+        return response.requireBody("Save cheque template returned an empty response.");
     }
 
-    private String readError(HttpURLConnection connection) {
-        try {
-            if (connection.getErrorStream() == null) {
-                return "";
-            }
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getErrorStream()))) {
-                StringBuilder response = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    response.append(line);
-                }
-                return response.toString();
-            }
-        } catch (Exception ignored) {
-            return "";
+    public List<ChequeTemplate> getTemplatesByAccountId(Long accountId) throws Exception {
+        if (accountId == null || accountId <= 0) {
+            return Collections.emptyList();
         }
+        ApiResponse<List<ChequeTemplate>> response = apiGateway.get(
+                TEMPLATE_URL + "/account/" + accountId,
+                new TypeReference<List<ChequeTemplate>>() {});
+
+        if (response.getStatusCode() == 404) {
+            return Collections.emptyList();
+        }
+        response.throwIfFailed("Load account templates");
+        return response.getBody().orElseGet(Collections::emptyList);
+    }
+
+    public void setDefaultTemplate(Long accountId, Long templateId) throws Exception {
+        ApiResponse<Void> response = apiGateway.putNoBody(
+                TEMPLATE_URL + "/account/" + accountId + "/default/" + templateId);
+        response.throwIfFailed("Set default template");
     }
 }

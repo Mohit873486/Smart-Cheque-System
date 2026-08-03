@@ -38,6 +38,7 @@ module com.chequeprint {
     opens com.chequeprint.config to javafx.fxml;
     opens com.chequeprint.dao to javafx.fxml;
     opens com.chequeprint.service to javafx.fxml;
+    opens com.chequeprint.api to javafx.fxml;
     opens com.chequeprint.util to javafx.fxml;
     opens com.chequeprint.printpreview to javafx.fxml;
 
@@ -47,6 +48,7 @@ module com.chequeprint {
     exports com.chequeprint.model;
     exports com.chequeprint.service;
     exports com.chequeprint.dao;
+    exports com.chequeprint.api;
     exports com.chequeprint.util;
     exports com.chequeprint.config;
     exports com.chequeprint.printpreview;
