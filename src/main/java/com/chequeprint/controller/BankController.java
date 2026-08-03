@@ -68,25 +68,41 @@ public class BankController {
 
     private static final Logger LOGGER = Logger.getLogger(BankController.class.getName());
     private final ApiService apiService = new ApiService();
-    @FXML private TableView<Bank> bankTable;
-    @FXML private TableView<BankAccount> accountTable;
-    @FXML private Button btnAddAccount;
-    @FXML private Button btnEditAccountAction;
-    @FXML private Button btnDeleteAccountAction;
-    @FXML private VBox emptyState;
-    @FXML private VBox loadingSpinner;
-    @FXML private VBox previewEmptyState;
-    @FXML private Pane previewPane;
-    @FXML private VBox previewLoading;
-    @FXML private Button btnEditTemplate;
-    @FXML private ComboBox<com.chequeprint.model.ChequeTemplate> cmbAccountTemplates;
-    @FXML private Label lblTemplateStatus;
-    @FXML private Button btnSetAsDefault;
-    @FXML private Button btnPreviewTemplate;
+    @FXML
+    private TableView<Bank> bankTable;
+    @FXML
+    private TableView<BankAccount> accountTable;
+    @FXML
+    private Button btnAddAccount;
+    @FXML
+    private Button btnEditAccountAction;
+    @FXML
+    private Button btnDeleteAccountAction;
+    @FXML
+    private VBox emptyState;
+    @FXML
+    private VBox loadingSpinner;
+    @FXML
+    private VBox previewEmptyState;
+    @FXML
+    private Pane previewPane;
+    @FXML
+    private VBox previewLoading;
+    @FXML
+    private Button btnEditTemplate;
+    @FXML
+    private ComboBox<com.chequeprint.model.ChequeTemplate> cmbAccountTemplates;
+    @FXML
+    private Label lblTemplateStatus;
+    @FXML
+    private Button btnSetAsDefault;
+    @FXML
+    private Button btnPreviewTemplate;
 
     private static final double PREVIEW_PPI = 90.0;
     private final Map<Long, BankTemplateLayout> bankTemplateMap = new java.util.concurrent.ConcurrentHashMap<>();
-    private final java.util.concurrent.atomic.AtomicBoolean isProcessing = new java.util.concurrent.atomic.AtomicBoolean(false);
+    private final java.util.concurrent.atomic.AtomicBoolean isProcessing = new java.util.concurrent.atomic.AtomicBoolean(
+            false);
 
     @FXML
     private ComboBox<BankAccount> cmbBankAccount;
@@ -161,6 +177,7 @@ public class BankController {
             }
         }
     }
+
     @FXML
     private TextField fldAdjustLeft;
     @FXML
@@ -223,10 +240,30 @@ public class BankController {
     private final Set<String> templateLoadsInFlight = ConcurrentHashMap.newKeySet();
     private final Set<Long> layoutLoadsInFlight = ConcurrentHashMap.newKeySet();
 
+    private static final class Delta {
+        private double x;
+        private double y;
+    }
+
+    private void setLayerButtonSelected(Button layerButton, boolean selected) {
+        if (layerButton == null) {
+            return;
+        }
+
+        if (selected) {
+            layerButton.setStyle(
+                    "-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-color: #1d4ed8; -fx-border-width: 1px;");
+        } else {
+            layerButton.setStyle(
+                    "-fx-background-color: #f8fafc; -fx-text-fill: #0f172a; -fx-font-weight: normal; -fx-border-color: #cbd5e1; -fx-border-width: 1px;");
+        }
+    }
+
     @FXML
     private void onAddAccount() {
         try {
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/bank_account_dialog.fxml"));
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                    getClass().getResource("/view/bank_account_dialog.fxml"));
             javafx.scene.Parent root = loader.load();
 
             BankAccountDialogController controller = loader.getController();
@@ -257,7 +294,9 @@ public class BankController {
             });
 
             // Background blur/dim
-            javafx.scene.Parent ownerRoot = accountTable != null && accountTable.getScene() != null ? accountTable.getScene().getRoot() : null;
+            javafx.scene.Parent ownerRoot = accountTable != null && accountTable.getScene() != null
+                    ? accountTable.getScene().getRoot()
+                    : null;
             javafx.scene.effect.Effect oldEffect = ownerRoot != null ? ownerRoot.getEffect() : null;
             if (ownerRoot != null) {
                 ownerRoot.setEffect(new javafx.scene.effect.BoxBlur(6, 6, 3));
@@ -273,7 +312,8 @@ public class BankController {
                 BankAccount existingAcc = null;
                 if (account.getAccountNumber() != null) {
                     for (BankAccount acc : accountData) {
-                        if (acc.getAccountNumber() != null && acc.getAccountNumber().equalsIgnoreCase(account.getAccountNumber().trim())) {
+                        if (acc.getAccountNumber() != null
+                                && acc.getAccountNumber().equalsIgnoreCase(account.getAccountNumber().trim())) {
                             existingAcc = acc;
                             break;
                         }
@@ -321,7 +361,8 @@ public class BankController {
                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                     alert.setTitle(exists ? "Account Exists" : "Success");
                     alert.setHeaderText(null);
-                    alert.setContentText(exists ? "Account already exists! Details updated successfully." : "Bank account saved successfully to database!");
+                    alert.setContentText(exists ? "Account already exists! Details updated successfully."
+                            : "Bank account saved successfully to database!");
                     alert.showAndWait();
                 });
                 saveTask.setOnFailed(ev -> {
@@ -349,7 +390,8 @@ public class BankController {
         }
         BankAccount selected = accountTable.getSelectionModel().getSelectedItem();
         try {
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/bank_account_dialog.fxml"));
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                    getClass().getResource("/view/bank_account_dialog.fxml"));
             javafx.scene.Parent root = loader.load();
 
             BankAccountDialogController controller = loader.getController();
@@ -496,7 +538,8 @@ public class BankController {
         lbl.setStyle("-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #9ca3af;");
         TextField tf = new TextField();
         tf.setPromptText(placeholder);
-        tf.setStyle("-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 9 12; -fx-font-size: 13px;");
+        tf.setStyle(
+                "-fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 9 12; -fx-font-size: 13px;");
         box.getChildren().addAll(lbl, tf);
         return box;
     }
@@ -573,7 +616,9 @@ public class BankController {
             currentTemplate = new com.chequeprint.model.ChequeTemplate();
         }
 
-        com.chequeprint.model.ChequeTemplate.FieldConfig cfg = switch (fieldName != null ? fieldName.toLowerCase().trim() : "") {
+        com.chequeprint.model.ChequeTemplate.FieldConfig cfg = switch (fieldName != null
+                ? fieldName.toLowerCase().trim()
+                : "") {
             case "date", "datefield" -> currentTemplate.getDateField();
             case "payee", "payeefield" -> currentTemplate.getPayeeField();
             case "amountwords", "words" -> currentTemplate.getAmountWordsField();
@@ -588,7 +633,8 @@ public class BankController {
         if (cfg != null) {
             cfg.setX(x);
             cfg.setY(y);
-            if (fontSize > 0) cfg.setFontSize(fontSize);
+            if (fontSize > 0)
+                cfg.setFontSize(fontSize);
             cfg.setVisible(visible);
 
             // Re-render live preview instantly in real-time
@@ -598,12 +644,15 @@ public class BankController {
 
     private void updateTemplateMappingLabel(BankAccount account) {
         if (account == null) {
-            if (lblTemplateMapping != null) lblTemplateMapping.setText("Select an account to view template mapping");
-            if (lblTemplateMappingDesigner != null) lblTemplateMappingDesigner.setText("Select a Bank Account");
+            if (lblTemplateMapping != null)
+                lblTemplateMapping.setText("Select an account to view template mapping");
+            if (lblTemplateMappingDesigner != null)
+                lblTemplateMappingDesigner.setText("Select a Bank Account");
             return;
         }
 
-        String bankName = account.getBankName() != null && !account.getBankName().isBlank() ? account.getBankName() : "Bank Account";
+        String bankName = account.getBankName() != null && !account.getBankName().isBlank() ? account.getBankName()
+                : "Bank Account";
         String accNo = account.getAccountNumber() != null ? account.getAccountNumber().trim() : "";
         String last4 = accNo.length() >= 4 ? accNo.substring(accNo.length() - 4) : accNo;
         String labelText = bankName + (last4.isEmpty() ? "" : " (••• " + last4 + ")");
@@ -626,25 +675,33 @@ public class BankController {
                 accountTable.getColumns().get(4).setCellValueFactory(new PropertyValueFactory<>("branchName"));
             }
             accountTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-                if (isUpdatingForm) return;
+                if (isUpdatingForm)
+                    return;
                 try {
                     isUpdatingForm = true;
                     boolean hasSelection = (newVal != null);
-                    if (btnEditAccountAction != null) btnEditAccountAction.setDisable(!hasSelection);
-                    if (btnDeleteAccountAction != null) btnDeleteAccountAction.setDisable(!hasSelection);
+                    if (btnEditAccountAction != null)
+                        btnEditAccountAction.setDisable(!hasSelection);
+                    if (btnDeleteAccountAction != null)
+                        btnDeleteAccountAction.setDisable(!hasSelection);
                     updateTemplateMappingLabel(newVal);
 
                     if (newVal == null) {
-                        if (previewEmptyState != null) previewEmptyState.setVisible(true);
+                        if (previewEmptyState != null)
+                            previewEmptyState.setVisible(true);
                         if (previewPane != null) {
                             previewPane.setVisible(false);
                             previewPane.getChildren().clear();
                         }
-                        if (btnEditTemplate != null) btnEditTemplate.setDisable(true);
+                        if (btnEditTemplate != null)
+                            btnEditTemplate.setDisable(true);
                     } else {
-                        if (previewEmptyState != null) previewEmptyState.setVisible(false);
-                        if (previewPane != null) previewPane.setVisible(true);
-                        if (btnEditTemplate != null) btnEditTemplate.setDisable(false);
+                        if (previewEmptyState != null)
+                            previewEmptyState.setVisible(false);
+                        if (previewPane != null)
+                            previewPane.setVisible(true);
+                        if (btnEditTemplate != null)
+                            btnEditTemplate.setDisable(false);
 
                         if (cmbBankAccount != null && cmbBankAccount.getValue() != newVal) {
                             cmbBankAccount.setValue(newVal);
@@ -666,12 +723,16 @@ public class BankController {
     }
 
     private void loadTemplatesForSelectedAccount(BankAccount account) {
-        if (cmbAccountTemplates == null) return;
+        if (cmbAccountTemplates == null)
+            return;
         if (account == null || account.getId() == null) {
             cmbAccountTemplates.getItems().clear();
-            if (btnSetAsDefault != null) btnSetAsDefault.setDisable(true);
-            if (btnPreviewTemplate != null) btnPreviewTemplate.setDisable(true);
-            if (lblTemplateStatus != null) lblTemplateStatus.setText("NO SELECTION");
+            if (btnSetAsDefault != null)
+                btnSetAsDefault.setDisable(true);
+            if (btnPreviewTemplate != null)
+                btnPreviewTemplate.setDisable(true);
+            if (lblTemplateStatus != null)
+                lblTemplateStatus.setText("NO SELECTION");
             return;
         }
 
@@ -680,14 +741,19 @@ public class BankController {
                 Long accountId = account.getId().longValue();
                 List<com.chequeprint.model.ChequeTemplate> templates = new ArrayList<>();
                 try {
-                    java.net.http.HttpRequest req = com.chequeprint.util.RestApiClient.requestBuilder(com.chequeprint.config.ApiConfig.BASE_URL + "/api/template/account/" + accountId).GET().build();
+                    java.net.http.HttpRequest req = com.chequeprint.util.RestApiClient
+                            .requestBuilder(
+                                    com.chequeprint.config.ApiConfig.BASE_URL + "/api/template/account/" + accountId)
+                            .GET().build();
                     java.net.http.HttpResponse<String> res = com.chequeprint.util.RestApiClient.send(req);
                     String json = res.statusCode() == 200 ? res.body() : null;
                     if (json != null && !json.isBlank()) {
                         com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                        templates = mapper.readValue(json, mapper.getTypeFactory().constructCollectionType(List.class, com.chequeprint.model.ChequeTemplate.class));
+                        templates = mapper.readValue(json, mapper.getTypeFactory().constructCollectionType(List.class,
+                                com.chequeprint.model.ChequeTemplate.class));
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
 
                 if (templates.isEmpty()) {
                     com.chequeprint.model.ChequeTemplate defaultTpl = new com.chequeprint.model.ChequeTemplate();
@@ -701,9 +767,12 @@ public class BankController {
                     cmbAccountTemplates.setConverter(new StringConverter<>() {
                         @Override
                         public String toString(com.chequeprint.model.ChequeTemplate t) {
-                            if (t == null) return "";
-                            boolean isDef = account.getTemplateId() != null && account.getTemplateId().equals(t.getId());
-                            return (isDef ? "⭐ [DEFAULT] " : "📄 ") + (t.getTemplateName() != null ? t.getTemplateName() : "Template #" + t.getId());
+                            if (t == null)
+                                return "";
+                            boolean isDef = account.getTemplateId() != null
+                                    && account.getTemplateId().equals(t.getId());
+                            return (isDef ? "⭐ [DEFAULT] " : "📄 ")
+                                    + (t.getTemplateName() != null ? t.getTemplateName() : "Template #" + t.getId());
                         }
 
                         @Override
@@ -723,8 +792,10 @@ public class BankController {
                     }
                     cmbAccountTemplates.setValue(defaultItem);
 
-                    if (btnSetAsDefault != null) btnSetAsDefault.setDisable(false);
-                    if (btnPreviewTemplate != null) btnPreviewTemplate.setDisable(false);
+                    if (btnSetAsDefault != null)
+                        btnSetAsDefault.setDisable(false);
+                    if (btnPreviewTemplate != null)
+                        btnPreviewTemplate.setDisable(false);
 
                     updateTemplateStatusBadge(account, defaultItem);
 
@@ -745,24 +816,30 @@ public class BankController {
     }
 
     private void updateTemplateStatusBadge(BankAccount account, com.chequeprint.model.ChequeTemplate selectedTpl) {
-        if (lblTemplateStatus == null) return;
-        boolean isDefault = (account != null && account.getTemplateId() != null && selectedTpl != null && account.getTemplateId().equals(selectedTpl.getId()));
+        if (lblTemplateStatus == null)
+            return;
+        boolean isDefault = (account != null && account.getTemplateId() != null && selectedTpl != null
+                && account.getTemplateId().equals(selectedTpl.getId()));
         if (isDefault) {
             lblTemplateStatus.setText("⭐ ACTIVE DEFAULT");
-            lblTemplateStatus.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-background-color: #dbeafe; -fx-text-fill: #1d4ed8; -fx-padding: 2 6 2 6; -fx-background-radius: 4;");
+            lblTemplateStatus.setStyle(
+                    "-fx-font-size: 10px; -fx-font-weight: bold; -fx-background-color: #dbeafe; -fx-text-fill: #1d4ed8; -fx-padding: 2 6 2 6; -fx-background-radius: 4;");
         } else {
             lblTemplateStatus.setText("OPTIONAL TEMPLATE");
-            lblTemplateStatus.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-background-color: #fef3c7; -fx-text-fill: #b45309; -fx-padding: 2 6 2 6; -fx-background-radius: 4;");
+            lblTemplateStatus.setStyle(
+                    "-fx-font-size: 10px; -fx-font-weight: bold; -fx-background-color: #fef3c7; -fx-text-fill: #b45309; -fx-padding: 2 6 2 6; -fx-background-radius: 4;");
         }
     }
 
     @FXML
     private void onSetAsDefaultTemplate() {
         BankAccount selectedAcc = accountTable != null ? accountTable.getSelectionModel().getSelectedItem() : null;
-        com.chequeprint.model.ChequeTemplate selectedTpl = cmbAccountTemplates != null ? cmbAccountTemplates.getValue() : null;
+        com.chequeprint.model.ChequeTemplate selectedTpl = cmbAccountTemplates != null ? cmbAccountTemplates.getValue()
+                : null;
 
         if (selectedAcc == null || selectedTpl == null) {
-            Alert alert = new Alert(Alert.AlertType.WARNING, "Please select a Bank Account and Template first.", ButtonType.OK);
+            Alert alert = new Alert(Alert.AlertType.WARNING, "Please select a Bank Account and Template first.",
+                    ButtonType.OK);
             alert.setHeaderText(null);
             alert.showAndWait();
             return;
@@ -773,10 +850,13 @@ public class BankController {
             Long tplId = selectedTpl.getId();
 
             try {
-                java.net.http.HttpRequest req = com.chequeprint.util.RestApiClient.requestBuilder(com.chequeprint.config.ApiConfig.BASE_URL + "/api/template/account/" + accId + "/default/" + tplId)
+                java.net.http.HttpRequest req = com.chequeprint.util.RestApiClient
+                        .requestBuilder(com.chequeprint.config.ApiConfig.BASE_URL + "/api/template/account/" + accId
+                                + "/default/" + tplId)
                         .PUT(java.net.http.HttpRequest.BodyPublishers.noBody()).build();
                 com.chequeprint.util.RestApiClient.send(req);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             selectedAcc.setTemplateId(tplId);
             AppState.getInstance().setSelectedBankAccount(selectedAcc);
@@ -785,21 +865,26 @@ public class BankController {
             cmbAccountTemplates.setItems(FXCollections.observableArrayList(cmbAccountTemplates.getItems()));
             cmbAccountTemplates.setValue(selectedTpl);
 
-            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Template '" + selectedTpl.getTemplateName() + "' is now the active DEFAULT template for " + selectedAcc.getBankName() + "!", ButtonType.OK);
+            Alert alert = new Alert(
+                    Alert.AlertType.INFORMATION, "Template '" + selectedTpl.getTemplateName()
+                            + "' is now the active DEFAULT template for " + selectedAcc.getBankName() + "!",
+                    ButtonType.OK);
             alert.setTitle("Default Template Updated");
             alert.setHeaderText(null);
             alert.showAndWait();
 
         } catch (Exception e) {
             e.printStackTrace();
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to update default template: " + e.getMessage(), ButtonType.OK);
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to update default template: " + e.getMessage(),
+                    ButtonType.OK);
             alert.showAndWait();
         }
     }
 
     @FXML
     private void onPreviewSelectedTemplate() {
-        com.chequeprint.model.ChequeTemplate selectedTpl = cmbAccountTemplates != null ? cmbAccountTemplates.getValue() : null;
+        com.chequeprint.model.ChequeTemplate selectedTpl = cmbAccountTemplates != null ? cmbAccountTemplates.getValue()
+                : null;
         BankAccount selectedAcc = accountTable != null ? accountTable.getSelectionModel().getSelectedItem() : null;
 
         if (selectedTpl == null && selectedAcc != null && selectedAcc.getId() != null) {
@@ -808,8 +893,10 @@ public class BankController {
         }
         if (selectedTpl != null) {
             setCurrentTemplate(selectedTpl);
-            if (previewEmptyState != null) previewEmptyState.setVisible(false);
-            if (previewPane != null) previewPane.setVisible(true);
+            if (previewEmptyState != null)
+                previewEmptyState.setVisible(false);
+            if (previewPane != null)
+                previewPane.setVisible(true);
         }
     }
 
@@ -843,8 +930,10 @@ public class BankController {
 
         // 3. Condition: Prevent repeated calls if previous request failed
         if (failedBankIds.contains(bankId)) {
-            LOGGER.warning("[BankController] Previous request for Bank ID " + bankId + " failed. Serving cached fallback template without calling API.");
-            com.chequeprint.model.ChequeTemplate fallback = new com.chequeprint.model.ChequeTemplate(bankId, "Default Bank Template");
+            LOGGER.warning("[BankController] Previous request for Bank ID " + bankId
+                    + " failed. Serving cached fallback template without calling API.");
+            com.chequeprint.model.ChequeTemplate fallback = new com.chequeprint.model.ChequeTemplate(bankId,
+                    "Default Bank Template");
             templateCache.put(cacheKey, fallback);
             currentlyLoadedBankId = bankId;
             setCurrentTemplate(fallback);
@@ -866,10 +955,11 @@ public class BankController {
         templateDebounceTimer.play();
     }
 
-
     public void renderPreview(com.chequeprint.model.ChequeTemplate template) {
-        if (previewPane == null) return;
-        com.chequeprint.util.ChequeRenderEngine.renderCheque(previewPane, AppState.getInstance().getCurrentCheque(), selectedBank, AppState.getInstance().getSelectedTemplate());
+        if (previewPane == null)
+            return;
+        com.chequeprint.util.ChequeRenderEngine.renderCheque(previewPane, AppState.getInstance().getCurrentCheque(),
+                selectedBank, AppState.getInstance().getSelectedTemplate());
     }
 
     private void loadData() {
@@ -961,7 +1051,8 @@ public class BankController {
                 previewLoading.setManaged(false);
             }
             LOGGER.severe("Failed to fetch template for bankId " + bankId + ": " + task.getException().getMessage());
-            com.chequeprint.model.ChequeTemplate defaultTemplate = new com.chequeprint.model.ChequeTemplate(bankId, "Default Bank Template");
+            com.chequeprint.model.ChequeTemplate defaultTemplate = new com.chequeprint.model.ChequeTemplate(bankId,
+                    "Default Bank Template");
             templateCache.put(cacheKey, defaultTemplate);
             currentlyLoadedBankId = bankId;
             setCurrentTemplate(defaultTemplate);
@@ -1061,13 +1152,15 @@ public class BankController {
         printCanvas.setPrefHeight(currentTemplate.getHeight() * 3.7795);
 
         javafx.scene.Node printableNode = previewPane != null ? previewPane : printCanvas;
-        javafx.stage.Window ownerWindow = previewPane != null && previewPane.getScene() != null ?
-                previewPane.getScene().getWindow() : null;
+        javafx.stage.Window ownerWindow = previewPane != null && previewPane.getScene() != null
+                ? previewPane.getScene().getWindow()
+                : null;
 
         Task<Boolean> printTask = new Task<>() {
             @Override
             protected Boolean call() throws Exception {
-                LOGGER.info("[BankController] Starting background printing task on thread: " + Thread.currentThread().getName());
+                LOGGER.info("[BankController] Starting background printing task on thread: "
+                        + Thread.currentThread().getName());
                 boolean printed = printService.printNode(printableNode, ownerWindow);
                 LOGGER.info("[BankController] Background printing task completed with result: " + printed);
                 return printed;
@@ -1121,7 +1214,8 @@ public class BankController {
     }
 
     private void renderAlignmentGuides(Pane pane, double centerX, double centerY) {
-        if (pane == null) return;
+        if (pane == null)
+            return;
         removeAlignmentGuides(pane);
 
         double w = pane.getWidth() > 0 ? pane.getWidth() : (pane.getPrefWidth() > 0 ? pane.getPrefWidth() : 300.0);
@@ -1145,12 +1239,16 @@ public class BankController {
     }
 
     private void removeAlignmentGuides(Pane pane) {
-        if (pane == null) return;
-        pane.getChildren().removeIf(node -> "alignment-guide-horiz".equals(node.getId()) || "alignment-guide-vert".equals(node.getId()));
+        if (pane == null)
+            return;
+        pane.getChildren().removeIf(
+                node -> "alignment-guide-horiz".equals(node.getId()) || "alignment-guide-vert".equals(node.getId()));
     }
 
-    private void makeLabelDraggable(Label label, String fieldKey, com.chequeprint.model.ChequeTemplate.FieldConfig cfg, double scaleX, double scaleY) {
-        if (label == null || cfg == null) return;
+    private void makeLabelDraggable(Label label, String fieldKey, com.chequeprint.model.ChequeTemplate.FieldConfig cfg,
+            double scaleX, double scaleY) {
+        if (label == null || cfg == null)
+            return;
         label.setCursor(javafx.scene.Cursor.HAND);
         final double[] dragOffset = new double[2];
 
@@ -1197,7 +1295,8 @@ public class BankController {
                 lblCoordinatesHUD.setText(String.format("X: %.1f mm | Y: %.1f mm", mmX, mmY));
             }
 
-            renderAlignmentGuides(previewPane, newLayoutX + label.getWidth() / 2.0, newLayoutY + label.getHeight() / 2.0);
+            renderAlignmentGuides(previewPane, newLayoutX + label.getWidth() / 2.0,
+                    newLayoutY + label.getHeight() / 2.0);
             event.consume();
         });
 
@@ -1211,12 +1310,14 @@ public class BankController {
     }
 
     private double scalePos(double val, double scale, double fallback) {
-        if (val < 0) return fallback;
+        if (val < 0)
+            return fallback;
         return val * scale;
     }
 
     private String formatFieldStyle(String fieldKey, com.chequeprint.model.ChequeTemplate.FieldConfig cfg) {
-        if (cfg == null) return "-fx-font-size: 10px; -fx-text-fill: #0f172a;";
+        if (cfg == null)
+            return "-fx-font-size: 10px; -fx-text-fill: #0f172a;";
         double sz = cfg.getFontSize() > 0 ? Math.min(cfg.getFontSize(), 14.0) : 10.0;
         String family = cfg.getFontFamily() != null ? cfg.getFontFamily() : "Arial";
         String weight = cfg.isBold() ? "bold" : "normal";
@@ -1226,14 +1327,17 @@ public class BankController {
         if (fieldKey != null && fieldKey.equalsIgnoreCase(selectedFieldName)) {
             highlight = "; -fx-border-color: #2563eb; -fx-border-width: 1.5px; -fx-border-style: dashed; -fx-background-color: rgba(37,99,235,0.15); -fx-padding: 2 4; -fx-border-radius: 4; -fx-background-radius: 4;";
         }
-        return String.format("-fx-font-size: %.1fpx; -fx-font-family: '%s'; -fx-font-weight: %s; -fx-font-style: %s; -fx-text-fill: #0f172a;", sz, family, weight, posture) + highlight;
+        return String.format(
+                "-fx-font-size: %.1fpx; -fx-font-family: '%s'; -fx-font-weight: %s; -fx-font-style: %s; -fx-text-fill: #0f172a;",
+                sz, family, weight, posture) + highlight;
     }
 
     private void setupForm() {
         if (cmbBankAccount != null) {
             cmbBankAccount.setItems(accountData);
             cmbBankAccount.valueProperty().addListener((obs, oldVal, newVal) -> {
-                if (isUpdatingForm) return;
+                if (isUpdatingForm)
+                    return;
                 try {
                     isUpdatingForm = true;
                     updateTemplateMappingLabel(newVal);
@@ -1256,7 +1360,8 @@ public class BankController {
             });
         }
         if (cmbFontFamily != null) {
-            cmbFontFamily.setItems(FXCollections.observableArrayList("Arial", "Courier New", "Consolas", "Times New Roman", "Verdana", "Tahoma"));
+            cmbFontFamily.setItems(FXCollections.observableArrayList("Arial", "Courier New", "Consolas",
+                    "Times New Roman", "Verdana", "Tahoma"));
             cmbFontFamily.setValue("Arial");
             cmbFontFamily.valueProperty().addListener((obs, oldVal, newVal) -> {
                 if (newVal != null && getSelectedField() != null) {
@@ -1270,27 +1375,33 @@ public class BankController {
                 if (newVal != null && getSelectedField() != null) {
                     try {
                         int size = Integer.parseInt(newVal.trim());
-                        String family = cmbFontFamily != null && cmbFontFamily.getValue() != null ? cmbFontFamily.getValue() : "Arial";
+                        String family = cmbFontFamily != null && cmbFontFamily.getValue() != null
+                                ? cmbFontFamily.getValue()
+                                : "Arial";
                         applySelectedFieldFont(getSelectedField(), family, size);
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }
             });
         }
-        if (btnDelete != null) btnDelete.setDisable(true);
+        if (btnDelete != null)
+            btnDelete.setDisable(true);
 
         if (cmbChequeSize != null) {
             cmbChequeSize.setItems(FXCollections.observableArrayList(ChequeSizePreset.values()));
             cmbChequeSize.setValue(ChequeSizePreset.STANDARD);
         }
-        if (chkMicr != null) chkMicr.setSelected(true);
+        if (chkMicr != null)
+            chkMicr.setSelected(true);
 
-        if (fldCustomWidth != null) fldCustomWidth.setDisable(true);
-        if (fldCustomHeight != null) fldCustomHeight.setDisable(true);
+        if (fldCustomWidth != null)
+            fldCustomWidth.setDisable(true);
+        if (fldCustomHeight != null)
+            fldCustomHeight.setDisable(true);
 
         if (cmbChequeSizeUnit != null) {
             cmbChequeSizeUnit.setItems(FXCollections.observableArrayList(
-                "Inches (in)", "Millimeters (mm)", "Centimeters (cm)", "Pixels (300 DPI)", "Pixels (72 DPI)"
-            ));
+                    "Inches (in)", "Millimeters (mm)", "Centimeters (cm)", "Pixels (300 DPI)", "Pixels (72 DPI)"));
             cmbChequeSizeUnit.setValue("Inches (in)");
             cmbChequeSizeUnit.setDisable(true);
 
@@ -1304,8 +1415,10 @@ public class BankController {
                     case "Pixels (300 DPI)", "Pixels (72 DPI)" -> "(px)";
                     default -> "(in)";
                 };
-                if (lblCustomWidth != null) lblCustomWidth.setText("Custom Width " + unitSuffix);
-                if (lblCustomHeight != null) lblCustomHeight.setText("Custom Height " + unitSuffix);
+                if (lblCustomWidth != null)
+                    lblCustomWidth.setText("Custom Width " + unitSuffix);
+                if (lblCustomHeight != null)
+                    lblCustomHeight.setText("Custom Height " + unitSuffix);
 
                 try {
                     String wText = fldCustomWidth.getText().trim();
@@ -1336,8 +1449,10 @@ public class BankController {
                 if (!custom) {
                     cmbChequeSizeUnit.setValue("Inches (in)");
                     currentUnit = "Inches (in)";
-                    if (lblCustomWidth != null) lblCustomWidth.setText("Custom Width (in)");
-                    if (lblCustomHeight != null) lblCustomHeight.setText("Custom Height (in)");
+                    if (lblCustomWidth != null)
+                        lblCustomWidth.setText("Custom Width (in)");
+                    if (lblCustomHeight != null)
+                        lblCustomHeight.setText("Custom Height (in)");
                 }
             }
             if (!custom) {
@@ -1358,13 +1473,17 @@ public class BankController {
     }
 
     private void setupPreview() {
-        chequePreviewPane.setStyle("-fx-background-color:white; -fx-border-color:#94a3b8; -fx-border-width:1; -fx-background-radius:10; -fx-border-radius:10;");
+        chequePreviewPane.setStyle(
+                "-fx-background-color:white; -fx-border-color:#94a3b8; -fx-border-width:1; -fx-background-radius:10; -fx-border-radius:10;");
         createFieldNode(LayoutField.BANK_LOGO, "BANK LOGO", "-fx-background-color:#eff6ff; -fx-border-color:#3b82f6;");
         createFieldNode(LayoutField.DATE, "DATE", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;");
         createFieldNode(LayoutField.PAYEE, "PAYEE", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;");
-        createFieldNode(LayoutField.AMOUNT_NUMBER, "AMOUNT NUMBER", "-fx-background-color:#fefce8; -fx-border-color:#ca8a04;");
-        createFieldNode(LayoutField.AMOUNT_WORDS, "AMOUNT WORDS", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;");
-        createFieldNode(LayoutField.SIGNATURE, "SIGNATURE AREA", "-fx-background-color:#f8fafc; -fx-border-color:#64748b;");
+        createFieldNode(LayoutField.AMOUNT_NUMBER, "AMOUNT NUMBER",
+                "-fx-background-color:#fefce8; -fx-border-color:#ca8a04;");
+        createFieldNode(LayoutField.AMOUNT_WORDS, "AMOUNT WORDS",
+                "-fx-background-color:#f8fafc; -fx-border-color:#64748b;");
+        createFieldNode(LayoutField.SIGNATURE, "SIGNATURE AREA",
+                "-fx-background-color:#f8fafc; -fx-border-color:#64748b;");
         createFieldNode(LayoutField.MICR, "MICR LINE", "-fx-background-color:#f1f5f9; -fx-border-color:#334155;");
 
         guideLineV = new Line();
@@ -1403,31 +1522,31 @@ public class BankController {
         StackPane node = new StackPane();
         node.setPadding(new Insets(2, 5, 2, 5));
         node.setCursor(Cursor.MOVE);
-        
+
         Label label = new Label(text);
         label.setStyle("-fx-font-size:11px; -fx-font-weight:600; -fx-text-fill: #1e293b;");
         node.getChildren().add(label);
-        
+
         javafx.scene.shape.Circle resizeHandle = new javafx.scene.shape.Circle(4.5, Color.web("#2563eb"));
         resizeHandle.setStroke(Color.WHITE);
         resizeHandle.setStrokeWidth(1.5);
         resizeHandle.setCursor(Cursor.SE_RESIZE);
         resizeHandle.setManaged(false);
         resizeHandle.setVisible(false);
-        
+
         node.getChildren().add(resizeHandle);
-        
+
         node.widthProperty().addListener((obs, o, w) -> resizeHandle.setLayoutX(w.doubleValue() - 4.5));
         node.heightProperty().addListener((obs, o, h) -> resizeHandle.setLayoutY(h.doubleValue() - 4.5));
-        
+
         enableDragAndResize(field, node, resizeHandle);
         fieldNodes.put(field, node);
         chequePreviewPane.getChildren().add(node);
     }
-    
+
     private void enableDragAndResize(LayoutField field, StackPane node, javafx.scene.shape.Circle resizeHandle) {
         final Delta dragDelta = new Delta();
-        
+
         node.setOnMousePressed(e -> {
             if (e.getTarget() == resizeHandle) {
                 return;
@@ -1438,7 +1557,7 @@ public class BankController {
             node.toFront();
             e.consume();
         });
-        
+
         node.setOnMouseDragged(e -> {
             if (e.getTarget() == resizeHandle) {
                 return;
@@ -1446,14 +1565,16 @@ public class BankController {
             moveFieldNode(field, node, e, dragDelta);
             e.consume();
         });
-        
+
         node.setOnMouseReleased(e -> {
-            if (guideLineV != null) guideLineV.setVisible(false);
-            if (guideLineH != null) guideLineH.setVisible(false);
+            if (guideLineV != null)
+                guideLineV.setVisible(false);
+            if (guideLineH != null)
+                guideLineH.setVisible(false);
             persistCurrentLayoutIfPossible();
             e.consume();
         });
-        
+
         final Delta resizeDelta = new Delta();
         resizeHandle.setOnMousePressed(e -> {
             resizeDelta.x = e.getScreenX();
@@ -1463,47 +1584,48 @@ public class BankController {
             setSelectedField(field);
             e.consume();
         });
-        
+
         resizeHandle.setOnMouseDragged(e -> {
             double dx = e.getScreenX() - resizeDelta.x;
             double dy = e.getScreenY() - resizeDelta.y;
-            
+
             double newW = dragDelta.x + dx;
             double newH = dragDelta.y + dy;
-            
+
             if (chkSnapGrid != null && chkSnapGrid.isSelected()) {
                 newW = Math.round(newW / 15.0) * 15.0;
                 newH = Math.round(newH / 15.0) * 15.0;
             }
-            
+
             newW = Math.max(30.0, newW);
             newH = Math.max(15.0, newH);
-            
+
             double paneW = chequePreviewPane.getPrefWidth();
             double paneH = chequePreviewPane.getPrefHeight();
-            if (paneW <= 0) paneW = 720;
-            if (paneH <= 0) paneH = 300;
-            
+            if (paneW <= 0)
+                paneW = 720;
+            if (paneH <= 0)
+                paneH = 300;
+
             double maxW = paneW - node.getLayoutX();
             double maxH = paneH - node.getLayoutY();
             newW = Math.min(newW, maxW);
             newH = Math.min(newH, maxH);
-            
+
             node.setPrefSize(newW, newH);
             node.setMinSize(newW, newH);
             node.setMaxSize(newW, newH);
-            
+
             FieldPosition pos = currentLayout.get(field);
-            currentLayout.setFieldLayout(field, 
-                pos.getXRatio(), pos.getYRatio(), 
-                newW / paneW, newH / paneH
-            );
-            
+            currentLayout.setFieldLayout(field,
+                    pos.getXRatio(), pos.getYRatio(),
+                    newW / paneW, newH / paneH);
+
             loadAdjustmentFields(field);
             updateHUD(field, node);
             e.consume();
         });
-        
+
         resizeHandle.setOnMouseReleased(e -> {
             persistCurrentLayoutIfPossible();
             e.consume();
@@ -1516,16 +1638,18 @@ public class BankController {
             double heightMm = currentLayout.getHeightInches() * 25.4;
             double paneW = chequePreviewPane.getPrefWidth();
             double paneH = chequePreviewPane.getPrefHeight();
-            if (paneW <= 0) paneW = 720;
-            if (paneH <= 0) paneH = 300;
+            if (paneW <= 0)
+                paneW = 720;
+            if (paneH <= 0)
+                paneH = 300;
 
-            lblCoordinatesHUD.setText(String.format("Active Field: %s | X: %.1f mm, Y: %.1f mm | W: %.1f mm, H: %.1f mm",
-                field.name(),
-                (node.getLayoutX() / paneW) * widthMm,
-                (node.getLayoutY() / paneH) * heightMm,
-                (node.getPrefWidth() / paneW) * widthMm,
-                (node.getPrefHeight() / paneH) * heightMm
-            ));
+            lblCoordinatesHUD
+                    .setText(String.format("Active Field: %s | X: %.1f mm, Y: %.1f mm | W: %.1f mm, H: %.1f mm",
+                            field.name(),
+                            (node.getLayoutX() / paneW) * widthMm,
+                            (node.getLayoutY() / paneH) * heightMm,
+                            (node.getPrefWidth() / paneW) * widthMm,
+                            (node.getPrefHeight() / paneH) * heightMm));
         }
     }
 
@@ -1536,8 +1660,10 @@ public class BankController {
 
         double paneW = chequePreviewPane.getPrefWidth();
         double paneH = chequePreviewPane.getPrefHeight();
-        if (paneW <= 0) paneW = 720;
-        if (paneH <= 0) paneH = 300;
+        if (paneW <= 0)
+            paneW = 720;
+        if (paneH <= 0)
+            paneH = 300;
 
         double nx = node.getLayoutX() + (event.getX() - delta.x);
         double ny = node.getLayoutY() + (event.getY() - delta.y);
@@ -1642,8 +1768,10 @@ public class BankController {
 
         double paneW = chequePreviewPane.getPrefWidth();
         double paneH = chequePreviewPane.getPrefHeight();
-        if (paneW <= 0) paneW = 720;
-        if (paneH <= 0) paneH = 300;
+        if (paneW <= 0)
+            paneW = 720;
+        if (paneH <= 0)
+            paneH = 300;
 
         for (Map.Entry<LayoutField, StackPane> entry : fieldNodes.entrySet()) {
             LayoutField field = entry.getKey();
@@ -1663,7 +1791,8 @@ public class BankController {
             node.setVisible(field != LayoutField.MICR || chkMicr.isSelected());
         }
 
-        lblPreviewSize.setText(String.format("Preview Size: %.2f x %.2f inches", currentLayout.getWidthInches(), currentLayout.getHeightInches()));
+        lblPreviewSize.setText(String.format("Preview Size: %.2f x %.2f inches", currentLayout.getWidthInches(),
+                currentLayout.getHeightInches()));
         loadAdjustmentFields(getSelectedField());
         updateFieldHighlights();
 
@@ -1722,9 +1851,11 @@ public class BankController {
 
     private void setLoading(boolean loading) {
         Platform.runLater(() -> {
-            if (cmbBankAccount != null && cmbBankAccount.getScene() != null && cmbBankAccount.getScene().getRoot() != null) {
+            if (cmbBankAccount != null && cmbBankAccount.getScene() != null
+                    && cmbBankAccount.getScene().getRoot() != null) {
                 cmbBankAccount.getScene().getRoot().setCursor(loading ? Cursor.WAIT : Cursor.DEFAULT);
-            } else if (fldBankCode != null && fldBankCode.getScene() != null && fldBankCode.getScene().getRoot() != null) {
+            } else if (fldBankCode != null && fldBankCode.getScene() != null
+                    && fldBankCode.getScene().getRoot() != null) {
                 fldBankCode.getScene().getRoot().setCursor(loading ? Cursor.WAIT : Cursor.DEFAULT);
             }
             if (loadingSpinner != null) {
@@ -1735,19 +1866,32 @@ public class BankController {
                 previewLoading.setVisible(loading);
                 previewLoading.setManaged(loading);
             }
-            if (btnSave != null) btnSave.setDisable(loading);
-            if (btnDelete != null) btnDelete.setDisable(loading || selectedBank == null);
-            if (btnClear != null) btnClear.setDisable(loading);
-            if (btnNewBank != null) btnNewBank.setDisable(loading);
-            if (btnAddAccount != null) btnAddAccount.setDisable(loading);
-            if (btnEditAccountAction != null) btnEditAccountAction.setDisable(loading);
-            if (btnDeleteAccountAction != null) btnDeleteAccountAction.setDisable(loading);
-            if (btnSetAsDefault != null) btnSetAsDefault.setDisable(loading);
-            if (btnEditTemplate != null) btnEditTemplate.setDisable(loading);
-            if (btnPreviewTemplate != null) btnPreviewTemplate.setDisable(loading);
-            if (bankTable != null) bankTable.setDisable(loading);
-            if (accountTable != null) accountTable.setDisable(loading);
-            if (cmbBankAccount != null) cmbBankAccount.setDisable(loading);
+            if (btnSave != null)
+                btnSave.setDisable(loading);
+            if (btnDelete != null)
+                btnDelete.setDisable(loading || selectedBank == null);
+            if (btnClear != null)
+                btnClear.setDisable(loading);
+            if (btnNewBank != null)
+                btnNewBank.setDisable(loading);
+            if (btnAddAccount != null)
+                btnAddAccount.setDisable(loading);
+            if (btnEditAccountAction != null)
+                btnEditAccountAction.setDisable(loading);
+            if (btnDeleteAccountAction != null)
+                btnDeleteAccountAction.setDisable(loading);
+            if (btnSetAsDefault != null)
+                btnSetAsDefault.setDisable(loading);
+            if (btnEditTemplate != null)
+                btnEditTemplate.setDisable(loading);
+            if (btnPreviewTemplate != null)
+                btnPreviewTemplate.setDisable(loading);
+            if (bankTable != null)
+                bankTable.setDisable(loading);
+            if (accountTable != null)
+                accountTable.setDisable(loading);
+            if (cmbBankAccount != null)
+                cmbBankAccount.setDisable(loading);
         });
     }
 
@@ -1801,12 +1945,14 @@ public class BankController {
                     }
                 }
                 if (targetAcc != null) {
-                    if (cmbBankAccount.getValue() == null || !targetAcc.getId().equals(cmbBankAccount.getValue().getId())) {
+                    if (cmbBankAccount.getValue() == null
+                            || !targetAcc.getId().equals(cmbBankAccount.getValue().getId())) {
                         cmbBankAccount.setValue(targetAcc);
                     }
                     AppState.getInstance().setSelectedBankAccount(targetAcc);
                     if (targetAcc.getId() != null) {
-                        loadNewTemplate(targetAcc.getId().longValue(), new Bank(targetAcc.getBankName(), targetAcc.getBankName(), "STANDARD", true));
+                        loadNewTemplate(targetAcc.getId().longValue(),
+                                new Bank(targetAcc.getBankName(), targetAcc.getBankName(), "STANDARD", true));
                     }
                 }
             }
@@ -1837,36 +1983,21 @@ public class BankController {
         thread.start();
     }
 
-    private void loadData() {
-        if (loadingSpinner != null) {
-            loadingSpinner.setVisible(true);
-            loadingSpinner.setManaged(true);
+    @FXML
+    private void onSave() {
+        BankAccount selectedAcc = cmbBankAccount != null ? cmbBankAccount.getValue() : null;
+        if (selectedAcc == null || selectedAcc.getId() == null) {
+            showAlert("No Bank Account Selected", "Please choose a bank account before saving the template layout.",
+                    Alert.AlertType.WARNING);
+            return;
         }
-        setLoading(true);
 
-        Task<List<Bank>> task = new Task<>() {
-            @Override
-            protected List<Bank> call() throws Exception {
-                return bankService.getBanks();
-            }
-        };
+        if (currentLayout == null) {
+            showAlert("Save Error", "No cheque template layout is loaded to save.", Alert.AlertType.WARNING);
+            return;
+        }
 
-        task.setOnSucceeded(e -> {
-            List<Bank> list = task.getValue();
-            bankList.setAll(list);
-            data.setAll(list);
-            if (bankTable != null) {
-                bankTable.setItems(bankList);
-                bankTable.refresh();
-            }
-            if (fldBankName != null) {
-                fldBankName.setItems(data);
-            }
-            if (loadingSpinner != null) {
-                loadingSpinner.setVisible(false);
-                loadingSpinner.setManaged(false);
-            }
-        });
+        saveTemplateFieldsToApiInternal(selectedAcc.getId().longValue(), true);
     }
 
     @FXML
@@ -1877,7 +2008,8 @@ public class BankController {
         }
 
         Bank bank = selectedBank != null ? selectedBank : buildDraftBank();
-        if (bank.getBankName() == null || bank.getBankName().isBlank() || bank.getBankCode() == null || bank.getBankCode().isBlank()) {
+        if (bank.getBankName() == null || bank.getBankName().isBlank() || bank.getBankCode() == null
+                || bank.getBankCode().isBlank()) {
             showAlert("Validation", "Enter bank name and code before exporting PDF.", Alert.AlertType.WARNING);
             return;
         }
@@ -1895,6 +2027,45 @@ public class BankController {
     @FXML
     private void onClear() {
         clearForm();
+    }
+
+    private void selectLayer(LayoutField field) {
+        setSelectedField(field);
+    }
+
+    @FXML
+    private void onSelectLayerDate() {
+        selectLayer(LayoutField.DATE);
+    }
+
+    @FXML
+    private void onSelectLayerPayee() {
+        selectLayer(LayoutField.PAYEE);
+    }
+
+    @FXML
+    private void onSelectLayerAmountWords() {
+        selectLayer(LayoutField.AMOUNT_WORDS);
+    }
+
+    @FXML
+    private void onSelectLayerAmountNumber() {
+        selectLayer(LayoutField.AMOUNT_NUMBER);
+    }
+
+    @FXML
+    private void onSelectLayerSignature() {
+        selectLayer(LayoutField.SIGNATURE);
+    }
+
+    @FXML
+    private void onSelectLayerBankLogo() {
+        selectLayer(LayoutField.BANK_LOGO);
+    }
+
+    @FXML
+    private void onSelectLayerMicr() {
+        selectLayer(LayoutField.MICR);
     }
 
     private void populateForm(Bank bank) {
@@ -1945,8 +2116,10 @@ public class BankController {
                 cmbChequeSizeUnit.setValue("Inches (in)");
                 currentUnit = "Inches (in)";
             }
-            if (lblCustomWidth != null) lblCustomWidth.setText("Custom Width (in)");
-            if (lblCustomHeight != null) lblCustomHeight.setText("Custom Height (in)");
+            if (lblCustomWidth != null)
+                lblCustomWidth.setText("Custom Width (in)");
+            if (lblCustomHeight != null)
+                lblCustomHeight.setText("Custom Height (in)");
             fldCustomWidth.setText(String.format("%.2f", sizeLayout.getWidthInches()));
             fldCustomHeight.setText(String.format("%.2f", sizeLayout.getHeightInches()));
             fldCustomWidth.setDisable(false);
@@ -1957,8 +2130,10 @@ public class BankController {
                 cmbChequeSizeUnit.setValue("Inches (in)");
                 currentUnit = "Inches (in)";
             }
-            if (lblCustomWidth != null) lblCustomWidth.setText("Custom Width (in)");
-            if (lblCustomHeight != null) lblCustomHeight.setText("Custom Height (in)");
+            if (lblCustomWidth != null)
+                lblCustomWidth.setText("Custom Width (in)");
+            if (lblCustomHeight != null)
+                lblCustomHeight.setText("Custom Height (in)");
             fldCustomWidth.clear();
             fldCustomHeight.clear();
             fldCustomWidth.setDisable(true);
@@ -1979,9 +2154,12 @@ public class BankController {
 
     private void clearForm() {
         selectedBank = null;
-        if (lblFormTitle != null) lblFormTitle.setText("Cheque Template Designer");
-        if (btnSave != null) btnSave.setText("💾 Save Template");
-        if (btnDelete != null) btnDelete.setDisable(true);
+        if (lblFormTitle != null)
+            lblFormTitle.setText("Cheque Template Designer");
+        if (btnSave != null)
+            btnSave.setText("💾 Save Template");
+        if (btnDelete != null)
+            btnDelete.setDisable(true);
         if (btnNewBank != null) {
             btnNewBank.setVisible(false);
             btnNewBank.setManaged(false);
@@ -1995,7 +2173,7 @@ public class BankController {
                 btnClear.getStyleClass().add("btn-secondary");
             }
         }
-        
+
         isUpdatingForm = true;
         try {
             if (cmbBankAccount != null) {
@@ -2007,12 +2185,17 @@ public class BankController {
         if (fldBankCode != null) {
             fldBankCode.clear();
         }
-        if (chkMicr != null) chkMicr.setSelected(true);
-        if (cmbChequeSize != null) cmbChequeSize.setValue(ChequeSizePreset.STANDARD);
-        if (fldCustomWidth != null) fldCustomWidth.clear();
-        if (fldCustomHeight != null) fldCustomHeight.clear();
+        if (chkMicr != null)
+            chkMicr.setSelected(true);
+        if (cmbChequeSize != null)
+            cmbChequeSize.setValue(ChequeSizePreset.STANDARD);
+        if (fldCustomWidth != null)
+            fldCustomWidth.clear();
+        if (fldCustomHeight != null)
+            fldCustomHeight.clear();
 
-        currentLayout = new BankTemplateLayout(ChequeSizePreset.STANDARD.getWidthInches(), ChequeSizePreset.STANDARD.getHeightInches());
+        currentLayout = new BankTemplateLayout(ChequeSizePreset.STANDARD.getWidthInches(),
+                ChequeSizePreset.STANDARD.getHeightInches());
         layoutPreviewPane();
         refreshPreview();
     }
@@ -2083,7 +2266,8 @@ public class BankController {
     }
 
     private double convertFromInches(double inches, String toUnit) {
-        if (toUnit == null) return inches;
+        if (toUnit == null)
+            return inches;
         return switch (toUnit) {
             case "Millimeters (mm)" -> inches * 25.4;
             case "Centimeters (cm)" -> inches * 2.54;
@@ -2094,7 +2278,8 @@ public class BankController {
     }
 
     private double convertToInches(double value, String fromUnit) {
-        if (fromUnit == null) return value;
+        if (fromUnit == null)
+            return value;
         return switch (fromUnit) {
             case "Millimeters (mm)" -> value / 25.4;
             case "Centimeters (cm)" -> value / 2.54;
@@ -2109,7 +2294,9 @@ public class BankController {
         BankAccount acc = cmbBankAccount != null ? cmbBankAccount.getValue() : null;
         String name = acc != null && acc.getBankName() != null ? acc.getBankName().trim() : "Bank";
         bank.setBankName(name);
-        bank.setBankCode(fldBankCode != null && fldBankCode.getText() != null ? fldBankCode.getText().trim().toUpperCase() : "BANK");
+        bank.setBankCode(
+                fldBankCode != null && fldBankCode.getText() != null ? fldBankCode.getText().trim().toUpperCase()
+                        : "BANK");
         bank.setMicr(chkMicr != null && chkMicr.isSelected());
         return bank;
     }
@@ -2125,8 +2312,10 @@ public class BankController {
 
         fldAdjustLeft.setText(formatMm(pos.getXRatio() * widthMm));
         fldAdjustTop.setText(formatMm(pos.getYRatio() * heightMm));
-        if (fldAdjustWidth != null) fldAdjustWidth.setText(formatMm(effectiveWidthRatio(field, pos) * widthMm));
-        if (fldAdjustHeight != null) fldAdjustHeight.setText(formatMm(effectiveHeightRatio(field, pos) * heightMm));
+        if (fldAdjustWidth != null)
+            fldAdjustWidth.setText(formatMm(effectiveWidthRatio(field, pos) * widthMm));
+        if (fldAdjustHeight != null)
+            fldAdjustHeight.setText(formatMm(effectiveHeightRatio(field, pos) * heightMm));
 
         // Load Font and Size properties for selected field
         StackPane node = fieldNodes.get(field);
@@ -2148,13 +2337,15 @@ public class BankController {
 
     private double fieldWidthPx(LayoutField field, FieldPosition pos) {
         double w = chequePreviewPane.getPrefWidth();
-        if (w <= 0) w = 720;
+        if (w <= 0)
+            w = 720;
         return Math.max(24.0, effectiveWidthRatio(field, pos) * w);
     }
 
     private double fieldHeightPx(LayoutField field, FieldPosition pos) {
         double h = chequePreviewPane.getPrefHeight();
-        if (h <= 0) h = 300;
+        if (h <= 0)
+            h = 300;
         return Math.max(18.0, effectiveHeightRatio(field, pos) * h);
     }
 
@@ -2207,7 +2398,8 @@ public class BankController {
             return;
         }
 
-        String code = selectedBank != null ? safeCode(selectedBank.getBankCode()) : (fldBankCode != null ? safeCode(fldBankCode.getText()) : "BANK");
+        String code = selectedBank != null ? safeCode(selectedBank.getBankCode())
+                : (fldBankCode != null ? safeCode(fldBankCode.getText()) : "BANK");
         if (code.isBlank()) {
             return;
         }
@@ -2225,13 +2417,15 @@ public class BankController {
                         if (reloaded != null && !reloaded.isEmpty()) {
                             applyReloadedFields(reloaded);
                         }
-                        AppState.getInstance().setSelectedTemplate(currentLayout != null ? currentLayout.copy() : layoutToSave);
+                        AppState.getInstance()
+                                .setSelectedTemplate(currentLayout != null ? currentLayout.copy() : layoutToSave);
                     });
                 } else {
                     Platform.runLater(() -> AppState.getInstance().setSelectedTemplate(layoutToSave));
                 }
             } catch (Exception ex) {
-                Platform.runLater(() -> showAlert("Layout Save Error", "Unable to save cheque alignment: " + ex.getMessage(), Alert.AlertType.ERROR));
+                Platform.runLater(() -> showAlert("Layout Save Error",
+                        "Unable to save cheque alignment: " + ex.getMessage(), Alert.AlertType.ERROR));
             }
         }, "persist-layout").start();
     }
@@ -2253,12 +2447,15 @@ public class BankController {
         boolean showRulers = chkShowRulers != null && chkShowRulers.isSelected();
 
         StringBuilder style = new StringBuilder();
-        style.append("-fx-border-color: #475569; -fx-border-width: 1px; -fx-background-radius: 6px; -fx-border-radius: 6px; ");
+        style.append(
+                "-fx-border-color: #475569; -fx-border-width: 1px; -fx-background-radius: 6px; -fx-border-radius: 6px; ");
 
         if (showGrid) {
             style.append("-fx-background-color: #ffffff, ");
-            style.append("linear-gradient(from 0px 0px to 15px 0px, repeat, rgba(148,163,184,0.12) 0px, rgba(148,163,184,0.12) 1px, transparent 1px, transparent 15px), ");
-            style.append("linear-gradient(from 0px 0px to 0px 15px, repeat, rgba(148,163,184,0.12) 0px, rgba(148,163,184,0.12) 1px, transparent 1px, transparent 15px); ");
+            style.append(
+                    "linear-gradient(from 0px 0px to 15px 0px, repeat, rgba(148,163,184,0.12) 0px, rgba(148,163,184,0.12) 1px, transparent 1px, transparent 15px), ");
+            style.append(
+                    "linear-gradient(from 0px 0px to 0px 15px, repeat, rgba(148,163,184,0.12) 0px, rgba(148,163,184,0.12) 1px, transparent 1px, transparent 15px); ");
         } else {
             style.append("-fx-background-color: #ffffff; ");
         }
@@ -2289,15 +2486,13 @@ public class BankController {
     private void updateFieldHighlights() {
         LayoutField selected = getSelectedField();
 
-        if (layerDate != null) {
-            setLayerButtonSelected(layerDate, selected == LayoutField.DATE);
-            setLayerButtonSelected(layerPayee, selected == LayoutField.PAYEE);
-            setLayerButtonSelected(layerAmountNumber, selected == LayoutField.AMOUNT_NUMBER);
-            setLayerButtonSelected(layerAmountWords, selected == LayoutField.AMOUNT_WORDS);
-            setLayerButtonSelected(layerSignature, selected == LayoutField.SIGNATURE);
-            setLayerButtonSelected(layerBankLogo, selected == LayoutField.BANK_LOGO);
-            setLayerButtonSelected(layerMicr, selected == LayoutField.MICR);
-        }
+        setLayerButtonSelected(layerDate, selected == LayoutField.DATE);
+        setLayerButtonSelected(layerPayee, selected == LayoutField.PAYEE);
+        setLayerButtonSelected(layerAmountNumber, selected == LayoutField.AMOUNT_NUMBER);
+        setLayerButtonSelected(layerAmountWords, selected == LayoutField.AMOUNT_WORDS);
+        setLayerButtonSelected(layerSignature, selected == LayoutField.SIGNATURE);
+        setLayerButtonSelected(layerBankLogo, selected == LayoutField.BANK_LOGO);
+        setLayerButtonSelected(layerMicr, selected == LayoutField.MICR);
 
         if (lblActiveLayerName != null) {
             lblActiveLayerName.setText(selected == null ? "None" : selected.name());
@@ -2332,261 +2527,65 @@ public class BankController {
             };
 
             if (field == selected) {
-                node.setStyle(baseStyle + " -fx-border-color:#2563eb; -fx-border-style:dashed; -fx-border-width:2px; -fx-background-radius:4; -fx-border-radius:4; -fx-effect: dropshadow(three-pass-box, rgba(37,99,235,0.35), 6, 0, 0, 0);");
-                if (resizeHandle != null) resizeHandle.setVisible(true);
+                node.setStyle(baseStyle
+                        + " -fx-border-color:#2563eb; -fx-border-style:dashed; -fx-border-width:2px; -fx-background-radius:4; -fx-border-radius:4; -fx-effect: dropshadow(three-pass-box, rgba(37,99,235,0.35), 6, 0, 0, 0);");
+                if (resizeHandle != null)
+                    resizeHandle.setVisible(true);
             } else {
                 node.setStyle(baseStyle + " -fx-border-width:1px; -fx-background-radius:4; -fx-border-radius:4;");
-                if (resizeHandle != null) resizeHandle.setVisible(false);
+                if (resizeHandle != null)
+                    resizeHandle.setVisible(false);
             }
         }
     }
 
-    private void setLayerButtonSelected(Button button, boolean isSelected) {
-        if (button == null) return;
-        button.getStyleClass().removeAll("btn-primary", "btn-secondary");
-        if (isSelected) {
-            button.getStyleClass().add("btn-primary");
-            button.setStyle("-fx-alignment: center-left; -fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold;");
-        } else {
-            button.getStyleClass().add("btn-secondary");
-            button.setStyle("-fx-alignment: center-left; -fx-background-color: #f1f5f9; -fx-text-fill: #334155; -fx-font-weight: normal;");
-        }
-    }
-
-    private double fieldWidthPx(LayoutField field, FieldPosition pos) {
-        double w = chequePreviewPane.getPrefWidth();
-        if (w <= 0) w = 720;
-        return Math.max(24.0, effectiveWidthRatio(field, pos) * w);
-    }
-
-    private double fieldHeightPx(LayoutField field, FieldPosition pos) {
-        double h = chequePreviewPane.getPrefHeight();
-        if (h <= 0) h = 300;
-        return Math.max(18.0, effectiveHeightRatio(field, pos) * h);
-    }
-
-    private double effectiveWidthRatio(LayoutField field, FieldPosition pos) {
-        if (pos.getWidthRatio() > 0) {
-            return pos.getWidthRatio();
-        }
-        return switch (field) {
-            case DATE -> 0.19;
-            case PAYEE -> 0.66;
-            case AMOUNT_NUMBER -> 0.16;
-            case AMOUNT_WORDS -> 0.62;
-            case SIGNATURE -> 0.22;
-            case BANK_LOGO -> 0.18;
-            case MICR -> 0.50;
-        };
-    }
-
-    private double effectiveHeightRatio(LayoutField field, FieldPosition pos) {
-        if (pos.getHeightRatio() > 0) {
-            return pos.getHeightRatio();
-        }
-        return switch (field) {
-            case SIGNATURE -> 0.16;
-            case AMOUNT_NUMBER -> 0.11;
-            case DATE, BANK_LOGO -> 0.10;
-            case PAYEE, AMOUNT_WORDS -> 0.09;
-            case MICR -> 0.08;
-        };
-    }
-
-    private double parsePositive(String raw, String label) {
-        try {
-            double value = Double.parseDouble(raw.trim());
-            if (value < 0) {
-                throw new NumberFormatException();
-            }
-            return value;
-        } catch (Exception ex) {
-            throw new IllegalArgumentException(label + " must be a valid number in mm.");
-        }
-    }
-
-    private String formatMm(double value) {
-        return String.format(java.util.Locale.ROOT, "%.2f", value);
-    }
-
-    private void persistCurrentLayoutIfPossible() {
-        if (currentLayout == null || !currentLayout.isValidLayout()) {
-            return;
-        }
-
-        String code = selectedBank != null ? safeCode(selectedBank.getBankCode()) : (fldBankCode != null ? safeCode(fldBankCode.getText()) : "BANK");
-        if (code.isBlank()) {
-            return;
-        }
-
-        final BankTemplateLayout layoutToSave = currentLayout.copy();
-        new Thread(() -> {
-            try {
-                layoutByBankCode.put(code, layoutToSave);
-                bankService.saveLayouts(layoutByBankCode);
-
-                Long bankId = Session.getSelectedBankId();
-                if (bankId != null && bankId > 0) {
-                    List<Map<String, Object>> reloaded = bankService.getTemplateFields(bankId);
-                    Platform.runLater(() -> {
-                        if (reloaded != null && !reloaded.isEmpty()) {
-                            applyReloadedFields(reloaded);
-                        }
-                        AppState.getInstance().setSelectedTemplate(currentLayout != null ? currentLayout.copy() : layoutToSave);
-                    });
-                } else {
-                    Platform.runLater(() -> AppState.getInstance().setSelectedTemplate(layoutToSave));
-                }
-            } catch (Exception ex) {
-                Platform.runLater(() -> showAlert("Layout Save Error", "Unable to save cheque alignment: " + ex.getMessage(), Alert.AlertType.ERROR));
-            }
-        }, "persist-layout").start();
-    }
-
-    private String safeCode(String code) {
-        return code == null ? "" : code.trim().toUpperCase();
-    }
-
-    private static double clamp(double value, double min, double max) {
-        return Math.max(min, Math.min(max, value));
-    }
-
-    private void updateGridOverlay() {
-        if (chequePreviewPane == null) {
-            return;
-        }
-
-        boolean showGrid = chkShowGrid != null && chkShowGrid.isSelected();
-        boolean showRulers = chkShowRulers != null && chkShowRulers.isSelected();
-
-        StringBuilder style = new StringBuilder();
-        style.append("-fx-border-color: #475569; -fx-border-width: 1px; -fx-background-radius: 6px; -fx-border-radius: 6px; ");
-
-        if (showGrid) {
-            style.append("-fx-background-color: #ffffff, ");
-            style.append("linear-gradient(from 0px 0px to 15px 0px, repeat, rgba(148,163,184,0.12) 0px, rgba(148,163,184,0.12) 1px, transparent 1px, transparent 15px), ");
-            style.append("linear-gradient(from 0px 0px to 0px 15px, repeat, rgba(148,163,184,0.12) 0px, rgba(148,163,184,0.12) 1px, transparent 1px, transparent 15px); ");
-        } else {
-            style.append("-fx-background-color: #ffffff; ");
-        }
-
-        if (showRulers) {
-            style.append("-fx-effect: dropshadow(three-pass-box, rgba(37,99,235,0.15), 10, 0, 0, 0); ");
-        }
-
-        chequePreviewPane.setStyle(style.toString());
+    @FXML
+    private void onAlignLeft() {
+        alignSelected(0.0, -1);
     }
 
     @FXML
-    private void onToggleGrid() {
-        updateGridOverlay();
-        if (currentTemplate != null) {
-            renderPreview(currentTemplate);
-        }
+    private void onAlignRight() {
+        alignSelected(1.0, -1);
     }
 
     @FXML
-    private void onToggleRulers() {
-        updateGridOverlay();
-        if (currentTemplate != null) {
-            renderPreview(currentTemplate);
-        }
+    private void onCenterHorizontal() {
+        alignSelected(0.5, -1);
     }
 
-    private void updateFieldHighlights() {
-        LayoutField selected = getSelectedField();
-
-        if (layerDate != null) {
-            setLayerButtonSelected(layerDate, selected == LayoutField.DATE);
-            setLayerButtonSelected(layerPayee, selected == LayoutField.PAYEE);
-            setLayerButtonSelected(layerAmountNumber, selected == LayoutField.AMOUNT_NUMBER);
-            setLayerButtonSelected(layerAmountWords, selected == LayoutField.AMOUNT_WORDS);
-            setLayerButtonSelected(layerSignature, selected == LayoutField.SIGNATURE);
-            setLayerButtonSelected(layerBankLogo, selected == LayoutField.BANK_LOGO);
-            setLayerButtonSelected(layerMicr, selected == LayoutField.MICR);
-        }
-
-        if (lblActiveLayerName != null) {
-            lblActiveLayerName.setText(selected == null ? "None" : selected.name());
-        }
-        if (inspectorGrid != null) {
-            inspectorGrid.setDisable(selected == null);
-        }
-        if (alignmentPanel != null) {
-            alignmentPanel.setDisable(selected == null);
-        }
-
-        for (Map.Entry<LayoutField, StackPane> entry : fieldNodes.entrySet()) {
-            LayoutField field = entry.getKey();
-            StackPane node = entry.getValue();
-
-            javafx.scene.shape.Circle resizeHandle = null;
-            for (javafx.scene.Node child : node.getChildren()) {
-                if (child instanceof javafx.scene.shape.Circle) {
-                    resizeHandle = (javafx.scene.shape.Circle) child;
-                    break;
-                }
-            }
-
-            String baseStyle = switch (field) {
-                case BANK_LOGO -> "-fx-background-color:rgba(239,246,255,0.85); -fx-border-color:#3b82f6;";
-                case DATE -> "-fx-background-color:rgba(248,250,252,0.85); -fx-border-color:#64748b;";
-                case PAYEE -> "-fx-background-color:rgba(248,250,252,0.85); -fx-border-color:#64748b;";
-                case AMOUNT_NUMBER -> "-fx-background-color:rgba(254,252,232,0.85); -fx-border-color:#ca8a04;";
-                case AMOUNT_WORDS -> "-fx-background-color:rgba(248,250,252,0.85); -fx-border-color:#64748b;";
-                case SIGNATURE -> "-fx-background-color:rgba(248,250,252,0.85); -fx-border-color:#64748b;";
-                case MICR -> "-fx-background-color:rgba(241,255,249,0.85); -fx-border-color:#10b981;";
-            };
-
-            if (field == selected) {
-                node.setStyle(baseStyle + " -fx-border-color:#2563eb; -fx-border-style:dashed; -fx-border-width:2px; -fx-background-radius:4; -fx-border-radius:4; -fx-effect: dropshadow(three-pass-box, rgba(37,99,235,0.35), 6, 0, 0, 0);");
-                if (resizeHandle != null) resizeHandle.setVisible(true);
-            } else {
-                node.setStyle(baseStyle + " -fx-border-width:1px; -fx-background-radius:4; -fx-border-radius:4;");
-                if (resizeHandle != null) resizeHandle.setVisible(false);
-            }
-        }
+    @FXML
+    private void onAlignTop() {
+        alignSelected(-1, 0.0);
     }
 
-    private void setLayerButtonSelected(Button button, boolean isSelected) {
-        if (button == null) return;
-        button.getStyleClass().removeAll("btn-primary", "btn-secondary");
-        if (isSelected) {
-            button.getStyleClass().add("btn-primary");
-            button.setStyle("-fx-alignment: center-left; -fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold;");
-        } else {
-            button.getStyleClass().add("btn-secondary");
-            button.setStyle("-fx-alignment: center-left; -fx-background-color: #f1f5f9; -fx-text-fill: #334155; -fx-font-weight: normal;");
-        }
+    @FXML
+    private void onAlignBottom() {
+        alignSelected(-1, 1.0);
     }
 
-    private void onSelectLayerMicr() { setSelectedField(LayoutField.MICR); }
-
     @FXML
-    private void onAlignLeft() { alignSelected(0.0, -1); }
-    @FXML
-    private void onAlignRight() { alignSelected(1.0, -1); }
-    @FXML
-    private void onCenterHorizontal() { alignSelected(0.5, -1); }
-    @FXML
-    private void onAlignTop() { alignSelected(-1, 0.0); }
-    @FXML
-    private void onAlignBottom() { alignSelected(-1, 1.0); }
-    @FXML
-    private void onCenterVertical() { alignSelected(-1, 0.5); }
+    private void onCenterVertical() {
+        alignSelected(-1, 0.5);
+    }
 
     private void alignSelected(double targetX, double targetY) {
-        if (currentLayout == null) return;
+        if (currentLayout == null)
+            return;
         LayoutField field = getSelectedField();
-        if (field == null) return;
+        if (field == null)
+            return;
 
         StackPane node = fieldNodes.get(field);
-        if (node == null) return;
+        if (node == null)
+            return;
 
         double paneW = chequePreviewPane.getPrefWidth();
         double paneH = chequePreviewPane.getPrefHeight();
-        if (paneW <= 0) paneW = 720;
-        if (paneH <= 0) paneH = 300;
+        if (paneW <= 0)
+            paneW = 720;
+        if (paneH <= 0)
+            paneH = 300;
 
         double currentX = node.getLayoutX();
         double currentY = node.getLayoutY();
@@ -2628,13 +2627,17 @@ public class BankController {
             return;
         }
 
-        BankTemplateLayout defaultLayout = new BankTemplateLayout(currentLayout.getWidthInches(), currentLayout.getHeightInches());
+        BankTemplateLayout defaultLayout = new BankTemplateLayout(currentLayout.getWidthInches(),
+                currentLayout.getHeightInches());
         FieldPosition defaultPos = defaultLayout.get(field);
 
-        currentLayout.setFieldLayout(field, defaultPos.getXRatio(), defaultPos.getYRatio(), defaultPos.getWidthRatio(), defaultPos.getHeightRatio());
+        currentLayout.setFieldLayout(field, defaultPos.getXRatio(), defaultPos.getYRatio(), defaultPos.getWidthRatio(),
+                defaultPos.getHeightRatio());
 
-        if (cmbFontFamily != null) cmbFontFamily.setValue("Arial");
-        if (fldFontSize != null) fldFontSize.setText("12");
+        if (cmbFontFamily != null)
+            cmbFontFamily.setValue("Arial");
+        if (fldFontSize != null)
+            fldFontSize.setText("12");
 
         applySelectedFieldFont(field, "Arial", 12);
         loadAdjustmentFields(field);
@@ -2680,7 +2683,8 @@ public class BankController {
             }
 
             // 2. Update field UI
-            String fontFamily = cmbFontFamily != null && cmbFontFamily.getValue() != null ? cmbFontFamily.getValue() : "Arial";
+            String fontFamily = cmbFontFamily != null && cmbFontFamily.getValue() != null ? cmbFontFamily.getValue()
+                    : "Arial";
             int fontSize = getSelectedFontSize();
             applySelectedFieldFont(field, fontFamily, fontSize);
 
@@ -2700,22 +2704,34 @@ public class BankController {
     }
 
     @FXML
-    private void onPresetSmall() { setPresetSize(40.0, 8.0); }
+    private void onPresetSmall() {
+        setPresetSize(40.0, 8.0);
+    }
+
     @FXML
-    private void onPresetMedium() { setPresetSize(80.0, 10.0); }
+    private void onPresetMedium() {
+        setPresetSize(80.0, 10.0);
+    }
+
     @FXML
-    private void onPresetLarge() { setPresetSize(120.0, 12.0); }
+    private void onPresetLarge() {
+        setPresetSize(120.0, 12.0);
+    }
+
     @FXML
     private void onPresetFullWidth() {
-        if (currentLayout == null) return;
+        if (currentLayout == null)
+            return;
         double chequeWmm = currentLayout.getWidthInches() * 25.4;
         setPresetSize(chequeWmm * 0.9, 10.0);
     }
 
     private void setPresetSize(double widthMm, double heightMm) {
-        if (currentLayout == null) return;
+        if (currentLayout == null)
+            return;
         LayoutField field = getSelectedField();
-        if (field == null) return;
+        if (field == null)
+            return;
 
         double widthInches = currentLayout.getWidthInches();
         double heightInches = currentLayout.getHeightInches();
@@ -2738,21 +2754,23 @@ public class BankController {
         javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
         fileChooser.setTitle("Export Cheque Layout JSON");
         fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("JSON Files", "*.json"));
-        fileChooser.setInitialFileName((selectedBank != null ? selectedBank.getBankCode() : "layout") + "_template.json");
-        File file = fileChooser.showSaveDialog(chequePreviewPane != null && chequePreviewPane.getScene() != null ? chequePreviewPane.getScene().getWindow() : null);
+        fileChooser
+                .setInitialFileName((selectedBank != null ? selectedBank.getBankCode() : "layout") + "_template.json");
+        File file = fileChooser.showSaveDialog(chequePreviewPane != null && chequePreviewPane.getScene() != null
+                ? chequePreviewPane.getScene().getWindow()
+                : null);
         if (file != null) {
             try {
                 com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
                 mapper.enable(com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT);
                 mapper.writeValue(file, currentLayout);
-                showAlert("Export Success", "Layout template exported successfully to:\n" + file.getAbsolutePath(), Alert.AlertType.INFORMATION);
+                showAlert("Export Success", "Layout template exported successfully to:\n" + file.getAbsolutePath(),
+                        Alert.AlertType.INFORMATION);
             } catch (Exception e) {
                 showAlert("Export Error", "Failed to export layout JSON: " + e.getMessage(), Alert.AlertType.ERROR);
             }
         }
     }
-
-
 
     public void saveTemplateFieldsToApi(Long templateId) {
         new Thread(() -> saveTemplateFieldsToApiInternal(templateId, true), "save-template-fields-api").start();
@@ -2762,14 +2780,18 @@ public class BankController {
         BankAccount selectedAcc = cmbBankAccount != null ? cmbBankAccount.getValue() : null;
         if (selectedAcc == null || selectedAcc.getId() == null) {
             if (showSuccessAlert) {
-                Platform.runLater(() -> showAlert("No Bank Account Selected", "⚠️ Please select a valid Bank Account from the dropdown list before saving the cheque template layout.", Alert.AlertType.WARNING));
+                Platform.runLater(() -> showAlert("No Bank Account Selected",
+                        "⚠️ Please select a valid Bank Account from the dropdown list before saving the cheque template layout.",
+                        Alert.AlertType.WARNING));
             }
             return false;
         }
 
         if (currentLayout != null && !currentLayout.isValidLayout()) {
             if (showSuccessAlert) {
-                Platform.runLater(() -> showAlert("Layout Validation Error", "Required fields (Payee, Date, Amount in Figures, Amount in Words) must have valid coordinates before saving.", Alert.AlertType.WARNING));
+                Platform.runLater(() -> showAlert("Layout Validation Error",
+                        "Required fields (Payee, Date, Amount in Figures, Amount in Words) must have valid coordinates before saving.",
+                        Alert.AlertType.WARNING));
             }
             return false;
         }
@@ -2780,12 +2802,14 @@ public class BankController {
         List<Map<String, Object>> directPayload = new ArrayList<>();
         List<Map<String, Object>> fieldsPayload = new ArrayList<>();
 
-        String fontFamily = cmbFontFamily != null && cmbFontFamily.getValue() != null ? cmbFontFamily.getValue() : "Arial";
+        String fontFamily = cmbFontFamily != null && cmbFontFamily.getValue() != null ? cmbFontFamily.getValue()
+                : "Arial";
         int fontSize = 12;
         if (fldFontSize != null && !fldFontSize.getText().isBlank()) {
             try {
                 fontSize = Integer.parseInt(fldFontSize.getText().trim());
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
 
         for (Map.Entry<LayoutField, StackPane> entry : fieldNodes.entrySet()) {
@@ -2825,20 +2849,26 @@ public class BankController {
                     }
                     refreshPreview();
                     if (showSuccessAlert) {
-                        showAlert("Template Saved", "✅ Cheque template coordinates successfully saved & reloaded from backend!", Alert.AlertType.INFORMATION);
+                        showAlert("Template Saved",
+                                "✅ Cheque template coordinates successfully saved & reloaded from backend!",
+                                Alert.AlertType.INFORMATION);
                     }
                 });
                 return true;
             } else {
                 if (showSuccessAlert) {
-                    Platform.runLater(() -> showAlert("Save Warning", "⚠️ Backend server received request but did not confirm template field save.", Alert.AlertType.WARNING));
+                    Platform.runLater(() -> showAlert("Save Warning",
+                            "⚠️ Backend server received request but did not confirm template field save.",
+                            Alert.AlertType.WARNING));
                 }
             }
         } catch (Exception ex) {
-            System.err.println("[Backend API Error] Failed to save/reload template fields from REST API: " + ex.getMessage());
+            System.err.println(
+                    "[Backend API Error] Failed to save/reload template fields from REST API: " + ex.getMessage());
             ex.printStackTrace();
             if (showSuccessAlert) {
-                Platform.runLater(() -> showAlert("Save Error", "❌ Failed to save template layout to server: " + ex.getMessage(), Alert.AlertType.ERROR));
+                Platform.runLater(() -> showAlert("Save Error",
+                        "❌ Failed to save template layout to server: " + ex.getMessage(), Alert.AlertType.ERROR));
             }
         }
         return false;
@@ -2864,12 +2894,18 @@ public class BankController {
         if (lblCoordinatesHUD != null) {
             lblCoordinatesHUD.setText("Select an element");
         }
-        if (fldAdjustLeft != null) fldAdjustLeft.clear();
-        if (fldAdjustTop != null) fldAdjustTop.clear();
-        if (fldAdjustWidth != null) fldAdjustWidth.clear();
-        if (fldAdjustHeight != null) fldAdjustHeight.clear();
-        if (inspectorGrid != null) inspectorGrid.setDisable(true);
-        if (alignmentPanel != null) alignmentPanel.setDisable(true);
+        if (fldAdjustLeft != null)
+            fldAdjustLeft.clear();
+        if (fldAdjustTop != null)
+            fldAdjustTop.clear();
+        if (fldAdjustWidth != null)
+            fldAdjustWidth.clear();
+        if (fldAdjustHeight != null)
+            fldAdjustHeight.clear();
+        if (inspectorGrid != null)
+            inspectorGrid.setDisable(true);
+        if (alignmentPanel != null)
+            alignmentPanel.setDisable(true);
 
         updateFieldHighlights();
     }
@@ -2886,7 +2922,8 @@ public class BankController {
             return;
         }
 
-        // Clear old template and UI selection immediately when bank changes to avoid mixing layouts
+        // Clear old template and UI selection immediately when bank changes to avoid
+        // mixing layouts
         clearOldUI();
         this.currentLayout = new BankTemplateLayout();
 
@@ -2957,8 +2994,10 @@ public class BankController {
 
         double paneW = chequePreviewPane.getPrefWidth();
         double paneH = chequePreviewPane.getPrefHeight();
-        if (paneW <= 0) paneW = 720;
-        if (paneH <= 0) paneH = 300;
+        if (paneW <= 0)
+            paneW = 720;
+        if (paneH <= 0)
+            paneH = 300;
 
         for (Map<String, Object> map : fields) {
             String name = (String) map.get("fieldName");
@@ -2982,7 +3021,8 @@ public class BankController {
                         for (javafx.scene.Node child : node.getChildren()) {
                             if (child instanceof Label label) {
                                 label.setFont(javafx.scene.text.Font.font(fontFamily, fontSize));
-                                label.setStyle("-fx-font-family: '" + fontFamily + "'; -fx-font-size: " + fontSize + "px; -fx-font-weight: 600; -fx-text-fill: #1e293b;");
+                                label.setStyle("-fx-font-family: '" + fontFamily + "'; -fx-font-size: " + fontSize
+                                        + "px; -fx-font-weight: 600; -fx-text-fill: #1e293b;");
                             }
                         }
                         if (!chequePreviewPane.getChildren().contains(node)) {
@@ -3013,13 +3053,15 @@ public class BankController {
     }
 
     private void applySelectedFieldFont(LayoutField field, String fontFamily, int fontSize) {
-        if (field == null) return;
+        if (field == null)
+            return;
         StackPane node = fieldNodes.get(field);
         if (node != null) {
             for (javafx.scene.Node child : node.getChildren()) {
                 if (child instanceof Label label) {
                     label.setFont(javafx.scene.text.Font.font(fontFamily, fontSize));
-                    label.setStyle("-fx-font-family: '" + fontFamily + "'; -fx-font-size: " + fontSize + "px; -fx-font-weight: 600; -fx-text-fill: #1e293b;");
+                    label.setStyle("-fx-font-family: '" + fontFamily + "'; -fx-font-size: " + fontSize
+                            + "px; -fx-font-weight: 600; -fx-text-fill: #1e293b;");
                 }
             }
         }
@@ -3029,14 +3071,10 @@ public class BankController {
         if (fldFontSize != null && !fldFontSize.getText().isBlank()) {
             try {
                 return Integer.parseInt(fldFontSize.getText().trim());
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
         return 12;
-    }
-
-    private static final class Delta {
-        double x;
-        double y;
     }
 
     private void showAlert(String title, String message, Alert.AlertType type) {
