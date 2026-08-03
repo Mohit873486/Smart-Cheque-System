@@ -117,6 +117,13 @@ public final class AppState {
     }
 
     public void setCurrentCheque(Cheque cheque) {
+        Cheque current = this.currentCheque.get();
+        if (Objects.equals(current, cheque)) {
+            return;
+        }
+        if (current != null && cheque != null && Objects.equals(current.getId(), cheque.getId())) {
+            return;
+        }
         this.currentCheque.set(cheque);
     }
 
@@ -129,7 +136,7 @@ public final class AppState {
     }
 
     public void setCurrentChequeData(Cheque cheque) {
-        this.currentCheque.set(cheque);
+        setCurrentCheque(cheque);
     }
 
     public ObjectProperty<Printer> selectedPrinterProperty() {

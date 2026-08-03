@@ -30,7 +30,7 @@ import java.util.Comparator;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 
-public class InvoiceController {
+public class InvoiceController implements ReloadableController {
 
     // ── Table columns ────────────────────────────────────────────────
     @FXML

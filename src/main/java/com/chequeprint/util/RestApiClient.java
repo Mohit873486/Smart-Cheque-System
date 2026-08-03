@@ -30,10 +30,24 @@ public final class RestApiClient {
 
     public static HttpResponse<String> send(HttpRequest request) throws Exception {
         long count = callCounter.incrementAndGet();
+        long startTime = System.currentTimeMillis();
         String caller = getCallerMethodInfo();
-        System.out.println(String.format("🌐 [API Call #%d] %s %s | Triggered by: %s",
-                count, request.method(), request.uri(), caller));
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        System.out.println(String.format("API_CALL_START | %s %s | Call #%d | Caller: %s | Time=%d",
+                request.method(), request.uri(), count, caller, startTime));
+
+        try {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            long duration = System.currentTimeMillis() - startTime;
+            System.out.println(String.format("API_CALL_END | %s %s | Status=%d | Duration=%dms | Time=%d",
+                    request.method(), request.uri(), response.statusCode(), duration, System.currentTimeMillis()));
+            return response;
+        } catch (Exception e) {
+            long duration = System.currentTimeMillis() - startTime;
+            System.out.println(String.format("API_CALL_END | %s %s | ERROR=%s | Duration=%dms | Time=%d",
+                    request.method(), request.uri(), e.getMessage(), duration, System.currentTimeMillis()));
+            throw e;
+        }
     }
 
     private static String getCallerMethodInfo() {

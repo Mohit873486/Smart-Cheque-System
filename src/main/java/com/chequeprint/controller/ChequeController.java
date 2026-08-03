@@ -47,7 +47,7 @@ import java.util.List;
  * • applyFilter() is null-safe for bankName.
  * • clearForm() safely checks combo list before calling getValue().
  */
-public class ChequeController {
+public class ChequeController implements ReloadableController {
 
     // ── Table ──
     @FXML
@@ -95,6 +95,8 @@ public class ChequeController {
 
     // ── State ──
     private static final Logger LOGGER = Logger.getLogger(ChequeController.class.getName());
+    private final java.util.concurrent.atomic.AtomicBoolean isLoading = new java.util.concurrent.atomic.AtomicBoolean(false);
+    private boolean alreadyLoaded = false;
     MainController mainController;
 
     ChequeService chequeService = new ChequeService();
@@ -214,14 +216,34 @@ public class ChequeController {
             }
         });
 
+        setupTableListener();
+    }
+
+    private boolean isUpdatingUI = false;
+
+    private void setupTableListener() {
         chequeTable.getSelectionModel().selectedItemProperty()
-                .addListener((obs, old, sel) -> {
-                    selectedCheque = sel;
-                    AppState.getInstance().setCurrentCheque(sel);
-                    if (sel != null && sel.getBankId() != null) {
-                        Session.setSelectedBankId(sel.getBankId().longValue());
+                .addListener((obs, oldSel, newSel) -> {
+                    long timestamp = System.currentTimeMillis();
+                    System.out.println("LISTENER_TRIGGER | chequeTable.selectedItem | Time=" + timestamp);
+                    if (isUpdatingUI) {
+                        System.out.println("LOCKED_UI_SUPPRESSED | chequeTable.selectedItem | Time=" + timestamp);
+                        return; // Programmatic UI update in progress — ignore event!
                     }
-                    updateButtonStates(sel);
+                    if (java.util.Objects.equals(oldSel, newSel)) {
+                        return;
+                    }
+                    if (oldSel != null && newSel != null && java.util.Objects.equals(oldSel.getId(), newSel.getId())) {
+                        return; // Cheque selection did not change!
+                    }
+
+                    System.out.println("ROW_SELECTED | chequeTable | ChequeID=" + (newSel != null ? newSel.getId() : "null") + " | Time=" + timestamp);
+                    selectedCheque = newSel;
+                    AppState.getInstance().setCurrentCheque(newSel);
+                    if (newSel != null && newSel.getBankId() != null) {
+                        Session.setSelectedBankId(newSel.getBankId().longValue());
+                    }
+                    updateButtonStates(newSel);
                 });
 
         // Double-click row to edit
@@ -327,7 +349,8 @@ public class ChequeController {
         LocalDate date = filterDate != null ? filterDate.getValue() : null;
 
         if (!search.isEmpty()) {
-            new Thread(() -> {
+            System.out.println("API_TRIGGER | chequeService.search | " + System.currentTimeMillis());
+            com.chequeprint.util.AppExecutors.runAsync(() -> {
                 try {
                     List<Cheque> results = chequeService.search(search);
                     Platform.runLater(() -> {
@@ -340,12 +363,17 @@ public class ChequeController {
                                 filteredResults.add(c);
                             }
                         }
-                        chequeTable.setItems(filteredResults);
+                        try {
+                            isUpdatingUI = true;
+                            chequeTable.setItems(filteredResults);
+                        } finally {
+                            isUpdatingUI = false;
+                        }
                     });
                 } catch (Exception e) {
                     Platform.runLater(() -> showAlert("Search Error", e.getMessage(), Alert.AlertType.ERROR));
                 }
-            }, "api-search-cheques").start();
+            });
         } else {
             filtered.setPredicate(c -> {
                 boolean matchStatus = "Status".equals(status)
@@ -356,7 +384,12 @@ public class ChequeController {
                         || (c.getIssueDate() != null && c.getIssueDate().equals(date));
                 return matchStatus && matchBank && matchDate;
             });
-            chequeTable.setItems(filtered);
+            try {
+                isUpdatingUI = true;
+                chequeTable.setItems(filtered);
+            } finally {
+                isUpdatingUI = false;
+            }
         }
     }
 
@@ -387,7 +420,8 @@ public class ChequeController {
 
     // ── Load cheque data ─────────────────────────────────────────────
     private void loadData() {
-        new Thread(() -> {
+        System.out.println("API_TRIGGER | ChequeService.getAll | " + System.currentTimeMillis());
+        com.chequeprint.util.AppExecutors.runAsync(() -> {
             try {
                 var list = chequeService.getAll();
                 try {
@@ -415,9 +449,14 @@ public class ChequeController {
                     System.err.println("Failed to enrich cheques with print log: " + auditEx.getMessage());
                 }
                 Platform.runLater(() -> {
-                    data.setAll(list);
-                    if (chequeTable != null) {
-                        chequeTable.refresh();
+                    try {
+                        isUpdatingUI = true;
+                        data.setAll(list);
+                        if (chequeTable != null) {
+                            chequeTable.refresh();
+                        }
+                    } finally {
+                        isUpdatingUI = false;
                     }
                 });
             } catch (Exception e) {
@@ -428,7 +467,7 @@ public class ChequeController {
                 final String alertMessage = message;
                 Platform.runLater(() -> showAlert("Server Connection Error", alertMessage, Alert.AlertType.ERROR));
             }
-        }, "load-cheques").start();
+        });
     }
 
     private String parseDetails(String details, String prefix, String suffix) {
