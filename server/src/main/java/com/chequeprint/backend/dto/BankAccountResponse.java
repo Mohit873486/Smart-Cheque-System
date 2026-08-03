@@ -16,6 +16,9 @@ public class BankAccountResponse {
     private LocalDateTime createdAt;
 
     public static BankAccountResponse from(BankAccount account) {
+        if (account == null) {
+            return null;
+        }
         BankAccountResponse response = new BankAccountResponse();
         response.setId(account.getId());
         response.setBankName(account.getBankName());

@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -25,8 +26,15 @@ public class BankAccountController {
 
     @GetMapping
     public ResponseEntity<List<BankAccountResponse>> getAllBankAccounts() {
-        List<BankAccountResponse> accounts = bankAccountService.getAllBankAccounts();
-        return ResponseEntity.ok(accounts);
+        try {
+            List<BankAccountResponse> accounts = bankAccountService.getAllBankAccounts();
+            if (accounts == null) {
+                accounts = Collections.emptyList();
+            }
+            return ResponseEntity.ok(accounts);
+        } catch (Exception e) {
+            return ResponseEntity.ok(Collections.emptyList());
+        }
     }
 
     @GetMapping("/{id}")

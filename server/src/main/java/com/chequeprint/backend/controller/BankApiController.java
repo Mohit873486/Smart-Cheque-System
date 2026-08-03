@@ -26,7 +26,7 @@ public class BankApiController {
     }
 
     // GET /api/banks/{id} - Get one bank account/template owner by id
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     public ResponseEntity<BankAccount> getBankById(@PathVariable Long id) {
         return bankTemplateService.getBankAccountById(id)
                 .map(ResponseEntity::ok)

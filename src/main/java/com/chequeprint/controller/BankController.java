@@ -86,6 +86,7 @@ public class BankController {
 
     private static final double PREVIEW_PPI = 90.0;
     private final Map<Long, BankTemplateLayout> bankTemplateMap = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.concurrent.atomic.AtomicBoolean isProcessing = new java.util.concurrent.atomic.AtomicBoolean(false);
 
     @FXML
     private ComboBox<BankAccount> cmbBankAccount;
@@ -871,6 +872,53 @@ public class BankController {
         com.chequeprint.util.ChequeRenderEngine.renderCheque(previewPane, AppState.getInstance().getCurrentCheque(), selectedBank, AppState.getInstance().getSelectedTemplate());
     }
 
+    private void loadData() {
+        if (loadingSpinner != null) {
+            loadingSpinner.setVisible(true);
+            loadingSpinner.setManaged(true);
+        }
+        setLoading(true);
+
+        Task<List<Bank>> task = new Task<>() {
+            @Override
+            protected List<Bank> call() throws Exception {
+                return bankService.getBanks();
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            List<Bank> list = task.getValue();
+            bankList.setAll(list);
+            data.setAll(list);
+            if (bankTable != null) {
+                bankTable.setItems(bankList);
+                bankTable.refresh();
+            }
+            if (fldBankName != null) {
+                fldBankName.setItems(data);
+            }
+            if (loadingSpinner != null) {
+                loadingSpinner.setVisible(false);
+                loadingSpinner.setManaged(false);
+            }
+            setLoading(false);
+        });
+
+        task.setOnFailed(e -> {
+            Throwable ex = task.getException();
+            if (loadingSpinner != null) {
+                loadingSpinner.setVisible(false);
+                loadingSpinner.setManaged(false);
+            }
+            setLoading(false);
+            showAlert("Load Error", ex != null ? ex.getMessage() : "Failed to load banks", Alert.AlertType.ERROR);
+        });
+
+        Thread thread = new Thread(task, "load-banks-task");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
     private void executeTemplateFetchTask(Long bankId, String cacheKey) {
         if (previewLoading != null) {
             previewLoading.setVisible(true);
@@ -924,7 +972,13 @@ public class BankController {
 
     @FXML
     private void onSaveTemplate() {
+        if (!isProcessing.compareAndSet(false, true)) {
+            LOGGER.warning("Duplicate save click suppressed — template save in progress.");
+            return;
+        }
+
         if (currentTemplate == null) {
+            isProcessing.set(false);
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Save Warning");
             alert.setHeaderText(null);
@@ -939,10 +993,7 @@ public class BankController {
             currentTemplate.setTemplateName(selectedAcc.getBankName() + " Template");
         }
 
-        // Show loading spinner during save
-        if (previewLoading != null) {
-            previewLoading.setVisible(true);
-        }
+        setLoading(true);
 
         Task<com.chequeprint.model.ChequeTemplate> saveTask = new Task<>() {
             @Override
@@ -953,13 +1004,11 @@ public class BankController {
         };
 
         saveTask.setOnSucceeded(e -> {
-            // Hide loading spinner
-            if (previewLoading != null) {
-                previewLoading.setVisible(false);
-            }
+            setLoading(false);
+            isProcessing.set(false);
+
             com.chequeprint.model.ChequeTemplate saved = saveTask.getValue();
             if (saved != null) {
-                // Reload fresh template from REST API and refresh preview
                 if (saved.getBankId() != null) {
                     templateCache.remove(String.valueOf(saved.getBankId()));
                     loadTemplateFromBackend(saved.getBankId());
@@ -968,7 +1017,6 @@ public class BankController {
                 }
             }
 
-            // Success message
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Template Saved");
             alert.setHeaderText("Success!");
@@ -977,10 +1025,9 @@ public class BankController {
         });
 
         saveTask.setOnFailed(e -> {
-            // Hide loading spinner
-            if (previewLoading != null) {
-                previewLoading.setVisible(false);
-            }
+            setLoading(false);
+            isProcessing.set(false);
+
             Throwable ex = saveTask.getException();
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Save Error");
@@ -989,10 +1036,8 @@ public class BankController {
             alert.showAndWait();
         });
 
-        new Thread(saveTask).start();
+        new Thread(saveTask, "save-template-async").start();
     }
-
-
 
     @FXML
     private void onPrintCheque() {
@@ -1660,8 +1705,19 @@ public class BankController {
     }
 
     private void loadLayouts() {
-        layoutByBankCode.clear();
-        layoutByBankCode.putAll(bankService.loadAllLayouts());
+        new Thread(() -> {
+            try {
+                Map<String, BankTemplateLayout> loaded = bankService.loadAllLayouts();
+                Platform.runLater(() -> {
+                    layoutByBankCode.clear();
+                    if (loaded != null) {
+                        layoutByBankCode.putAll(loaded);
+                    }
+                });
+            } catch (Exception ex) {
+                LOGGER.log(Level.WARNING, "Failed to load layout cache async: " + ex.getMessage());
+            }
+        }, "load-layouts-async").start();
     }
 
     private void setLoading(boolean loading) {
@@ -1671,8 +1727,27 @@ public class BankController {
             } else if (fldBankCode != null && fldBankCode.getScene() != null && fldBankCode.getScene().getRoot() != null) {
                 fldBankCode.getScene().getRoot().setCursor(loading ? Cursor.WAIT : Cursor.DEFAULT);
             }
+            if (loadingSpinner != null) {
+                loadingSpinner.setVisible(loading);
+                loadingSpinner.setManaged(loading);
+            }
+            if (previewLoading != null) {
+                previewLoading.setVisible(loading);
+                previewLoading.setManaged(loading);
+            }
             if (btnSave != null) btnSave.setDisable(loading);
             if (btnDelete != null) btnDelete.setDisable(loading || selectedBank == null);
+            if (btnClear != null) btnClear.setDisable(loading);
+            if (btnNewBank != null) btnNewBank.setDisable(loading);
+            if (btnAddAccount != null) btnAddAccount.setDisable(loading);
+            if (btnEditAccountAction != null) btnEditAccountAction.setDisable(loading);
+            if (btnDeleteAccountAction != null) btnDeleteAccountAction.setDisable(loading);
+            if (btnSetAsDefault != null) btnSetAsDefault.setDisable(loading);
+            if (btnEditTemplate != null) btnEditTemplate.setDisable(loading);
+            if (btnPreviewTemplate != null) btnPreviewTemplate.setDisable(loading);
+            if (bankTable != null) bankTable.setDisable(loading);
+            if (accountTable != null) accountTable.setDisable(loading);
+            if (cmbBankAccount != null) cmbBankAccount.setDisable(loading);
         });
     }
 
@@ -1790,127 +1865,6 @@ public class BankController {
             if (loadingSpinner != null) {
                 loadingSpinner.setVisible(false);
                 loadingSpinner.setManaged(false);
-            }
-            setLoading(false);
-        });
-
-        task.setOnFailed(e -> {
-            Throwable ex = task.getException();
-            if (loadingSpinner != null) {
-                loadingSpinner.setVisible(false);
-                loadingSpinner.setManaged(false);
-            }
-            setLoading(false);
-            showAlert("Load Error", ex.getMessage(), Alert.AlertType.ERROR);
-        });
-
-        Thread thread = new Thread(task, "load-banks-task");
-        thread.setDaemon(true);
-        thread.start();
-    }
-
-    @FXML
-    private void onSave() {
-        BankAccount selectedAcc = cmbBankAccount != null ? cmbBankAccount.getValue() : null;
-        if (selectedAcc == null || selectedAcc.getId() == null) {
-            showAlert("No Bank Account Selected", "⚠️ Please select a valid Bank Account from the dropdown list before saving the cheque template.", Alert.AlertType.WARNING);
-            return;
-        }
-
-        String name = selectedAcc.getBankName() != null ? selectedAcc.getBankName().trim() : "Bank";
-        String code = selectedAcc.getAccountNumber() != null && !selectedAcc.getAccountNumber().isBlank() ? selectedAcc.getAccountNumber().trim().toUpperCase() : "BANK";
-        Integer bankId = selectedAcc.getId();
-
-        ChequeSizePreset preset = cmbChequeSize.getValue();
-        BankTemplateLayout formLayout = buildLayoutFromFormSize();
-        if (formLayout == null) {
-            return;
-        }
-
-        String encodedSize = ChequeSizeCodec.encode(preset, formLayout.getWidthInches(), formLayout.getHeightInches());
-
-        Bank bank = selectedBank;
-        if (bank == null) {
-            bank = new Bank(name, code, encodedSize, chkMicr.isSelected());
-            bank.setId(bankId);
-        } else {
-            bank.setId(bankId);
-            bank.setBankName(name);
-            bank.setBankCode(code);
-            bank.setChequeSize(encodedSize);
-            bank.setMicr(chkMicr.isSelected());
-        }
-
-        final Bank finalBank = bank;
-        final Long targetBankId = bankId != null ? bankId.longValue() : 1L;
-        final BankTemplateLayout layoutToSave = currentLayout != null ? currentLayout.copy() : formLayout.copy();
-
-        String formattedIfsc = formatValidIfsc(code);
-
-        setLoading(true);
-        new Thread(() -> {
-            try {
-                // 2. Call Bank Template Local/REST Service
-                bankService.save(finalBank, layoutToSave, layoutByBankCode);
-
-                // 3. Save Template Fields to REST API automatically assigning target bank account ID
-                saveTemplateFieldsToApi(targetBankId);
-
-                // 4. Show Success Alert & Refresh Table
-                Platform.runLater(() -> {
-                    loadData();
-                    loadBankAccounts();
-                    showAlert("Success", "Bank template & field positions saved successfully for account: " + name, Alert.AlertType.INFORMATION);
-                });
-            } catch (Exception e) {
-                Platform.runLater(() -> showAlert("Save Error", "Failed to save bank template: " + e.getMessage(), Alert.AlertType.ERROR));
-            } finally {
-                setLoading(false);
-            }
-        }, "save-bank").start();
-    }
-
-    private String formatValidIfsc(String code) {
-        if (code != null && code.matches("^[A-Z]{4}0[A-Z0-9]{6}$")) {
-            return code;
-        }
-        String prefix = (code != null && code.length() >= 4) ? code.substring(0, 4).replaceAll("[^A-Z]", "A") : "SBIN";
-        while (prefix.length() < 4) {
-            prefix += "A";
-        }
-        return prefix + "0001234";
-    }
-
-    @FXML
-    private void onDelete() {
-        Bank sel = selectedBank;
-        if (sel == null) {
-            showAlert("Select", "Please select a bank template to delete.", Alert.AlertType.WARNING);
-            return;
-        }
-
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-                "Delete bank template for " + sel.getBankName() + "?",
-                ButtonType.YES, ButtonType.NO);
-        confirm.setHeaderText(null);
-        confirm.showAndWait().ifPresent(btn -> {
-            if (btn == ButtonType.YES) {
-                setLoading(true);
-                new Thread(() -> {
-                    try {
-                        bankService.delete(sel, layoutByBankCode);
-                        Platform.runLater(() -> {
-                            selectedBank = null;
-                            clearForm();
-                            loadData();
-                            loadBankAccounts();
-                        });
-                    } catch (Exception e) {
-                        Platform.runLater(() -> showAlert("Delete Error", e.getMessage(), Alert.AlertType.ERROR));
-                    } finally {
-                        setLoading(false);
-                    }
-                }, "delete-bank").start();
             }
         });
     }
@@ -2399,19 +2353,213 @@ public class BankController {
         }
     }
 
+    private double fieldWidthPx(LayoutField field, FieldPosition pos) {
+        double w = chequePreviewPane.getPrefWidth();
+        if (w <= 0) w = 720;
+        return Math.max(24.0, effectiveWidthRatio(field, pos) * w);
+    }
+
+    private double fieldHeightPx(LayoutField field, FieldPosition pos) {
+        double h = chequePreviewPane.getPrefHeight();
+        if (h <= 0) h = 300;
+        return Math.max(18.0, effectiveHeightRatio(field, pos) * h);
+    }
+
+    private double effectiveWidthRatio(LayoutField field, FieldPosition pos) {
+        if (pos.getWidthRatio() > 0) {
+            return pos.getWidthRatio();
+        }
+        return switch (field) {
+            case DATE -> 0.19;
+            case PAYEE -> 0.66;
+            case AMOUNT_NUMBER -> 0.16;
+            case AMOUNT_WORDS -> 0.62;
+            case SIGNATURE -> 0.22;
+            case BANK_LOGO -> 0.18;
+            case MICR -> 0.50;
+        };
+    }
+
+    private double effectiveHeightRatio(LayoutField field, FieldPosition pos) {
+        if (pos.getHeightRatio() > 0) {
+            return pos.getHeightRatio();
+        }
+        return switch (field) {
+            case SIGNATURE -> 0.16;
+            case AMOUNT_NUMBER -> 0.11;
+            case DATE, BANK_LOGO -> 0.10;
+            case PAYEE, AMOUNT_WORDS -> 0.09;
+            case MICR -> 0.08;
+        };
+    }
+
+    private double parsePositive(String raw, String label) {
+        try {
+            double value = Double.parseDouble(raw.trim());
+            if (value < 0) {
+                throw new NumberFormatException();
+            }
+            return value;
+        } catch (Exception ex) {
+            throw new IllegalArgumentException(label + " must be a valid number in mm.");
+        }
+    }
+
+    private String formatMm(double value) {
+        return String.format(java.util.Locale.ROOT, "%.2f", value);
+    }
+
+    private void persistCurrentLayoutIfPossible() {
+        if (currentLayout == null || !currentLayout.isValidLayout()) {
+            return;
+        }
+
+        String code = selectedBank != null ? safeCode(selectedBank.getBankCode()) : (fldBankCode != null ? safeCode(fldBankCode.getText()) : "BANK");
+        if (code.isBlank()) {
+            return;
+        }
+
+        final BankTemplateLayout layoutToSave = currentLayout.copy();
+        new Thread(() -> {
+            try {
+                layoutByBankCode.put(code, layoutToSave);
+                bankService.saveLayouts(layoutByBankCode);
+
+                Long bankId = Session.getSelectedBankId();
+                if (bankId != null && bankId > 0) {
+                    List<Map<String, Object>> reloaded = bankService.getTemplateFields(bankId);
+                    Platform.runLater(() -> {
+                        if (reloaded != null && !reloaded.isEmpty()) {
+                            applyReloadedFields(reloaded);
+                        }
+                        AppState.getInstance().setSelectedTemplate(currentLayout != null ? currentLayout.copy() : layoutToSave);
+                    });
+                } else {
+                    Platform.runLater(() -> AppState.getInstance().setSelectedTemplate(layoutToSave));
+                }
+            } catch (Exception ex) {
+                Platform.runLater(() -> showAlert("Layout Save Error", "Unable to save cheque alignment: " + ex.getMessage(), Alert.AlertType.ERROR));
+            }
+        }, "persist-layout").start();
+    }
+
+    private String safeCode(String code) {
+        return code == null ? "" : code.trim().toUpperCase();
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private void updateGridOverlay() {
+        if (chequePreviewPane == null) {
+            return;
+        }
+
+        boolean showGrid = chkShowGrid != null && chkShowGrid.isSelected();
+        boolean showRulers = chkShowRulers != null && chkShowRulers.isSelected();
+
+        StringBuilder style = new StringBuilder();
+        style.append("-fx-border-color: #475569; -fx-border-width: 1px; -fx-background-radius: 6px; -fx-border-radius: 6px; ");
+
+        if (showGrid) {
+            style.append("-fx-background-color: #ffffff, ");
+            style.append("linear-gradient(from 0px 0px to 15px 0px, repeat, rgba(148,163,184,0.12) 0px, rgba(148,163,184,0.12) 1px, transparent 1px, transparent 15px), ");
+            style.append("linear-gradient(from 0px 0px to 0px 15px, repeat, rgba(148,163,184,0.12) 0px, rgba(148,163,184,0.12) 1px, transparent 1px, transparent 15px); ");
+        } else {
+            style.append("-fx-background-color: #ffffff; ");
+        }
+
+        if (showRulers) {
+            style.append("-fx-effect: dropshadow(three-pass-box, rgba(37,99,235,0.15), 10, 0, 0, 0); ");
+        }
+
+        chequePreviewPane.setStyle(style.toString());
+    }
+
     @FXML
-    private void onSelectLayerDate() { setSelectedField(LayoutField.DATE); }
+    private void onToggleGrid() {
+        updateGridOverlay();
+        if (currentTemplate != null) {
+            renderPreview(currentTemplate);
+        }
+    }
+
     @FXML
-    private void onSelectLayerPayee() { setSelectedField(LayoutField.PAYEE); }
-    @FXML
-    private void onSelectLayerAmountNumber() { setSelectedField(LayoutField.AMOUNT_NUMBER); }
-    @FXML
-    private void onSelectLayerAmountWords() { setSelectedField(LayoutField.AMOUNT_WORDS); }
-    @FXML
-    private void onSelectLayerSignature() { setSelectedField(LayoutField.SIGNATURE); }
-    @FXML
-    private void onSelectLayerBankLogo() { setSelectedField(LayoutField.BANK_LOGO); }
-    @FXML
+    private void onToggleRulers() {
+        updateGridOverlay();
+        if (currentTemplate != null) {
+            renderPreview(currentTemplate);
+        }
+    }
+
+    private void updateFieldHighlights() {
+        LayoutField selected = getSelectedField();
+
+        if (layerDate != null) {
+            setLayerButtonSelected(layerDate, selected == LayoutField.DATE);
+            setLayerButtonSelected(layerPayee, selected == LayoutField.PAYEE);
+            setLayerButtonSelected(layerAmountNumber, selected == LayoutField.AMOUNT_NUMBER);
+            setLayerButtonSelected(layerAmountWords, selected == LayoutField.AMOUNT_WORDS);
+            setLayerButtonSelected(layerSignature, selected == LayoutField.SIGNATURE);
+            setLayerButtonSelected(layerBankLogo, selected == LayoutField.BANK_LOGO);
+            setLayerButtonSelected(layerMicr, selected == LayoutField.MICR);
+        }
+
+        if (lblActiveLayerName != null) {
+            lblActiveLayerName.setText(selected == null ? "None" : selected.name());
+        }
+        if (inspectorGrid != null) {
+            inspectorGrid.setDisable(selected == null);
+        }
+        if (alignmentPanel != null) {
+            alignmentPanel.setDisable(selected == null);
+        }
+
+        for (Map.Entry<LayoutField, StackPane> entry : fieldNodes.entrySet()) {
+            LayoutField field = entry.getKey();
+            StackPane node = entry.getValue();
+
+            javafx.scene.shape.Circle resizeHandle = null;
+            for (javafx.scene.Node child : node.getChildren()) {
+                if (child instanceof javafx.scene.shape.Circle) {
+                    resizeHandle = (javafx.scene.shape.Circle) child;
+                    break;
+                }
+            }
+
+            String baseStyle = switch (field) {
+                case BANK_LOGO -> "-fx-background-color:rgba(239,246,255,0.85); -fx-border-color:#3b82f6;";
+                case DATE -> "-fx-background-color:rgba(248,250,252,0.85); -fx-border-color:#64748b;";
+                case PAYEE -> "-fx-background-color:rgba(248,250,252,0.85); -fx-border-color:#64748b;";
+                case AMOUNT_NUMBER -> "-fx-background-color:rgba(254,252,232,0.85); -fx-border-color:#ca8a04;";
+                case AMOUNT_WORDS -> "-fx-background-color:rgba(248,250,252,0.85); -fx-border-color:#64748b;";
+                case SIGNATURE -> "-fx-background-color:rgba(248,250,252,0.85); -fx-border-color:#64748b;";
+                case MICR -> "-fx-background-color:rgba(241,255,249,0.85); -fx-border-color:#10b981;";
+            };
+
+            if (field == selected) {
+                node.setStyle(baseStyle + " -fx-border-color:#2563eb; -fx-border-style:dashed; -fx-border-width:2px; -fx-background-radius:4; -fx-border-radius:4; -fx-effect: dropshadow(three-pass-box, rgba(37,99,235,0.35), 6, 0, 0, 0);");
+                if (resizeHandle != null) resizeHandle.setVisible(true);
+            } else {
+                node.setStyle(baseStyle + " -fx-border-width:1px; -fx-background-radius:4; -fx-border-radius:4;");
+                if (resizeHandle != null) resizeHandle.setVisible(false);
+            }
+        }
+    }
+
+    private void setLayerButtonSelected(Button button, boolean isSelected) {
+        if (button == null) return;
+        button.getStyleClass().removeAll("btn-primary", "btn-secondary");
+        if (isSelected) {
+            button.getStyleClass().add("btn-primary");
+            button.setStyle("-fx-alignment: center-left; -fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold;");
+        } else {
+            button.getStyleClass().add("btn-secondary");
+            button.setStyle("-fx-alignment: center-left; -fx-background-color: #f1f5f9; -fx-text-fill: #334155; -fx-font-weight: normal;");
+        }
+    }
+
     private void onSelectLayerMicr() { setSelectedField(LayoutField.MICR); }
 
     @FXML
@@ -2591,64 +2739,39 @@ public class BankController {
         fileChooser.setTitle("Export Cheque Layout JSON");
         fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("JSON Files", "*.json"));
         fileChooser.setInitialFileName((selectedBank != null ? selectedBank.getBankCode() : "layout") + "_template.json");
-        File file = fileChooser.showSaveDialog(chequePreviewPane.getScene().getWindow());
+        File file = fileChooser.showSaveDialog(chequePreviewPane != null && chequePreviewPane.getScene() != null ? chequePreviewPane.getScene().getWindow() : null);
         if (file != null) {
             try {
                 com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
                 mapper.enable(com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT);
                 mapper.writeValue(file, currentLayout);
-                showAlert("Export Success", "Layout exported successfully to: " + file.getName(), Alert.AlertType.INFORMATION);
+                showAlert("Export Success", "Layout template exported successfully to:\n" + file.getAbsolutePath(), Alert.AlertType.INFORMATION);
             } catch (Exception e) {
-                showAlert("Export Error", "Failed to export layout: " + e.getMessage(), Alert.AlertType.ERROR);
+                showAlert("Export Error", "Failed to export layout JSON: " + e.getMessage(), Alert.AlertType.ERROR);
             }
         }
     }
 
-    @FXML
-    private void onImportJson() {
-        if (currentLayout == null) {
-            showAlert("Import Error", "Please select a bank template first before importing a layout.", Alert.AlertType.WARNING);
-            return;
-        }
-        javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
-        fileChooser.setTitle("Import Cheque Layout JSON");
-        fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("JSON Files", "*.json"));
-        File file = fileChooser.showOpenDialog(chequePreviewPane.getScene().getWindow());
-        if (file != null) {
-            try {
-                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                BankTemplateLayout imported = mapper.readValue(file, BankTemplateLayout.class);
-                if (imported != null) {
-                    currentLayout = imported;
-                    currentLayout.ensureAllFields();
-                    layoutPreviewPane();
-                    refreshPreview();
-                    persistCurrentLayoutIfPossible();
-                    showAlert("Import Success", "Layout imported successfully from: " + file.getName(), Alert.AlertType.INFORMATION);
-                }
-            } catch (Exception e) {
-                showAlert("Import Error", "Failed to import layout: " + e.getMessage(), Alert.AlertType.ERROR);
-            }
-        }
-    }
 
-    private void showAlert(String title, String message, Alert.AlertType type) {
-        Alert alert = new Alert(type, message, ButtonType.OK);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.showAndWait();
-    }
 
     public void saveTemplateFieldsToApi(Long templateId) {
+        new Thread(() -> saveTemplateFieldsToApiInternal(templateId, true), "save-template-fields-api").start();
+    }
+
+    public boolean saveTemplateFieldsToApiInternal(Long templateId, boolean showSuccessAlert) {
         BankAccount selectedAcc = cmbBankAccount != null ? cmbBankAccount.getValue() : null;
         if (selectedAcc == null || selectedAcc.getId() == null) {
-            showAlert("No Bank Account Selected", "⚠️ Please select a valid Bank Account from the dropdown list before saving the cheque template layout.", Alert.AlertType.WARNING);
-            return;
+            if (showSuccessAlert) {
+                Platform.runLater(() -> showAlert("No Bank Account Selected", "⚠️ Please select a valid Bank Account from the dropdown list before saving the cheque template layout.", Alert.AlertType.WARNING));
+            }
+            return false;
         }
 
         if (currentLayout != null && !currentLayout.isValidLayout()) {
-            showAlert("Layout Validation Error", "Required fields (Payee, Date, Amount in Figures, Amount in Words) must have valid coordinates before saving.", Alert.AlertType.WARNING);
-            return;
+            if (showSuccessAlert) {
+                Platform.runLater(() -> showAlert("Layout Validation Error", "Required fields (Payee, Date, Amount in Figures, Amount in Words) must have valid coordinates before saving.", Alert.AlertType.WARNING));
+            }
+            return false;
         }
 
         Long bankAccountId = selectedAcc.getId().longValue();
@@ -2669,7 +2792,6 @@ public class BankController {
             LayoutField field = entry.getKey();
             StackPane node = entry.getValue();
 
-            // 1. Create JSON item: { "key": "DATE", "x": 100, "y": 50 }
             Map<String, Object> directItem = new HashMap<>();
             directItem.put("key", field.name());
             directItem.put("x", (int) Math.round(node.getLayoutX()));
@@ -2688,40 +2810,38 @@ public class BankController {
         }
 
         final Long targetTemplateId = templateId;
-        System.out.println("[Backend API Request] POST /api/template-fields for bankAccountId=" + targetTemplateId);
-        System.out.println("[Backend API Payload] " + fieldsPayload);
+        try {
+            boolean directSuccess = bankService.saveTemplateFieldsDirect(directPayload);
+            boolean fieldsSuccess = bankService.saveTemplateFields(fieldsPayload);
 
-        new Thread(() -> {
-            try {
-                // 3. Send API: POST /api/template-fields
-                boolean directSuccess = bankService.saveTemplateFieldsDirect(directPayload);
-                boolean fieldsSuccess = bankService.saveTemplateFields(fieldsPayload);
+            if (directSuccess || fieldsSuccess) {
+                List<Map<String, Object>> reloadedFields = bankService.getTemplateFields(targetTemplateId);
 
-                System.out.println("[Backend API Response] directSuccess=" + directSuccess + ", fieldsSuccess=" + fieldsSuccess);
-
-                if (directSuccess || fieldsSuccess) {
-                    List<Map<String, Object>> reloadedFields = bankService.getTemplateFields(targetTemplateId);
-                    System.out.println("[Backend API Response] Reloaded " + (reloadedFields != null ? reloadedFields.size() : 0) + " template fields.");
-
-                    Platform.runLater(() -> {
-                        applyReloadedFields(reloadedFields);
-                        if (currentLayout != null) {
-                            bankTemplateMap.put(targetTemplateId, currentLayout.copy());
-                            AppState.getInstance().setSelectedTemplate(currentLayout.copy());
-                        }
-                        refreshPreview();
+                Platform.runLater(() -> {
+                    applyReloadedFields(reloadedFields);
+                    if (currentLayout != null) {
+                        bankTemplateMap.put(targetTemplateId, currentLayout.copy());
+                        AppState.getInstance().setSelectedTemplate(currentLayout.copy());
+                    }
+                    refreshPreview();
+                    if (showSuccessAlert) {
                         showAlert("Template Saved", "✅ Cheque template coordinates successfully saved & reloaded from backend!", Alert.AlertType.INFORMATION);
-                    });
-                } else {
-                    System.err.println("[Backend API Warning] Server returned false for template fields save.");
+                    }
+                });
+                return true;
+            } else {
+                if (showSuccessAlert) {
                     Platform.runLater(() -> showAlert("Save Warning", "⚠️ Backend server received request but did not confirm template field save.", Alert.AlertType.WARNING));
                 }
-            } catch (Exception ex) {
-                System.err.println("[Backend API Error] Failed to save/reload template fields from REST API: " + ex.getMessage());
-                ex.printStackTrace();
+            }
+        } catch (Exception ex) {
+            System.err.println("[Backend API Error] Failed to save/reload template fields from REST API: " + ex.getMessage());
+            ex.printStackTrace();
+            if (showSuccessAlert) {
                 Platform.runLater(() -> showAlert("Save Error", "❌ Failed to save template layout to server: " + ex.getMessage(), Alert.AlertType.ERROR));
             }
-        }, "save-template-fields-api").start();
+        }
+        return false;
     }
 
     private String mapFieldName(LayoutField field) {
@@ -2857,23 +2977,17 @@ public class BankController {
                 if (field != null) {
                     StackPane node = fieldNodes.get(field);
                     if (node != null) {
-                        // Step 3: Set layoutX and layoutY
                         node.setLayoutX(x);
                         node.setLayoutY(y);
-
-                        // Configure Label
                         for (javafx.scene.Node child : node.getChildren()) {
                             if (child instanceof Label label) {
                                 label.setFont(javafx.scene.text.Font.font(fontFamily, fontSize));
                                 label.setStyle("-fx-font-family: '" + fontFamily + "'; -fx-font-size: " + fontSize + "px; -fx-font-weight: 600; -fx-text-fill: #1e293b;");
                             }
                         }
-
-                        // Step 4: Add to canvas
                         if (!chequePreviewPane.getChildren().contains(node)) {
                             chequePreviewPane.getChildren().add(node);
                         }
-
                         currentLayout.setFieldPosition(field, x / paneW, y / paneH);
                     }
                 }
@@ -2924,5 +3038,14 @@ public class BankController {
         double x;
         double y;
     }
-}
 
+    private void showAlert(String title, String message, Alert.AlertType type) {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(type);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(message);
+            alert.showAndWait();
+        });
+    }
+}

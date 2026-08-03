@@ -22,9 +22,14 @@ public class BankAccountService {
 
     @Transactional(readOnly = true)
     public List<BankAccountResponse> getAllBankAccounts() {
-        return bankAccountRepository.findAllByOrderByIdAsc()
-                .stream()
+        List<BankAccount> accounts = bankAccountRepository.findAllByOrderByIdAsc();
+        if (accounts == null || accounts.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        return accounts.stream()
+                .filter(java.util.Objects::nonNull)
                 .map(BankAccountResponse::from)
+                .filter(java.util.Objects::nonNull)
                 .toList();
     }
 
