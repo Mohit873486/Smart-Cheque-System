@@ -6,7 +6,7 @@
 <?import javafx.scene.shape.SVGPath?>
 <?import javafx.scene.text.*?>
 
-<TabPane tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.chequeprint.controller.BankController" style="-fx-background-color: #f8fafc;">
+<TabPane tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.chequeprint.controller.BankTemplateController" style="-fx-background-color: #f8fafc;">
 
     <!-- ============================================================ -->
     <!-- TAB 1: Bank Accounts — Redesigned                            -->

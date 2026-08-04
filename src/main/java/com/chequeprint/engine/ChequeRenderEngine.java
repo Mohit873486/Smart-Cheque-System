@@ -26,13 +26,81 @@ import java.util.Map;
  * - Single source of truth for rendering cheques using BankTemplateLayout coordinates.
  * - Used for BOTH screen preview and physical printing.
  * - Guarantees: Preview Output EQUALS Print Output.
+ *
+ * <p><b>Performance notes:</b>
+ * Style strings, alignments, and wrapText flags are pre-computed once in static
+ * initializers and applied only when the label cache is first built for a given
+ * target pane. Subsequent calls only update text content and x/y positions,
+ * avoiding redundant JavaFX CSS re-passes on every render call.
  */
 public final class ChequeRenderEngine {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    private static final String LABEL_CACHE_KEY = "LABEL_CACHE";
+
+    // ── Performance optimisation: static style / layout data ─────────────────
+    // These maps are built once at class-load time.  No String objects are
+    // allocated on the hot renderCheque() path — the same interned constant
+    // references are reused for every call.
+    private static final Map<LayoutField, String>  FIELD_STYLES;
+    private static final Map<LayoutField, Pos>     FIELD_ALIGNMENTS;
+    private static final Map<LayoutField, Boolean> FIELD_WRAP;
+
+    static {
+        FIELD_STYLES = new EnumMap<>(LayoutField.class);
+        FIELD_STYLES.put(LayoutField.BANK_LOGO,
+                "-fx-font-family: 'Segoe UI', sans-serif;"
+                + " -fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #1e293b;");
+        FIELD_STYLES.put(LayoutField.PAYEE,
+                "-fx-font-family: 'Segoe UI', sans-serif;"
+                + " -fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #0f172a;");
+        FIELD_STYLES.put(LayoutField.DATE,
+                "-fx-font-family: 'Courier New', monospace;"
+                + " -fx-font-weight: bold; -fx-font-size: 13px;"
+                + " -fx-text-fill: #0f172a; -fx-letter-spacing: 3px;");
+        FIELD_STYLES.put(LayoutField.AMOUNT_WORDS,
+                "-fx-font-family: 'Segoe UI', sans-serif;"
+                + " -fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #1e293b;");
+        FIELD_STYLES.put(LayoutField.AMOUNT_NUMBER,
+                "-fx-font-family: 'Segoe UI', sans-serif;"
+                + " -fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #0f172a;"
+                + " -fx-background-color: rgba(255, 255, 255, 0.7);"
+                + " -fx-border-color: #94a3b8; -fx-border-width: 1px;"
+                + " -fx-border-radius: 4px; -fx-background-radius: 4px;"
+                + " -fx-padding: 2 6 2 6;");
+        FIELD_STYLES.put(LayoutField.SIGNATURE,
+                "-fx-font-family: 'Segoe UI', sans-serif;"
+                + " -fx-font-style: italic; -fx-font-size: 11px; -fx-text-fill: #475569;");
+        FIELD_STYLES.put(LayoutField.MICR,
+                "-fx-font-family: 'Courier New', monospace;"
+                + " -fx-font-size: 11px; -fx-text-fill: #334155;");
+
+        FIELD_ALIGNMENTS = new EnumMap<>(LayoutField.class);
+        FIELD_ALIGNMENTS.put(LayoutField.BANK_LOGO,     Pos.CENTER_LEFT);
+        FIELD_ALIGNMENTS.put(LayoutField.PAYEE,         Pos.CENTER_LEFT);
+        FIELD_ALIGNMENTS.put(LayoutField.DATE,          Pos.CENTER_LEFT);
+        FIELD_ALIGNMENTS.put(LayoutField.AMOUNT_WORDS,  Pos.TOP_LEFT);
+        FIELD_ALIGNMENTS.put(LayoutField.AMOUNT_NUMBER, Pos.CENTER_RIGHT);
+        FIELD_ALIGNMENTS.put(LayoutField.SIGNATURE,     Pos.BOTTOM_RIGHT);
+        FIELD_ALIGNMENTS.put(LayoutField.MICR,          Pos.CENTER);
+
+        FIELD_WRAP = new EnumMap<>(LayoutField.class);
+        for (LayoutField f : LayoutField.values()) {
+            FIELD_WRAP.put(f, false);
+        }
+        FIELD_WRAP.put(LayoutField.AMOUNT_WORDS, true);
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     private ChequeRenderEngine() {
         // Utility class
+    }
+
+    public static void initializePreviewElements(Pane targetPane) {
+        if (targetPane == null) {
+            return;
+        }
+        getOrCreateLabelCache(targetPane);
     }
 
     public static void renderCheque(Pane targetPane, Cheque cheque, Bank bank, BankTemplateLayout layout) {
@@ -79,19 +147,7 @@ public final class ChequeRenderEngine {
         }
         targetPane.setStyle(bgStyle);
 
-        @SuppressWarnings("unchecked")
-        Map<LayoutField, Label> labelCache = (Map<LayoutField, Label>) targetPane.getProperties().get("LABEL_CACHE");
-        if (labelCache == null) {
-            targetPane.getChildren().clear();
-            labelCache = new EnumMap<>(LayoutField.class);
-            for (LayoutField field : LayoutField.values()) {
-                Label lbl = new Label();
-                lbl.setMouseTransparent(true);
-                labelCache.put(field, lbl);
-                targetPane.getChildren().add(lbl);
-            }
-            targetPane.getProperties().put("LABEL_CACHE", labelCache);
-        }
+        Map<LayoutField, Label> labelCache = getOrCreateLabelCache(targetPane);
 
         String bankNameText = bank != null && bank.getBankName() != null ? bank.getBankName() : "State Bank of India";
         String payeeText = cheque != null && cheque.getPayeeName() != null && !cheque.getPayeeName().isBlank()
@@ -136,45 +192,40 @@ public final class ChequeRenderEngine {
             lbl.setPrefWidth(fieldW);
             lbl.setPrefHeight(fieldH);
 
+            // Only text is updated on every call.
+            // Style / alignment / wrapText were fixed once at label-creation time above.
             switch (field) {
-                case BANK_LOGO -> {
-                    lbl.setText(bankNameText);
-                    lbl.setStyle("-fx-font-family: 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #1e293b;");
-                    lbl.setAlignment(Pos.CENTER_LEFT);
-                }
-                case PAYEE -> {
-                    lbl.setText(payeeText);
-                    lbl.setStyle("-fx-font-family: 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #0f172a;");
-                    lbl.setAlignment(Pos.CENTER_LEFT);
-                }
-                case DATE -> {
-                    lbl.setText(dateText);
-                    lbl.setStyle("-fx-font-family: 'Courier New', monospace; -fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #0f172a; -fx-letter-spacing: 3px;");
-                    lbl.setAlignment(Pos.CENTER_LEFT);
-                }
-                case AMOUNT_WORDS -> {
-                    lbl.setText(amountWordsText);
-                    lbl.setStyle("-fx-font-family: 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #1e293b;");
-                    lbl.setAlignment(Pos.TOP_LEFT);
-                    lbl.setWrapText(true);
-                }
-                case AMOUNT_NUMBER -> {
-                    lbl.setText(amountNumText);
-                    lbl.setStyle("-fx-font-family: 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #0f172a; -fx-background-color: rgba(255, 255, 255, 0.7); -fx-border-color: #94a3b8; -fx-border-width: 1px; -fx-border-radius: 4px; -fx-background-radius: 4px; -fx-padding: 2 6 2 6;");
-                    lbl.setAlignment(Pos.CENTER_RIGHT);
-                }
-                case SIGNATURE -> {
-                    lbl.setText("Authorized Signatory");
-                    lbl.setStyle("-fx-font-family: 'Segoe UI', sans-serif; -fx-font-style: italic; -fx-font-size: 11px; -fx-text-fill: #475569;");
-                    lbl.setAlignment(Pos.BOTTOM_RIGHT);
-                }
-                case MICR -> {
-                    lbl.setText(micrText);
-                    lbl.setStyle("-fx-font-family: 'Courier New', monospace; -fx-font-size: 11px; -fx-text-fill: #334155;");
-                    lbl.setAlignment(Pos.CENTER);
-                }
+                case BANK_LOGO     -> lbl.setText(bankNameText);
+                case PAYEE         -> lbl.setText(payeeText);
+                case DATE          -> lbl.setText(dateText);
+                case AMOUNT_WORDS  -> lbl.setText(amountWordsText);
+                case AMOUNT_NUMBER -> lbl.setText(amountNumText);
+                case SIGNATURE     -> lbl.setText("Authorized Signatory");
+                case MICR          -> lbl.setText(micrText);
             }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<LayoutField, Label> getOrCreateLabelCache(Pane targetPane) {
+        Map<LayoutField, Label> labelCache = (Map<LayoutField, Label>) targetPane.getProperties().get(LABEL_CACHE_KEY);
+        if (labelCache == null) {
+            // Create all field labels once when the bank/template preview is initialized.
+            labelCache = new EnumMap<>(LayoutField.class);
+            for (LayoutField field : LayoutField.values()) {
+                Label lbl = new Label();
+                lbl.setMouseTransparent(true);
+                lbl.setStyle(FIELD_STYLES.get(field));
+                lbl.setAlignment(FIELD_ALIGNMENTS.get(field));
+                lbl.setWrapText(Boolean.TRUE.equals(FIELD_WRAP.get(field)));
+                labelCache.put(field, lbl);
+                targetPane.getChildren().add(lbl);
+            }
+            targetPane.getProperties().put(LABEL_CACHE_KEY, labelCache);
+        } else if (!targetPane.getChildren().containsAll(labelCache.values())) {
+            targetPane.getChildren().setAll(labelCache.values());
+        }
+        return labelCache;
     }
 
     public static WritableImage renderChequeToImage(Cheque cheque, Bank bank, BankTemplateLayout layout, double scale) {

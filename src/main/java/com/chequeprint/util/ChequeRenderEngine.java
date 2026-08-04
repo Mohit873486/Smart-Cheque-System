@@ -15,6 +15,10 @@ public final class ChequeRenderEngine {
     private ChequeRenderEngine() {
     }
 
+    public static void initializePreviewElements(Pane targetPane) {
+        com.chequeprint.engine.ChequeRenderEngine.initializePreviewElements(targetPane);
+    }
+
     public static void renderCheque(Pane targetPane, Cheque cheque, Bank bank, BankTemplateLayout layout) {
         com.chequeprint.engine.ChequeRenderEngine.renderCheque(targetPane, cheque, bank, layout);
     }
