@@ -102,7 +102,7 @@ public class FxPrinterService {
     }
 
     public static boolean printCheque(Node node) {
-        return printCheque(node, new PrinterService().resolveSelectedOrDefaultPrinter().orElse(Printer.getDefaultPrinter()));
+        return printCheque(node, new PrintService().resolveSelectedOrDefaultPrinter().orElse(Printer.getDefaultPrinter()));
     }
 
     public static boolean printCheque(Node node, Printer selectedPrinter) {
@@ -115,7 +115,7 @@ public class FxPrinterService {
 
         final Printer targetPrinter = selectedPrinter != null
                 ? selectedPrinter
-                : new PrinterService().resolveSelectedOrDefaultPrinter().orElse(Printer.getDefaultPrinter());
+                : new PrintService().resolveSelectedOrDefaultPrinter().orElse(Printer.getDefaultPrinter());
 
         if (targetPrinter == null || !PrinterUtils.isValidPrinter(targetPrinter)) {
             System.out.println("Print Failed");

@@ -89,17 +89,6 @@ public class MainApp extends Application {
                 // Background DB ping & migration
                 new Thread(() -> {
                     boolean ok = AppConfig.isConnected();
-                    if (ok) {
-                        try (java.sql.Connection conn = AppConfig.getConnection();
-                             java.sql.Statement stmt = conn.createStatement()) {
-                            stmt.executeUpdate("ALTER TABLE cheques MODIFY COLUMN status "
-                                + "ENUM('Draft','Pending','Approved','Rejected','Printed','Cancelled','Deposited','Cleared','Bounced') "
-                                + "NOT NULL DEFAULT 'Draft'");
-                            System.out.println("✓ Database migration: status enum updated successfully.");
-                        } catch (Exception ex) {
-                            System.err.println("Migration warning: " + ex.getMessage());
-                        }
-                    }
                     javafx.application.Platform.runLater(() -> {
                         if (ok) {
                             pb.setProgress(0.65);

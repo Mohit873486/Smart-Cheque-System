@@ -1,250 +1,44 @@
 package com.chequeprint.service;
 
 import com.chequeprint.state.AppState;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.print.Printer;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
- * Centralized JavaFX printer discovery and selection service.
+ * @deprecated All printer management is now handled by {@link PrintService}.
+ *             This class is retained only for binary compatibility.
+ *             Migrate any direct callers to use PrintService instead.
  */
+@Deprecated(since = "2.0", forRemoval = true)
 public class PrinterService {
 
-    public enum PrinterRoutingMode {
-        SINGLE,
-        BULK
-    }
+    public enum PrinterRoutingMode { SINGLE, BULK }
+    public enum PrinterType        { DEFAULT, OFFICE }
 
-    public enum PrinterType {
-        DEFAULT,
-        OFFICE
-    }
+    private final PrintService delegate;
 
-    private final AppState appState;
-    private final Map<PrinterType, String> printerTypeConfiguration = new EnumMap<>(PrinterType.class);
+    public PrinterService()                 { this.delegate = new PrintService(); }
+    PrinterService(AppState ignored)        { this.delegate = new PrintService(); }
 
-    public PrinterService() {
-        this(AppState.getInstance());
-    }
-
-    PrinterService(AppState appState) {
-        this.appState = appState;
-    }
-
-    public List<Printer> getAllPrinters() {
-        List<Printer> printerList = new ArrayList<>();
-        try {
-            for (Printer printer : Printer.getAllPrinters()) {
-                if (printer != null && isUsablePrinter(printer)) {
-                    printerList.add(printer);
-                }
-            }
-        } catch (Throwable t) {
-            System.err.println("[PrinterService] Failed to query JavaFX printers: " + t.getMessage());
-        }
-        return printerList;
-    }
-
-    public List<Printer> fetchAvailablePrinters() {
-        return getAllPrinters();
-    }
-
-    public ObservableList<Printer> refreshPrinters() {
-        List<Printer> printers = fetchAvailablePrinters();
-        appState.getAvailablePrinters().setAll(printers);
-
-        Printer selectedPrinter = appState.getSelectedPrinter();
-        if (selectedPrinter != null && findByName(printers, selectedPrinter.getName()).isEmpty()) {
-            appState.setSelectedPrinter(null);
-        }
-
-        return appState.getAvailablePrinters();
-    }
-
-    public ObservableList<String> refreshPrinterNames() {
-        ObservableList<String> names = FXCollections.observableArrayList();
-        for (Printer printer : refreshPrinters()) {
-            names.add(printer.getName());
-        }
-        return names;
-    }
-
-    public List<Printer> getAvailablePrinters() {
-        return Collections.unmodifiableList(appState.getAvailablePrinters());
-    }
-
-    public Optional<Printer> getSelectedPrinter() {
-        Printer selectedPrinter = appState.getSelectedPrinter();
-        if (selectedPrinter == null) {
-            return Optional.empty();
-        }
-        return findByName(appState.getAvailablePrinters(), selectedPrinter.getName());
-    }
-
-    public Optional<Printer> getDefaultPrinter() {
-        Printer defaultPrinter = appState.getDefaultPrinter();
-        if (defaultPrinter == null) {
-            return Optional.empty();
-        }
-        return findByName(refreshPrinters(), defaultPrinter.getName());
-    }
-
-    public Optional<Printer> findPrinterByName(String printerName) {
-        if (printerName == null || printerName.isBlank()) {
-            return Optional.empty();
-        }
-        return findByName(refreshPrinters(), printerName);
-    }
-
-    public Optional<Printer> selectPrinterByName(String printerName) {
-        Optional<Printer> printer = findPrinterByName(printerName);
-        printer.ifPresent(appState::setSelectedPrinter);
-        return printer;
-    }
-
-    public Printer selectPrinter(Printer printer) {
-        if (!isUsablePrinter(printer)) {
-            throw new IllegalArgumentException("Selected printer is invalid or unavailable.");
-        }
-        Optional<Printer> detectedPrinter = findByName(refreshPrinters(), printer.getName());
-        Printer selectedPrinter = detectedPrinter.orElseThrow(
-                () -> new IllegalArgumentException("Printer not found: " + printer.getName()));
-        appState.setSelectedPrinter(selectedPrinter);
-        return selectedPrinter;
-    }
-
-    public Printer saveDefaultPrinter(Printer printer) {
-        Printer selectedPrinter = selectPrinter(printer);
-        appState.setDefaultPrinter(selectedPrinter);
-        return selectedPrinter;
-    }
-
-    public Optional<Printer> saveDefaultPrinterByName(String printerName) {
-        Optional<Printer> printer = findPrinterByName(printerName);
-        printer.ifPresent(appState::setDefaultPrinter);
-        return printer;
-    }
-
-    public Optional<Printer> resolveSelectedOrDefaultPrinter() {
-        refreshPrinters();
-        Printer printer = appState.resolveSelectedOrDefaultPrinter();
-        if (printer == null) {
-            return Optional.empty();
-        }
-        return findByName(appState.getAvailablePrinters(), printer.getName());
-    }
-
-    public PrinterService setOfficePrinter(String printerName) {
-        return configurePrinterType(PrinterType.OFFICE, printerName);
-    }
-
-    public PrinterService setDefaultPrinter(String printerName) {
-        return configurePrinterType(PrinterType.DEFAULT, printerName);
-    }
-
-    public PrinterService configurePrinterType(PrinterType type, String printerName) {
-        if (type == null) {
-            throw new IllegalArgumentException("Printer type must not be null.");
-        }
-        if (printerName == null || printerName.isBlank()) {
-            printerTypeConfiguration.remove(type);
-            return this;
-        }
-        printerTypeConfiguration.put(type, printerName.trim());
-        return this;
-    }
-
-    public Optional<String> getConfiguredPrinterName(PrinterType type) {
-        if (type == null) {
-            return Optional.empty();
-        }
-        String configuredName = printerTypeConfiguration.get(type);
-        return Optional.ofNullable(configuredName).filter(name -> !name.isBlank());
-    }
-
-    public Optional<Printer> getConfiguredPrinter(PrinterType type) {
-        Optional<String> configuredName = getConfiguredPrinterName(type);
-        if (configuredName.isEmpty()) {
-            return Optional.empty();
-        }
-        return findPrinterByName(configuredName.get());
-    }
-
-    public Optional<Printer> resolvePrinterForMode(PrinterRoutingMode mode) {
-        refreshPrinters();
-
-        if (mode == PrinterRoutingMode.BULK) {
-            Optional<Printer> officePrinter = getConfiguredPrinter(PrinterType.OFFICE)
-                    .or(this::getDefaultPrinter)
-                    .or(this::resolveSelectedOrDefaultPrinter);
-            officePrinter.ifPresent(p -> System.out.println("[SmartRouting] Bulk mode -> Routed to Office Printer: " + p.getName()));
-            return officePrinter;
-        }
-
-        // Single cheque printing -> use Default Printer
-        Optional<Printer> defaultPrinter = getDefaultPrinter()
-                .or(this::resolveSelectedOrDefaultPrinter);
-        defaultPrinter.ifPresent(p -> System.out.println("[SmartRouting] Single mode -> Routed to Default Printer: " + p.getName()));
-        return defaultPrinter;
-    }
-
-    public static String routePrinterName(
-            PrinterRoutingMode mode,
-            String selectedPrinterName,
-            String defaultPrinterName,
-            String officePrinterName) {
-
-        if (mode == PrinterRoutingMode.BULK) {
-            if (officePrinterName != null && !officePrinterName.isBlank()) {
-                return officePrinterName;
-            }
-        }
-
-        if (defaultPrinterName != null && !defaultPrinterName.isBlank()) {
-            return defaultPrinterName;
-        }
-
-        return selectedPrinterName;
-    }
-
-    public Optional<Printer> initializeSelectedPrinter() {
-        ObservableList<Printer> printers = refreshPrinters();
-        if (printers.isEmpty()) {
-            appState.setSelectedPrinter(null);
-            return Optional.empty();
-        }
-
-        Optional<Printer> selectedPrinter = getSelectedPrinter();
-        if (selectedPrinter.isPresent()) {
-            return selectedPrinter;
-        }
-        Optional<Printer> defaultPrinter = getDefaultPrinter();
-        defaultPrinter.ifPresent(appState::setSelectedPrinter);
-        return defaultPrinter;
-    }
-
-    public boolean hasPrinters() {
-        return !appState.getAvailablePrinters().isEmpty();
-    }
-
-    private Optional<Printer> findByName(List<Printer> printers, String printerName) {
-        if (printerName == null || printerName.isBlank()) {
-            return Optional.empty();
-        }
-        return printers.stream()
-                .filter(printer -> printer.getName().equalsIgnoreCase(printerName.trim()))
-                .findFirst();
-    }
-
-    private boolean isUsablePrinter(Printer printer) {
-        return printer != null && printer.getName() != null && !printer.getName().isBlank();
-    }
+    public List<Printer>          getAllPrinters()                               { return delegate.getAvailablePrinters(); }
+    public List<Printer>          fetchAvailablePrinters()                      { return delegate.getAvailablePrinters(); }
+    public List<Printer>          getAvailablePrinters()                        { return delegate.getAvailablePrinters(); }
+    public ObservableList<Printer>refreshPrinters()                             { return delegate.refreshPrinters(); }
+    public ObservableList<String> refreshPrinterNames()                         { return delegate.refreshPrinterNames(); }
+    public Optional<Printer>      getSelectedPrinter()                          { return delegate.getSelectedPrinter(); }
+    public Optional<Printer>      getDefaultPrinter()                           { return delegate.getDefaultPrinter(); }
+    public Optional<Printer>      findPrinterByName(String name)                { return delegate.findPrinterByName(name); }
+    public Optional<Printer>      selectPrinterByName(String name)              { return delegate.selectPrinterByName(name); }
+    public Printer                selectPrinter(Printer p)                      { return delegate.selectPrinter(p); }
+    public Printer                saveDefaultPrinter(Printer p)                 { return delegate.saveDefaultPrinter(p); }
+    public Optional<Printer>      saveDefaultPrinterByName(String name)         { return delegate.selectPrinterByName(name); }
+    public Optional<Printer>      resolveSelectedOrDefaultPrinter()             { return delegate.resolveSelectedOrDefaultPrinter(); }
+    public Optional<Printer>      initializeSelectedPrinter()                   { return Optional.ofNullable(delegate.initializeDefaultPrinter()); }
+    public PrinterService         setOfficePrinter(String name)                 { delegate.setOfficePrinter(name); return this; }
+    public PrinterService         setDefaultPrinter(String name)                { delegate.setDefaultPrinter(name); return this; }
+    public Optional<Printer>      resolvePrinterForMode(PrinterRoutingMode mode){ return delegate.resolvePrinterForMode(PrintService.PrinterRoutingMode.valueOf(mode.name())); }
+    public boolean                hasPrinters()                                  { return delegate.hasPrinters(); }
 }

@@ -30,8 +30,7 @@ public class ChequeTemplateService {
         defaultTemplate.setTemplateName("Default Bank Layout");
         defaultTemplate.setWidth(200.0);
         defaultTemplate.setHeight(93.0);
-        defaultTemplate.setConfigJson("{}");
-        
+
         try {
             return chequeTemplateRepository.save(defaultTemplate);
         } catch (Exception e) {
@@ -48,7 +47,6 @@ public class ChequeTemplateService {
                 toUpdate.setTemplateName(template.getTemplateName());
                 if (template.getWidth() != null) toUpdate.setWidth(template.getWidth());
                 if (template.getHeight() != null) toUpdate.setHeight(template.getHeight());
-                if (template.getConfigJson() != null) toUpdate.setConfigJson(template.getConfigJson());
                 return chequeTemplateRepository.save(toUpdate);
             }
         }
@@ -59,7 +57,6 @@ public class ChequeTemplateService {
             toUpdate.setTemplateName(template.getTemplateName());
             if (template.getWidth() != null) toUpdate.setWidth(template.getWidth());
             if (template.getHeight() != null) toUpdate.setHeight(template.getHeight());
-            if (template.getConfigJson() != null) toUpdate.setConfigJson(template.getConfigJson());
             return chequeTemplateRepository.save(toUpdate);
         } else {
             return chequeTemplateRepository.save(template);

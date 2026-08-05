@@ -3,7 +3,7 @@ package com.chequeprint.backend.entity;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "template_field")
+@Table(name = "template_fields")
 public class TemplateField {
 
     @Id

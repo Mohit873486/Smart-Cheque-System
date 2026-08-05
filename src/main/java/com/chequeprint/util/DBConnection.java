@@ -1,84 +1,67 @@
 package com.chequeprint.util;
 
+import com.chequeprint.config.AppConfig;
+
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /**
- * DBConnection — lightweight JDBC connection wrapper.
+ * DBConnection — thin helper that delegates to the shared HikariCP pool in
+ * {@link AppConfig}.
  *
  * Design notes:
- *  • AppConfig.java holds the primary singleton connection used by all DAO classes.
- *  • DBConnection provides a secondary, thread-safe helper for background threads
- *    that need their own connection (e.g. async loaders) so they don't share the
- *    single AppConfig connection and risk "ResultSet already closed" errors.
- *  • Call DBConnection.getConnection() instead of AppConfig.getConnection() inside
- *    any Thread that runs concurrently with the JavaFX Application Thread.
+ *  • Previously this class maintained its own ThreadLocal of raw
+ *    DriverManager connections. Now that AppConfig uses HikariCP, both
+ *    the main thread and background threads can safely call
+ *    {@code AppConfig.getConnection()} — the pool is thread-safe and
+ *    hands out independent connections to each caller.
+ *  • The public API is preserved (getConnection / closeConnection /
+ *    isReachable / statusLabel) so that all existing callers continue to
+ *    compile and work without modification.
+ *  • {@code closeConnection()} is now a no-op stub; callers using
+ *    try-with-resources return connections to the pool automatically.
+ *    Callers that obtained a connection without try-with-resources should
+ *    close it explicitly (conn.close()) to return it to the pool.
  */
 public final class DBConnection {
-
-    // ── Connection parameters — kept in sync with AppConfig ──────────
-    private static final String URL  = "jdbc:mysql://localhost:3306/chequeprint_db"
-            + "?useSSL=false"
-            + "&allowPublicKeyRetrieval=true"
-            + "&serverTimezone=Asia/Kolkata"
-            + "&autoReconnect=true";
-
-    private static final String USER = "root";
-    private static final String PASS = "root123";
-
-    // ── Thread-local so each background thread gets its own connection ─
-    private static final ThreadLocal<Connection> threadLocal = new ThreadLocal<>();
 
     private DBConnection() {}
 
     /**
-     * Returns a connection for the current thread.
-     * Creates a new one if none exists or if the existing one is closed.
+     * Borrows a connection from the shared HikariCP pool.
+     * Always close the returned connection (use try-with-resources) to
+     * return it to the pool.
      */
     public static Connection getConnection() throws SQLException {
-        Connection con = threadLocal.get();
-        if (con == null || con.isClosed()) {
-            con = DriverManager.getConnection(URL, USER, PASS);
-            threadLocal.set(con);
-        }
-        return con;
+        return AppConfig.getConnection();
     }
 
     /**
-     * Closes and removes the connection for the current thread.
-     * Call this at the end of each background task / thread lifecycle.
+     * No-op — kept for API compatibility.
+     * With HikariCP each connection is returned to the pool when it is
+     * closed; there is no per-thread state to clean up here.
      */
     public static void closeConnection() {
-        Connection con = threadLocal.get();
-        if (con != null) {
-            try { con.close(); } catch (SQLException ignored) {}
-            threadLocal.remove();
-        }
+        // No-op: pool manages connection lifecycle
     }
 
     /**
      * Quick connectivity test — returns true when the DB is reachable.
-     * Safe to call from any thread; always opens and closes its own connection.
+     * Safe to call from any thread.
      */
     public static boolean isReachable() {
-        try (Connection test = DriverManager.getConnection(URL, USER, PASS)) {
-            return test != null && !test.isClosed();
-        } catch (SQLException e) {
-            return false;
-        }
+        return AppConfig.isConnected();
     }
 
     /**
      * Returns a brief status string suitable for UI display.
-     * e.g. "🟢 Connected" or "🔴 Offline: Communications link failure"
+     * e.g. "🟢 Database connected" or "🔴 DB offline: ..."
      */
     public static String statusLabel() {
-        try (Connection test = DriverManager.getConnection(URL, USER, PASS)) {
+        try (Connection test = AppConfig.getConnection()) {
             return "🟢 Database connected";
         } catch (SQLException e) {
             String msg = e.getMessage();
-            // Trim verbose JDBC messages for display
             if (msg != null && msg.length() > 80) msg = msg.substring(0, 80) + "…";
             return "🔴 DB offline: " + msg;
         }

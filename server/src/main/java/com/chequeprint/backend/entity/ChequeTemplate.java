@@ -28,18 +28,17 @@ public class ChequeTemplate {
     @Column(name = "is_default", nullable = false)
     private Boolean isDefault = false;
 
-    @Column(name = "config_json", columnDefinition = "LONGTEXT")
-    private String configJson;
+    // config_json removed in V4 migration — data lives in template_layout_fields
 
     public ChequeTemplate() {
     }
 
     public ChequeTemplate(Long id, Long bankId, String templateName, Double width, Double height) {
-        this.id = id;
-        this.bankId = bankId;
+        this.id           = id;
+        this.bankId       = bankId;
         this.templateName = templateName;
-        this.width = width != null ? width : 203.20;
-        this.height = height != null ? height : 92.00;
+        this.width        = width  != null ? width  : 203.20;
+        this.height       = height != null ? height : 92.00;
     }
 
     public Long getId() {
@@ -82,13 +81,6 @@ public class ChequeTemplate {
         this.height = height;
     }
 
-    public String getConfigJson() {
-        return configJson;
-    }
-
-    public void setConfigJson(String configJson) {
-        this.configJson = configJson;
-    }
 
     public Long getAccountId() {
         return accountId;

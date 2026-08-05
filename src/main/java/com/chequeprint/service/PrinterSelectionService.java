@@ -1,57 +1,25 @@
 package com.chequeprint.service;
 
-import com.chequeprint.state.AppState;
 import javafx.print.Printer;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Controller -> Service -> State printer selection flow.
- *
- * This service is the single entry point for UI code that needs to list,
- * select, or restore the active JavaFX printer. It keeps the controller thin
- * and ensures printer choice is persisted in AppState.
+ * @deprecated Merged into {@link PrintService}. Use PrintService directly.
  */
+@Deprecated(since = "2.0", forRemoval = true)
 public class PrinterSelectionService {
 
-    private final AppState appState = AppState.getInstance();
-    private final PrinterService printerService = new PrinterService();
+    private final PrintService delegate = new PrintService();
 
-    public List<Printer> listAvailablePrinters() {
-        return printerService.getAvailablePrinters();
-    }
-
-    public void refreshAvailablePrinters() {
-        printerService.refreshPrinters();
-    }
-
-    public Optional<Printer> findPrinter(String printerName) {
-        return printerService.findPrinterByName(printerName);
-    }
-
-    public Printer selectPrinter(Printer printer) {
-        return printerService.selectPrinter(printer);
-    }
-
-    public Printer selectPrinter(String printerName) {
-        return printerService.selectPrinterByName(printerName)
-                .orElseThrow(() -> new IllegalArgumentException("Printer not found: " + printerName));
-    }
-
-    public Printer initializeDefaultPrinter() {
-        return printerService.initializeSelectedPrinter().orElse(null);
-    }
-
-    public Printer getDefaultPrinter() {
-        return printerService.getDefaultPrinter().orElse(null);
-    }
-
-    public Printer setDefaultPrinter(Printer printer) {
-        return printerService.saveDefaultPrinter(printer);
-    }
-
-    public Printer resolveSelectedOrDefaultPrinter() {
-        return printerService.resolveSelectedOrDefaultPrinter().orElse(null);
-    }
+    public List<Printer>   listAvailablePrinters()           { return delegate.getAvailablePrinters(); }
+    public void            refreshAvailablePrinters()         { delegate.refreshPrinters(); }
+    public Optional<Printer> findPrinter(String name)        { return delegate.findPrinterByName(name); }
+    public Printer         selectPrinter(Printer p)           { return delegate.selectPrinter(p); }
+    public Printer         selectPrinter(String name)         { return delegate.selectPrinterByNameOrThrow(name); }
+    public Printer         initializeDefaultPrinter()         { return delegate.initializeDefaultPrinter(); }
+    public Printer         getDefaultPrinter()                { return delegate.getDefaultPrinter().orElse(null); }
+    public Printer         setDefaultPrinter(Printer p)       { return delegate.saveDefaultPrinter(p); }
+    public Printer         resolveSelectedOrDefaultPrinter()  { return delegate.resolveSelectedOrDefaultPrinter().orElse(null); }
 }

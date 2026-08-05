@@ -36,7 +36,7 @@ import java.util.Map;
 public class ChequePrintPreviewApp extends JFrame {
   private final ChequePreviewPanel previewPanel = new ChequePreviewPanel();
   private final BankTemplateStore templateStore = new BankTemplateStore();
-  private final ChequePrintService printService = new ChequePrintService();
+  private final PrintService printService = new PrintService();
 
   private final JTextField payeeField = new JTextField(26);
   private final JTextField amountNumberField = new JTextField(16);

@@ -98,7 +98,6 @@ public class BankTemplateService {
         existing.setTemplateName(template.getTemplateName());
         if (template.getWidth() != null) existing.setWidth(template.getWidth());
         if (template.getHeight() != null) existing.setHeight(template.getHeight());
-        if (template.getConfigJson() != null) existing.setConfigJson(template.getConfigJson());
     }
 
     @Transactional(readOnly = true)
