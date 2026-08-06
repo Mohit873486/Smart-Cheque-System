@@ -1,7 +1,5 @@
 package com.chequeprint.service;
 
-import com.chequeprint.config.AppConfig;
-
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
@@ -11,6 +9,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
+
+import com.chequeprint.config.ApiConfig;
 
 public class AiSqlDatabaseService {
 
@@ -37,23 +37,28 @@ public class AiSqlDatabaseService {
     public List<Map<String, Object>> executeSelect(String sql) throws Exception {
         validateSelectSql(sql);
 
-        try (Statement statement = AppConfig.getConnection().createStatement();
-             ResultSet resultSet = statement.executeQuery(sql)) {
-
-            ResultSetMetaData meta = resultSet.getMetaData();
-            int columnCount = meta.getColumnCount();
-            List<Map<String, Object>> rows = new ArrayList<>();
-
-            while (resultSet.next()) {
-                Map<String, Object> row = new LinkedHashMap<>();
-                for (int i = 1; i <= columnCount; i++) {
-                    row.put(meta.getColumnLabel(i), resultSet.getObject(i));
-                }
-                rows.add(row);
+        // Client cannot execute SQL directly — send to backend API
+        try {
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(ApiConfig.BASE_URL + "/api/ai/sql"))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", com.chequeprint.util.Session.getAuthorizationHeader())
+                    .POST(java.net.http.HttpRequest.BodyPublishers
+                            .ofString("{\"sql\":\"" + sql.replace("\"", "\\\"") + "\"}"))
+                    .build();
+            java.net.http.HttpResponse<String> response = client.send(request,
+                    java.net.http.HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                return mapper.readValue(response.body(),
+                        new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {
+                        });
             }
-
-            return rows;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to execute SQL via API: " + e.getMessage(), e);
         }
+        return List.of();
     }
 
     private void validateSelectSql(String sql) {

@@ -5,7 +5,6 @@ import com.chequeprint.model.User;
 import com.chequeprint.util.PasswordUtil;
 
 import java.security.SecureRandom;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 
 public class ForgotPasswordService {
@@ -14,7 +13,7 @@ public class ForgotPasswordService {
 
     private final UserDAO dao = new UserDAO();
 
-    public String startReset(String usernameOrEmail) throws SQLException {
+    public String startReset(String usernameOrEmail) {
         if (usernameOrEmail == null || usernameOrEmail.isBlank()) {
             throw new IllegalArgumentException("Enter your username or email first.");
         }
@@ -29,7 +28,7 @@ public class ForgotPasswordService {
         return otp;
     }
 
-    public void resetPassword(String usernameOrEmail, String otp, String newPassword) throws SQLException {
+    public void resetPassword(String usernameOrEmail, String otp, String newPassword) {
         if (usernameOrEmail == null || usernameOrEmail.isBlank()) {
             throw new IllegalArgumentException("Enter your username or email first.");
         }
@@ -55,7 +54,7 @@ public class ForgotPasswordService {
         dao.markOtpsUsed(user.getId());
     }
 
-    public User verifyOtpLogin(String usernameOrEmail, String otp) throws SQLException {
+    public User verifyOtpLogin(String usernameOrEmail, String otp) {
         if (usernameOrEmail == null || usernameOrEmail.isBlank()) {
             throw new IllegalArgumentException("Enter your username or email first.");
         }

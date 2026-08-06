@@ -1,8 +1,6 @@
 package com.chequeprint;
 
-import com.chequeprint.config.AppConfig;
 import com.chequeprint.service.ChequeReminderScheduler;
-import com.chequeprint.util.DBConnection;
 import javafx.animation.*;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -19,13 +17,6 @@ import javafx.util.Duration;
 
 /**
  * MainApp — application entry point.
- *
- * Fixes applied vs original:
- *  • Loads login.fxml FIRST (not main.fxml directly) so users authenticate.
- *  • Removed broken @FXML minimizeWindow() — it had no FXML scene reference.
- *  • Added Application.stop() to close DB connection on exit.
- *  • Removed accidental stage.setIconified(true) that minimised window on launch.
- *  • Splash runs DB check on background thread to avoid blocking the UI thread.
  */
 public class MainApp extends Application {
 
@@ -38,17 +29,13 @@ public class MainApp extends Application {
         showSplash(primaryStage);
     }
 
-    // ── Clean shutdown ───────────────────────────────────────────────
     @Override
     public void stop() {
-        reminderScheduler.stop();
-        AppConfig.closeConnection();
-        DBConnection.closeConnection();
+        // Client has no direct DB connections — all access via REST API
+        System.out.println("Application stopped gracefully.");
     }
 
-    // ── Splash Screen ────────────────────────────────────────────────
     private void showSplash(Stage primaryStage) {
-
         Label logo = new Label("💼 ChequePro");
         logo.setStyle("-fx-font-size:32px; -fx-font-weight:bold; -fx-text-fill:#1a56db;");
 
@@ -65,10 +52,10 @@ public class MainApp extends Application {
         VBox splashRoot = new VBox(12, logo, tagline, pb, loadingText);
         splashRoot.setAlignment(Pos.CENTER);
         splashRoot.setStyle(
-            "-fx-background-color:#ffffff;"
-            + "-fx-padding:60 80 60 80;"
-            + "-fx-background-radius:16px;"
-            + "-fx-effect:dropshadow(three-pass-box,rgba(0,0,0,0.18),30,0,0,8);");
+                "-fx-background-color:#ffffff;"
+                        + "-fx-padding:60 80 60 80;"
+                        + "-fx-background-radius:16px;"
+                        + "-fx-effect:dropshadow(three-pass-box,rgba(0,0,0,0.18),30,0,0,8);");
 
         Stage splashStage = new Stage(StageStyle.TRANSPARENT);
         Scene splashScene = new Scene(splashRoot);
@@ -77,37 +64,34 @@ public class MainApp extends Application {
         splashStage.setAlwaysOnTop(true);
         splashStage.show();
 
-        // DB check runs on background thread; UI updates back on FX thread
         Timeline splash = new Timeline(
-            new KeyFrame(Duration.millis(0), e -> {
-                pb.setProgress(0.1);
-                loadingText.setText("Starting…");
-            }),
-            new KeyFrame(Duration.millis(500), e -> {
-                pb.setProgress(0.35);
-                loadingText.setText("Checking database…");
-                // Background DB ping & migration
-                new Thread(() -> {
-                    boolean ok = AppConfig.isConnected();
-                    javafx.application.Platform.runLater(() -> {
-                        if (ok) {
-                            pb.setProgress(0.65);
-                            loadingText.setText("Database connected ✓");
-                        } else {
-                            loadingText.setText("⚠ DB offline — running in limited mode");
-                            pb.setProgress(0.65);
-                        }
-                    });
-                }, "splash-db-check").start();
-            }),
-            new KeyFrame(Duration.millis(1400), e -> {
-                pb.setProgress(0.9);
-                loadingText.setText("Loading UI…");
-            }),
-            new KeyFrame(Duration.millis(1900), e -> {
-                pb.setProgress(1.0);
-            })
-        );
+                new KeyFrame(Duration.millis(0), e -> {
+                    pb.setProgress(0.1);
+                    loadingText.setText("Starting…");
+                }),
+                new KeyFrame(Duration.millis(500), e -> {
+                    pb.setProgress(0.35);
+                    loadingText.setText("Checking backend…");
+                    new Thread(() -> {
+                        boolean ok = checkBackendConnection();
+                        javafx.application.Platform.runLater(() -> {
+                            if (ok) {
+                                pb.setProgress(0.65);
+                                loadingText.setText("Backend connected ✓");
+                            } else {
+                                loadingText.setText("⚠ Backend offline — running in limited mode");
+                                pb.setProgress(0.65);
+                            }
+                        });
+                    }, "splash-backend-check").start();
+                }),
+                new KeyFrame(Duration.millis(1400), e -> {
+                    pb.setProgress(0.9);
+                    loadingText.setText("Loading UI…");
+                }),
+                new KeyFrame(Duration.millis(1900), e -> {
+                    pb.setProgress(1.0);
+                }));
 
         splash.setOnFinished(e -> {
             splashStage.close();
@@ -117,31 +101,39 @@ public class MainApp extends Application {
         splash.play();
     }
 
-    // ── Load Login Screen ────────────────────────────────────────────
-    /**
-     * Shows login.fxml first. After successful authentication, LoginController
-     * swaps the scene to main.fxml itself.
-     */
+    private boolean checkBackendConnection() {
+        try {
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(com.chequeprint.config.ApiConfig.BASE_URL + "/api/cheques"))
+                    .timeout(java.time.Duration.ofSeconds(3))
+                    .GET()
+                    .build();
+            java.net.http.HttpResponse<String> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+            return response.statusCode() < 500;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private void loadLoginScreen(Stage stage) {
         try {
             FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/login.fxml"));
+                    getClass().getResource("/view/login.fxml"));
             Parent root = loader.load();
 
             Scene scene = new Scene(root, 1000, 680);
             scene.getStylesheets().add(
-                getClass().getResource("/css/style.css").toExternalForm());
+                    getClass().getResource("/css/style.css").toExternalForm());
             com.chequeprint.util.ThemeManager.applySavedTheme(scene);
 
             stage.setScene(scene);
             stage.setTitle("ChequePro — Sign In");
             stage.setMinWidth(480);
             stage.setMinHeight(560);
-            // Centre on screen
             stage.centerOnScreen();
             stage.show();
 
-            // Fade in
             root.setOpacity(0);
             FadeTransition ft = new FadeTransition(Duration.millis(400), root);
             ft.setFromValue(0);

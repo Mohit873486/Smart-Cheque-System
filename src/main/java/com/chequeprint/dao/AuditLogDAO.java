@@ -1,72 +1,75 @@
-package com.chequeprint.dao;
+  package com.chequeprint.dao;
 
-import com.chequeprint.config.AppConfig;
-import com.chequeprint.model.AuditAction;
-import com.chequeprint.model.AuditLog;
+  import com.chequeprint.config.ApiConfig;
+  import com.chequeprint.model.AuditLog;
+  import com.chequeprint.util.Session;
+  import com.fasterxml.jackson.databind.DeserializationFeature;
+  import com.fasterxml.jackson.databind.ObjectMapper;
+  import com.fasterxml.jackson.core.type.TypeReference;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
+  import java.net.URI;
+  import java.net.http.HttpClient;
+  import java.net.http.HttpRequest;
+  import java.net.http.HttpResponse;
+  import java.util.ArrayList;
+  import java.util.List;
+  import java.time.Duration;
 
-public class AuditLogDAO {
+  public class AuditLogDAO {
 
-  private static final String INSERT = "INSERT INTO audit_log (user_id, table_name, record_id, action, details, created_at) VALUES (?, ?, ?, ?, ?, ?)";
-  private static final String SELECT_RECENT = "SELECT * FROM audit_log ORDER BY created_at DESC LIMIT ?";
+      private static final String API_AUDIT = ApiConfig.BASE_URL + "/api/audit-logs";
+      private static volatile long lastErrorLogTime = 0;
 
-  public boolean insert(AuditLog log) throws SQLException {
-    try (Connection connection = AppConfig.getConnection();
-        PreparedStatement ps = connection.prepareStatement(INSERT, PreparedStatement.RETURN_GENERATED_KEYS)) {
-      ps.setObject(1, log.getUserId());
-      ps.setString(2, log.getTableName());
-      ps.setObject(3, log.getRecordId());
-      ps.setString(4, log.getAction().name());
-      ps.setString(5, log.getDetails());
-      ps.setTimestamp(6, Timestamp.valueOf(log.getCreatedAt()));
-      boolean inserted = ps.executeUpdate() > 0;
-      if (inserted) {
-        try (ResultSet keys = ps.getGeneratedKeys()) {
-          if (keys.next()) {
-            log.setId(keys.getLong(1));
+      private final HttpClient httpClient;
+      private final ObjectMapper objectMapper;
+
+      public AuditLogDAO() {
+          this.httpClient = HttpClient.newBuilder()
+                  .version(HttpClient.Version.HTTP_2)
+                  .connectTimeout(Duration.ofSeconds(10))
+                  .build();
+          this.objectMapper = new ObjectMapper();
+          this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+      }
+
+      private void addAuthToken(HttpRequest.Builder builder) {
+          String authHeader = Session.getAuthorizationHeader();
+          if (authHeader != null && !authHeader.isBlank()) {
+              builder.header("Authorization", authHeader);
           }
-        }
       }
-      return inserted;
-    }
-  }
 
-  public List<AuditLog> findRecent(int limit) throws SQLException {
-    List<AuditLog> logs = new ArrayList<>();
-    try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(SELECT_RECENT)) {
-      ps.setInt(1, limit);
-      try (ResultSet rs = ps.executeQuery()) {
-        while (rs.next()) {
-          logs.add(mapRow(rs));
-        }
+      public boolean insert(AuditLog log) {
+          try {
+              String json = objectMapper.writeValueAsString(log);
+              HttpRequest.Builder builder = HttpRequest.newBuilder()
+                      .POST(HttpRequest.BodyPublishers.ofString(json))
+                      .uri(URI.create(API_AUDIT))
+                      .header("Content-Type", "application/json")
+                      .header("Accept", "application/json");
+              addAuthToken(builder);
+              HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+              return response.statusCode() >= 200 && response.statusCode() < 300;
+          } catch (Exception ex) {
+              System.err.println("AuditLogDAO insert error: " + ex.getMessage());
+              return false;
+          }
       }
-    }
-    return logs;
-  }
 
-  private AuditLog mapRow(ResultSet rs) throws SQLException {
-    AuditLog log = new AuditLog();
-    log.setId(rs.getLong("id"));
-    int userId = rs.getInt("user_id");
-    if (!rs.wasNull()) {
-      log.setUserId(userId);
-    }
-    log.setTableName(rs.getString("table_name"));
-    int recordId = rs.getInt("record_id");
-    if (!rs.wasNull()) {
-      log.setRecordId(recordId);
-    }
-    log.setAction(AuditAction.valueOf(rs.getString("action")));
-    log.setDetails(rs.getString("details"));
-    Timestamp createdAt = rs.getTimestamp("created_at");
-    log.setCreatedAt(createdAt.toLocalDateTime());
-    return log;
+      public List<AuditLog> findRecent(int limit) {
+          try {
+              HttpRequest.Builder builder = HttpRequest.newBuilder()
+                      .GET()
+                      .uri(URI.create(API_AUDIT + "?limit=" + limit))
+                      .header("Accept", "application/json");
+              addAuthToken(builder);
+              HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+              if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                  return objectMapper.readValue(response.body(), new TypeReference<List<AuditLog>>() {});
+              }
+          } catch (Exception ex) {
+              System.err.println("AuditLogDAO findRecent error: " + ex.getMessage());
+          }
+          return new ArrayList<>();
+      }
   }
-}

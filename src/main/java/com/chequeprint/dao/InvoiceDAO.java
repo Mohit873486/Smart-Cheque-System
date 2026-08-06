@@ -1,84 +1,145 @@
 package com.chequeprint.dao;
 
-import com.chequeprint.config.AppConfig;
+import com.chequeprint.config.ApiConfig;
 import com.chequeprint.model.Invoice;
+import com.chequeprint.util.Session;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 
-import java.sql.*;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
 public class InvoiceDAO {
 
-    public boolean insert(Invoice inv) throws SQLException {
-        String sql = "INSERT INTO invoices (invoice_no,client_name,amount,issue_date,due_date,status,notes) VALUES(?,?,?,?,?,?,?)";
-        try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(sql)) {
-            ps.setString(1, inv.getInvoiceNo());
-            ps.setString(2, inv.getClientName());
-            ps.setBigDecimal(3, inv.getAmount());
-            ps.setDate(4, Date.valueOf(inv.getIssueDate()));
-            ps.setDate(5, Date.valueOf(inv.getDueDate()));
-            ps.setString(6, inv.getStatus().name());
-            ps.setString(7, inv.getNotes());
-            return ps.executeUpdate() > 0;
+    private static final String API_INVOICES = ApiConfig.BASE_URL + "/api/invoices";
+    private static volatile long lastErrorLogTime = 0;
+
+    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
+
+    public InvoiceDAO() {
+        this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
+
+    private void addAuthToken(HttpRequest.Builder builder) {
+        String authHeader = Session.getAuthorizationHeader();
+        if (authHeader != null && !authHeader.isBlank()) {
+            builder.header("Authorization", authHeader);
         }
     }
 
-    public List<Invoice> findAll() throws SQLException {
-        List<Invoice> list = new ArrayList<>();
-        String sql = "SELECT * FROM invoices ORDER BY created_at DESC";
-        try (Statement st = AppConfig.getConnection().createStatement();
-                ResultSet rs = st.executeQuery(sql)) {
-            while (rs.next())
-                list.add(mapRow(rs));
+    private HttpResponse<String> sendWithRetry(HttpRequest request) throws Exception {
+        int maxRetries = 3;
+        for (int i = 0; i < maxRetries; i++) {
+            try {
+                return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            } catch (Exception e) {
+                if (i == maxRetries - 1) throw e;
+                Thread.sleep(500L * (i + 1));
+            }
         }
-        return list;
+        return null;
     }
 
-    public boolean update(Invoice inv) throws SQLException {
-        String sql = "UPDATE invoices SET client_name=?,amount=?,issue_date=?,due_date=?,status=?,notes=? WHERE id=?";
-        try (PreparedStatement ps = AppConfig.getConnection().prepareStatement(sql)) {
-            ps.setString(1, inv.getClientName());
-            ps.setBigDecimal(2, inv.getAmount());
-            ps.setDate(3, Date.valueOf(inv.getIssueDate()));
-            ps.setDate(4, Date.valueOf(inv.getDueDate()));
-            ps.setString(5, inv.getStatus().name());
-            ps.setString(6, inv.getNotes());
-            ps.setInt(7, inv.getId());
-            return ps.executeUpdate() > 0;
+    public List<Invoice> findAll() {
+        try {
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .GET()
+                    .uri(URI.create(API_INVOICES))
+                    .header("Accept", "application/json");
+            addAuthToken(builder);
+            HttpResponse<String> response = sendWithRetry(builder.build());
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                return objectMapper.readValue(response.body(), new TypeReference<List<Invoice>>() {});
+            }
+        } catch (Exception ex) {
+            logError("InvoiceDAO findAll error: " + ex.getMessage());
+        }
+        return new ArrayList<>();
+    }
+
+    public boolean insert(Invoice inv) {
+        try {
+            String json = objectMapper.writeValueAsString(inv);
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .POST(HttpRequest.BodyPublishers.ofString(json))
+                    .uri(URI.create(API_INVOICES))
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json");
+            addAuthToken(builder);
+            HttpResponse<String> response = sendWithRetry(builder.build());
+            return response.statusCode() >= 200 && response.statusCode() < 300;
+        } catch (Exception ex) {
+            logError("InvoiceDAO insert error: " + ex.getMessage());
+            return false;
         }
     }
 
-    public boolean delete(int id) throws SQLException {
-        try (PreparedStatement ps = AppConfig.getConnection().prepareStatement("DELETE FROM invoices WHERE id=?")) {
-            ps.setInt(1, id);
-            return ps.executeUpdate() > 0;
+    public boolean update(Invoice inv) {
+        if (inv == null || inv.getId() <= 0) return false;
+        try {
+            String json = objectMapper.writeValueAsString(inv);
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .PUT(HttpRequest.BodyPublishers.ofString(json))
+                    .uri(URI.create(API_INVOICES + "/" + inv.getId()))
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json");
+            addAuthToken(builder);
+            HttpResponse<String> response = sendWithRetry(builder.build());
+            return response.statusCode() >= 200 && response.statusCode() < 300;
+        } catch (Exception ex) {
+            logError("InvoiceDAO update error: " + ex.getMessage());
+            return false;
         }
     }
 
-    private Invoice mapRow(ResultSet rs) throws SQLException {
-        Invoice inv = new Invoice();
-        inv.setId(rs.getInt("id"));
-        inv.setInvoiceNo(rs.getString("invoice_no"));
-        inv.setClientName(rs.getString("client_name"));
-        inv.setAmount(rs.getBigDecimal("amount"));
-        Date id = rs.getDate("issue_date");
-        if (id != null)
-            inv.setIssueDate(id.toLocalDate());
-        Date dd = rs.getDate("due_date");
-        if (dd != null)
-            inv.setDueDate(dd.toLocalDate());
-        inv.setStatus(Invoice.Status.valueOf(rs.getString("status")));
-        inv.setNotes(rs.getString("notes"));
-        return inv;
+    public boolean delete(int id) {
+        try {
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .DELETE()
+                    .uri(URI.create(API_INVOICES + "/" + id));
+            addAuthToken(builder);
+            HttpResponse<String> response = sendWithRetry(builder.build());
+            return response.statusCode() >= 200 && response.statusCode() < 300;
+        } catch (Exception ex) {
+            logError("InvoiceDAO delete error: " + ex.getMessage());
+            return false;
+        }
     }
 
-    public int countTotal() throws SQLException {
-        String sql = "SELECT COUNT(*) FROM invoices";
-        try (Statement st = AppConfig.getConnection().createStatement();
-                ResultSet rs = st.executeQuery(sql)) {
-            if (rs.next())
-                return rs.getInt(1);
+    public int countTotal() {
+        try {
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .GET()
+                    .uri(URI.create(API_INVOICES + "/count"))
+                    .header("Accept", "application/json");
+            addAuthToken(builder);
+            HttpResponse<String> response = sendWithRetry(builder.build());
+            if (response.statusCode() == 200) {
+                return Integer.parseInt(response.body().trim());
+            }
+        } catch (Exception ex) {
+            logError("InvoiceDAO countTotal error: " + ex.getMessage());
         }
         return 0;
+    }
+
+    private void logError(String message) {
+        long now = System.currentTimeMillis();
+        if (now - lastErrorLogTime > 5000) {
+            lastErrorLogTime = now;
+            System.err.println(message);
+        }
     }
 }

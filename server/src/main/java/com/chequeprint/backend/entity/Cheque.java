@@ -3,6 +3,12 @@ package com.chequeprint.backend.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.DecimalMax;
 
 @Entity
 @Table(name = "cheques")
@@ -15,6 +21,9 @@ public class Cheque {
     @Column(name = "cheque_no", unique = true, length = 50)
     private String chequeNo;
 
+    @NotBlank(message = "Payee name is required")
+    @Size(max = 150, message = "Max 150 chars")
+    @Pattern(regexp = "^[a-zA-Z0-9 .'-]+$", message = "Invalid characters in payee name")
     @Column(name = "payee_name", nullable = false, length = 150)
     private String payeeName;
 
@@ -45,9 +54,11 @@ public class Cheque {
         Draft, Pending, Deposited, Cleared, Bounced, Approved, Rejected, Printed, Cancelled
     }
 
-    public Cheque() {}
+    public Cheque() {
+    }
 
-    public Cheque(String chequeNo, String payeeName, BigDecimal amount, String amountWords, Integer bankId, LocalDate issueDate, Status status) {
+    public Cheque(String chequeNo, String payeeName, BigDecimal amount, String amountWords, Integer bankId,
+            LocalDate issueDate, Status status) {
         this.chequeNo = chequeNo;
         this.payeeName = payeeName;
         this.amount = amount;
@@ -57,7 +68,8 @@ public class Cheque {
         this.status = status;
     }
 
-    public Cheque(String chequeNo, String payeeName, BigDecimal amount, String amountWords, Integer bankId, int accountId, LocalDate issueDate, Status status) {
+    public Cheque(String chequeNo, String payeeName, BigDecimal amount, String amountWords, Integer bankId,
+            int accountId, LocalDate issueDate, Status status) {
         this.chequeNo = chequeNo;
         this.payeeName = payeeName;
         this.amount = amount;
@@ -68,32 +80,77 @@ public class Cheque {
         this.status = status;
     }
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public int getId() {
+        return id;
+    }
 
-    public String getChequeNo() { return chequeNo; }
-    public void setChequeNo(String chequeNo) { this.chequeNo = chequeNo; }
+    public void setId(int id) {
+        this.id = id;
+    }
 
-    public String getPayeeName() { return payeeName; }
-    public void setPayeeName(String payeeName) { this.payeeName = payeeName; }
+    public String getChequeNo() {
+        return chequeNo;
+    }
 
-    public BigDecimal getAmount() { return amount; }
-    public void setAmount(BigDecimal amount) { this.amount = amount; }
+    public void setChequeNo(String chequeNo) {
+        this.chequeNo = chequeNo;
+    }
 
-    public String getAmountWords() { return amountWords; }
-    public void setAmountWords(String amountWords) { this.amountWords = amountWords; }
+    public String getPayeeName() {
+        return payeeName;
+    }
 
-    public Integer getBankId() { return bankId; }
-    public void setBankId(Integer bankId) { this.bankId = bankId; }
+    public void setPayeeName(String payeeName) {
+        this.payeeName = payeeName;
+    }
 
-    public Integer getAccountId() { return accountId; }
-    public void setAccountId(Integer accountId) { this.accountId = accountId; }
+    public BigDecimal getAmount() {
+        return amount;
+    }
 
-    public LocalDate getIssueDate() { return issueDate; }
-    public void setIssueDate(LocalDate issueDate) { this.issueDate = issueDate; }
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
 
-    public Status getStatus() { return status; }
-    public void setStatus(Status status) { this.status = status; }
+    public String getAmountWords() {
+        return amountWords;
+    }
+
+    public void setAmountWords(String amountWords) {
+        this.amountWords = amountWords;
+    }
+
+    public Integer getBankId() {
+        return bankId;
+    }
+
+    public void setBankId(Integer bankId) {
+        this.bankId = bankId;
+    }
+
+    public Integer getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Integer accountId) {
+        this.accountId = accountId;
+    }
+
+    public LocalDate getIssueDate() {
+        return issueDate;
+    }
+
+    public void setIssueDate(LocalDate issueDate) {
+        this.issueDate = issueDate;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
 
     public String getBankName() {
         return bankTemplate != null ? bankTemplate.getBankName() : null;
