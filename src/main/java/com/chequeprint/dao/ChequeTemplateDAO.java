@@ -5,6 +5,7 @@ import com.chequeprint.model.BankTemplateLayout;
 import com.chequeprint.model.ChequeTemplate;
 import com.chequeprint.model.FieldPosition;
 import com.chequeprint.model.LayoutField;
+import com.chequeprint.util.HttpClientProvider;
 import com.chequeprint.util.Session;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -40,12 +41,9 @@ public class ChequeTemplateDAO {
     private final ObjectMapper objectMapper;
 
     public ChequeTemplateDAO() {
-        this.httpClient = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_2)
-                .connectTimeout(Duration.ofSeconds(10))
-                .build();
-        this.objectMapper = new ObjectMapper()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.httpClient = HttpClientProvider.getClient();  // ✅ shared, no leak
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     // ── Auth helper ───────────────────────────────────────────────────────────

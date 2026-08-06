@@ -32,7 +32,6 @@ public class MainController {
 
   private String currentPage = "dashboard";
 
-
   @FXML
   private VBox sidebar;
 
@@ -137,6 +136,15 @@ public class MainController {
       mainSearchField.textProperty().addListener((obs, oldValue, newValue) -> handleMainSearch(newValue));
     }
 
+    // Session timeout via scene listener (no polling)
+    Platform.runLater(() -> {
+      if (contentPane != null && contentPane.getScene() != null) {
+        contentPane.getScene().addEventFilter(InputEvent.ANY, e -> {
+          SessionManager.getInstance().updateActivity();
+        });
+      }
+    });
+
     // Start Dev Hot Reload Service for dynamic FXML and CSS reloading
     com.chequeprint.dev.DevHotReloadService.getInstance().start(this);
   }
@@ -154,7 +162,6 @@ public class MainController {
     navigate("cheques");
     setActiveNav(navCheques);
   }
-
 
   @FXML
   private void onInvoices() {
@@ -224,33 +231,30 @@ public class MainController {
     onSupport();
   }
 
-  private Timeline sessionTimeoutTimeline;
-
   public void setCurrentUser(User currentUser) {
     this.currentUser = currentUser;
     applyRolePermissions();
     updateUserFooter();
     navigateRoleLanding();
-    startSessionTimeoutCheck();
+// Load and apply the theme asynchronously on startup
 
-    // Load and apply the theme asynchronously on startup
     com.chequeprint.util.AppExecutors.runAsync(() -> {
-        try {
-            com.chequeprint.service.SettingService service = new com.chequeprint.service.SettingService();
-            com.chequeprint.model.Settings settings = service.getSettings();
-            if (settings != null) {
-                Platform.runLater(() -> {
-                    if (sidebarLogoText != null && settings.getAppName() != null && !settings.getAppName().isBlank()) {
-                        sidebarLogoText.setText(settings.getAppName());
-                    }
-                    if (contentPane != null && contentPane.getScene() != null) {
-                        com.chequeprint.util.ThemeManager.applyTheme(contentPane.getScene(), settings.getTheme());
-                    }
-                });
+      try {
+        com.chequeprint.service.SettingService service = new com.chequeprint.service.SettingService();
+        com.chequeprint.model.Settings settings = service.getSettings();
+        if (settings != null) {
+          Platform.runLater(() -> {
+            if (sidebarLogoText != null && settings.getAppName() != null && !settings.getAppName().isBlank()) {
+              sidebarLogoText.setText(settings.getAppName());
             }
-        } catch (Exception ex) {
-            System.err.println("[MainController] Error applying theme: " + ex.getMessage());
+            if (contentPane != null && contentPane.getScene() != null) {
+              com.chequeprint.util.ThemeManager.applyTheme(contentPane.getScene(), settings.getTheme());
+            }
+          });
         }
+      } catch (Exception ex) {
+        System.err.println("[MainController] Error applying theme: " + ex.getMessage());
+      }
     });
   }
 
@@ -260,40 +264,10 @@ public class MainController {
     }
   }
 
-  private void startSessionTimeoutCheck() {
-    if (sessionTimeoutTimeline != null) {
-      sessionTimeoutTimeline.stop();
-    }
-    SessionManager.getInstance().updateActivity();
-
-    Platform.runLater(() -> {
-      if (contentPane != null && contentPane.getScene() != null) {
-        contentPane.getScene().addEventFilter(InputEvent.ANY, e -> {
-          SessionManager.getInstance().updateActivity();
-        });
-      }
-    });
-
-    sessionTimeoutTimeline = new Timeline(new KeyFrame(Duration.seconds(10), e -> checkSessionTimeout()));
-    sessionTimeoutTimeline.setCycleCount(Timeline.INDEFINITE);
-    sessionTimeoutTimeline.play();
-  }
-
-  private void checkSessionTimeout() {
-    if (SessionManager.getInstance().isExpired()) {
-      if (sessionTimeoutTimeline != null) {
-        sessionTimeoutTimeline.stop();
-      }
-      handleAutoLogout();
-    }
-  }
-
   private void handleAutoLogout() {
     Platform.runLater(() -> {
       try {
-        if (sessionTimeoutTimeline != null) {
-          sessionTimeoutTimeline.stop();
-        }
+        // Session timeout timeline removed — event-based only
         com.chequeprint.service.AuthService authService = new com.chequeprint.service.AuthService();
         authService.logout();
         SessionManager.getInstance().clear();
@@ -309,9 +283,9 @@ public class MainController {
         javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/login.fxml"));
         Parent root = loader.load();
         javafx.stage.Stage stage = (javafx.stage.Stage) contentPane.getScene().getWindow();
-        
+
         stage.setMaximized(false); // Restore normal window size
-        
+
         javafx.scene.Scene scene = new javafx.scene.Scene(root, 900, 620);
         var stylesheet = getClass().getResource("/css/style.css");
         if (stylesheet != null) {
@@ -322,7 +296,8 @@ public class MainController {
         stage.setTitle("Smart Cheque Management System - Sign In");
         stage.centerOnScreen();
 
-        Alert alert = new Alert(Alert.AlertType.WARNING, "Your session has expired due to inactivity. Please log in again.");
+        Alert alert = new Alert(Alert.AlertType.WARNING,
+            "Your session has expired due to inactivity. Please log in again.");
         alert.setTitle("Session Expired");
         alert.setHeaderText(null);
         alert.show();
@@ -361,7 +336,8 @@ public class MainController {
   @FXML
   private void onLogout() {
     try {
-      javafx.scene.control.Alert confirm = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION,
+      javafx.scene.control.Alert confirm = new javafx.scene.control.Alert(
+          javafx.scene.control.Alert.AlertType.CONFIRMATION,
           "Are you sure you want to sign out?");
       confirm.setTitle("Sign out");
       var res = confirm.showAndWait();
@@ -369,10 +345,8 @@ public class MainController {
         return;
       }
 
-      if (sessionTimeoutTimeline != null) {
-        sessionTimeoutTimeline.stop();
-      }
-
+      // Session timeout timeline removed — event-based only
+      
       // Perform logout
       com.chequeprint.service.AuthService authService = new com.chequeprint.service.AuthService();
       authService.logout();
@@ -390,9 +364,9 @@ public class MainController {
       javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/login.fxml"));
       javafx.scene.Parent root = loader.load();
       javafx.stage.Stage stage = (javafx.stage.Stage) contentPane.getScene().getWindow();
-      
+
       stage.setMaximized(false); // Restore normal window size
-      
+
       javafx.scene.Scene scene = new javafx.scene.Scene(root, 900, 620);
       var stylesheet = getClass().getResource("/css/style.css");
       if (stylesheet != null) {
@@ -411,7 +385,7 @@ public class MainController {
   }
 
   private void navigateRoleLanding() {
-    String[] preferredPages = {"dashboard", "cheques", "invoices", "banks", "profile", "support"};
+    String[] preferredPages = { "dashboard", "cheques", "invoices", "banks", "profile", "support" };
     for (String page : preferredPages) {
       if (isPageAllowed(page)) {
         navigate(page);
@@ -469,7 +443,6 @@ public class MainController {
   }
 
   // ================= MAIN NAVIGATION & HOT RELOAD =================
-
   public void navigate(String page) {
     if (SessionManager.getInstance().isExpired()) {
       handleAutoLogout();
@@ -494,6 +467,51 @@ public class MainController {
     try {
       Node view;
 
+      // ✅ CACHE CHECK: If already loaded, reuse cached view
+      if (pageCache.containsKey(page)) {
+        view = pageCache.get(page);
+
+        // Notify cached controller that page is being shown again
+        Object cachedCtrl = controllerMap.get(page);
+        if (cachedCtrl instanceof ReloadableController rc) {
+          rc.onPageLoad();
+        }
+
+        // Fade in cached view
+        Node current = contentPane.getChildren().isEmpty()
+            ? null
+            : contentPane.getChildren().get(0);
+
+        if (current == view) {
+          return; // Same page already visible
+        }
+
+        if (current != null) {
+          FadeTransition fadeOut = new FadeTransition(Duration.millis(150), current);
+          fadeOut.setFromValue(1);
+          fadeOut.setToValue(0);
+          fadeOut.setOnFinished(e -> {
+            contentPane.getChildren().setAll(view);
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(250), view);
+            fadeIn.setFromValue(0);
+            fadeIn.setToValue(1);
+            fadeIn.play();
+          });
+          fadeOut.play();
+        } else {
+          contentPane.getChildren().setAll(view);
+          FadeTransition fadeIn = new FadeTransition(Duration.millis(250), view);
+          fadeIn.setFromValue(0);
+          fadeIn.setToValue(1);
+          fadeIn.play();
+        }
+
+        headerTitle.setText(titleMap.getOrDefault(page, "ChequePro"));
+        System.out.println("Loaded page from cache: " + page);
+        return;
+      }
+
+      // Fresh load from FXML
       java.net.URL resourceUrl = getClass().getResource(path);
       if (resourceUrl == null) {
         String relativePath = path.startsWith("/") ? path.substring(1) : path;
@@ -569,13 +587,14 @@ public class MainController {
 
       headerTitle.setText(titleMap.getOrDefault(page, "ChequePro"));
 
-      // ✅ DEBUG (optional)
+      // ✅ CACHE: Store loaded view for future reuse
+      pageCache.put(page, view);
       System.out.println("Loaded page: " + page);
 
     } catch (Exception e) {
       e.printStackTrace();
-      Label error = new Label("Unable to load " + titleMap.getOrDefault(page, page)
-          + ".\n" + e.getClass().getSimpleName() + ": " + e.getMessage());
+      Label error = new Label("Unable to load " + titleMap.getOrDefault(page, page) + ".\n"
+          + e.getClass().getSimpleName() + ": " + e.getMessage());
       error.setWrapText(true);
       error.getStyleClass().add("empty-label");
       contentPane.getChildren().setAll(error);
@@ -584,8 +603,10 @@ public class MainController {
   }
 
   /**
-   * Dynamically hot-reloads the current active view when an FXML file changes on disk.
-   * Captures state snapshot before reload and restores state after controller re-binding.
+   * Dynamically hot-reloads the current active view when an FXML file changes on
+   * disk.
+   * Captures state snapshot before reload and restores state after controller
+   * re-binding.
    *
    * @param fxmlFileName Modified FXML file name
    */
@@ -596,7 +617,8 @@ public class MainController {
 
     String currentPath = fxmlMap.get(currentPage);
     if (fxmlFileName != null && currentPath != null && !currentPath.endsWith(fxmlFileName)) {
-      // The changed FXML is not the active visible view; evict it from cache if cached
+      // The changed FXML is not the active visible view; evict it from cache if
+      // cached
       for (Map.Entry<String, String> entry : fxmlMap.entrySet()) {
         if (entry.getValue().endsWith(fxmlFileName)) {
           pageCache.remove(entry.getKey());
@@ -642,13 +664,20 @@ public class MainController {
         controllerMap.put(currentPage, ctrl);
       }
 
-      if (ctrl instanceof DashboardController dc) dc.setMainController(this);
-      if (ctrl instanceof ChequeController cc) cc.setMainController(this);
-      if (ctrl instanceof InvoiceController ic) ic.setMainController(this);
-      if (ctrl instanceof AiAssistantController ac) ac.setMainController(this);
-      if (ctrl instanceof ProfileController pc) pc.setMainController(this);
-      if (ctrl instanceof SettingsController sc) sc.setMainController(this);
-      if (ctrl instanceof SupportController sc) sc.setMainController(this);
+      if (ctrl instanceof DashboardController dc)
+        dc.setMainController(this);
+      if (ctrl instanceof ChequeController cc)
+        cc.setMainController(this);
+      if (ctrl instanceof InvoiceController ic)
+        ic.setMainController(this);
+      if (ctrl instanceof AiAssistantController ac)
+        ac.setMainController(this);
+      if (ctrl instanceof ProfileController pc)
+        pc.setMainController(this);
+      if (ctrl instanceof SettingsController sc)
+        sc.setMainController(this);
+      if (ctrl instanceof SupportController sc)
+        sc.setMainController(this);
 
       if (ctrl instanceof ReloadableController rc) {
         if (stateSnapshot != null) {
@@ -730,7 +759,7 @@ public class MainController {
       return null;
     }
     Node current = contentPane.getChildren().get(0);
-    for (Map.Entry<String, Node> entry : pageCache.entrySet()) {
+    for (Map.Entry entry : pageCache.entrySet()) {
       if (entry.getValue() == current) {
         return controllerMap.get(entry.getKey());
       }

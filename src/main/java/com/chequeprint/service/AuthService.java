@@ -19,9 +19,7 @@ public class AuthService {
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final AuditService auditService = new AuditService();
   private static final int MAX_LOGIN_ATTEMPTS = 3;
-  private int remainingLoginAttempts = MAX_LOGIN_ATTEMPTS;
   private User currentUser;
-  private boolean accountLocked = false;
 
   public AuthenticationResult authenticate(String usernameOrEmail, String password) {
     if (usernameOrEmail == null || usernameOrEmail.isBlank()
@@ -29,35 +27,25 @@ public class AuthService {
       return AuthenticationResult.failure("Username/email and password are required.");
     }
 
-    if (accountLocked) {
-      return AuthenticationResult.failure("Blocked account. Contact an administrator to unlock it.");
-    }
-
     try {
-      // 1. Prepare request body JSON
       Map<String, String> requestBody = new HashMap<>();
       requestBody.put("username", usernameOrEmail.trim());
       requestBody.put("password", password);
       String requestBodyJson = objectMapper.writeValueAsString(requestBody);
 
-      // 2. Build HTTP POST request
       HttpRequest request = HttpRequest.newBuilder()
               .uri(URI.create(ApiConfig.BASE_URL + "/api/auth/login"))
               .header("Content-Type", "application/json")
               .POST(HttpRequest.BodyPublishers.ofString(requestBodyJson))
               .build();
 
-      // 3. Send request
       HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
       if (response.statusCode() == 200) {
-        // Successful login
         JsonNode rootNode = objectMapper.readTree(response.body());
         String token = rootNode.get("token").asText();
-        System.out.println("Debug - Extracted Token: " + token);
         JsonNode userNode = rootNode.get("user");
 
-        // 4. Map properties from userNode to client User model
         User user = new User();
         user.setId(userNode.get("id").asInt());
         user.setUsername(userNode.get("username").asText());
@@ -66,32 +54,31 @@ public class AuthService {
         user.setRole(userNode.get("role").asText());
         user.setStatus("Active");
 
-        // 5. Store session context
         com.chequeprint.util.Session.token = token;
         com.chequeprint.util.Session.username = user.getUsername();
         com.chequeprint.util.Session.setSession(token, user.getUsername());
         SessionManager.getInstance().start(user);
         SessionManager.getInstance().setToken(token);
         
-        remainingLoginAttempts = MAX_LOGIN_ATTEMPTS;
         currentUser = user;
-        
         auditService.recordLogin(user);
         return AuthenticationResult.success(user);
 
       } else if (response.statusCode() == 401) {
-        // Bad credentials
-        remainingLoginAttempts--;
-        if (remainingLoginAttempts <= 0) {
-          accountLocked = true;
-          return AuthenticationResult.failure("Blocked account. Maximum login attempts reached.");
+        JsonNode errNode = objectMapper.readTree(response.body());
+        boolean locked = errNode.has("locked") && errNode.get("locked").asBoolean();
+        if (locked) {
+          return AuthenticationResult.failure("Blocked account. Contact an administrator to unlock it.");
         }
-        return AuthenticationResult.failure("Wrong password. " + remainingLoginAttempts + " attempt(s) remaining.");
+        int remaining = errNode.has("remainingAttempts") ? errNode.get("remainingAttempts").asInt() : 0;
+        return AuthenticationResult.failure("Wrong password. " + remaining + " attempt(s) remaining.");
+
       } else if (response.statusCode() == 403) {
-        // Locked / Disabled user
-        return AuthenticationResult.failure("Blocked account. Contact an administrator to unlock it.");
+        JsonNode errNode = objectMapper.readTree(response.body());
+        String msg = errNode.has("message") ? errNode.get("message").asText() : "Account is locked.";
+        return AuthenticationResult.failure(msg);
+
       } else {
-        // General error details
         JsonNode errNode = objectMapper.readTree(response.body());
         String msg = errNode.has("message") ? errNode.get("message").asText() : "HTTP error: " + response.statusCode();
         return AuthenticationResult.failure("Login failed: " + msg);
@@ -108,11 +95,11 @@ public class AuthService {
   }
 
   public boolean isLocked() {
-    return accountLocked || remainingLoginAttempts <= 0;
+    return false;
   }
 
   public int getRemainingLoginAttempts() {
-    return remainingLoginAttempts;
+    return MAX_LOGIN_ATTEMPTS;
   }
 
   public User getCurrentUser() {
@@ -121,8 +108,6 @@ public class AuthService {
 
   public void logout() {
     currentUser = null;
-    remainingLoginAttempts = MAX_LOGIN_ATTEMPTS;
-    accountLocked = false;
     SessionManager.getInstance().clear();
   }
 

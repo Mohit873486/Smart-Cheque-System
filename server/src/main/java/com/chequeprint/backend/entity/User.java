@@ -47,6 +47,13 @@ public class User {
     @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
 
+    // new  
+    @Column(name = "failed_login_attempts")
+    private int failedLoginAttempts = 0;
+
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
+
     public User() {}
 
     public int getId() { return id; }
@@ -84,4 +91,11 @@ public class User {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+
+    // new
+    public int getFailedLoginAttempts() { return failedLoginAttempts; }
+    public void setFailedLoginAttempts(int failedLoginAttempts) { this.failedLoginAttempts = failedLoginAttempts; }
+
+    public LocalDateTime getLockedUntil() { return lockedUntil; }
+    public void setLockedUntil(LocalDateTime lockedUntil) { this.lockedUntil = lockedUntil; }
 }

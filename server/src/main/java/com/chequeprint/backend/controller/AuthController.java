@@ -28,6 +28,25 @@ public class AuthController {
         try {
             LoginResponse response = authService.login(request);
             return ResponseEntity.ok(response);
+        } catch (AuthService.AccountLockedException ex) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("timestamp", LocalDateTime.now().toString());
+            error.put("status", HttpStatus.FORBIDDEN.value());
+            error.put("error", "Account Locked");
+            error.put("message", ex.getMessage());
+            error.put("locked", true);
+            error.put("path", "/api/auth/login");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+        } catch (AuthService.InvalidCredentialsException ex) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("timestamp", LocalDateTime.now().toString());
+            error.put("status", HttpStatus.UNAUTHORIZED.value());
+            error.put("error", "Unauthorized");
+            error.put("message", ex.getMessage());
+            error.put("remainingAttempts", ex.getRemainingAttempts());
+            error.put("locked", false);
+            error.put("path", "/api/auth/login");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         } catch (IllegalArgumentException ex) {
             Map<String, Object> error = new HashMap<>();
             error.put("timestamp", LocalDateTime.now().toString());
@@ -44,6 +63,20 @@ public class AuthController {
             error.put("message", ex.getMessage());
             error.put("path", "/api/auth/login");
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+        }
+    }
+
+    @PostMapping("/unlock/{userId}")
+    public ResponseEntity<?> unlockUser(@PathVariable int userId) {
+        try {
+            authService.unlockUser(userId);
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "User unlocked successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception ex) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("message", ex.getMessage());
+            return ResponseEntity.badRequest().body(error);
         }
     }
 }

@@ -40,52 +40,91 @@ import java.util.stream.Collectors;
 
 public class DashboardController implements ReloadableController {
 
-    private final java.util.concurrent.atomic.AtomicBoolean dashboardFetchInFlight = new java.util.concurrent.atomic.AtomicBoolean(false);
+    private final java.util.concurrent.atomic.AtomicBoolean dashboardFetchInFlight = new java.util.concurrent.atomic.AtomicBoolean(
+            false);
     private boolean alreadyLoaded = false;
 
-    @FXML private BorderPane dashboardRoot;
-    @FXML private Label lblWelcome;
-    @FXML private Label lblSubtitle;
-    @FXML private Label lblTotalCheques;
-    @FXML private Label lblPendingCheques;
-    @FXML private Label lblPrintedCheques;
-    @FXML private Label lblClearedCount;
+    @FXML
+    private BorderPane dashboardRoot;
+    @FXML
+    private Label lblWelcome;
+    @FXML
+    private Label lblSubtitle;
+    @FXML
+    private Label lblTotalCheques;
+    @FXML
+    private Label lblPendingCheques;
+    @FXML
+    private Label lblPrintedCheques;
+    @FXML
+    private Label lblClearedCount;
 
-    @FXML private VBox cardTotal;
-    @FXML private VBox cardPending;
-    @FXML private VBox cardPrinted;
-    @FXML private VBox cardAmount;
+    @FXML
+    private VBox cardTotal;
+    @FXML
+    private VBox cardPending;
+    @FXML
+    private VBox cardPrinted;
+    @FXML
+    private VBox cardAmount;
 
-    @FXML private Button btnNewCheque;
-    @FXML private Button btnNewInvoice;
-    @FXML private Button btnViewAllCheques;
-    @FXML private Button btnViewAllInvoices;
-    @FXML private Button btnRefreshCheques;
-    @FXML private Button btnQuickNewCheque;
-    @FXML private Button btnQuickReviewCheques;
-    @FXML private Button btnQuickOpenInvoices;
-    @FXML private TextField txtChequeSearch;
+    @FXML
+    private Button btnNewCheque;
+    @FXML
+    private Button btnNewInvoice;
+    @FXML
+    private Button btnViewAllCheques;
+    @FXML
+    private Button btnViewAllInvoices;
+    @FXML
+    private Button btnRefreshCheques;
+    @FXML
+    private Button btnQuickNewCheque;
+    @FXML
+    private Button btnQuickReviewCheques;
+    @FXML
+    private Button btnQuickOpenInvoices;
+    @FXML
+    private TextField txtChequeSearch;
 
-    @FXML private LineChart<Number, Number> chequeChart;
-    @FXML private PieChart statusChart;
-    @FXML private Pane statusChartOverlay;
-    @FXML private Label lblDonutTotal;
-    @FXML private FlowPane legendContainer;
+    @FXML
+    private LineChart<Number, Number> chequeChart;
+    @FXML
+    private PieChart statusChart;
+    @FXML
+    private Pane statusChartOverlay;
+    @FXML
+    private Label lblDonutTotal;
+    @FXML
+    private FlowPane legendContainer;
 
-    @FXML private TableView<Cheque> tblRecentCheques;
-    @FXML private TableColumn<Cheque, String> colChequeNo;
-    @FXML private TableColumn<Cheque, String> colPayee;
-    @FXML private TableColumn<Cheque, String> colAmount;
-    @FXML private TableColumn<Cheque, String> colBank;
-    @FXML private TableColumn<Cheque, String> colStatus;
-    @FXML private TableColumn<Cheque, String> colChequeDate;
+    @FXML
+    private TableView<Cheque> tblRecentCheques;
+    @FXML
+    private TableColumn<Cheque, String> colChequeNo;
+    @FXML
+    private TableColumn<Cheque, String> colPayee;
+    @FXML
+    private TableColumn<Cheque, String> colAmount;
+    @FXML
+    private TableColumn<Cheque, String> colBank;
+    @FXML
+    private TableColumn<Cheque, String> colStatus;
+    @FXML
+    private TableColumn<Cheque, String> colChequeDate;
 
-    @FXML private TableView<Invoice> tblRecentInvoices;
-    @FXML private TableColumn<Invoice, String> colInvoiceNo;
-    @FXML private TableColumn<Invoice, String> colInvoiceClient;
-    @FXML private TableColumn<Invoice, String> colInvoiceAmount;
-    @FXML private TableColumn<Invoice, String> colInvoiceDue;
-    @FXML private TableColumn<Invoice, String> colInvoiceStatus;
+    @FXML
+    private TableView<Invoice> tblRecentInvoices;
+    @FXML
+    private TableColumn<Invoice, String> colInvoiceNo;
+    @FXML
+    private TableColumn<Invoice, String> colInvoiceClient;
+    @FXML
+    private TableColumn<Invoice, String> colInvoiceAmount;
+    @FXML
+    private TableColumn<Invoice, String> colInvoiceDue;
+    @FXML
+    private TableColumn<Invoice, String> colInvoiceStatus;
 
     private final ChequeService chequeService = new ChequeService();
     private final InvoiceService invoiceService = new InvoiceService();
@@ -260,9 +299,9 @@ public class DashboardController implements ReloadableController {
         if (tblRecentInvoices != null) {
             setCell(colInvoiceNo, new PropertyValueFactory<>("invoiceNo"));
             setCell(colInvoiceClient, new PropertyValueFactory<>("clientName"));
-            setCell(colInvoiceAmount, c -> new SimpleStringProperty(formatAmount(c.getValue().getAmount())));
-            setCell(colInvoiceDue, c -> new SimpleStringProperty(formatDate(c.getValue().getDueDate())));
-            setCell(colInvoiceStatus, c -> new SimpleStringProperty(formatStatus(c.getValue().getStatus())));
+            setStringCell(colInvoiceAmount, c -> formatAmount(c.getAmount()));
+            setStringCell(colInvoiceDue, c -> formatDate(c.getDueDate()));
+            setStringCell(colInvoiceStatus, c -> formatStatus(c.getStatus()));
             if (colInvoiceStatus != null) {
                 colInvoiceStatus.setCellFactory(col -> new TableCell<>() {
                     @Override
@@ -276,9 +315,21 @@ public class DashboardController implements ReloadableController {
         }
     }
 
-    private <S> void setCell(TableColumn<S, String> column, javafx.util.Callback<TableColumn.CellDataFeatures<S, String>, javafx.beans.value.ObservableValue<String>> factory) {
+    // Generic cell value factory setter for any table type (Cheque or Invoice)
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private <S, T> void setCell(TableColumn<S, T> column,
+            javafx.util.Callback<TableColumn.CellDataFeatures<S, T>, javafx.beans.value.ObservableValue<T>> factory) {
         if (column != null) {
             column.setCellValueFactory(factory);
+        }
+    }
+
+    // Convenience method for String columns using a simple extractor
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private <S> void setStringCell(TableColumn<S, String> column,
+            java.util.function.Function<S, String> extractor) {
+        if (column != null) {
+            column.setCellValueFactory(c -> new SimpleStringProperty(extractor.apply(c.getValue())));
         }
     }
 
@@ -357,8 +408,8 @@ public class DashboardController implements ReloadableController {
 
         String displayName = data.profile() != null && data.profile().getName() != null
                 && !data.profile().getName().isBlank()
-                ? data.profile().getName()
-                : "Admin";
+                        ? data.profile().getName()
+                        : "Admin";
 
         if (lblWelcome != null) {
             lblWelcome.setText("Welcome, " + displayName);
@@ -385,8 +436,8 @@ public class DashboardController implements ReloadableController {
 
         if (lblSubtitle != null && data.error() == null) {
             lblSubtitle.setText(String.format(Locale.ROOT,
-                "Operations running smoothly • Total Portfolio: ₹ %,.2f • Pending: %.1f%% • Printed: %.1f%%",
-                totalAmountSum, pendingRatio, printedRatio));
+                    "Operations running smoothly • Total Portfolio: ₹ %,.2f • Pending: %.1f%% • Printed: %.1f%%",
+                    totalAmountSum, pendingRatio, printedRatio));
         }
 
         applyChequeFilter(txtChequeSearch == null ? "" : txtChequeSearch.getText());
@@ -483,8 +534,10 @@ public class DashboardController implements ReloadableController {
         boolean clockwise = statusChart.isClockwise();
         double centerX = statusChartOverlay != null ? statusChartOverlay.getWidth() / 2.0 : 110.0;
         double centerY = (statusChartOverlay != null ? statusChartOverlay.getHeight() / 2.0 : 110.0) + 8.0;
-        if (centerX == 0) centerX = 110.0;
-        if (centerY == 8.0) centerY = 118.0;
+        if (centerX == 0)
+            centerX = 110.0;
+        if (centerY == 8.0)
+            centerY = 118.0;
 
         for (PieChart.Data d : statusChart.getData()) {
             String status = d.getName();
@@ -497,11 +550,13 @@ public class DashboardController implements ReloadableController {
             }
             d.nodeProperty().addListener((obs, oldNode, newNode) -> {
                 if (newNode != null) {
-                    newNode.setStyle("-fx-pie-color: " + color + "; -fx-border-color: #ffffff; -fx-border-width: 2.5px;");
+                    newNode.setStyle(
+                            "-fx-pie-color: " + color + "; -fx-border-color: #ffffff; -fx-border-width: 2.5px;");
                 }
             });
 
-            // Create custom legend item and draw overlay label if value > 0 and status is not "No Data"
+            // Create custom legend item and draw overlay label if value > 0 and status is
+            // not "No Data"
             if (d.getPieValue() > 0 && !"No Data".equals(status)) {
                 double pct = totalCheques > 0 ? (d.getPieValue() / (double) totalCheques) * 100.0 : 0.0;
                 double arcLength = totalCheques > 0 ? (d.getPieValue() / (double) totalCheques) * 360.0 : 0.0;
@@ -522,12 +577,13 @@ public class DashboardController implements ReloadableController {
                     double x = centerX + labelRadius * Math.cos(rad);
                     double y = centerY - labelRadius * Math.sin(rad);
 
-                    String pctStr = pct % 1 == 0 ? String.format(Locale.ROOT, "%.0f%%", pct) : String.format(Locale.ROOT, "%.1f%%", pct);
+                    String pctStr = pct % 1 == 0 ? String.format(Locale.ROOT, "%.0f%%", pct)
+                            : String.format(Locale.ROOT, "%.1f%%", pct);
                     Label label = new Label(pctStr);
                     label.setStyle("-fx-text-fill: #ffffff; " +
-                                   "-fx-font-weight: bold; " +
-                                   "-fx-font-size: 11.5px; " +
-                                   "-fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.85), 3, 0, 0, 0);");
+                            "-fx-font-weight: bold; " +
+                            "-fx-font-size: 11.5px; " +
+                            "-fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.85), 3, 0, 0, 0);");
 
                     final double fx = x;
                     final double fy = y;
@@ -556,15 +612,15 @@ public class DashboardController implements ReloadableController {
 
     private String getColorForStatus(String status) {
         return switch (status) {
-            case "Approved" -> "#6366f1";   // Indigo
-            case "Pending" -> "#d97706";    // Amber/Orange
-            case "Printed" -> "#10b981";    // Emerald Green
-            case "Cancelled" -> "#1e293b";  // Navy
-            case "Draft" -> "#94a3b8";      // Slate Gray
-            case "Deposited" -> "#3b82f6";  // Blue
-            case "Cleared" -> "#059669";    // Dark Green
-            case "Bounced" -> "#ef4444";    // Red
-            case "Rejected" -> "#dc2626";   // Crimson
+            case "Approved" -> "#6366f1"; // Indigo
+            case "Pending" -> "#d97706"; // Amber/Orange
+            case "Printed" -> "#10b981"; // Emerald Green
+            case "Cancelled" -> "#1e293b"; // Navy
+            case "Draft" -> "#94a3b8"; // Slate Gray
+            case "Deposited" -> "#3b82f6"; // Blue
+            case "Cleared" -> "#059669"; // Dark Green
+            case "Bounced" -> "#ef4444"; // Red
+            case "Rejected" -> "#dc2626"; // Crimson
             default -> "#64748b";
         };
     }
@@ -609,7 +665,8 @@ public class DashboardController implements ReloadableController {
         Label statusLabel = new Label(status);
         statusLabel.getStyleClass().add("status-legend-name");
 
-        String pctStr = percentage % 1 == 0 ? String.format(Locale.ROOT, "%.0f%%", percentage) : String.format(Locale.ROOT, "%.1f%%", percentage);
+        String pctStr = percentage % 1 == 0 ? String.format(Locale.ROOT, "%.0f%%", percentage)
+                : String.format(Locale.ROOT, "%.1f%%", percentage);
         Label pctLabel = new Label(pctStr);
         pctLabel.getStyleClass().add("status-legend-pct");
 

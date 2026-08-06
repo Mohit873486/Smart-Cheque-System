@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * ChequeService — business logic layer between controllers and DAO.
@@ -15,6 +16,7 @@ import java.util.List;
  */
 public class ChequeService {
 
+    private static final AtomicLong SEQUENCE = new AtomicLong(0);
     private final ChequeDAO dao = new ChequeDAO();
 
     public List<Cheque> getAll() throws SQLException {
@@ -150,9 +152,11 @@ public class ChequeService {
     }
 
     private String generateChequeNo() {
-        return "CHQ-" + System.currentTimeMillis();
+        String date = java.time.LocalDate.now().toString().replace("-", "");
+        long seq = SEQUENCE.incrementAndGet();
+        return String.format("CHQ-%s-%06d", date, seq % 999999);
     }
-
+    
     public List<Cheque> search(String query) throws SQLException {
         return dao.search(query);
     }

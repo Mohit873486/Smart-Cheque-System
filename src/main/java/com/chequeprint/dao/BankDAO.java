@@ -2,6 +2,7 @@ package com.chequeprint.dao;
 
 import com.chequeprint.config.ApiConfig;
 import com.chequeprint.model.Bank;
+import com.chequeprint.util.HttpClientProvider;
 import com.chequeprint.util.SessionManager;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -18,7 +19,8 @@ import java.util.Map;
 
 /**
  * Data Access Object (DAO) for Bank & Template persistence operations.
- * Isolates low-level REST API and database communications from business services.
+ * Isolates low-level REST API and database communications from business
+ * services.
  */
 public class BankDAO {
 
@@ -30,10 +32,7 @@ public class BankDAO {
     private final ObjectMapper objectMapper;
 
     public BankDAO() {
-        this.httpClient = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_2)
-                .connectTimeout(Duration.ofSeconds(10))
-                .build();
+        this.httpClient = HttpClientProvider.getClient();
         this.objectMapper = new ObjectMapper();
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
@@ -55,7 +54,8 @@ public class BankDAO {
         HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() >= 200 && response.statusCode() < 300) {
-            List<Bank> banks = objectMapper.readValue(response.body(), new TypeReference<List<Bank>>() {});
+            List<Bank> banks = objectMapper.readValue(response.body(), new TypeReference<List<Bank>>() {
+            });
             if (!banks.isEmpty()) {
                 return banks;
             }
@@ -63,21 +63,24 @@ public class BankDAO {
 
         // Secondary API Fallback to /api/bank/account if /api/banks is empty
         try {
-            List<com.chequeprint.model.BankAccount> accounts = new com.chequeprint.service.ApiService().getBankAccounts();
+            List<com.chequeprint.model.BankAccount> accounts = new com.chequeprint.service.ApiService()
+                    .getBankAccounts();
             if (accounts != null && !accounts.isEmpty()) {
                 List<Bank> mapped = new ArrayList<>();
                 for (com.chequeprint.model.BankAccount acc : accounts) {
                     Bank b = new Bank();
                     b.setId(acc.getId() != null ? acc.getId().intValue() : 0);
                     b.setBankName(acc.getBankName());
-                    b.setBankCode(acc.getBankName() != null ? acc.getBankName().toUpperCase().replaceAll("\\s+", "_") : "BANK");
+                    b.setBankCode(acc.getBankName() != null ? acc.getBankName().toUpperCase().replaceAll("\\s+", "_")
+                            : "BANK");
                     b.setChequeSize("STANDARD");
                     b.setMicr(true);
                     mapped.add(b);
                 }
                 return mapped;
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         return new ArrayList<>();
     }
@@ -107,7 +110,8 @@ public class BankDAO {
         HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() >= 200 && response.statusCode() < 300) {
-            return objectMapper.readValue(response.body(), new TypeReference<List<Map<String, Object>>>() {});
+            return objectMapper.readValue(response.body(), new TypeReference<List<Map<String, Object>>>() {
+            });
         }
         return new ArrayList<>();
     }
@@ -122,7 +126,8 @@ public class BankDAO {
         HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() >= 200 && response.statusCode() < 300) {
-            return objectMapper.readValue(response.body(), new TypeReference<List<Map<String, Object>>>() {});
+            return objectMapper.readValue(response.body(), new TypeReference<List<Map<String, Object>>>() {
+            });
         }
         return new ArrayList<>();
     }
@@ -143,7 +148,8 @@ public class BankDAO {
     }
 
     public boolean update(Bank bank) throws Exception {
-        if (bank == null || bank.getId() == null) return false;
+        if (bank == null || bank.getId() == null)
+            return false;
         String jsonPayload = objectMapper.writeValueAsString(bank);
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .PUT(HttpRequest.BodyPublishers.ofString(jsonPayload))

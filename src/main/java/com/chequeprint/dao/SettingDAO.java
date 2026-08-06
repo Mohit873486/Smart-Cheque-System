@@ -2,20 +2,25 @@ package com.chequeprint.dao;
 
 import com.chequeprint.config.ApiConfig;
 import com.chequeprint.model.Settings;
+import com.chequeprint.util.HttpClientProvider;
 import com.chequeprint.util.RestApiClient;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.sql.SQLException;
 
 public class SettingDAO {
 
+    private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
+
     public SettingDAO() {
+        this.httpClient = HttpClientProvider.getClient();  // ✅ shared, no leak
         this.objectMapper = new ObjectMapper();
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }

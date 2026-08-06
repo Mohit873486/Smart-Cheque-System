@@ -294,14 +294,11 @@ public class LoginController {
   }
 
   private void updateAttemptsLabel() {
-    if (authService.isLocked()) {
-      lblAttempts.setText("Account blocked. Contact administrator.");
-      btnLogin.setDisable(true);
-    } else {
-      lblAttempts.setText(authService.getRemainingLoginAttempts() + " attempts remaining");
-    }
+    // Backend handles login attempt tracking and locking
+    // Error messages from backend already contain remaining attempts info
+    lblAttempts.setText("Secure login enabled");
+    btnLogin.setDisable(false);
   }
-
   private void persistRememberMe(String identity) {
     if (chkRememberMe.isSelected()) {
       PREFS.put("login.username", identity);

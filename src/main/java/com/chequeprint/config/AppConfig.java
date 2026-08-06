@@ -38,7 +38,8 @@ public final class AppConfig {
             + "&rewriteBatchedStatements=true";
 
     private static final String DB_USER = "root";
-    private static final String DB_PASS = "root123";
+    private static final String DB_PASS = System.getenv().getOrDefault("DB_PASS", 
+    System.getProperty("DB_PASS", "root123"));
 
     // ── HikariCP DataSource (created once, shared by all threads) ────────
     private static volatile HikariDataSource dataSource;
