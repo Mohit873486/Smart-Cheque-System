@@ -1,7 +1,7 @@
 package com.chequeprint.controller;
 
 import com.chequeprint.service.SettingService;
-import com.chequeprint.service.PrintService;
+import com.chequeprint.service.PrinterService;
 import com.chequeprint.model.Settings;
 import com.chequeprint.util.FxUtils;
 import javafx.beans.value.ChangeListener;
@@ -105,7 +105,7 @@ public class SettingsController {
 
     private MainController mainController;
     private final SettingService settingService = new SettingService();
-    private final PrintService printerService = new PrintService();
+    private final PrinterService printerService = new PrinterService();
     private ChangeListener<String> printerSelectionListener;
 
     private void showStatusMessage(String message, boolean isError) {

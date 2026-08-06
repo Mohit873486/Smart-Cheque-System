@@ -16,6 +16,9 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+
+import com.chequeprint.service.PrintService;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -36,7 +39,7 @@ import java.util.Map;
 public class ChequePrintPreviewApp extends JFrame {
   private final ChequePreviewPanel previewPanel = new ChequePreviewPanel();
   private final BankTemplateStore templateStore = new BankTemplateStore();
-  private final PrintService printService = new PrintService();
+  private final ChequePrintService printService = new ChequePrintService();
 
   private final JTextField payeeField = new JTextField(26);
   private final JTextField amountNumberField = new JTextField(16);

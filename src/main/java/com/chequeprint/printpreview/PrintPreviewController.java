@@ -4,6 +4,8 @@ import com.chequeprint.util.AppState;
 import com.chequeprint.util.PrinterUtils;
 import com.chequeprint.service.FxPrinterService;
 import com.chequeprint.service.PrintService;
+import com.chequeprint.service.PrinterErrorHandler;
+import com.chequeprint.service.PrinterSelectionService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -77,6 +79,7 @@ public class PrintPreviewController {
 
     private PrintPreviewDocument document;
     private final PrintService printService = new PrintService();
+    private final PrinterSelectionService printerSelectionService = new PrinterSelectionService();
     private boolean printed;
     private boolean contentReady;
     private boolean printersAvailable;
@@ -169,7 +172,7 @@ public class PrintPreviewController {
         String attemptedPrinterName = null;
         try {
             if (printer == null) {
-                printer = printService.resolveSelectedOrDefaultPrinter().orElse(null);
+                printer = printerSelectionService.resolveSelectedOrDefaultPrinter();
                 if (printer != null && cmbPrinter != null) {
                     cmbPrinter.setValue(printer);
                 }
@@ -177,7 +180,7 @@ public class PrintPreviewController {
             if (printer == null) {
                 showAlert(
                         "Printer Required",
-                        PrintService.buildPrinterErrorMessage(null, "select", null),
+                        PrinterErrorHandler.buildUserMessage(null, "select", null),
                         Alert.AlertType.WARNING);
                 return;
             }
@@ -194,7 +197,7 @@ public class PrintPreviewController {
                 return; // Cancel printing
             }
 
-            printService.selectPrinter(printer);
+            printerSelectionService.selectPrinter(printer);
 
             // 2. Disable print button while printing
             setPrinting(true);
@@ -204,7 +207,7 @@ public class PrintPreviewController {
             setPrinting(false);
             showAlert(
                     "Print Error",
-                    PrintService.buildPrinterErrorMessage(printer, "print", ex),
+                    PrinterErrorHandler.buildUserMessage(printer, "print", ex),
                     Alert.AlertType.ERROR);
         }
     }
@@ -222,7 +225,7 @@ public class PrintPreviewController {
         }
 
         try {
-            printService.saveDefaultPrinter(selectedPrinter);
+            printerSelectionService.setDefaultPrinter(selectedPrinter);
             showAlert("Default Printer Set", "Default printer updated to '" + selectedPrinter.getName() + "' successfully.\nThis choice will be remembered permanently.", Alert.AlertType.INFORMATION);
         } catch (Exception e) {
             showAlert("Error Setting Printer", "Failed to save default printer: " + e.getMessage(), Alert.AlertType.ERROR);
@@ -460,7 +463,7 @@ public class PrintPreviewController {
                 errorShown = true;
                 showAlert(
                         "Print Error",
-                        PrintService.buildPrinterErrorMessage(printer, "print", ex, true),
+                        PrinterErrorHandler.buildUserMessage(printer, "print", ex, true),
                         Alert.AlertType.ERROR);
             } finally {
                 setPrinting(false);
@@ -473,7 +476,7 @@ public class PrintPreviewController {
             } else if (!errorShown) {
                 showAlert(
                         "Print Failed",
-                        PrintService.buildPrinterErrorMessage(printer, "print", null, true),
+                        PrinterErrorHandler.buildUserMessage(printer, "print", null, true),
                         Alert.AlertType.ERROR);
             }
         });
