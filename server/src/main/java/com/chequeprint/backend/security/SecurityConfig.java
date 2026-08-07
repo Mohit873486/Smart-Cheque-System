@@ -69,9 +69,12 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/accounts/**").hasAnyRole("Admin", "Manager")
                 .requestMatchers(HttpMethod.PUT, "/api/accounts/**").hasAnyRole("Admin", "Manager")
                 .requestMatchers(HttpMethod.DELETE, "/api/accounts/**").hasAnyRole("Admin", "Manager")
+
+                .requestMatchers("/api/v1/cheques/**").authenticated()
                 
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
+
             );
 
         // Inject JWT request filter before the default Authentication filter

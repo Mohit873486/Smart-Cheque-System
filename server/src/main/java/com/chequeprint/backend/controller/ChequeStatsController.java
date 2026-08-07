@@ -31,7 +31,7 @@ public class ChequeStatsController {
         stats.put("pending", chequeRepo.countByStatus(Cheque.Status.Pending));
         stats.put("printed", chequeRepo.countByStatus(Cheque.Status.Printed));
         stats.put("today", chequeRepo.countByIssueDate(LocalDate.now()));
-        stats.put("thisMonthAmount", chequeRepo.sumThisMonth() != null ? chequeRepo.sumThisMonth() : BigDecimal.ZERO);
+        stats.put("thisMonthAmount", chequeRepo.sumThisMonth(LocalDate.now().withDayOfMonth(1)));
         return ResponseEntity.ok(stats);
     }
 
@@ -39,13 +39,10 @@ public class ChequeStatsController {
     public ResponseEntity<Map<String, Long>> getCountByDate(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
-        
         List<Object[]> results = chequeRepo.countByDateRange(start, end);
         Map<String, Long> map = new HashMap<>();
         for (Object[] row : results) {
-            LocalDate date = (LocalDate) row[0];
-            Long count = (Long) row[1];
-            map.put(date.toString(), count);
+            map.put(((LocalDate) row[0]).toString(), (Long) row[1]);
         }
         return ResponseEntity.ok(map);
     }

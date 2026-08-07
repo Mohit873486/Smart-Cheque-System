@@ -3,12 +3,10 @@ package com.chequeprint.backend.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.DecimalMax;
 
 @Entity
 @Table(name = "cheques")
@@ -42,6 +40,24 @@ public class Cheque {
     @Column(name = "issue_date", nullable = false)
     private LocalDate issueDate;
 
+    @Column(name = "is_active")
+    private boolean isActive = true;
+
+    @Column(name = "last_printer")
+    private String lastPrinter;
+
+    @Column(name = "last_print_result")
+    private String lastPrintResult;
+
+    @Column(name = "printed_at")
+    private LocalDateTime printedAt;
+
+    @Column(name = "created_at", insertable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", insertable = false, updatable = false)
+    private LocalDateTime updatedAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Status status;
@@ -54,103 +70,57 @@ public class Cheque {
         Draft, Pending, Deposited, Cleared, Bounced, Approved, Rejected, Printed, Cancelled
     }
 
-    public Cheque() {
-    }
+    public Cheque() {}
 
-    public Cheque(String chequeNo, String payeeName, BigDecimal amount, String amountWords, Integer bankId,
-            LocalDate issueDate, Status status) {
-        this.chequeNo = chequeNo;
-        this.payeeName = payeeName;
-        this.amount = amount;
-        this.amountWords = amountWords;
-        this.bankId = bankId;
-        this.issueDate = issueDate;
-        this.status = status;
-    }
+    // ── Getters / Setters ───────────────────────────────────────────
 
-    public Cheque(String chequeNo, String payeeName, BigDecimal amount, String amountWords, Integer bankId,
-            int accountId, LocalDate issueDate, Status status) {
-        this.chequeNo = chequeNo;
-        this.payeeName = payeeName;
-        this.amount = amount;
-        this.amountWords = amountWords;
-        this.bankId = bankId;
-        this.accountId = accountId;
-        this.issueDate = issueDate;
-        this.status = status;
-    }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
-    public int getId() {
-        return id;
-    }
+    public String getChequeNo() { return chequeNo; }
+    public void setChequeNo(String chequeNo) { this.chequeNo = chequeNo; }
 
-    public void setId(int id) {
-        this.id = id;
-    }
+    public String getPayeeName() { return payeeName; }
+    public void setPayeeName(String payeeName) { this.payeeName = payeeName; }
 
-    public String getChequeNo() {
-        return chequeNo;
-    }
+    public BigDecimal getAmount() { return amount; }
+    public void setAmount(BigDecimal amount) { this.amount = amount; }
 
-    public void setChequeNo(String chequeNo) {
-        this.chequeNo = chequeNo;
-    }
+    public String getAmountWords() { return amountWords; }
+    public void setAmountWords(String amountWords) { this.amountWords = amountWords; }
 
-    public String getPayeeName() {
-        return payeeName;
-    }
+    public Integer getBankId() { return bankId; }
+    public void setBankId(Integer bankId) { this.bankId = bankId; }
 
-    public void setPayeeName(String payeeName) {
-        this.payeeName = payeeName;
-    }
+    public Integer getAccountId() { return accountId; }
+    public void setAccountId(Integer accountId) { this.accountId = accountId; }
 
-    public BigDecimal getAmount() {
-        return amount;
-    }
+    public LocalDate getIssueDate() { return issueDate; }
+    public void setIssueDate(LocalDate issueDate) { this.issueDate = issueDate; }
 
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
+    public boolean isActive() { return isActive; }
+    public void setActive(boolean active) { isActive = active; }
 
-    public String getAmountWords() {
-        return amountWords;
-    }
+    public String getLastPrinter() { return lastPrinter; }
+    public void setLastPrinter(String lastPrinter) { this.lastPrinter = lastPrinter; }
 
-    public void setAmountWords(String amountWords) {
-        this.amountWords = amountWords;
-    }
+    public String getLastPrintResult() { return lastPrintResult; }
+    public void setLastPrintResult(String lastPrintResult) { this.lastPrintResult = lastPrintResult; }
 
-    public Integer getBankId() {
-        return bankId;
-    }
+    public LocalDateTime getPrintedAt() { return printedAt; }
+    public void setPrintedAt(LocalDateTime printedAt) { this.printedAt = printedAt; }
 
-    public void setBankId(Integer bankId) {
-        this.bankId = bankId;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public Integer getAccountId() {
-        return accountId;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    public void setAccountId(Integer accountId) {
-        this.accountId = accountId;
-    }
+    public Status getStatus() { return status; }
+    public void setStatus(Status status) { this.status = status; }
 
-    public LocalDate getIssueDate() {
-        return issueDate;
-    }
-
-    public void setIssueDate(LocalDate issueDate) {
-        this.issueDate = issueDate;
-    }
-
-    public Status getStatus() {
-        return status;
-    }
-
-    public void setStatus(Status status) {
-        this.status = status;
-    }
+    public BankTemplate getBankTemplate() { return bankTemplate; }
+    public void setBankTemplate(BankTemplate bankTemplate) { this.bankTemplate = bankTemplate; }
 
     public String getBankName() {
         return bankTemplate != null ? bankTemplate.getBankName() : null;
