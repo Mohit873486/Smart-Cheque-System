@@ -1,57 +1,80 @@
 package com.chequeprint.dao;
 
 import com.chequeprint.config.ApiConfig;
+import com.chequeprint.model.ApiResponse;
 import com.chequeprint.model.Cheque;
-import com.chequeprint.util.HttpClientProvider;
-import com.chequeprint.util.Session;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
+import com.chequeprint.model.PageRequest;
+import com.chequeprint.model.PageResult;
+import com.chequeprint.util.RestApiClient;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Data Access Object (DAO) for Cheque persistence operations.
- * Isolates low-level REST API HTTP communications for cheque CRUD tasks.
+ * Paginated, resilient ChequeDAO.
+ *
+ * <p>
+ * <b>Backend Contract (ideal):</b>
+ * </p>
+ * <ul>
+ * <li>GET /api/cheques?page=0&size=25&sort=issueDate,desc&q=term</li>
+ * <li>GET /api/cheques/{id}</li>
+ * <li>POST /api/cheques</li>
+ * <li>PUT /api/cheques/{id}</li>
+ * <li>DELETE /api/cheques/{id}</li>
+ * <li>GET /api/cheques/stats/summary</li>
+ * <li>GET /api/cheques/exists?chequeNo=XXX&excludeId=YYY</li>
+ * </ul>
+ *
+ * <p>
+ * <b>Backward Compatibility:</b> Agar backend plain array {@code [{...},{...}]}
+ * bhi bheje,
+ * toh DAO usse {@code PageResult} mein wrap kar dega. Pagination tab activate
+ * hoga jab
+ * backend Spring Data {@code Page<T>} return karega.
+ * </p>
  */
 public class ChequeDAO {
 
     private static final String API_CHEQUES = ApiConfig.BASE_URL + "/api/cheques";
-    private static volatile long lastErrorLogTime = 0;
+    private static final int MAX_RETRIES = 3;
+    private static final long BASE_RETRY_DELAY_MS = 500;
+    private static final AtomicLong LAST_ERROR_LOG_TIME = new AtomicLong(0);
+    private static final long ERROR_LOG_COOLDOWN_MS = 5000;
 
-    private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
     public ChequeDAO() {
-        this.httpClient = HttpClientProvider.getClient(); // ✅ shared, no leak
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.objectMapper = new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
+        // LocalDate support (same as old DAO)
         SimpleModule module = new SimpleModule();
-        module.addSerializer(LocalDate.class, new JsonSerializer<>() {
+        module.addSerializer(LocalDate.class, new com.fasterxml.jackson.databind.JsonSerializer<>() {
             @Override
-            public void serialize(LocalDate value, JsonGenerator gen, SerializerProvider serializers)
-                    throws IOException {
-                if (value != null) {
+            public void serialize(LocalDate value, com.fasterxml.jackson.core.JsonGenerator gen,
+                    com.fasterxml.jackson.databind.SerializerProvider serializers) throws IOException {
+                if (value != null)
                     gen.writeString(value.toString());
-                } else {
+                else
                     gen.writeNull();
-                }
             }
         });
-        module.addDeserializer(LocalDate.class, new JsonDeserializer<>() {
+        module.addDeserializer(LocalDate.class, new com.fasterxml.jackson.databind.JsonDeserializer<>() {
             @Override
-            public LocalDate deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+            public LocalDate deserialize(com.fasterxml.jackson.core.JsonParser p,
+                    com.fasterxml.jackson.databind.DeserializationContext ctxt) throws IOException {
                 String val = p.getValueAsString();
                 return (val == null || val.isBlank()) ? null : LocalDate.parse(val);
             }
@@ -59,196 +82,267 @@ public class ChequeDAO {
         this.objectMapper.registerModule(module);
     }
 
-    private void addAuthToken(HttpRequest.Builder builder) {
-        String authHeader = Session.getAuthorizationHeader();
-        if (authHeader != null && !authHeader.isBlank()) {
-            builder.header("Authorization", authHeader);
-        }
+    // ═══════════════════════════════════════════════════════════════════════
+    // 1. PAGINATED READS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    public PageResult<Cheque> findAll(PageRequest pageRequest) {
+        String url = API_CHEQUES + "?" + pageRequest.toQueryString();
+        ApiResponse<PageResult<Cheque>> resp = executeGetPage(url);
+        return resp.isOk() && resp.getData() != null ? resp.getData() : emptyPage(pageRequest);
     }
 
-    private HttpResponse<String> sendWithRetry(HttpRequest request) throws Exception {
-        int maxRetries = 3;
-        for (int i = 0; i < maxRetries; i++) {
-            try {
-                return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            } catch (Exception e) {
-                if (i == maxRetries - 1)
-                    throw e;
-                Thread.sleep(500L * (i + 1)); // 500ms, 1000ms, 1500ms
-            }
+    public PageResult<Cheque> search(String query, PageRequest pageRequest) {
+        if (query == null || query.isBlank()) {
+            return findAll(pageRequest);
         }
-        return null; // unreachable but compiler needs it
+        PageRequest searchReq = PageRequest.of(pageRequest.getPage(), pageRequest.getSize())
+                .withSort(pageRequest.getSortBy(), pageRequest.getSortDir())
+                .withSearch(query);
+        String url = API_CHEQUES + "?" + searchReq.toQueryString();
+        ApiResponse<PageResult<Cheque>> resp = executeGetPage(url);
+        return resp.isOk() && resp.getData() != null ? resp.getData() : emptyPage(pageRequest);
     }
 
-    public List<Cheque> findAll() {
-        try {
-            HttpRequest.Builder builder = HttpRequest.newBuilder()
-                    .GET()
-                    .uri(URI.create(API_CHEQUES))
-                    .header("Accept", "application/json");
-
-            addAuthToken(builder);
-            HttpResponse<String> response = sendWithRetry(builder.build());
-            if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                return objectMapper.readValue(response.body(), new TypeReference<List<Cheque>>() {
-                });
-            }
-        } catch (Exception ex) {
-            long now = System.currentTimeMillis();
-            if (now - lastErrorLogTime > 5000) {
-                lastErrorLogTime = now;
-                System.err.println("ChequeDAO findAll error: " + ex.getMessage());
-            }
-        }
-        return new ArrayList<>();
+    public Optional<Cheque> findById(int id) {
+        ApiResponse<Cheque> resp = executeGet(API_CHEQUES + "/" + id, new TypeReference<>() {
+        });
+        return resp.isOk() ? Optional.ofNullable(resp.getData()) : Optional.empty();
     }
 
-    public Cheque findById(int id) {
-        try {
-            HttpRequest.Builder builder = HttpRequest.newBuilder()
-                    .GET()
-                    .uri(URI.create(API_CHEQUES + "/" + id))
-                    .header("Accept", "application/json");
+    // ═══════════════════════════════════════════════════════════════════════
+    // 2. WRITE OPERATIONS
+    // ═══════════════════════════════════════════════════════════════════════
 
-            addAuthToken(builder);
-            HttpResponse<String> response = sendWithRetry(builder.build());
-            if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                return objectMapper.readValue(response.body(), Cheque.class);
-            }
-        } catch (Exception ex) {
-            System.err.println("ChequeDAO findById error: " + ex.getMessage());
-        }
-        return null;
-    }
-
-    public boolean insert(Cheque cheque) {
+    public ApiResponse<Cheque> insert(Cheque cheque) {
         try {
             String json = objectMapper.writeValueAsString(cheque);
-            HttpRequest.Builder builder = HttpRequest.newBuilder()
+            HttpRequest request = RestApiClient.requestBuilder(API_CHEQUES)
+                    .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(json))
-                    .uri(URI.create(API_CHEQUES))
-                    .header("Content-Type", "application/json")
-                    .header("Accept", "application/json");
-
-            addAuthToken(builder);
-            HttpResponse<String> response = sendWithRetry(builder.build());
-            return response.statusCode() >= 200 && response.statusCode() < 300;
-        } catch (Exception ex) {
-            System.err.println("ChequeDAO insert error: " + ex.getMessage());
-            return false;
+                    .build();
+            return executeWithRetry(request, new TypeReference<>() {
+            });
+        } catch (Exception e) {
+            return logAndWrapError("insert", e);
         }
     }
 
-    public boolean update(Cheque cheque) {
-        if (cheque == null || cheque.getId() <= 0)
-            return false;
+    public ApiResponse<Void> update(Cheque cheque) {
+        if (cheque == null || cheque.getId() <= 0) {
+            return ApiResponse.error("Invalid cheque or ID", 400);
+        }
         try {
             String json = objectMapper.writeValueAsString(cheque);
-            HttpRequest.Builder builder = HttpRequest.newBuilder()
-                    .PUT(HttpRequest.BodyPublishers.ofString(json))
-                    .uri(URI.create(API_CHEQUES + "/" + cheque.getId()))
+            HttpRequest request = RestApiClient.requestBuilder(API_CHEQUES + "/" + cheque.getId())
                     .header("Content-Type", "application/json")
-                    .header("Accept", "application/json");
-
-            addAuthToken(builder);
-            HttpResponse<String> response = sendWithRetry(builder.build());
-            return response.statusCode() >= 200 && response.statusCode() < 300;
-        } catch (Exception ex) {
-            System.err.println("ChequeDAO update error: " + ex.getMessage());
-            return false;
+                    .PUT(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+            return executeWithRetry(request, new TypeReference<>() {
+            });
+        } catch (Exception e) {
+            return logAndWrapError("update", e);
         }
     }
 
-    public boolean delete(int id) {
+    public ApiResponse<Void> delete(int id) {
+        HttpRequest request = RestApiClient.requestBuilder(API_CHEQUES + "/" + id)
+                .DELETE()
+                .build();
+        return executeWithRetry(request, new TypeReference<>() {
+        });
+    }
+
+    public ApiResponse<Void> updateStatus(int chequeId, Cheque.Status status) {
         try {
-            HttpRequest.Builder builder = HttpRequest.newBuilder()
-                    .DELETE()
-                    .uri(URI.create(API_CHEQUES + "/" + id));
-
-            addAuthToken(builder);
-            HttpResponse<String> response = sendWithRetry(builder.build());
-            return response.statusCode() >= 200 && response.statusCode() < 300;
-        } catch (Exception ex) {
-            System.err.println("ChequeDAO delete error: " + ex.getMessage());
-            return false;
+            String json = objectMapper.writeValueAsString(Collections.singletonMap("status", status.name()));
+            HttpRequest request = RestApiClient.requestBuilder(API_CHEQUES + "/" + chequeId + "/status")
+                    .header("Content-Type", "application/json")
+                    .PUT(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+            return executeWithRetry(request, new TypeReference<>() {
+            });
+        } catch (Exception e) {
+            return logAndWrapError("updateStatus", e);
         }
     }
 
-    public boolean updateStatus(Cheque cheque, Cheque.Status status) {
-        if (cheque == null)
-            return false;
-        cheque.setStatus(status);
-        return update(cheque);
+    // ═══════════════════════════════════════════════════════════════════════
+    // 3. SERVER-SIDE STATS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Expected: { "total": 100, "pending": 20, "printed": 50, "today": 5,
+     * "monthlySum": 150000.0 }
+     */
+    public ApiResponse<ChequeStats> fetchStats() {
+        return executeGet(API_CHEQUES + "/stats/summary", new TypeReference<>() {
+        });
     }
 
-    public boolean approveCheque(int id) {
-        Cheque c = findById(id);
-        if (c == null)
-            return false;
-        return updateStatus(c, Cheque.Status.Printed);
-    }
+    // ═══════════════════════════════════════════════════════════════════════
+    // 4. VALIDATION / UTILITY
+    // ═══════════════════════════════════════════════════════════════════════
 
     public boolean existsByChequeNo(String chequeNo, Integer excludeId) {
         if (chequeNo == null || chequeNo.isBlank())
             return false;
-        List<Cheque> all = findAll();
-        return all.stream().anyMatch(
-                c -> chequeNo.equalsIgnoreCase(c.getChequeNo()) && (excludeId == null || !excludeId.equals(c.getId())));
+        StringBuilder url = new StringBuilder(API_CHEQUES + "/exists?chequeNo=" + encode(chequeNo));
+        if (excludeId != null)
+            url.append("&excludeId=").append(excludeId);
+        ApiResponse<Boolean> resp = executeGet(url.toString(), new TypeReference<>() {
+        });
+        return resp.isOk() && Boolean.TRUE.equals(resp.getData());
     }
 
-    public int countTotal() {
+    // ═══════════════════════════════════════════════════════════════════════
+    // 5. RESILIENT EXECUTION ENGINE
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Triple-parse fallback for paginated responses:
+     * 1. ApiResponse&lt;PageResult&lt;Cheque&gt;&gt; (wrapped)
+     * 2. PageResult&lt;Cheque&gt; (raw Spring page)
+     * 3. List&lt;Cheque&gt; (plain array → wrapped as single page)
+     */
+    private ApiResponse<PageResult<Cheque>> executeGetPage(String url) {
         try {
-            HttpRequest.Builder builder = HttpRequest.newBuilder()
-                    .GET()
-                    .uri(URI.create(API_CHEQUES + "/stats/summary"))
-                    .header("Accept", "application/json");
-            addAuthToken(builder);
-            HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 200) {
-                JsonNode node = objectMapper.readTree(response.body());
-                return node.get("total").asInt();
+            HttpRequest request = RestApiClient.requestBuilder(url).GET().build();
+            HttpResponse<?> response = sendWithRetry(request);
+            int status = response.statusCode();
+            String body = response.body().toString();
+
+            if (status < 200 || status >= 300) {
+                return ApiResponse.error(extractErrorMessage(body, status), status);
             }
-        } catch (Exception ex) {
-            System.err.println("ChequeDAO countTotal error: " + ex.getMessage());
+
+            // Strategy 1: Wrapped ApiResponse<PageResult<Cheque>>
+            try {
+                var type = objectMapper.getTypeFactory()
+                        .constructParametricType(ApiResponse.class,
+                                objectMapper.getTypeFactory().constructParametricType(PageResult.class, Cheque.class));
+                ApiResponse<PageResult<Cheque>> wrapped = objectMapper.readValue(body, type);
+                wrapped.setHttpStatus(status);
+                return wrapped;
+            } catch (Exception e1) {
+                // Strategy 2: Raw PageResult<Cheque>
+                try {
+                    var type = objectMapper.getTypeFactory().constructParametricType(PageResult.class, Cheque.class);
+                    PageResult<Cheque> page = objectMapper.readValue(body, type);
+                    ApiResponse<PageResult<Cheque>> manual = ApiResponse.ok(page);
+                    manual.setHttpStatus(status);
+                    return manual;
+                } catch (Exception e2) {
+                    // Strategy 3: Plain List<Cheque>
+                    try {
+                        var listType = objectMapper.getTypeFactory()
+                                .constructCollectionType(List.class, Cheque.class);
+                        List<Cheque> list = objectMapper.readValue(body, listType);
+                        PageResult<Cheque> page = new PageResult<>(list, list.size(), 0, list.size());
+                        page.setLast(true);
+                        ApiResponse<PageResult<Cheque>> manual = ApiResponse.ok(page);
+                        manual.setHttpStatus(status);
+                        return manual;
+                    } catch (Exception e3) {
+                        return ApiResponse.error("Parse error: " + e3.getMessage(), status);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            return logAndWrapError("GET " + url, e);
         }
-        return 0;
     }
 
-    public int countPrinted() {
-        return (int) findAll().stream().filter(c -> c.getStatus() == Cheque.Status.Printed).count();
+    private <T> ApiResponse<T> executeGet(String url, TypeReference<T> dataTypeRef) {
+        try {
+            HttpRequest request = RestApiClient.requestBuilder(url).GET().build();
+            HttpResponse<?> response = sendWithRetry(request);
+            return parseResponse(response, dataTypeRef);
+        } catch (Exception e) {
+            return logAndWrapError("GET " + url, e);
+        }
     }
 
-    public int countPending() {
-        return (int) findAll().stream().filter(c -> c.getStatus() == Cheque.Status.Pending).count();
+
+    private <T> ApiResponse<T> parseResponse(HttpResponse<?> rawResponse, TypeReference<T> dataTypeRef) {
+        int status = rawResponse.statusCode();
+        String body = rawResponse.body().toString();
+
+        if (status < 200 || status >= 300) {
+            return ApiResponse.error(extractErrorMessage(body, status), status);
+        }
+
+        // Strategy 1: Wrapped ApiResponse<T>
+        try {
+            var dataType = objectMapper.constructType(dataTypeRef.getType());
+            var wrappedType = objectMapper.getTypeFactory().constructParametricType(ApiResponse.class, dataType);
+            ApiResponse<T> wrapped = objectMapper.readValue(body, wrappedType);
+            wrapped.setHttpStatus(status);
+            return wrapped;
+        } catch (Exception wrapEx) {
+            // Strategy 2: Raw T
+            try {
+                T rawData = objectMapper.readValue(body, dataTypeRef);
+                ApiResponse<T> manual = ApiResponse.ok(rawData);
+                manual.setHttpStatus(status);
+                return manual;
+            } catch (Exception rawEx) {
+                return ApiResponse.error(
+                        "Parse error — Wrapped: " + wrapEx.getMessage() + "; Raw: " + rawEx.getMessage(),
+                        status);
+            }
+        }
     }
 
-    public int countTodayEntries() {
-        LocalDate today = LocalDate.now();
-        return (int) findAll().stream().filter(c -> today.equals(c.getIssueDate())).count();
+    private String extractErrorMessage(String body, int status) {
+        try {
+            JsonNode node = objectMapper.readTree(body);
+            if (node.has("message"))
+                return node.get("message").asText();
+            if (node.has("error"))
+                return node.get("error").asText();
+        } catch (Exception ignored) {
+        }
+        return "HTTP " + status + (body != null && !body.isBlank()
+                ? ": " + body.substring(0, Math.min(200, body.length()))
+                : "");
     }
 
-    public double sumThisMonth() {
-        LocalDate now = LocalDate.now();
-        return findAll().stream()
-                .filter(c -> c.getIssueDate() != null && c.getIssueDate().getMonth() == now.getMonth()
-                        && c.getIssueDate().getYear() == now.getYear())
-                .mapToDouble(c -> c.getAmount() != null ? c.getAmount().doubleValue() : 0.0)
-                .sum();
+    private <T> ApiResponse<T> logAndWrapError(String operation, Exception e) {
+        long now = System.currentTimeMillis();
+        if (now - LAST_ERROR_LOG_TIME.get() > ERROR_LOG_COOLDOWN_MS) {
+            LAST_ERROR_LOG_TIME.set(now);
+            System.err.println("[ChequeDAO] Operation '" + operation + "' failed: " + e.getMessage());
+        }
+        return ApiResponse.error("DAO error [" + operation + "]: " + e.getMessage(), 0);
     }
 
-    public int countByIssueDate(LocalDate date) {
-        if (date == null)
-            return 0;
-        return (int) findAll().stream().filter(c -> date.equals(c.getIssueDate())).count();
+    private PageResult<Cheque> emptyPage(PageRequest req) {
+        return new PageResult<>(Collections.emptyList(), 0, req.getPage(), req.getSize());
     }
 
-    public List<Cheque> search(String query) {
-        if (query == null || query.isBlank())
-            return findAll();
-        String needle = query.toLowerCase();
-        return findAll().stream()
-                .filter(c -> (c.getChequeNo() != null && c.getChequeNo().toLowerCase().contains(needle))
-                        || (c.getPayeeName() != null && c.getPayeeName().toLowerCase().contains(needle)))
-                .toList();
+    private static String encode(String value) {
+        return java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    /** DTO for /stats/summary endpoint. */
+    public record ChequeStats(long total, long pending, long printed, long today, double monthlySum) {
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Thin wrappers — retry now lives in RestApiClient (ResilientHttpClient)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    private HttpResponse<?> sendWithRetry(HttpRequest request) throws Exception {
+        return RestApiClient.send(request);
+    }
+
+    private <T> ApiResponse<T> executeWithRetry(HttpRequest request, TypeReference<T> dataTypeRef) {
+        try {
+            HttpResponse<?> response = RestApiClient.send(request);
+            return parseResponse(response, dataTypeRef);
+        } catch (Exception e) {
+            return logAndWrapError(request.method() + " " + request.uri(), e);
+        }
     }
 }

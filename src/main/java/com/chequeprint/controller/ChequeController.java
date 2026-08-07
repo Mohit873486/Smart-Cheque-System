@@ -3,6 +3,8 @@ package com.chequeprint.controller;
 import com.chequeprint.service.BankService;
 import com.chequeprint.model.Bank;
 import com.chequeprint.model.Cheque;
+import com.chequeprint.model.PageRequest;
+import com.chequeprint.model.PageResult;
 import com.chequeprint.model.User;
 import com.chequeprint.service.AccessControl;
 import com.chequeprint.service.ChequeService;
@@ -33,6 +35,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -89,13 +93,27 @@ public class ChequeController implements ReloadableController {
     @FXML
     private DatePicker filterDate;
 
+    // _
+    @FXML
+    private javafx.scene.control.ComboBox<Integer> cmbPageSize;
+    @FXML
+    private javafx.scene.control.Label lblPageInfo;
+    @FXML
+    private javafx.scene.control.Button btnPrev;
+    @FXML
+    private javafx.scene.control.Button btnNext;
+
+    private PageRequest currentPageRequest = PageRequest.of(0, 25).withSort("issueDate", "desc");
+    private String currentSearchQuery = "";
+
     // ── Root ──
     @FXML
     private VBox rootPane;
 
     // ── State ──
     private static final Logger LOGGER = Logger.getLogger(ChequeController.class.getName());
-    private final java.util.concurrent.atomic.AtomicBoolean isLoading = new java.util.concurrent.atomic.AtomicBoolean(false);
+    private final java.util.concurrent.atomic.AtomicBoolean isLoading = new java.util.concurrent.atomic.AtomicBoolean(
+            false);
     private boolean alreadyLoaded = false;
     MainController mainController;
 
@@ -121,10 +139,56 @@ public class ChequeController implements ReloadableController {
     public void initialize() {
         setupTable();
         setupFilters();
+        setupPagination();
         applyPermissions();
         onPageLoad();
         updateButtonStates(null);
         FxUtils.animateIn(rootPane, 0);
+    }
+
+    private void setupPagination() {
+        if (cmbPageSize != null) {
+            cmbPageSize.setItems(FXCollections.observableArrayList(10, 25, 50, 100));
+            cmbPageSize.setValue(25);
+            cmbPageSize.setOnAction(e -> {
+                currentPageRequest = PageRequest.of(0, cmbPageSize.getValue())
+                        .withSort("issueDate", "desc");
+                loadData();
+            });
+        }
+        updatePaginationControls(new PageResult<>(Collections.emptyList(), 0, 0, 25));
+    }
+
+    private void updatePaginationControls(PageResult<Cheque> page) {
+        if (lblPageInfo != null) {
+            lblPageInfo.setText(String.format("Page %d of %d (%d items)",
+                    page.getNumber() + 1, Math.max(1, page.getTotalPages()), page.getTotalElements()));
+        }
+        if (btnPrev != null)
+            btnPrev.setDisable(page.isFirst());
+        if (btnNext != null)
+            btnNext.setDisable(page.isLast());
+    }
+
+    @FXML
+    private void onPrevPage() {
+        if (currentPageRequest.getPage() > 0) {
+            currentPageRequest = PageRequest.of(currentPageRequest.getPage() - 1,
+                    currentPageRequest.getSize()).withSort("issueDate", "desc");
+            loadData();
+        }
+    }
+
+    @FXML
+    private void onNextPage() {
+        currentPageRequest = PageRequest.of(currentPageRequest.getPage() + 1,
+                currentPageRequest.getSize()).withSort("issueDate", "desc");
+        loadData();
+    }
+
+    @FXML
+    private void onRefresh() {
+        loadData();
     }
 
     @Override
@@ -204,7 +268,7 @@ public class ChequeController implements ReloadableController {
                     setGraphic(vbox);
 
                     Tooltip tooltip = new Tooltip(String.format("Last Printer: %s\nStatus: %s",
-                        cheque.getLastPrinter(), cheque.getLastPrintResult()));
+                            cheque.getLastPrinter(), cheque.getLastPrintResult()));
                     tooltip.setShowDelay(javafx.util.Duration.millis(100));
                     setTooltip(tooltip);
                 } else {
@@ -237,7 +301,8 @@ public class ChequeController implements ReloadableController {
                         return; // Cheque selection did not change!
                     }
 
-                    System.out.println("ROW_SELECTED | chequeTable | ChequeID=" + (newSel != null ? newSel.getId() : "null") + " | Time=" + timestamp);
+                    System.out.println("ROW_SELECTED | chequeTable | ChequeID="
+                            + (newSel != null ? newSel.getId() : "null") + " | Time=" + timestamp);
                     selectedCheque = newSel;
                     AppState.getInstance().setCurrentCheque(newSel);
                     if (newSel != null && newSel.getBankId() != null) {
@@ -295,14 +360,16 @@ public class ChequeController implements ReloadableController {
                         }
                     }
                     if (bankNames.size() == 1) {
-                        bankNames.addAll("State Bank of India", "HDFC Bank", "ICICI Bank", "Axis Bank", "Bank of Baroda");
+                        bankNames.addAll("State Bank of India", "HDFC Bank", "ICICI Bank", "Axis Bank",
+                                "Bank of Baroda");
                     }
                     filterBank.setItems(bankNames);
                     filterBank.setValue("Bank Name");
                 });
             } catch (Exception e) {
                 Platform.runLater(() -> {
-                    filterBank.setItems(FXCollections.observableArrayList("Bank Name", "State Bank of India", "HDFC Bank", "ICICI Bank", "Axis Bank", "Bank of Baroda"));
+                    filterBank.setItems(FXCollections.observableArrayList("Bank Name", "State Bank of India",
+                            "HDFC Bank", "ICICI Bank", "Axis Bank", "Bank of Baroda"));
                     filterBank.setValue("Bank Name");
                 });
             }
@@ -331,7 +398,8 @@ public class ChequeController implements ReloadableController {
     }
 
     private void updateComboPlaceholderStyle(ComboBox<String> combo, String placeholder) {
-        if (combo == null) return;
+        if (combo == null)
+            return;
         if (placeholder.equals(combo.getValue())) {
             if (!combo.getStyleClass().contains("combo-placeholder")) {
                 combo.getStyleClass().add("combo-placeholder");
@@ -341,61 +409,45 @@ public class ChequeController implements ReloadableController {
         }
     }
 
+    // ======= YEH ADD KARO =======
     private void applyFilter() {
-        String search = searchField.getText() == null ? ""
-                : searchField.getText().toLowerCase().trim();
+        String search = searchField.getText() == null ? "" : searchField.getText().toLowerCase().trim();
         String status = filterStatus.getValue();
         String bank = filterBank != null ? filterBank.getValue() : "Bank Name";
         LocalDate date = filterDate != null ? filterDate.getValue() : null;
 
-        if (!search.isEmpty()) {
-            System.out.println("API_TRIGGER | chequeService.search | " + System.currentTimeMillis());
-            com.chequeprint.util.AppExecutors.runAsync(() -> {
-                try {
-                    List<Cheque> results = chequeService.search(search);
-                    Platform.runLater(() -> {
-                        ObservableList<Cheque> filteredResults = FXCollections.observableArrayList();
-                        for (Cheque c : results) {
-                            boolean matchStatus = "Status".equals(status) || (c.getStatus() != null && c.getStatus().name().equals(status));
-                            boolean matchBank = "Bank Name".equals(bank) || (c.getBankName() != null && c.getBankName().equalsIgnoreCase(bank));
-                            boolean matchDate = date == null || (c.getIssueDate() != null && c.getIssueDate().equals(date));
-                            if (matchStatus && matchBank && matchDate) {
-                                filteredResults.add(c);
-                            }
-                        }
-                        try {
-                            isUpdatingUI = true;
-                            chequeTable.setItems(filteredResults);
-                        } finally {
-                            isUpdatingUI = false;
-                        }
-                    });
-                } catch (Exception e) {
-                    Platform.runLater(() -> showAlert("Search Error", e.getMessage(), Alert.AlertType.ERROR));
-                }
-            });
-        } else {
-            filtered.setPredicate(c -> {
-                boolean matchStatus = "Status".equals(status)
-                        || (c.getStatus() != null && c.getStatus().name().equals(status));
-                boolean matchBank = "Bank Name".equals(bank)
-                        || (c.getBankName() != null && c.getBankName().equalsIgnoreCase(bank));
-                boolean matchDate = date == null
-                        || (c.getIssueDate() != null && c.getIssueDate().equals(date));
-                return matchStatus && matchBank && matchDate;
-            });
-            try {
-                isUpdatingUI = true;
-                chequeTable.setItems(filtered);
-            } finally {
-                isUpdatingUI = false;
-            }
-        }
+        // Client-side filter (kyunki backend change nahi ho raha)
+        filtered.setPredicate(cheque -> {
+            if (cheque == null)
+                return false;
+
+            boolean matchesSearch = search.isBlank()
+                    || contains(cheque.getChequeNo(), search)
+                    || contains(cheque.getPayeeName(), search)
+                    || contains(cheque.getBankName(), search);
+
+            boolean matchesStatus = "Status".equals(status)
+                    || (cheque.getStatus() != null && status.equals(cheque.getStatus().name()));
+
+            boolean matchesBank = "Bank Name".equals(bank)
+                    || bank.equals(cheque.getBankName());
+
+            boolean matchesDate = date == null
+                    || (cheque.getIssueDate() != null && cheque.getIssueDate().equals(date));
+
+            return matchesSearch && matchesStatus && matchesBank && matchesDate;
+        });
+    }
+
+    private boolean contains(String value, String needle) {
+        return value != null && needle != null
+                && value.toLowerCase().contains(needle.toLowerCase());
     }
 
     @FXML
     private void onResetFilters() {
-        if (searchField != null) searchField.clear();
+        if (searchField != null)
+            searchField.clear();
         if (filterStatus != null) {
             filterStatus.setValue("Status");
             updateComboPlaceholderStyle(filterStatus, "Status");
@@ -417,26 +469,36 @@ public class ChequeController implements ReloadableController {
 
     // ── Load banks from DB into ComboBox ─────────────────────────────
 
-
     // ── Load cheque data ─────────────────────────────────────────────
     private void loadData() {
-        System.out.println("API_TRIGGER | ChequeService.getAll | " + System.currentTimeMillis());
+        System.out.println("API_TRIGGER | ChequeService page=" + currentPageRequest.getPage()
+                + " size=" + currentPageRequest.getSize() + " | " + System.currentTimeMillis());
+
         com.chequeprint.util.AppExecutors.runAsync(() -> {
             try {
-                var list = chequeService.getAll();
+                PageResult<Cheque> page;
+                if (currentSearchQuery != null && !currentSearchQuery.isBlank()) {
+                    page = chequeService.search(currentSearchQuery, currentPageRequest);
+                } else {
+                    page = chequeService.getAll(currentPageRequest);
+                }
+
+                // Audit log enrichment (optional, current page only)
+                List<Cheque> list = new ArrayList<>(page.getContent());
                 try {
-                    List<AuditLog> auditLogs = auditService.findRecent(200);
-                    java.util.Map<Integer, AuditLog> lastPrintLogs = new java.util.HashMap<>();
-                    for (AuditLog log : auditLogs) {
-                        if ("cheques".equals(log.getTableName()) && AuditAction.PRINT == log.getAction()) {
-                            Integer chequeId = log.getRecordId();
-                            if (chequeId != null && !lastPrintLogs.containsKey(chequeId)) {
-                                lastPrintLogs.put(chequeId, log);
+                    var auditLogs = auditService.findRecent(200);
+                    java.util.Map<Integer, com.chequeprint.model.AuditLog> lastPrintLogs = new java.util.HashMap<>();
+                    for (var log : auditLogs) {
+                        if ("cheques".equals(log.getTableName())
+                                && com.chequeprint.model.AuditAction.PRINT == log.getAction()) {
+                            Integer cid = log.getRecordId();
+                            if (cid != null && !lastPrintLogs.containsKey(cid)) {
+                                lastPrintLogs.put(cid, log);
                             }
                         }
                     }
                     for (Cheque c : list) {
-                        AuditLog log = lastPrintLogs.get(c.getId());
+                        var log = lastPrintLogs.get(c.getId());
                         if (log != null) {
                             String details = log.getDetails();
                             String printer = parseDetails(details, "Printer: ", ".");
@@ -448,20 +510,21 @@ public class ChequeController implements ReloadableController {
                 } catch (Exception auditEx) {
                     System.err.println("Failed to enrich cheques with print log: " + auditEx.getMessage());
                 }
+
                 Platform.runLater(() -> {
                     try {
                         isUpdatingUI = true;
                         data.setAll(list);
-                        if (chequeTable != null) {
+                        updatePaginationControls(page);
+                        if (chequeTable != null)
                             chequeTable.refresh();
-                        }
                     } finally {
                         isUpdatingUI = false;
                     }
                 });
             } catch (Exception e) {
                 String message = e.getMessage();
-                if (message != null && message.contains("Failed to fetch cheques from REST API")) {
+                if (message != null && message.contains("Failed to fetch")) {
                     message = "Unable to connect to the backend server. Please start the REST API service and try again.";
                 }
                 final String alertMessage = message;
@@ -471,9 +534,11 @@ public class ChequeController implements ReloadableController {
     }
 
     private String parseDetails(String details, String prefix, String suffix) {
-        if (details == null) return null;
+        if (details == null)
+            return null;
         int start = details.indexOf(prefix);
-        if (start == -1) return null;
+        if (start == -1)
+            return null;
         start += prefix.length();
         int end = details.indexOf(suffix, start);
         if (end == -1) {
@@ -504,7 +569,8 @@ public class ChequeController implements ReloadableController {
 
     private void openChequeDialog(Cheque cheque) {
         try {
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/cheque_dialog.fxml"));
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                    getClass().getResource("/view/cheque_dialog.fxml"));
             javafx.scene.Parent root = loader.load();
 
             ChequeDialogController controller = loader.getController();
@@ -515,7 +581,7 @@ public class ChequeController implements ReloadableController {
             stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
             stage.initOwner(rootPane.getScene().getWindow());
             stage.setTitle(cheque == null ? "New Cheque" : "Edit Cheque");
-            
+
             javafx.scene.Scene scene = new javafx.scene.Scene(root);
             scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
             scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
@@ -532,19 +598,19 @@ public class ChequeController implements ReloadableController {
                 stage.setX(event.getScreenX() - xOffset[0]);
                 stage.setY(event.getScreenY() - yOffset[0]);
             });
-            
+
             stage.setScene(scene);
 
             javafx.scene.Parent ownerRoot = rootPane.getScene().getRoot();
             javafx.scene.effect.Effect oldEffect = ownerRoot.getEffect();
-            
+
             javafx.scene.effect.BoxBlur blur = new javafx.scene.effect.BoxBlur(6, 6, 3);
             javafx.scene.effect.ColorAdjust dim = new javafx.scene.effect.ColorAdjust();
             dim.setBrightness(-0.35);
             dim.setInput(blur);
-            
+
             ownerRoot.setEffect(dim);
-            
+
             try {
                 stage.showAndWait();
             } finally {
@@ -584,7 +650,8 @@ public class ChequeController implements ReloadableController {
         if (sel.getStatus() != Cheque.Status.Approved && sel.getStatus() != Cheque.Status.Printed) {
             if (AccessControl.can(actor, Permission.APPROVE_CHEQUE)) {
                 showAlert("Approval Required",
-                        "This cheque is in " + sel.getStatus() + " status. You must approve it first using the 'Approve' button before printing.",
+                        "This cheque is in " + sel.getStatus()
+                                + " status. You must approve it first using the 'Approve' button before printing.",
                         Alert.AlertType.WARNING);
             } else {
                 if (sel.getStatus() == Cheque.Status.Draft) {
@@ -609,7 +676,8 @@ public class ChequeController implements ReloadableController {
         Task<Boolean> printTask = new Task<>() {
             @Override
             protected Boolean call() throws Exception {
-                LOGGER.info("[ChequeController] Starting background printing task on thread: " + Thread.currentThread().getName());
+                LOGGER.info("[ChequeController] Starting background printing task on thread: "
+                        + Thread.currentThread().getName());
                 workflowService.print(sel.getId(), actor);
                 LOGGER.info("[ChequeController] Background printing task completed for cheque ID: " + sel.getId());
                 return true;
@@ -762,11 +830,12 @@ public class ChequeController implements ReloadableController {
             return;
         }
 
-        boolean isPrintable = selected.getStatus() == Cheque.Status.Approved || selected.getStatus() == Cheque.Status.Printed;
+        boolean isPrintable = selected.getStatus() == Cheque.Status.Approved
+                || selected.getStatus() == Cheque.Status.Printed;
         if (btnPrint != null) {
             btnPrint.setDisable(!isPrintable);
             if (!isPrintable) {
-                String reason = hasApprovePerm 
+                String reason = hasApprovePerm
                         ? "This cheque is in " + selected.getStatus() + " status. Please approve it first."
                         : "This cheque is in " + selected.getStatus() + " status and requires manager approval.";
                 btnPrint.setTooltip(new Tooltip(reason));
@@ -865,7 +934,8 @@ public class ChequeController implements ReloadableController {
             if (btn == ButtonType.YES) {
                 try {
                     workflowService.cancel(sel.getId(), actor);
-                    showAlert("Success", "Cheque " + sel.getChequeNo() + " has been cancelled.", Alert.AlertType.INFORMATION);
+                    showAlert("Success", "Cheque " + sel.getChequeNo() + " has been cancelled.",
+                            Alert.AlertType.INFORMATION);
                     loadData();
                     clearForm();
                     refreshDashboard();

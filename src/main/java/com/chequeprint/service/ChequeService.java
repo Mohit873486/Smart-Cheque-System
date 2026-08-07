@@ -2,30 +2,56 @@ package com.chequeprint.service;
 
 import com.chequeprint.dao.ChequeDAO;
 import com.chequeprint.model.Cheque;
+import com.chequeprint.model.PageRequest;
+import com.chequeprint.model.PageResult;
 import com.chequeprint.util.NumberToWordsConverter;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * ChequeService — business logic layer between controllers and DAO.
- * Validates input, converts amount to words, generates cheque numbers.
- */
 public class ChequeService {
 
-    private static final AtomicLong SEQUENCE = new AtomicLong(0);
+    private static final java.util.concurrent.atomic.AtomicLong SEQUENCE = new java.util.concurrent.atomic.AtomicLong(0);
     private final ChequeDAO dao = new ChequeDAO();
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // 1. PAGINATED READS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    public PageResult<Cheque> getAll(PageRequest pageRequest) {
+        return dao.findAll(pageRequest);
+    }
+
+    /**
+     * Legacy compatibility. Loads up to 1000 items.
+     * @deprecated Use {@link #getAll(PageRequest)} for production.
+     */
+    @Deprecated
     public List<Cheque> getAll() throws SQLException {
-        return dao.findAll();
+        return dao.findAll(PageRequest.of(0, 1000)).getContent();
     }
 
     public Cheque getById(int id) throws SQLException {
-        return dao.findById(id);
+        return dao.findById(id).orElse(null);
     }
+
+    public PageResult<Cheque> search(String query, PageRequest pageRequest) {
+        return dao.search(query, pageRequest);
+    }
+
+    /**
+     * @deprecated Use paginated {@link #search(String, PageRequest)}.
+     */
+    @Deprecated
+    public List<Cheque> search(String query) throws SQLException {
+        return dao.search(query, PageRequest.of(0, 1000)).getContent();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 2. WRITE OPERATIONS
+    // ═══════════════════════════════════════════════════════════════════════
 
     public boolean save(Cheque c) throws SQLException {
         return createCheque(c);
@@ -40,79 +66,62 @@ public class ChequeService {
         }
         validateCheque(c);
         c.setAmountWords(convertAmountToWords(c.getAmount()));
-        return dao.insert(c);
-    }
-
-    public Cheque validateChequeData(Cheque cheque) {
-        if (cheque == null) {
-            throw new IllegalStateException("Cheque data is null. Cannot proceed with printing.");
-        }
-        if (cheque.getPayeeName() == null || cheque.getPayeeName().isBlank()) {
-            throw new IllegalStateException("Payee Name is required for printing.");
-        }
-        if (cheque.getAmount() == null || cheque.getAmount().doubleValue() <= 0) {
-            throw new IllegalStateException("Cheque Amount must be greater than zero.");
-        }
-        if (cheque.getIssueDate() == null) {
-            throw new IllegalStateException("Issue Date is required for printing.");
-        }
-        return cheque;
+        return dao.insert(c).isOk();
     }
 
     public boolean update(Cheque c) throws SQLException {
         validateCheque(c);
         c.setAmountWords(convertAmountToWords(c.getAmount()));
-        return dao.update(c);
+        return dao.update(c).isOk();
     }
 
     public boolean delete(int id) throws SQLException {
-        return dao.delete(id);
+        return dao.delete(id).isOk();
     }
 
     public boolean markPrinted(int id) throws SQLException {
-        Cheque c = dao.findById(id);
-        if (c == null)
-            return false;
-        return dao.updateStatus(c, Cheque.Status.Printed);
+        return dao.updateStatus(id, Cheque.Status.Printed).isOk();
     }
 
     public boolean setStatus(Cheque cheque, Cheque.Status status) throws SQLException {
-        if (cheque == null || status == null) {
-            return false;
-        }
-        return dao.updateStatus(cheque, status);
+        if (cheque == null || status == null) return false;
+        return dao.updateStatus(cheque.getId(), status).isOk();
     }
 
     public boolean approveCheque(int id) throws SQLException {
-        return dao.approveCheque(id);
+        return dao.updateStatus(id, Cheque.Status.Approved).isOk();
     }
 
-    // --- Dashboard stats ---
-    public int getTotalCheques() throws SQLException {
-        return dao.countTotal();
+    // ═══════════════════════════════════════════════════════════════════════
+    // 3. STATS (Server-side via dedicated endpoint)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    public ChequeDAO.ChequeStats fetchStats() {
+        var response = dao.fetchStats();
+        return response.isOk() && response.getData() != null
+            ? response.getData()
+            : new ChequeDAO.ChequeStats(0, 0, 0, 0, 0.0);
     }
 
-    public int getPrintedCheques() throws SQLException {
-        return dao.countPrinted();
-    }
+    @Deprecated
+    public int getTotalCheques() throws SQLException { return (int) fetchStats().total(); }
 
-    public int getPendingCheques() throws SQLException {
-        return dao.countPending();
-    }
+    @Deprecated
+    public int getPrintedCheques() throws SQLException { return (int) fetchStats().printed(); }
 
-    public int getTodayCheques() throws SQLException {
-        return dao.countTodayEntries();
-    }
+    @Deprecated
+    public int getPendingCheques() throws SQLException { return (int) fetchStats().pending(); }
 
-    public double getMonthlyAmount() throws SQLException {
-        return dao.sumThisMonth();
-    }
+    @Deprecated
+    public int getTodayCheques() throws SQLException { return (int) fetchStats().today(); }
 
-    public int getCountByDate(java.time.LocalDate date) throws SQLException {
-        return dao.countByIssueDate(date);
-    }
+    @Deprecated
+    public double getMonthlyAmount() throws SQLException { return fetchStats().monthlySum(); }
 
-    // --- Helpers ---
+    // ═══════════════════════════════════════════════════════════════════════
+    // 4. VALIDATION & HELPERS
+    // ═══════════════════════════════════════════════════════════════════════
+
     public void validateCheque(Cheque c) throws SQLException {
         if (c.getPayeeName() == null || c.getPayeeName().isBlank())
             throw new IllegalArgumentException("Payee name is required.");
@@ -144,10 +153,24 @@ public class ChequeService {
         }
     }
 
-    public String convertAmountToWords(BigDecimal amount) {
-        if (amount == null) {
-            return "";
+    public Cheque validateChequeData(Cheque cheque) {
+        if (cheque == null) {
+            throw new IllegalStateException("Cheque data is null. Cannot proceed with printing.");
         }
+        if (cheque.getPayeeName() == null || cheque.getPayeeName().isBlank()) {
+            throw new IllegalStateException("Payee Name is required for printing.");
+        }
+        if (cheque.getAmount() == null || cheque.getAmount().doubleValue() <= 0) {
+            throw new IllegalStateException("Cheque Amount must be greater than zero.");
+        }
+        if (cheque.getIssueDate() == null) {
+            throw new IllegalStateException("Issue Date is required for printing.");
+        }
+        return cheque;
+    }
+
+    public String convertAmountToWords(BigDecimal amount) {
+        if (amount == null) return "";
         return NumberToWordsConverter.convert(amount);
     }
 
@@ -156,33 +179,27 @@ public class ChequeService {
         long seq = SEQUENCE.incrementAndGet();
         return String.format("CHQ-%s-%06d", date, seq % 999999);
     }
-    
-    public List<Cheque> search(String query) throws SQLException {
-        return dao.search(query);
-    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 5. DASHBOARD AGGREGATIONS (Client-side on provided list)
+    // ═══════════════════════════════════════════════════════════════════════
 
     public BigDecimal calculatePortfolioSum(List<Cheque> cheques) {
-        if (cheques == null || cheques.isEmpty()) {
-            return BigDecimal.ZERO;
-        }
+        if (cheques == null || cheques.isEmpty()) return BigDecimal.ZERO;
         return cheques.stream()
-                .map(Cheque::getAmount)
-                .filter(amt -> amt != null)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            .map(Cheque::getAmount)
+            .filter(amt -> amt != null)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public double calculatePendingRatio(List<Cheque> cheques) {
-        if (cheques == null || cheques.isEmpty()) {
-            return 0.0;
-        }
+        if (cheques == null || cheques.isEmpty()) return 0.0;
         long pendingCount = cheques.stream().filter(c -> c.getStatus() == Cheque.Status.Pending).count();
         return (pendingCount * 100.0) / cheques.size();
     }
 
     public double calculatePrintedRatio(List<Cheque> cheques) {
-        if (cheques == null || cheques.isEmpty()) {
-            return 0.0;
-        }
+        if (cheques == null || cheques.isEmpty()) return 0.0;
         long printedCount = cheques.stream().filter(c -> c.getStatus() == Cheque.Status.Printed).count();
         return (printedCount * 100.0) / cheques.size();
     }

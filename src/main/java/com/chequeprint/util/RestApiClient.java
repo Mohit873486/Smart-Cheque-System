@@ -7,7 +7,15 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Central REST API client for the JavaFX application.
+ *
+ * <p>All DAOs should call {@link #send(HttpRequest)} — it automatically
+ * delegates to {@link ResilientHttpClient} for retry (3 attempts,
+ * 500/1000/1500ms back-off).</p>
+ */
 public final class RestApiClient {
+
     private static final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
@@ -28,6 +36,11 @@ public final class RestApiClient {
         return builder;
     }
 
+    /**
+     * Sends the request with automatic retry (3 attempts, 500/1000/1500ms).
+     * Returns HttpResponse&lt;String&gt; — same as before, so zero breaking changes
+     * in ApiGateway, UserService, SettingDAO, ChequeApiClient, etc.
+     */
     public static HttpResponse<String> send(HttpRequest request) throws Exception {
         long count = callCounter.incrementAndGet();
         long startTime = System.currentTimeMillis();
@@ -37,7 +50,9 @@ public final class RestApiClient {
                 request.method(), request.uri(), count, caller, startTime));
 
         try {
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<?> raw = ResilientHttpClient.sendWithRetry(request);
+            @SuppressWarnings("unchecked")
+            HttpResponse<String> response = (HttpResponse<String>) raw;
             long duration = System.currentTimeMillis() - startTime;
             System.out.println(String.format("API_CALL_END | %s %s | Status=%d | Duration=%dms | Time=%d",
                     request.method(), request.uri(), response.statusCode(), duration, System.currentTimeMillis()));
@@ -54,8 +69,11 @@ public final class RestApiClient {
         StackTraceElement[] stack = Thread.currentThread().getStackTrace();
         for (int i = 2; i < stack.length; i++) {
             String className = stack[i].getClassName();
-            if (!className.contains("RestApiClient") && !className.contains("java.lang.Thread")) {
-                return stack[i].getFileName() + ":" + stack[i].getLineNumber() + " (" + stack[i].getMethodName() + ")";
+            if (!className.contains("RestApiClient")
+                    && !className.contains("ResilientHttpClient")
+                    && !className.contains("java.lang.Thread")) {
+                return stack[i].getFileName() + ":" + stack[i].getLineNumber()
+                        + " (" + stack[i].getMethodName() + ")";
             }
         }
         return "UnknownCaller";

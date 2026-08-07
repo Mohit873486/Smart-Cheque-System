@@ -21,7 +21,8 @@
                 <Label text="Create, edit, and print cheque records"
                     styleClass="dashboard-subtitle" />
             </VBox>
-            <Button fx:id="btnNewCheque" text="+ New Cheque" styleClass="btn-primary" onAction="#onNewCheque" />
+            <Button fx:id="btnNewCheque" text="+ New Cheque" styleClass="btn-primary"
+                onAction="#onNewCheque" />
         </HBox>
 
         <HBox spacing="20" VBox.vgrow="ALWAYS" maxWidth="Infinity" maxHeight="Infinity">
@@ -35,13 +36,15 @@
                             styleClass="search-input-field" HBox.hgrow="ALWAYS"
                             maxWidth="Infinity" />
                     </HBox>
-                    <DatePicker fx:id="filterDate" promptText="Filter by issue date" styleClass="form-date"
+                    <DatePicker fx:id="filterDate" promptText="Filter by issue date"
+                        styleClass="form-date"
                         prefWidth="160" />
                     <ComboBox fx:id="filterStatus" styleClass="filter-combo" promptText="Status"
                         prefWidth="120" />
                     <ComboBox fx:id="filterBank" styleClass="filter-combo" promptText="Bank Name"
                         prefWidth="150" />
-                    <Button text="Reset Filters" styleClass="btn-secondary" onAction="#onResetFilters" />
+                    <Button text="Reset Filters" styleClass="btn-secondary"
+                        onAction="#onResetFilters" />
 
 
                 </HBox>
@@ -56,19 +59,33 @@
                             styleClass="table-placeholder" />
                     </placeholder>
                     <columns>
-                        <TableColumn fx:id="colChequeNo" text="Cheque No" prefWidth="120" minWidth="90" />
+                        <TableColumn fx:id="colChequeNo" text="Cheque No" prefWidth="120"
+                            minWidth="90" />
                         <TableColumn fx:id="colPayee" text="Payee" prefWidth="160" minWidth="100" />
                         <TableColumn fx:id="colAmount" text="Amount" prefWidth="110" minWidth="80" />
                         <TableColumn fx:id="colBank" text="Bank" prefWidth="130" minWidth="100" />
                         <TableColumn fx:id="colDate" text="Issue Date" prefWidth="100" minWidth="85" />
-                        <TableColumn fx:id="colStatus" text="Status" prefWidth="90" minWidth="80" styleClass="align-center" />
+                        <TableColumn fx:id="colStatus" text="Status" prefWidth="90" minWidth="80"
+                            styleClass="align-center" />
                     </columns>
                 </TableView>
 
+                //////
+                <HBox spacing="10" alignment="CENTER_LEFT" styleClass="pagination-bar">
+                    <ComboBox fx:id="cmbPageSize" prefWidth="80" />
+                    <Button fx:id="btnPrev" text="← Prev" onAction="#onPrevPage" />
+                    <Label fx:id="lblPageInfo" text="Page 1 of 1" />
+                    <Button fx:id="btnNext" text="Next →" onAction="#onNextPage" />
+                    <Button text="Refresh" onAction="#onRefresh" />
+                </HBox>
+
                 <HBox spacing="10" alignment="CENTER_LEFT" styleClass="table-action-footer">
-                    <Button fx:id="btnApprove" text="Approve" styleClass="btn-secondary" onAction="#onApprove" />
-                    <Button fx:id="btnPrint" text="Print" styleClass="btn-primary" onAction="#onPrint" />
-                    <Button fx:id="btnEdit" text="Edit" styleClass="btn-secondary" onAction="#onEdit" />
+                    <Button fx:id="btnApprove" text="Approve" styleClass="btn-secondary"
+                        onAction="#onApprove" />
+                    <Button fx:id="btnPrint" text="Print" styleClass="btn-primary"
+                        onAction="#onPrint" />
+                    <Button fx:id="btnEdit" text="Edit" styleClass="btn-secondary"
+                        onAction="#onEdit" />
                     <MenuButton fx:id="btnLifecycle" text="Actions" styleClass="btn-secondary">
                         <items>
                             <MenuItem text="Mark as Deposited" onAction="#onDeposit" />
@@ -77,7 +94,8 @@
                             <MenuItem text="Cancel / Void" onAction="#onCancel" />
                         </items>
                     </MenuButton>
-                    <Button fx:id="btnDelete" text="Delete" styleClass="btn-danger-low" onAction="#onDelete" />
+                    <Button fx:id="btnDelete" text="Delete" styleClass="btn-danger-low"
+                        onAction="#onDelete" />
                     <Region HBox.hgrow="ALWAYS" />
                     <Label text="Double-click a row to edit" styleClass="footer-hint" />
                 </HBox>

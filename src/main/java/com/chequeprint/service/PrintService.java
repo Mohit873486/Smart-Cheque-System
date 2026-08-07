@@ -1,5 +1,6 @@
 package com.chequeprint.service;
 
+import com.chequeprint.model.PageRequest;
 import com.chequeprint.dao.BankDAO;
 import com.chequeprint.dao.ChequeDAO;
 import com.chequeprint.model.Bank;
@@ -100,7 +101,7 @@ public class PrintService {
 
     /** Looks up the cheque by ID, then prints it. */
     public boolean printCheque(int chequeId) throws Exception {
-        Cheque c = chequeDAO.findById(chequeId);
+        Cheque c = chequeDAO.findById(chequeId).orElse(null);
         if (c == null) throw new IllegalArgumentException("Cheque not found: id=" + chequeId);
         return printCheque(c);
     }
@@ -158,8 +159,8 @@ public class PrintService {
     }
 
     /** Batch-prints all Draft/Pending cheques; throws BatchPrintException if any fail. */
-    public List<Cheque> printAllPending() throws SQLException, BatchPrintException {
-        List<Cheque> pending = chequeDAO.findAll().stream()
+        public List<Cheque> printAllPending() throws SQLException, BatchPrintException {
+        List<Cheque> pending = chequeDAO.findAll(PageRequest.of(0, 1000)).getContent().stream()
                 .filter(c -> c.getStatus() == Cheque.Status.Draft || c.getStatus() == Cheque.Status.Pending)
                 .collect(Collectors.toList());
 
@@ -174,7 +175,7 @@ public class PrintService {
                 Bank bank = resolveBank(c);
                 boolean ok = JasperPrintUtil.printCheque(c, bank, bulkPrinter);
                 if (ok) {
-                    chequeDAO.updateStatus(c, Cheque.Status.Printed);
+                    chequeDAO.updateStatus(c.getId(), Cheque.Status.Printed);   // ← FIX: c → c.getId()
                     successes.add(c);
                 } else {
                     failures.add(c.getChequeNo() + ": Print returned false");
@@ -191,31 +192,29 @@ public class PrintService {
     }
 
     public void reprintCheque(int chequeId) throws Exception {
-        Cheque c = chequeDAO.findById(chequeId);
+        Cheque c = chequeDAO.findById(chequeId).orElse(null);
         if (c == null) throw new IllegalArgumentException("Cheque not found: id=" + chequeId);
         Bank bank = resolveBank(c);
-        if (JasperPrintUtil.printCheque(c, bank)) chequeDAO.updateStatus(c, Cheque.Status.Printed);
+        if (JasperPrintUtil.printCheque(c, bank)) chequeDAO.updateStatus(c.getId(), Cheque.Status.Printed);
     }
 
-    public int  getPrintQueueSize() throws SQLException {
-        return (int) chequeDAO.findAll().stream()
+            public int getPrintQueueSize() throws SQLException {
+        return (int) chequeDAO.findAll(PageRequest.of(0, 1000)).getContent().stream()
                 .filter(c -> c.getStatus() == Cheque.Status.Draft || c.getStatus() == Cheque.Status.Pending)
                 .count();
     }
 
     public boolean cancelPrint(int chequeId) throws SQLException {
-        Cheque c = chequeDAO.findById(chequeId);
+        Cheque c = chequeDAO.findById(chequeId).orElse(null);
         if (c == null) return false;
         c.setStatus(Cheque.Status.Cancelled);
-        return chequeDAO.update(c);
+        return chequeDAO.update(c).isOk();   // ← FIX: ApiResponse<Void> → boolean via .isOk()
     }
-
     // ═════════════════════════════════════════════════════════════════════════
     // 2. PDF EXPORT
     // ═════════════════════════════════════════════════════════════════════════
-
     public String exportChequePdf(int chequeId, String outputDir) throws Exception {
-        Cheque c = chequeDAO.findById(chequeId);
+        Cheque c = chequeDAO.findById(chequeId).orElse(null);
         if (c == null) throw new IllegalArgumentException("Cheque not found: id=" + chequeId);
         return JasperPrintUtil.exportChequePdf(c, outputDir, resolveBank(c));
     }
@@ -223,10 +222,9 @@ public class PrintService {
     public String exportSelectedChequePdfAndMarkPrinted(Cheque cheque, String outputDir) throws Exception {
         Objects.requireNonNull(cheque, "Cheque must not be null.");
         String path = JasperPrintUtil.exportChequePdf(cheque, outputDir, resolveBank(cheque));
-        chequeDAO.updateStatus(cheque, Cheque.Status.Printed);
+        chequeDAO.updateStatus(cheque.getId(), Cheque.Status.Printed);   // ← FIX: cheque → cheque.getId()
         return path;
     }
-
     // ═════════════════════════════════════════════════════════════════════════
     // 3. INVOICE OPERATIONS
     // ═════════════════════════════════════════════════════════════════════════
@@ -529,12 +527,12 @@ public class PrintService {
 
     private void updateStatusOrThrow(Cheque cheque, Cheque.Status status) throws Exception {
         try {
-            chequeDAO.updateStatus(cheque, status);
+            chequeDAO.updateStatus(cheque.getId(), status);   // ← FIX: cheque → cheque.getId()
         } catch (Exception e) {
             throw new Exception("Printed but failed to update status — contact support.", e);
         }
     }
-
+    
     private Optional<Printer> findByName(List<Printer> printers, String name) {
         if (name == null || name.isBlank()) return Optional.empty();
         return printers.stream().filter(p -> p.getName().equalsIgnoreCase(name.trim())).findFirst();

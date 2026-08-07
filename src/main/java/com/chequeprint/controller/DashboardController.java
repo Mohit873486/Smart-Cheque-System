@@ -2,6 +2,7 @@ package com.chequeprint.controller;
 
 import com.chequeprint.model.Cheque;
 import com.chequeprint.model.Invoice;
+import com.chequeprint.model.PageRequest;
 import com.chequeprint.model.User;
 import com.chequeprint.service.AccessControl;
 import com.chequeprint.service.ChequeService;
@@ -304,12 +305,14 @@ public class DashboardController implements ReloadableController {
             setStringCell(colInvoiceStatus, c -> formatStatus(c.getStatus()));
             if (colInvoiceStatus != null) {
                 colInvoiceStatus.setCellFactory(col -> new TableCell<>() {
+
                     @Override
                     protected void updateItem(String item, boolean empty) {
                         super.updateItem(item, empty);
                         setText(null);
                         setGraphic(empty || item == null ? null : invoiceStatusBadge(item));
                     }
+
                 });
             }
         }
@@ -375,14 +378,22 @@ public class DashboardController implements ReloadableController {
         addHover(cardAmount);
     }
 
+    // DashboardController.java — inside loadDashboardData() method
+
     private DashboardData loadDashboardData() {
         List<Cheque> cheques = Collections.emptyList();
         List<Invoice> invoices = Collections.emptyList();
         User profile = null;
         String error = null;
+        // Stats ko bhi yahin fetch karo (background thread pe)
+        com.chequeprint.dao.ChequeDAO.ChequeStats stats = new com.chequeprint.dao.ChequeDAO.ChequeStats(0, 0, 0, 0,
+                0.0);
 
         try {
-            cheques = chequeService.getAll();
+            stats = chequeService.fetchStats(); // Background thread pe safe
+            var recentPage = chequeService.getAll(
+                    PageRequest.of(0, 8).withSort("issueDate", "desc"));
+            cheques = recentPage.getContent();
         } catch (Exception e) {
             error = appendError(error, "Cheques: " + e.getMessage());
         }
@@ -399,12 +410,15 @@ public class DashboardController implements ReloadableController {
             error = appendError(error, "Profile: " + e.getMessage());
         }
 
-        return new DashboardData(cheques, invoices, profile, error);
+        return new DashboardData(cheques, invoices, profile, error, stats);
     }
 
     private void applyDashboardData(DashboardData data) {
         loadedCheques = data.cheques() == null ? Collections.emptyList() : data.cheques();
         loadedInvoices = data.invoices() == null ? Collections.emptyList() : data.invoices();
+
+        // Stats ab data object se mil raha hai — koi extra network call nahi
+        com.chequeprint.dao.ChequeDAO.ChequeStats stats = data.stats();
 
         String displayName = data.profile() != null && data.profile().getName() != null
                 && !data.profile().getName().isBlank()
@@ -414,37 +428,37 @@ public class DashboardController implements ReloadableController {
         if (lblWelcome != null) {
             lblWelcome.setText("Welcome, " + displayName);
         }
-        if (lblSubtitle != null) {
-            lblSubtitle.setText(data.error() == null
-                    ? "Your cheque printing operations are running smoothly."
-                    : "Dashboard loaded with limited data. " + data.error());
-        }
 
-        int total = loadedCheques.size();
-        int pending = countCheques(Cheque.Status.Pending);
-        int printed = countCheques(Cheque.Status.Printed);
-        int printedThisWeek = countPrintedThisWeek();
+        // Counts from SERVER stats (correct)
+        int total = (int) stats.total();
+        int pending = (int) stats.pending();
+        int printed = (int) stats.printed();
 
-        BigDecimal totalAmountSum = chequeService.calculatePortfolioSum(loadedCheques);
-        double pendingRatio = chequeService.calculatePendingRatio(loadedCheques);
-        double printedRatio = chequeService.calculatePrintedRatio(loadedCheques);
+        // NOTE: printedThisWeek ke liye proper endpoint chahiye.
+        // Abhi ke liye 0 ya stats.printed() dikhate hain.
+        int printedThisWeek = 0;
 
         setCount(lblTotalCheques, total);
         setCount(lblPendingCheques, pending);
         setCount(lblPrintedCheques, printed);
         setCount(lblClearedCount, printedThisWeek);
 
+        // Subtitle
         if (lblSubtitle != null && data.error() == null) {
             lblSubtitle.setText(String.format(Locale.ROOT,
-                    "Operations running smoothly • Total Portfolio: ₹ %,.2f • Pending: %.1f%% • Printed: %.1f%%",
-                    totalAmountSum, pendingRatio, printedRatio));
+                    "Operations running smoothly • Total Portfolio: ₹ %,.2f • Pending: %d • Printed: %d",
+                    stats.monthlySum(), pending, printed));
+        } else if (lblSubtitle != null) {
+            lblSubtitle.setText("Dashboard loaded with limited data. " + data.error());
         }
 
         applyChequeFilter(txtChequeSearch == null ? "" : txtChequeSearch.getText());
+
         if (tblRecentInvoices != null) {
             tblRecentInvoices.getItems().setAll(firstItems(loadedInvoices, 8));
             tblRecentInvoices.refresh();
         }
+
         updateChequeChart(loadedCheques);
         updateStatusChart(loadedCheques);
 
@@ -787,6 +801,12 @@ public class DashboardController implements ReloadableController {
         }
     }
 
-    private record DashboardData(List<Cheque> cheques, List<Invoice> invoices, User profile, String error) {
+    private record DashboardData(
+            List<Cheque> cheques,
+            List<Invoice> invoices,
+            User profile,
+            String error,
+            com.chequeprint.dao.ChequeDAO.ChequeStats stats) {
     }
+
 }
